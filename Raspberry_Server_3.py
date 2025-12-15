@@ -38,10 +38,10 @@ def handle_options_request():
 
 # GPIO pin mapping for relays (BCM numbering)
 RELAY_PINS = {
-    1: 17,  # Relay 1 on GPIO 17
-    2: 18,  # Relay 2 on GPIO 18
-    3: 27,  # Relay 3 on GPIO 27
-    4: 22   # Relay 4 on GPIO 22
+    1: 14,  # Relay 1 on GPIO 17
+    2: 15,  # Relay 2 on GPIO 18
+    3: 18,  # Relay 3 on GPIO 27
+    4: 23   # Relay 4 on GPIO 22
 }
 
 # Store current relay states
