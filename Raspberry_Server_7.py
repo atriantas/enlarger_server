@@ -151,7 +151,7 @@ def ping():
 def control_relay():
     """Control relay state (ON/OFF)"""
     try:
-        gpio = int(request.args.get('gpio', 14))
+        gpio = int(request.args.get('gpio', 25))
         state = request.args.get('state', 'off').lower()
         
         if gpio not in RELAY_PINS:
@@ -187,7 +187,7 @@ def control_relay():
 def timer_endpoint():
     """Trigger timer relay with duration parameter"""
     try:
-        gpio = int(request.args.get('gpio', 14))
+        gpio = int(request.args.get('gpio', 25))
         duration = float(request.args.get('duration', 1.0))
         
         if gpio not in RELAY_PINS:
@@ -298,8 +298,8 @@ if __name__ == '__main__':
         logger.info(f"Server starting on http://{local_ip}:{port}")
         logger.info("Endpoints:")
         logger.info("  GET /ping - Test connection")
-        logger.info("  GET /relay?gpio=14&state=on - Control relay")
-        logger.info("  GET /timer?gpio=14&duration=5.0 - Timer relay")
+        logger.info("  GET /relay?gpio=25&state=on - Control relay")
+        logger.info("  GET /timer?gpio=25&duration=5.0 - Timer relay")
         logger.info("  GET /status - Get all relay states")
         logger.info("  GET /all?state=on - Control all relays")
         
