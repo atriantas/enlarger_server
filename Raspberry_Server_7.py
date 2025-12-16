@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Darkroom Timer Relay Server for Raspberry Pi
-Controls 4 relays on GPIO pins 14, 15, 18, 23
+Controls 4 relays on GPIO pins 25, 17, 27, 22
 Lightweight Flask server optimized for timing accuracy
 """
 
@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 # GPIO Pin Configuration
 RELAY_PINS = {
-    14: {"name": "Enlarger Timer", "state": False},
-    15: {"name": "Safelight", "state": False},
-    18: {"name": "Ventilation", "state": False},
-    23: {"name": "White Light", "state": False}
+    25: {"name": "Enlarger Timer", "state": False},
+    17: {"name": "Safelight", "state": False},
+    27: {"name": "Ventilation", "state": False},
+    22: {"name": "White Light", "state": False}
 }
 
 # Active timer threads
