@@ -2296,7 +2296,7 @@ body.fullscreen-mode .tab-content {
                     <span>BASE TIME</span>
                     <span class="value-display" id="baseTimeValue">10.0s</span>
                 </div>
-                <input type="range" min="1" max="30" step="0.1" value="10" class="slider" id="baseTimeSlider">
+                <input type="range" min="0.5" max="50" step="0.2" value="10" class="slider" id="baseTimeSlider">
             </div>
             
             <div class="control">
@@ -2456,38 +2456,49 @@ body.fullscreen-mode .tab-content {
                 <!-- Paper Size Adjustment -->
 <div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Paper Size Adjustment</div>
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
-                    <div class="info-box">
-                        <div class="info-label">Original Paper Size</div>
-                        <select class="fstop-select" id="originalPaperSize">
-                            <option value="0.011">3.5×5" (0.011 m²)</option>
-                            <option value="0.018">4×5" (0.018 m²)</option>
-                            <option value="0.032">5×7" (0.032 m²)</option>
-                            <option value="0.080" selected>8×10" (0.080 m²)</option>
-                            <option value="0.161">11×14" (0.161 m²)</option>
-                            <option value="0.323">16×20" (0.323 m²)</option>
-                            <option value="custom">Custom size...</option>
-                        </select>
-                        <div id="originalCustomPaperSize" style="margin-top: 5px; display: none;">
-                            <input type="number" min="0.001" max="1" step="0.001" value="0.080" class="settings-input" id="originalCustomPaperSizeValue" placeholder="m²" style="width: 80px; font-size: 0.7rem;">
-                            <button class="adjust-btn" id="setOriginalCustomPaper" style="font-size: 0.6rem; padding: 2px 4px;">Set</button>
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">New Paper Size</div>
-                        <select class="fstop-select" id="newPaperSize">
-                            <option value="0.011">3.5×5" (0.011 m²)</option>
-                            <option value="0.018">4×5" (0.018 m²)</option>
-                            <option value="0.032">5×7" (0.032 m²)</option>
-                            <option value="0.080" selected>8×10" (0.080 m²)</option>
-                            <option value="0.161">11×14" (0.161 m²)</option>
-                            <option value="0.323">16×20" (0.323 m²)</option>
-                            <option value="custom">Custom size...</option>
-                        </select>
-                        <div id="newCustomPaperSize" style="margin-top: 5px; display: none;">
-                            <input type="number" min="0.001" max="1" step="0.001" value="0.080" class="settings-input" id="newCustomPaperSizeValue" placeholder="m²" style="width: 80px; font-size: 0.7rem;">
-                            <button class="adjust-btn" id="setNewCustomPaper" style="font-size: 0.6rem; padding: 2px 4px;">Set</button>
-                        </div>
-                    </div>
+                    <!-- Original Paper Size -->
+<div class="info-box">
+    <div class="info-label">Original Paper Size</div>
+    <select class="fstop-select" id="originalPaperSize">
+        <option value="0.011">3.5×5" (0.011 m²)</option>
+        <option value="0.013">4×5" (0.013 m²)</option>
+        <option value="0.023">5×7" (0.023 m²)</option>
+        <option value="0.052" selected>8×10" (0.052 m²)</option>
+        <option value="0.099">11×14" (0.099 m²)</option>
+        <option value="0.206">16×20" (0.206 m²)</option>
+        <option value="custom">Custom size...</option>
+    </select>
+    <!-- ADD "style" attribute to this div -->
+    <div id="originalCustomPaperSize" style="display: none; margin-top: 5px;">
+        <input type="number" min="0.001" max="1" step="0.001" value="0.052" 
+               class="settings-input" id="originalCustomPaperSizeValue" 
+               placeholder="m²" style="width: 80px; font-size: 0.7rem;">
+        <button class="adjust-btn" id="setOriginalCustomPaper" 
+                style="font-size: 0.6rem; padding: 2px 4px;">Set</button>
+    </div>
+</div>
+
+<!-- New Paper Size -->
+<div class="info-box">
+    <div class="info-label">New Paper Size</div>
+    <select class="fstop-select" id="newPaperSize">
+        <option value="0.011">3.5×5" (0.011 m²)</option>
+        <option value="0.013">4×5" (0.013 m²)</option>
+        <option value="0.023">5×7" (0.023 m²)</option>
+        <option value="0.052" selected>8×10" (0.052 m²)</option>
+        <option value="0.099">11×14" (0.099 m²)</option>
+        <option value="0.206">16×20" (0.206 m²)</option>
+        <option value="custom">Custom size...</option>
+    </select>
+    <!-- ADD "style" attribute to this div -->
+    <div id="newCustomPaperSize" style="display: none; margin-top: 5px;">
+        <input type="number" min="0.001" max="1" step="0.001" value="0.052" 
+               class="settings-input" id="newCustomPaperSizeValue" 
+               placeholder="m²" style="width: 80px; font-size: 0.7rem;">
+        <button class="adjust-btn" id="setNewCustomPaper" 
+                style="font-size: 0.6rem; padding: 2px 4px;">Set</button>
+    </div>
+</div>
                 </div>
                 
                 <!-- CONTRAST CONTROL INTEGRATED -->
@@ -2905,16 +2916,17 @@ body.fullscreen-mode .tab-content {
                 
                 <!-- NEW: Paper Size Selector -->
                 <div class="paper-size-selector">
-                    <div class="paper-size-buttons">
-                        <button class="paper-size-btn" data-size="0.011">3.5x5" (0.011 m²)</button>
-                        <button class="paper-size-btn active" data-size="0.018">4x5" (0.018 m²)</button>
-                        <button class="paper-size-btn" data-size="0.032">5x7" (0.032 m²)</button>
-                        <button class="paper-size-btn" data-size="0.080">8x10" (0.080 m²)</button>
-                        <button class="paper-size-btn" data-size="0.161">11x14" (0.161 m²)</button>
-                        <button class="paper-size-btn" data-size="0.323">16x20" (0.323 m²)</button>
-                    </div>
+<div class="paper-size-buttons">
+    <button class="paper-size-btn" data-size="0.011">3.5x5" (0.011 m²)</button>
+    <button class="paper-size-btn active" data-size="0.013">4x5" (0.013 m²)</button>
+    <button class="paper-size-btn" data-size="0.023">5x7" (0.023 m²)</button>
+    <button class="paper-size-btn" data-size="0.052">8x10" (0.052 m²)</button> <!-- CHANGED -->
+    <button class="paper-size-btn" data-size="0.099">11x14" (0.099 m²)</button> <!-- CHANGED -->
+    <button class="paper-size-btn" data-size="0.206">16x20" (0.206 m²)</button> <!-- CHANGED -->
+</div>
                     <div class="custom-paper-size">
-                        <input type="number" min="0.001" max="1" step="0.001" value="0.080" class="settings-input" id="customPaperSize" placeholder="Custom m²">
+                       <!-- Chemical tab capacity tracker custom paper size -->
+<input type="number" min="0.001" max="1" step="0.001" value="0.052" class="settings-input" id="customPaperSize" placeholder="Custom m²">
                         <button class="paper-size-btn" id="useCustomSize">Use</button>
                     </div>
                 </div>
@@ -3773,7 +3785,7 @@ body.fullscreen-mode .tab-content {
                     return saved ? JSON.parse(saved) : { 
                         printsDone: 0, 
                         areaUsed: 0,
-                        paperSize: 0.080,
+                        paperSize: 0.052,
                         lastReset: new Date().toISOString() 
                     };
                 } catch (e) {
@@ -3781,7 +3793,7 @@ body.fullscreen-mode .tab-content {
                     return { 
                         printsDone: 0, 
                         areaUsed: 0,
-                        paperSize: 0.080,
+                        paperSize: 0.052,
                         lastReset: new Date().toISOString() 
                     };
                 }
@@ -4839,22 +4851,32 @@ body.fullscreen-mode .tab-content {
                 this.add5PrintsBtn.addEventListener('click', () => this.addPrints(5));
                 this.resetPrintsBtn.addEventListener('click', () => this.resetPrints());
                 
-                // Paper size events - NEW
-                this.paperSizeBtns.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const size = parseFloat(e.target.getAttribute('data-size'));
-                        if (size) {
-                            this.setPaperSize(size);
-                        }
-                    });
-                });
+// Paper size events - FIXED
+this.paperSizeBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const size = parseFloat(e.target.getAttribute('data-size'));
+        if (size) {
+            this.setPaperSize(size);
+            // Update custom input to match selected size
+            this.customPaperSizeInput.value = size.toFixed(3);
+        }
+    });
+});
                 
-                this.useCustomSizeBtn.addEventListener('click', () => {
-                    const customSize = parseFloat(this.customPaperSizeInput.value);
-                    if (customSize && customSize > 0) {
-                        this.setPaperSize(customSize);
-                    }
-                });
+// Custom paper size button - FIXED
+this.useCustomSizeBtn.addEventListener('click', () => {
+    const customSize = parseFloat(this.customPaperSizeInput.value);
+    if (customSize && customSize > 0) {
+        this.setPaperSize(customSize);
+        // Show visual feedback
+        this.useCustomSizeBtn.textContent = '✓ Used';
+        this.useCustomSizeBtn.classList.add('active');
+        setTimeout(() => {
+            this.useCustomSizeBtn.textContent = 'Use';
+            this.useCustomSizeBtn.classList.remove('active');
+        }, 1000);
+    }
+});
                 
                 // Shelf life events
                 this.addChemicalBtn.addEventListener('click', () => this.addChemical());
@@ -6212,10 +6234,10 @@ async start() {
             this.newHeight = 30.0;
             this.originalFStop = 5.6;
             this.newFStop = 5.6;
-            this.originalPaperSize = 0.080; // Default 8×10" in m²
-            this.newPaperSize = 0.080;
-            this.originalPaperSizeCustom = 0.080;
-            this.newPaperSizeCustom = 0.080;
+this.originalPaperSize = 0.052; // Changed from 0.080
+this.newPaperSize = 0.052;      // Changed from 0.080
+this.originalPaperSizeCustom = 0.052;  // Changed from 0.080
+this.newPaperSizeCustom = 0.052;       // Changed from 0.080
             
             // NEW: Contrast control variables
             this.currentPaper = 'fomaspeed';
@@ -6310,26 +6332,69 @@ async start() {
             this.newFStopElement.addEventListener('change', () => this.updateFromControls());
             this.copyCurrentTimeBtn.addEventListener('click', () => this.copyCurrentTime());
             this.applyHeightTimeBtn.addEventListener('click', () => this.applyNewTime());
-            this.originalPaperSizeElement.addEventListener('change', () => this.updateFromControls());
-            this.newPaperSizeElement.addEventListener('change', () => this.updateFromControls());
-            
-            this.setOriginalCustomPaperBtn.addEventListener('click', () => {
-                const customValue = parseFloat(this.originalCustomPaperSizeValue.value);
-                if (customValue && customValue > 0) {
-                    this.originalPaperSizeCustom = customValue;
-                    this.updateCalculations();
-                    this.updateDisplay();
-                }
-            });
-            
+this.originalPaperSizeElement.addEventListener('change', (e) => {
+    const value = e.target.value;
+    if (value === 'custom') {
+        this.originalCustomPaperSizeDiv.style.display = 'block';
+    } else {
+        this.originalCustomPaperSizeDiv.style.display = 'none';
+        this.originalPaperSize = parseFloat(value);
+        this.updateCalculations();
+        this.updateDisplay();
+    }
+});
+
+// New paper size change handler
+this.newPaperSizeElement.addEventListener('change', (e) => {
+    const value = e.target.value;
+    if (value === 'custom') {
+        this.newCustomPaperSizeDiv.style.display = 'block';
+    } else {
+        this.newCustomPaperSizeDiv.style.display = 'none';
+        this.newPaperSize = parseFloat(value);
+        this.updateCalculations();
+        this.updateDisplay();
+    }
+});
             this.setNewCustomPaperBtn.addEventListener('click', () => {
-                const customValue = parseFloat(this.newCustomPaperSizeValue.value);
-                if (customValue && customValue > 0) {
-                    this.newPaperSizeCustom = customValue;
-                    this.updateCalculations();
-                    this.updateDisplay();
-                }
-            });
+    const customValue = parseFloat(this.newCustomPaperSizeValue.value);
+    if (customValue && customValue > 0) {
+        this.newPaperSizeCustom = customValue;
+        if (this.newPaperSizeElement.value === 'custom') {
+            this.newPaperSize = customValue;
+            this.updateCalculations();
+            this.updateDisplay();
+            // Show visual feedback
+            this.setNewCustomPaperBtn.textContent = '✓ Set';
+            this.setNewCustomPaperBtn.classList.add('active');
+            setTimeout(() => {
+                this.setNewCustomPaperBtn.textContent = 'Set';
+                this.setNewCustomPaperBtn.classList.remove('active');
+            }, 1000);
+        }
+    }
+});
+
+// Set original custom paper size button
+this.setOriginalCustomPaperBtn.addEventListener('click', () => {
+    const customValue = parseFloat(this.originalCustomPaperSizeValue.value);
+    if (customValue && customValue > 0) {
+        this.originalPaperSizeCustom = customValue;
+        if (this.originalPaperSizeElement.value === 'custom') {
+            this.originalPaperSize = customValue;
+            this.updateCalculations();
+            this.updateDisplay();
+            // Show visual feedback
+            this.setOriginalCustomPaperBtn.textContent = '✓ Set';
+            this.setOriginalCustomPaperBtn.classList.add('active');
+            setTimeout(() => {
+                this.setOriginalCustomPaperBtn.textContent = 'Set';
+                this.setOriginalCustomPaperBtn.classList.remove('active');
+            }, 1000);
+        }
+    }
+});
+            
             
             // NEW: Add event listeners for contrast controls
             this.btnFomaspeed.addEventListener('click', () => this.selectPaper('fomaspeed'));
@@ -6360,6 +6425,26 @@ async start() {
             this.updateCalculations();
             this.updateDisplay();
         }
+
+// Helper method to update custom paper size displays
+updateCustomPaperSizeDisplays() {
+    // Update custom input fields with current values
+    this.originalCustomPaperSizeValue.value = this.originalPaperSizeCustom.toFixed(3);
+    this.newCustomPaperSizeValue.value = this.newPaperSizeCustom.toFixed(3);
+    
+    // Show/hide custom inputs based on selection
+    if (this.originalPaperSizeElement.value === 'custom') {
+        this.originalCustomPaperSizeDiv.style.display = 'block';
+    } else {
+        this.originalCustomPaperSizeDiv.style.display = 'none';
+    }
+    
+    if (this.newPaperSizeElement.value === 'custom') {
+        this.newCustomPaperSizeDiv.style.display = 'block';
+    } else {
+        this.newCustomPaperSizeDiv.style.display = 'none';
+    }
+}
         
         copyCurrentTime() {
             this.originalTime = this.incrementalTimer.currentTotalTime;
@@ -6392,28 +6477,37 @@ async start() {
             this.originalFStop = parseFloat(this.originalFStopElement.value);
             this.newFStop = parseFloat(this.newFStopElement.value);
             
-            // Get paper size values
-            const originalPaperSizeSelect = this.originalPaperSizeElement.value;
-            const newPaperSizeSelect = this.newPaperSizeElement.value;
-            
-            if (originalPaperSizeSelect === 'custom') {
-                this.originalPaperSize = this.originalPaperSizeCustom;
-                this.originalCustomPaperSizeDiv.style.display = 'block';
-            } else {
-                this.originalPaperSize = parseFloat(originalPaperSizeSelect);
-                this.originalCustomPaperSizeDiv.style.display = 'none';
-            }
-            
-            if (newPaperSizeSelect === 'custom') {
-                this.newPaperSize = this.newPaperSizeCustom;
-                this.newCustomPaperSizeDiv.style.display = 'block';
-            } else {
-                this.newPaperSize = parseFloat(newPaperSizeSelect);
-                this.newCustomPaperSizeDiv.style.display = 'none';
-            }
+// Get paper size values
+const originalPaperSizeSelect = this.originalPaperSizeElement.value;
+const newPaperSizeSelect = this.newPaperSizeElement.value;
+
+// Handle original paper size
+if (originalPaperSizeSelect === 'custom') {
+    // Show custom input and set current value
+    this.originalCustomPaperSizeDiv.style.display = 'block';
+    this.originalCustomPaperSizeValue.value = this.originalPaperSizeCustom.toFixed(3);
+    this.originalPaperSize = this.originalPaperSizeCustom;
+} else {
+    // Hide custom input and use preset value
+    this.originalCustomPaperSizeDiv.style.display = 'none';
+    this.originalPaperSize = parseFloat(originalPaperSizeSelect);
+}
+
+// Handle new paper size
+if (newPaperSizeSelect === 'custom') {
+    // Show custom input and set current value
+    this.newCustomPaperSizeDiv.style.display = 'block';
+    this.newCustomPaperSizeValue.value = this.newPaperSizeCustom.toFixed(3);
+    this.newPaperSize = this.newPaperSizeCustom;
+} else {
+    // Hide custom input and use preset value
+    this.newCustomPaperSizeDiv.style.display = 'none';
+    this.newPaperSize = parseFloat(newPaperSizeSelect);
+}
             
             this.updateCalculations();
             this.updateDisplay();
+this.updateCustomPaperSizeDisplays();
         }
         
         updateCalculations() {
@@ -6432,11 +6526,14 @@ async start() {
             }
             
             // Paper size factor: New Paper Area ÷ Original Paper Area
-            if (this.originalPaperSize > 0) {
-                this.paperSizeFactor = this.newPaperSize / this.originalPaperSize;
-            } else {
-                this.paperSizeFactor = 1.0;
-            }
+if (this.originalPaperSize > 0) {
+    // CORRECT: (√New Paper Area ÷ √Original Paper Area)² = New Paper Area ÷ Original Paper Area
+    // This is actually mathematically the same as newPaperSize / originalPaperSize
+    // The issue was with the VALUES, not the formula!
+    this.paperSizeFactor = this.newPaperSize / this.originalPaperSize;
+} else {
+    this.paperSizeFactor = 1.0;
+}
             
             // NEW: Filter factor from contrast control
             const paper = this.paperTypes[this.currentPaper];
