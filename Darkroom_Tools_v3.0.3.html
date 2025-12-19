@@ -124,7 +124,7 @@ body.light-scheme {
     --border-lighter: #aaa;
     --border-dark: #ccc;
     
-    --button-bg: #0066cc;
+    --button-bg: #b0cfee;
     --button-border: #0055aa;
     --button-active-bg: #004488;
     --button-active-border: #003366;
@@ -355,8 +355,8 @@ h1 {
 }
 
 .tab-button.active {
-    color: var(--accent);
-    border-bottom: 2px solid var(--accent);
+    color: var(--title);
+    border-bottom: 2px solid var(--title);
 }
 
 .tab-content {
@@ -422,7 +422,7 @@ h1 {
     font-family: monospace;
     font-weight: bold;
     margin: 3px 0;
-    color: var(--accent);
+    color: var(--text);
 }
 
 .result-label {
@@ -440,7 +440,7 @@ h1 {
 
 .timer-status {
     font-size: 0.8rem;
-    color: var(--accent);
+    color: var(--text);
     text-align: center;
     margin-bottom: 8px;
     font-weight: bold;
@@ -452,7 +452,7 @@ h1 {
     font-weight: bold;
     text-align: center;
     margin: 10px 0;
-    color: var(--accent);
+    color: var(--text);
     min-height: 50px;
     display: flex;
     align-items: center;
@@ -472,7 +472,7 @@ h1 {
     padding: 8px;
     background: var(--button-bg);
     border: 1px solid var(--button-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 3px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -519,7 +519,7 @@ h1 {
     font-size: 0.85rem;
     font-family: monospace;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--text);
 }
 
 /* ===== TIMER GRID (EXACT MATCH) ===== */
@@ -546,20 +546,20 @@ h1 {
 /* Disabled state - black and red only */
 .timer-box.disabled {
     opacity: 0.2;
-    background: var(--panel-dark);
+    background: var(--json-btn-border);
 }
 
 .timer-box.disabled .timer-title {
-    color: var(--text-disabled);
+    color: var(--json-btn-border);
 }
 
 .timer-box.disabled .time-display {
-    color: var(--text-disabled);
+    color: var(--json-btn-border);
 }
 
 .timer-box.disabled .adjust-btn,
 .timer-box.disabled .timer-btn {
-    background: var(--button-disabled-bg);
+    background: var(--json-btn-border);
     border-color: var(--button-disabled-border);
     color: var(--button-disabled-text);
     cursor: not-allowed;
@@ -576,7 +576,7 @@ h1 {
     font-size: 1.6rem;
     font-family: monospace;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--text);
     margin: 4px 0;
     text-align: center;
     flex-grow: 1;
@@ -603,7 +603,7 @@ h1 {
     padding: 3px 4px;
     background: var(--panel-light);
     border: 1px solid var(--border-light);
-    color: var(--accent);
+    color: var(--text-secondary);
     border-radius: 2px;
     font-size: 0.65rem;
     cursor: pointer;
@@ -628,7 +628,7 @@ h1 {
     padding: 4px;
     background: var(--button-bg);
     border: 1px solid var(--button-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 2px;
     font-size: 0.7rem;
     cursor: pointer;
@@ -641,7 +641,7 @@ h1 {
 }
 
 .timer-btn.active {
-    background: var(--button-active-bg);
+    background: var(--button-bg);
     border-color: var(--button-active-border);
 }
 
@@ -784,7 +784,7 @@ h1 {
 .settings-btn {
     background: var(--button-bg);
     border: 1px solid var(--button-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 3px;
     padding: 6px 12px;
     font-size: 0.8rem;
@@ -834,9 +834,9 @@ h1 {
 .global-btn {
     flex: 1;
     padding: 8px;
-    background: var(--button-active-bg);
-    border: 1px solid var(--button-active-border);
-    color: var(--accent);
+    background: var(--button-bg);
+    border: 1px solid var(--button-active-bg);
+    color: var(--text);
     border-radius: 3px;
     font-size: 0.75rem;
     cursor: pointer;
@@ -942,7 +942,7 @@ input:checked + .slider-switch:before {
     font-size: 1.2rem;
     font-family: monospace;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--text);
 }
 
 /* ===== TEST STRIP GENERATOR (EXACT MATCH) ===== */
@@ -979,14 +979,14 @@ input:checked + .slider-switch:before {
 .step-time {
     font-size: 0.6rem;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--bg);
     text-align: center;
     z-index: 2;
 }
 
 .step-stop {
     font-size: 0.5rem;
-    color: var(--text-secondary);
+    color: var(--bg);
     margin-top: 2px;
 }
 
@@ -1010,7 +1010,7 @@ input:checked + .slider-switch:before {
 }
 
 .color-scheme-btn.active {
-    border-color: var(--accent);
+    border-color: var(--title);
     font-weight: bold;
 }
 
@@ -1026,7 +1026,7 @@ input:checked + .slider-switch:before {
     padding: 8px 12px;
     background: var(--json-btn-bg);
     border: 1px solid var(--json-btn-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 3px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -1037,7 +1037,7 @@ input:checked + .slider-switch:before {
     padding: 8px 16px;
     background: var(--fullscreen-btn-bg);
     border: 1px solid var(--fullscreen-btn-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 3px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -1053,7 +1053,7 @@ footer {
     padding-top: 6px;
     border-top: 1px solid var(--footer-border);
     font-size: 0.6rem;
-    color: var(--text-disabled);
+    color: var(--text-secondary);
 }
 
 /* ===== ANIMATIONS (EXACT MATCH) ===== */
@@ -1080,7 +1080,7 @@ footer {
 
 .time-table th {
     background: var(--panel-light);
-    color: var(--accent);
+    color: var(--text);
     padding: 5px 3px;
     text-align: center;
     border-bottom: 1px solid var(--border);
@@ -1149,7 +1149,7 @@ footer {
     padding: 8px;
     background: var(--button-bg);
     border: 1px solid var(--button-border);
-    color: var(--accent);
+    color: var(--text);
     border-radius: 3px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -1310,7 +1310,7 @@ footer {
     background: var(--button-bg);
     border: 1px solid var(--button-border);
     border-radius: 3px;
-    color: var(--accent);
+    color: var(--text);
     font-size: 0.75rem;
     cursor: pointer;
 }
@@ -1335,7 +1335,7 @@ footer {
     display: flex;
     justify-content: space-between;
     font-size: 0.6rem;
-    color: var(--text-disabled);
+    color: var(--text-secondary);
     margin-top: 5px;
 }
 
@@ -1515,7 +1515,7 @@ footer {
     font-size: 1rem;
     font-family: monospace;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--text);
 }
 
 .test-progress-container {
@@ -1535,7 +1535,7 @@ footer {
     justify-content: space-between;
     margin-top: 5px;
     font-size: 0.6rem;
-    color: var(--text-disabled);
+    color: var(--text-secondary);
 }
 
 .progress-fill {
@@ -1563,7 +1563,7 @@ footer {
     background: var(--button-bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
-    color: var(--accent);
+    color: var(--text);
     font-size: 0.75rem;
     cursor: pointer;
     text-align: center;
@@ -1586,7 +1586,7 @@ footer {
     background: var(--button-bg);
     border: 1px solid var(--border-light);
     border-radius: 3px;
-    color: var(--accent);
+    color: var(--text);
     cursor: pointer;
     text-align: center;
     font-size: 0.75rem;
@@ -2193,14 +2193,6 @@ body.fullscreen-mode .tab-content {
         height: 50px;
     }
     
-    .step-time {
-        font-size: 0.5rem;
-    }
-    
-    .step-stop {
-        font-size: 0.4rem;
-    }
-    
     .paper-selector {
         grid-template-columns: 1fr;
     }
@@ -2275,8 +2267,7 @@ body.fullscreen-mode .tab-content {
     <body>
     <div class="container">
         <header>
-            <h1>DARKROOM TIMER</h1>
-            <div class="subtitle">INCREMENTAL EXPOSURE</div>
+            <h1>DARKROOM F-STOP TIMER</h1>
         </header>
         
         <div class="tabs">
@@ -2306,19 +2297,19 @@ body.fullscreen-mode .tab-content {
                 </div>
                 <input type="range" min="-6" max="6" step="1" value="0" class="slider" id="stopSlider">
                 <div style="display: flex; justify-content: space-between; margin-top: 5px; padding: 0 5px;">
-                    <span style="font-size: 0.7rem; color: #900;">-2</span>
-                    <span style="font-size: 0.7rem; color: #900;">-1⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">-1⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">-1</span>
-                    <span style="font-size: 0.7rem; color: #900;">-⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">-⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">0</span>
-                    <span style="font-size: 0.7rem; color: #900;">+⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">+⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">+1</span>
-                    <span style="font-size: 0.7rem; color: #900;">+1⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">+1⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">+2</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-2</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-1⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-1⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-1</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">-⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">0</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+1</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+1⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+1⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">+2</span>
                 </div>
             </div>
             
@@ -2383,7 +2374,6 @@ body.fullscreen-mode .tab-content {
                 <div class="timer-status">ENLARGER & CONTRAST CALCULATOR</div>
                 
                 <!-- Original Settings Section -->
-                <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Original Time (s)</div>
                         <div class="info-value" id="originalTimeValue">10.00</div>
@@ -2391,11 +2381,6 @@ body.fullscreen-mode .tab-content {
                             <button class="adjust-btn" id="copyCurrentTime" style="flex: 1; font-size: 0.6rem; padding: 2px 4px;">Use Current</button>
                         </div>
                     </div>
-                    <div class="info-box">
-                        <div class="info-label">Height Factor</div>
-                        <div class="info-value" id="heightFactor">1.00x</div>
-                    </div>
-                </div>
                 
                 <!-- Height Adjustments -->
 <div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Head Height</div>
@@ -2404,9 +2389,9 @@ body.fullscreen-mode .tab-content {
                         <div class="info-label">Original Height (cm)</div>
                         <div class="info-value" id="originalHeightValue">30.0</div>
                         <div style="margin-top: 5px;">
-                            <div style="font-size: 0.6rem; color: #900; margin-bottom: 2px;">Coarse adjustment</div>
+                            <div style="font-size: 0.6rem; color: var(--text-secondary); margin-bottom: 2px;">Coarse adjustment</div>
                             <input type="range" min="10" max="60" step="1" value="30" class="slider" id="originalHeightCoarseSlider">
-                            <div style="font-size: 0.6rem; color: #900; margin-top: 3px; margin-bottom: 2px;">Fine adjustment (±0.5cm)</div>
+                            <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px; margin-bottom: 2px;">Fine adjustment (±0.5cm)</div>
                             <input type="range" min="-5" max="5" step="1" value="0" class="slider" id="originalHeightFineSlider" style="height: 16px;">
                         </div>
                     </div>
@@ -2414,9 +2399,9 @@ body.fullscreen-mode .tab-content {
                         <div class="info-label">New Height (cm)</div>
                         <div class="info-value" id="newHeightValue">30.0</div>
                         <div style="margin-top: 5px;">
-                            <div style="font-size: 0.6rem; color: #900; margin-bottom: 2px;">Coarse adjustment</div>
+                            <div style="font-size: 0.6rem; color: var(--text-secondary); margin-bottom: 2px;">Coarse adjustment</div>
                             <input type="range" min="10" max="60" step="1" value="30" class="slider" id="newHeightCoarseSlider">
-                            <div style="font-size: 0.6rem; color: #900; margin-top: 3px; margin-bottom: 2px;">Fine adjustment (±0.5cm)</div>
+                            <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px; margin-bottom: 2px;">Fine adjustment (±0.5cm)</div>
                             <input type="range" min="-5" max="5" step="1" value="0" class="slider" id="newHeightFineSlider" style="height: 16px;">
                         </div>
                     </div>
@@ -2570,7 +2555,7 @@ body.fullscreen-mode .tab-content {
                     <div class="info-box">
                         <div class="info-label">New Adjusted Time (s)</div>
                         <div class="info-value" id="newAdjustedTime">10.00</div>
-                        <div style="font-size: 0.6rem; color: #600; margin-top: 3px;">
+                        <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px;">
                             Formula: Original Time × (New Height ÷ Original Height)² × (New F-Stop ÷ Original F-Stop)² × (√New Paper Area ÷ √Original Paper Area)² × Filter Factor
                         </div>
                     </div>
@@ -2578,7 +2563,7 @@ body.fullscreen-mode .tab-content {
                 
                 <div style="margin-top: 10px; text-align: center;">
                     <button class="exp-btn" id="applyHeightTime" style="margin-bottom: 5px;">Apply Adjusted Time as Base Time</button>
-                    <div style="font-size: 0.6rem; color: #600; margin-top: 3px;">
+                    <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px;">
                         Example: 10s at 30cm, f/5.6, No filter → 22.5s at 45cm, f/5.6, No filter<br>
                         Example with filter: 10s at f/5.6 → 14s with Y filter (1.4× factor)
                     </div>
@@ -2629,15 +2614,15 @@ body.fullscreen-mode .tab-content {
                 </div>
                 <input type="range" min="1" max="9" step="1" value="1" class="slider" id="testIncrementSlider">
                 <div style="display: flex; justify-content: space-between; margin-top: 5px; padding: 0 5px;">
-                    <span style="font-size: 0.7rem; color: #900;">⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">1</span>
-                    <span style="font-size: 0.7rem; color: #900;">1⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">1⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">2</span>
-                    <span style="font-size: 0.7rem; color: #900;">2⅓</span>
-                    <span style="font-size: 0.7rem; color: #900;">2⅔</span>
-                    <span style="font-size: 0.7rem; color: #900;">3</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">1</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">1⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">1⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">2</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">2⅓</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">2⅔</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">3</span>
                 </div>
             </div>
             
@@ -2671,7 +2656,7 @@ body.fullscreen-mode .tab-content {
                     <input type="checkbox" id="autoAdvanceToggle">
                     <span class="slider-switch"></span>
                 </label>
-                <div style="font-size: 0.6rem; color: #900; margin-top: 3px; text-align: center;">
+                <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px; text-align: center;">
                     <span id="autoAdvanceDescription">Pause after each step</span>
                 </div>
             </div>
@@ -2686,12 +2671,12 @@ body.fullscreen-mode .tab-content {
             <div class="instructions-panel">
                 <div class="timer-status">INSTRUCTIONS</div>
                 <div id="methodInstructions">
-                    <div class="cumulative-instructions" style="font-size: 0.7rem; color: #900; line-height: 1.3; padding: 5px;">
+                    <div class="cumulative-instructions" style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.3; padding: 5px;">
                         <strong>CUMULATIVE METHOD:</strong><br>
                         • Expose each strip for its total time<br>
                         • <span id="cumulativeAdvanceText">Auto-advance: OFF - Press Next Step between exposures</span>
                     </div>
-                    <div class="incremental-instructions" style="font-size: 0.7rem; color: #900; line-height: 1.3; padding: 5px; display: none;">
+                    <div class="incremental-instructions" style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.3; padding: 5px; display: none;">
                         <strong>INCREMENTAL METHOD:</strong><br>
                         • First strip: expose for base time<br>
                         • Slide mask, expose next strip for difference<br>
@@ -2847,7 +2832,7 @@ body.fullscreen-mode .tab-content {
                 <div class="timer-status" style="font-size: 0.75rem; margin-top: 10px; margin-bottom: 5px;">OR CUSTOM RATIO</div>
                 <div class="custom-dilution">
                     <input type="number" min="1" max="100" value="1" class="settings-input" id="customStockParts" placeholder="Stock">
-                    <div style="color: #f00; align-self: center;">+</div>
+                    <div style="color: var(--text-secondary); align-self: center;">+</div>
                     <input type="number" min="1" max="100" value="9" class="settings-input" id="customWaterParts" placeholder="Water">
                 </div>
                 
@@ -2863,7 +2848,7 @@ body.fullscreen-mode .tab-content {
                             <div class="chemical-result-value" id="waterVolume">900ml</div>
                         </div>
                     </div>
-                    <div style="font-size: 0.6rem; color: #600; text-align: center; margin-top: 8px;">
+                    <div style="font-size: 0.6rem; color: --text-secondary; text-align: center; margin-top: 8px;">
                         Add stock to water, not water to stock
                     </div>
                 </div>
@@ -3016,7 +3001,7 @@ body.fullscreen-mode .tab-content {
                 
                 <div style="margin-top: 10px; text-align: center;">
                     <button class="exp-btn" id="clearExpired">Clear Expired</button>
-                    <div style="font-size: 0.6rem; color: #600; margin-top: 5px;">
+                    <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 5px;">
                         Red items expired, orange expire in 3 days
                     </div>
                 </div>
@@ -3238,14 +3223,10 @@ body.fullscreen-mode .tab-content {
     <div class="settings-group">
         <div class="settings-item">
             <div class="settings-label">Current Status</div>
-            <div id="safelightAutoOffStatus" style="color: #900; font-size: 0.8rem;">
+            <div id="safelightAutoOffStatus" style="color: var(--text-secondary); font-size: 0.8rem;">
                 Loading...
             </div>
         </div>
-    </div>
-    <div style="font-size: 0.7rem; color: #900; margin-top: 10px;">
-        When enabled: Safelight automatically turns off when enlarger is on, 
-        and turns back on when enlarger turns off.
     </div>
 
 <!-- Add this after the Auto-trigger Timer Relay setting -->
@@ -3259,7 +3240,7 @@ body.fullscreen-mode .tab-content {
     </div>
     <div class="settings-item">
         <div class="settings-label">&nbsp;</div>
-        <div style="font-size: 0.7rem; color: #900; text-align: center;">
+        <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: center;">
             Turn off safelight when enlarger is on
         </div>
     </div>
@@ -3284,9 +3265,17 @@ body.fullscreen-mode .tab-content {
                 </div>
                 <div class="settings-item">
                     <div class="settings-label">Status</div>
-                    <div id="relayStatus" style="color: #900; font-size: 0.8rem;">Not connected</div>
+                    <div id="relayStatus" style="color: var(--text-secondary); font-size: 0.8rem;">Not connected</div>
                 </div>
             </div>
+		<div class="settings-group">
+    <div class="settings-item">
+        <button class="settings-btn warning" id="rebootPi">Reboot Raspberry Pi</button>
+    </div>
+    <div class="settings-item">
+        <button class="settings-btn danger" id="shutdownPi">Shutdown Raspberry Pi</button>
+    </div>
+</div>
         </div>
         
         <div class="settings-section">
@@ -3309,7 +3298,7 @@ body.fullscreen-mode .tab-content {
                     </div>
                 </div>
             </div>
-            <div style="font-size: 0.7rem; color: #900; margin-top: 10px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px;">
                 Note: When enabled, the timer relay (GPIO 25) will automatically trigger during countdown timers in CALC and F-STOP TEST tabs.
                 Time is sent as a single request with delay parameter for maximum accuracy.
             </div>
@@ -3324,9 +3313,9 @@ body.fullscreen-mode .tab-content {
                 <div class="settings-section">
                     <div class="settings-title">Color Scheme</div>
                     <div class="color-scheme-selector">
-                        <button class="color-scheme-btn active" data-scheme="dark">Dark (Default)</button>
-                        <button class="color-scheme-btn" data-scheme="light">Light</button>
-                        <button class="color-scheme-btn" data-scheme="day">Day</button>
+                        <button class="color-scheme-btn active" data-scheme="dark">Darkroom (Default)</button>
+                        <button class="color-scheme-btn" data-scheme="light">Day</button>
+                        <button class="color-scheme-btn" data-scheme="day">Night</button>
                     </div>
                 </div>
                 
@@ -3399,7 +3388,7 @@ body.fullscreen-mode .tab-content {
     </div>
     <div class="settings-item">
         <div class="settings-label">&nbsp;</div>
-        <div id="autoAdvanceDelayStatus" style="font-size: 0.7rem; color: #900; text-align: center;">
+        <div id="autoAdvanceDelayStatus" style="font-size: 0.7rem; color: var(--text-secondary); text-align: center;">
             Delay between test strip steps
         </div>
     </div>
@@ -3493,7 +3482,7 @@ body.fullscreen-mode .tab-content {
                     <input type="file" id="allProfilesFileInput" accept=".json" style="display: none;">
                     <div id="allProfilesFeedback" class="json-feedback"></div>
                     
-                    <div style="font-size: 0.7rem; color: #900; margin-top: 8px;">
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 8px;">
                         Exports Timer Profiles, Chemical Presets, Capacity Tracker, and Shelf Life Data in one file
                     </div>
                 </div>
@@ -3502,7 +3491,7 @@ body.fullscreen-mode .tab-content {
                 <div class="settings-section">
                     <div class="settings-title">Display</div>
                     <button class="fullscreen-btn" id="toggleFullscreen">Toggle Fullscreen</button>
-                    <div style="font-size: 0.7rem; color: #900; text-align: center; margin-top: 5px;">
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 5px;">
                         Press F11 for desktop fullscreen
                     </div>
                 </div>
@@ -3511,7 +3500,7 @@ body.fullscreen-mode .tab-content {
                 <div class="settings-section">
                     <div class="settings-title">Reset</div>
                     <button class="settings-btn danger" id="resetAllSettings">Reset All Settings</button>
-                    <div style="font-size: 0.7rem; color: #900; text-align: center; margin-top: 5px;">
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 5px;">
                         This will reset all settings to defaults and clear all data
                     </div>
                 </div>
@@ -4702,7 +4691,7 @@ body.fullscreen-mode .tab-content {
                     item.innerHTML = `
                         <div>
                             <strong>${profile.name}</strong>
-                            <div style="font-size: 0.65rem; color: #900;">${new Date(profile.date).toLocaleDateString()}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(profile.date).toLocaleDateString()}</div>
                             <div style="font-size: 0.6rem; color: #600;">${timeStr}</div>
                         </div>
                         <div class="profile-actions">
@@ -5004,7 +4993,7 @@ this.useCustomSizeBtn.addEventListener('click', () => {
                     item.innerHTML = `
                         <div>
                             <strong>${preset.name}</strong>
-                            <div style="font-size: 0.65rem; color: #900;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary);">
                                 ${ratio} • ${preset.totalVolume}ml
                             </div>
                         </div>
@@ -5396,6 +5385,11 @@ class RelayManager {
         if (this.autoTriggerRelay) this.autoTriggerRelay.checked = this.autoTrigger;
         
         // Add event listeners
+// In the init() method, add:
+const shutdownBtn = document.getElementById('shutdownPi');
+if (shutdownBtn) {
+    shutdownBtn.addEventListener('click', () => this.shutdownPi());
+}
         if (this.relayServerIP) this.relayServerIP.addEventListener('change', () => this.saveSettings());
         if (this.relayServerPort) this.relayServerPort.addEventListener('change', () => this.saveSettings());
         if (this.autoTriggerRelay) this.autoTriggerRelay.addEventListener('change', () => this.saveSettings());
@@ -5424,13 +5418,49 @@ class RelayManager {
     });
 }
 
+// Add to the RelayManager class
+async shutdownPi() {
+    if (!confirm('Are you sure you want to shutdown the Raspberry Pi?\n\nThe server will stop and the Pi will power off.')) {
+        return;
+    }
+    
+    try {
+        const response = await this.sendRequest('shutdown');
+        
+        if (response) {
+            this.updateStatus('Shutdown command sent. Raspberry Pi will power off in 3 seconds...', 'success');
+            
+            // Visual feedback
+            const btn = document.getElementById('shutdownPi');
+            if (btn) {
+                const originalText = btn.textContent;
+                btn.textContent = 'Shutting down...';
+                btn.disabled = true;
+                
+                // Update status message after a delay
+                setTimeout(() => {
+                    this.updateStatus('Raspberry Pi is shutting down. Server connection will be lost.', 'info');
+                }, 2000);
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 5000);
+            }
+        }
+    } catch (error) {
+        this.updateStatus('Failed to send shutdown command', 'error');
+        console.error('Shutdown error:', error);
+    }
+}
+
 // In the RelayManager class, add a method to update the status display:
 updateSafelightAutoOffStatus() {
     const statusElement = document.getElementById('safelightAutoOffStatus');
     if (!statusElement) return;
     
     if (this.safelightAutoOff) {
-        statusElement.textContent = 'ENABLED - Safelight auto-off is active';
+        statusElement.textContent = 'ENABLED';
         statusElement.style.color = '#f00';
         
         // Theme adjustments
@@ -5440,7 +5470,7 @@ updateSafelightAutoOffStatus() {
             statusElement.style.color = '#ffcc00';
         }
     } else {
-        statusElement.textContent = 'DISABLED - Manual control only';
+        statusElement.textContent = 'DISABLED';
         statusElement.style.color = '#900';
         
         // Theme adjustments
