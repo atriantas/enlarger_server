@@ -327,6 +327,65 @@ def favicon():
     """Return empty favicon to avoid 404 errors"""
     return '', 204
 
+@app.route('/shutdown', methods=['GET', 'OPTIONS'])
+def shutdown_pi():
+    """Gracefully shutdown the Raspberry Pi"""
+    if request.method == 'OPTIONS':
+        return make_response('', 200)
+    
+    try:
+        logger.info("Shutdown command received from %s", request.remote_addr)
+        
+        # Return response first, then shutdown
+        response = jsonify({
+            "status": "success",
+            "message": "Raspberry Pi shutting down in 3 seconds...",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # Schedule shutdown in a separate thread after sending response
+        def delayed_shutdown():
+            time.sleep(3)  # Wait 3 seconds to allow response to be sent
+            logger.info("Initiating system shutdown...")
+            os.system("sudo shutdown -h now")
+        
+        threading.Thread(target=delayed_shutdown, daemon=True).start()
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/reboot', methods=['GET', 'OPTIONS'])
+def reboot_pi():
+    """Reboot the Raspberry Pi"""
+    if request.method == 'OPTIONS':
+        return make_response('', 200)
+    
+    try:
+        logger.info("Reboot command received from %s", request.remote_addr)
+        
+        # Return response first, then reboot
+        response = jsonify({
+            "status": "success",
+            "message": "Raspberry Pi rebooting in 3 seconds...",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        def delayed_reboot():
+            time.sleep(3)
+            logger.info("Initiating system reboot...")
+            os.system("sudo reboot")
+        
+        threading.Thread(target=delayed_reboot, daemon=True).start()
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error during reboot: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     try:
         # Setup GPIO
