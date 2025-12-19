@@ -5390,6 +5390,11 @@ const shutdownBtn = document.getElementById('shutdownPi');
 if (shutdownBtn) {
     shutdownBtn.addEventListener('click', () => this.shutdownPi());
 }
+const rebootBtn = document.getElementById('rebootPi');
+if (rebootBtn) {
+    rebootBtn.addEventListener('click', () => this.rebootPi());
+}
+
         if (this.relayServerIP) this.relayServerIP.addEventListener('change', () => this.saveSettings());
         if (this.relayServerPort) this.relayServerPort.addEventListener('change', () => this.saveSettings());
         if (this.autoTriggerRelay) this.autoTriggerRelay.addEventListener('change', () => this.saveSettings());
@@ -5450,6 +5455,42 @@ async shutdownPi() {
         }
     } catch (error) {
         this.updateStatus('Failed to send shutdown command', 'error');
+        console.error('Shutdown error:', error);
+    }
+}
+
+// Add to the RelayManager class
+async rebootPi() {
+    if (!confirm('Are you sure you want to reboot the Raspberry Pi?\n\nThe server will stop and the Pi will power off.')) {
+        return;
+    }
+    
+    try {
+        const response = await this.sendRequest('reboot');
+        
+        if (response) {
+            this.updateStatus('Reboot command sent. Raspberry Pi will reboot in 3 seconds...', 'success');
+            
+            // Visual feedback
+            const btn = document.getElementById('rebootPi');
+            if (btn) {
+                const originalText = btn.textContent;
+                btn.textContent = 'Reboot...';
+                btn.disabled = true;
+                
+                // Update status message after a delay
+                setTimeout(() => {
+                    this.updateStatus('Raspberry Pi is rebooting. Server connection will be lost.', 'info');
+                }, 2000);
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 5000);
+            }
+        }
+    } catch (error) {
+        this.updateStatus('Failed to send reboot command', 'error');
         console.error('Shutdown error:', error);
     }
 }
