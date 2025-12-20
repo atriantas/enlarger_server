@@ -5754,6 +5754,20 @@ async triggerTimerRelay(durationSeconds) {
         this.updateStatus('Timer relay failed', 'error');
     }
 }
+
+    async testConnection() {
+        this.updateStatus('Testing connection...', 'info');
+        
+        // Try to ping the server
+        const success = await this.sendRequest('ping');
+        
+        if (success) {
+            this.updateStatus('Connected successfully!', 'success');
+            playBeep(600, 0.3, 0.3);
+        } else {
+            this.updateStatus('Connection failed', 'error');
+        }
+    }
     
     async testTimerRelay() {
         const seconds = parseFloat(this.testTimerSeconds ? this.testTimerSeconds.value : 5);
