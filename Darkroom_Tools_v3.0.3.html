@@ -990,6 +990,152 @@ input:checked + .slider-switch:before {
     margin-top: 2px;
 }
 
+/* ===== SYSTEM CONTROL MODAL STYLES ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.system-control-section {
+    background: var(--panel);
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.system-stat {
+    background: var(--panel-light);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 8px;
+    text-align: center;
+}
+
+.system-stat small {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 3px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-online {
+    background-color: #0a0;
+    box-shadow: 0 0 8px #0a0;
+}
+
+.status-offline {
+    background-color: #a00;
+    box-shadow: 0 0 8px #a00;
+}
+
+.status-unknown {
+    background-color: #900;
+    box-shadow: 0 0 8px #900;
+}
+
+.system-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    background: var(--panel-light);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.progress-bar-small {
+    height: 6px;
+    background: var(--progress-bg);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.progress-fill-small {
+    height: 100%;
+    background: var(--progress-fill);
+}
+
+/* Light scheme adjustments */
+body.light-scheme .modal-content {
+    background: #fff;
+    border-color: #ddd;
+}
+
+body.light-scheme .system-control-section {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+body.light-scheme .system-stat,
+body.light-scheme .info-item {
+    background: #e9ecef;
+    border-color: #ddd;
+}
+
+/* Day scheme adjustments */
+body.day-scheme .modal-content {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+body.day-scheme .system-control-section {
+    background: #333;
+    border-color: #555;
+}
+
+body.day-scheme .system-stat,
+body.day-scheme .info-item {
+    background: #3a3a3a;
+    border-color: #555;
+}
+
 /* ===== COLOR SCHEME SELECTOR (EXACT MATCH) ===== */
 .color-scheme-selector {
     display: grid;
@@ -3268,15 +3414,174 @@ body.fullscreen-mode .tab-content {
                     <div id="relayStatus" style="color: var(--text-secondary); font-size: 0.8rem;">Not connected</div>
                 </div>
             </div>
-		<div class="settings-group">
-    <div class="settings-item">
-        <button class="settings-btn warning" id="rebootPi">Reboot Raspberry Pi</button>
+        </div>
+<!-- Add this after your existing relay controls, before the closing </div> of the relay tab -->
+
+<!-- Enhanced System Control Section -->
+<div class="system-control-section">
+    <div class="settings-title" style="margin-bottom: 15px; display: flex; align-items: center;">
+        <span style="margin-right: 8px; font-size: 1.2rem;">🖥️</span>
+        Raspberry Pi System Control
     </div>
-    <div class="settings-item">
-        <button class="settings-btn danger" id="shutdownPi">Shutdown Raspberry Pi</button>
+    
+    <!-- Connection Status -->
+    <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Server Status:</span>
+            <div style="display: flex; align-items: center;">
+                <span class="status-indicator status-unknown" id="piStatusIndicator"></span>
+                <span id="piStatusText" style="font-weight: bold; font-size: 0.8rem;">Unknown</span>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.7rem; color: var(--text-secondary);">Last Ping:</span>
+            <span id="piLastPing" style="font-size: 0.7rem; font-family: monospace;">Never</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button class="settings-btn" id="testPiConnection" style="flex: 1; padding: 8px; font-size: 0.75rem;">
+                Test Connection
+            </button>
+            <button class="settings-btn" id="refreshSystemStatus" style="flex: 1; padding: 8px; font-size: 0.75rem;">
+                Refresh Status
+            </button>
+        </div>
+        <div id="piConnectionResult" style="margin-top: 8px; font-size: 0.7rem; min-height: 20px;"></div>
+    </div>
+    
+    <!-- System Info Dashboard -->
+    <div class="settings-title" style="margin-bottom: 10px; font-size: 0.85rem;">System Information</div>
+    <div class="system-info-grid">
+        <div class="info-item">
+            <div class="info-label">Hostname</div>
+            <div id="hostnameDisplay" class="info-value">-</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">CPU Usage</div>
+            <div id="cpuUsageDisplay" class="info-value">-</div>
+            <div class="progress-bar-small">
+                <div id="cpuProgressBar" class="progress-fill-small" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Memory Usage</div>
+            <div id="memoryUsageDisplay" class="info-value">-</div>
+            <div class="progress-bar-small">
+                <div id="memoryProgressBar" class="progress-fill-small" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Disk Usage</div>
+            <div id="diskUsageDisplay" class="info-value">-</div>
+            <div class="progress-bar-small">
+                <div id="diskProgressBar" class="progress-fill-small" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Uptime</div>
+            <div id="uptimeDisplay" class="info-value">-</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Temperature</div>
+            <div id="temperatureDisplay" class="info-value">-</div>
+        </div>
+    </div>
+    
+    <!-- Control Buttons -->
+    <div style="margin-top: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <button id="systemStatusBtn" class="settings-btn" style="padding: 10px; font-size: 0.8rem;">
+                📊 System Status
+            </button>
+            <button id="rebootPiButton" class="settings-btn warning" style="padding: 10px; font-size: 0.8rem;">
+                🔄 Reboot
+            </button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <button id="restartServiceBtn" class="settings-btn" style="padding: 10px; font-size: 0.8rem;">
+                🔄 Restart Service
+            </button>
+            <button id="shutdownPiButton" class="settings-btn danger" style="padding: 10px; font-size: 0.8rem;">
+                🔴 Shutdown
+            </button>
+        </div>
+    </div>
+    
+    <div style="margin-top: 10px; text-align: center;">
+        <small style="font-size: 0.6rem; color: var(--text-disabled);">
+            Use with caution! These actions affect the entire system.
+        </small>
     </div>
 </div>
+
+<!-- Confirmation Modal -->
+<div id="piCommandModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="settings-title" id="piModalTitle" style="margin-bottom: 15px;"></div>
+        <p id="piModalMessage" style="margin-bottom: 15px; font-size: 0.9rem;"></p>
+        
+        <div id="piModalWarning" style="background: var(--panel-light); border-left: 4px solid var(--warning); padding: 10px; border-radius: 4px; margin-bottom: 20px;">
+            <div style="font-size: 0.8rem; font-weight: bold; color: var(--warning); margin-bottom: 5px;">
+                ⚠️ Warning
+            </div>
+            <div id="warningText" style="font-size: 0.8rem; color: var(--text);"></div>
         </div>
+        
+        <div style="margin-bottom: 20px;">
+            <div class="settings-label" style="margin-bottom: 8px;">
+                Type "CONFIRM" to proceed:
+            </div>
+            <input type="text" id="piConfirmInput" 
+                   class="settings-input" 
+                   style="text-align: center; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;"
+                   placeholder="Type CONFIRM here">
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="piModalCancel" class="settings-btn" style="padding: 8px 16px;">
+                Cancel
+            </button>
+            <button id="piModalConfirm" class="settings-btn danger" style="padding: 8px 16px;" disabled>
+                Execute
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Modal -->
+<div id="systemStatusModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="settings-title" style="margin: 0; display: flex; align-items: center;">
+                <span style="margin-right: 8px;">📊</span>
+                Detailed System Status
+            </div>
+            <button id="closeStatusModal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text);">
+                ×
+            </button>
+        </div>
+        
+        <div id="systemStatusContent" style="margin-bottom: 20px; max-height: 60vh; overflow-y: auto;">
+            <div style="text-align: center; padding: 20px;">
+                Loading system status...
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">
+                Last updated: <span id="statusUpdateTime">Just now</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button id="refreshStatusBtn" class="settings-btn" style="padding: 6px 12px; font-size: 0.75rem;">
+                    Refresh
+                </button>
+                <button id="closeStatusModal2" class="settings-btn" style="padding: 6px 12px; font-size: 0.75rem;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
         
         <div class="settings-section">
             <div class="settings-title">Timer Relay Settings</div>
@@ -5840,6 +6145,570 @@ async allRelaysOff() {
         }
     }
 }
+
+// Enhanced System Manager Class
+class SystemManager {
+    constructor(relayManager) {
+        this.relayManager = relayManager;
+        this.lastPingTime = null;
+        this.connectionStatus = 'unknown';
+        this.systemInfo = null;
+        this.pingInterval = null;
+        this.statusUpdateInterval = null;
+        
+        this.init();
+        this.startMonitoring();
+    }
+    
+    init() {
+        // Get elements
+        this.piStatusIndicator = document.getElementById('piStatusIndicator');
+        this.piStatusText = document.getElementById('piStatusText');
+        this.piLastPing = document.getElementById('piLastPing');
+        this.piConnectionResult = document.getElementById('piConnectionResult');
+        
+        // System info displays
+        this.hostnameDisplay = document.getElementById('hostnameDisplay');
+        this.cpuUsageDisplay = document.getElementById('cpuUsageDisplay');
+        this.cpuProgressBar = document.getElementById('cpuProgressBar');
+        this.memoryUsageDisplay = document.getElementById('memoryUsageDisplay');
+        this.memoryProgressBar = document.getElementById('memoryProgressBar');
+        this.diskUsageDisplay = document.getElementById('diskUsageDisplay');
+        this.diskProgressBar = document.getElementById('diskProgressBar');
+        this.uptimeDisplay = document.getElementById('uptimeDisplay');
+        this.temperatureDisplay = document.getElementById('temperatureDisplay');
+        
+        // Buttons
+        this.testPiConnectionBtn = document.getElementById('testPiConnection');
+        this.refreshSystemStatusBtn = document.getElementById('refreshSystemStatus');
+        this.systemStatusBtn = document.getElementById('systemStatusBtn');
+        this.rebootPiButton = document.getElementById('rebootPiButton');
+        this.shutdownPiButton = document.getElementById('shutdownPiButton');
+        this.restartServiceBtn = document.getElementById('restartServiceBtn');
+        
+        // Modal elements
+        this.piCommandModal = document.getElementById('piCommandModal');
+        this.piModalTitle = document.getElementById('piModalTitle');
+        this.piModalMessage = document.getElementById('piModalMessage');
+        this.warningText = document.getElementById('warningText');
+        this.piConfirmInput = document.getElementById('piConfirmInput');
+        this.piModalConfirm = document.getElementById('piModalConfirm');
+        this.piModalCancel = document.getElementById('piModalCancel');
+        
+        // Status modal elements
+        this.systemStatusModal = document.getElementById('systemStatusModal');
+        this.systemStatusContent = document.getElementById('systemStatusContent');
+        this.statusUpdateTime = document.getElementById('statusUpdateTime');
+        this.refreshStatusBtn = document.getElementById('refreshStatusBtn');
+        this.closeStatusModal = document.getElementById('closeStatusModal');
+        this.closeStatusModal2 = document.getElementById('closeStatusModal2');
+        
+        // Add event listeners
+        this.testPiConnectionBtn?.addEventListener('click', () => this.testConnection());
+        this.refreshSystemStatusBtn?.addEventListener('click', () => this.updateSystemInfo());
+        this.systemStatusBtn?.addEventListener('click', () => this.showDetailedStatus());
+        this.rebootPiButton?.addEventListener('click', () => this.confirmReboot());
+        this.shutdownPiButton?.addEventListener('click', () => this.confirmShutdown());
+        this.restartServiceBtn?.addEventListener('click', () => this.confirmRestartService());
+        
+        // Modal event listeners
+        this.piModalCancel?.addEventListener('click', () => this.closeCommandModal());
+        this.piModalConfirm?.addEventListener('click', () => this.executeCommand());
+        this.piConfirmInput?.addEventListener('input', (e) => this.validateConfirmation(e.target.value));
+        
+        // Status modal listeners
+        this.refreshStatusBtn?.addEventListener('click', () => this.updateDetailedStatus());
+        this.closeStatusModal?.addEventListener('click', () => this.closeStatusModal());
+        this.closeStatusModal2?.addEventListener('click', () => this.closeStatusModal());
+        
+        // Close modals when clicking outside
+        this.piCommandModal?.addEventListener('click', (e) => {
+            if (e.target === this.piCommandModal) this.closeCommandModal();
+        });
+        
+        this.systemStatusModal?.addEventListener('click', (e) => {
+            if (e.target === this.systemStatusModal) this.closeStatusModal();
+        });
+        
+        // Initial update
+        this.updateSystemInfo();
+    }
+    
+    startMonitoring() {
+        // Ping the server every 30 seconds
+        if (this.pingInterval) clearInterval(this.pingInterval);
+        this.pingInterval = setInterval(() => {
+            this.testConnection(true); // Silent test
+        }, 30000);
+        
+        // Update system info every 60 seconds
+        if (this.statusUpdateInterval) clearInterval(this.statusUpdateInterval);
+        this.statusUpdateInterval = setInterval(() => {
+            this.updateSystemInfo(true); // Silent update
+        }, 60000);
+    }
+    
+    async testConnection(silent = false) {
+        try {
+            const startTime = Date.now();
+            const response = await this.sendRequest('system/ping');
+            const pingTime = Date.now() - startTime;
+            
+            if (response && response.status === 'success') {
+                this.connectionStatus = 'online';
+                this.lastPingTime = new Date();
+                
+                // Update status display
+                this.piStatusIndicator.className = 'status-indicator status-online';
+                this.piStatusText.textContent = 'Online';
+                this.piLastPing.textContent = `${pingTime}ms ago`;
+                
+                if (!silent) {
+                    this.showConnectionResult(`✅ Connected successfully (${pingTime}ms)`, 'success');
+                }
+                
+                // Update system info if available
+                if (response.cpu_usage !== undefined) {
+                    this.updateProgressBar(this.cpuProgressBar, response.cpu_usage);
+                    this.cpuUsageDisplay.textContent = `${response.cpu_usage}%`;
+                }
+                
+                return true;
+            } else {
+                throw new Error('Invalid response');
+            }
+        } catch (error) {
+            this.connectionStatus = 'offline';
+            this.piStatusIndicator.className = 'status-indicator status-offline';
+            this.piStatusText.textContent = 'Offline';
+            
+            if (!silent) {
+                this.showConnectionResult(`❌ Connection failed: ${error.message}`, 'error');
+            }
+            
+            return false;
+        }
+    }
+    
+    async updateSystemInfo(silent = false) {
+        try {
+            const response = await this.sendRequest('system/status');
+            
+            if (response && response.status === 'success') {
+                this.systemInfo = response;
+                
+                // Update dashboard displays
+                this.hostnameDisplay.textContent = response.system.hostname;
+                
+                // CPU
+                const cpuPercent = response.cpu.percent;
+                this.updateProgressBar(this.cpuProgressBar, cpuPercent);
+                this.cpuUsageDisplay.textContent = `${cpuPercent}%`;
+                
+                // Memory
+                const memoryPercent = response.memory.percent;
+                this.updateProgressBar(this.memoryProgressBar, memoryPercent);
+                this.memoryUsageDisplay.textContent = `${memoryPercent}% (${response.memory.used_gb}/${response.memory.total_gb} GB)`;
+                
+                // Disk
+                const diskPercent = response.disk.percent;
+                this.updateProgressBar(this.diskProgressBar, diskPercent);
+                this.diskUsageDisplay.textContent = `${diskPercent}% (${response.disk.used_gb}/${response.disk.total_gb} GB)`;
+                
+                // Uptime
+                this.uptimeDisplay.textContent = response.uptime.formatted;
+                
+                // Temperature
+                this.temperatureDisplay.textContent = response.temperature;
+                
+                if (!silent && this.connectionStatus === 'unknown') {
+                    this.testConnection(true);
+                }
+                
+                return true;
+            }
+        } catch (error) {
+            if (!silent) {
+                console.error('Failed to update system info:', error);
+            }
+            return false;
+        }
+    }
+    
+    updateProgressBar(element, percent) {
+        if (element) {
+            element.style.width = `${Math.min(100, percent)}%`;
+            
+            // Color coding based on percentage
+            if (percent > 80) {
+                element.style.backgroundColor = '#f00'; // Red for high usage
+            } else if (percent > 60) {
+                element.style.backgroundColor = '#ff5500'; // Orange
+            } else {
+                element.style.backgroundColor = '#0a0'; // Green
+            }
+            
+            // Theme adjustments
+            if (document.body.classList.contains('light-scheme')) {
+                if (percent > 80) element.style.backgroundColor = '#cc0000';
+                else if (percent > 60) element.style.backgroundColor = '#ff6600';
+                else element.style.backgroundColor = '#006600';
+            } else if (document.body.classList.contains('day-scheme')) {
+                if (percent > 80) element.style.backgroundColor = '#ff3333';
+                else if (percent > 60) element.style.backgroundColor = '#ff9900';
+                else element.style.backgroundColor = '#33cc33';
+            }
+        }
+    }
+    
+    showConnectionResult(message, type) {
+        if (!this.piConnectionResult) return;
+        
+        this.piConnectionResult.textContent = message;
+        this.piConnectionResult.style.color = type === 'success' ? '#0a0' : '#f00';
+        
+        // Theme adjustments
+        if (document.body.classList.contains('light-scheme')) {
+            this.piConnectionResult.style.color = type === 'success' ? '#006600' : '#cc0000';
+        } else if (document.body.classList.contains('day-scheme')) {
+            this.piConnectionResult.style.color = type === 'success' ? '#33cc33' : '#ff3333';
+        }
+        
+        // Clear after 5 seconds
+        setTimeout(() => {
+            this.piConnectionResult.textContent = '';
+        }, 5000);
+    }
+    
+    // Command confirmation system
+    confirmShutdown() {
+        this.currentCommand = 'shutdown';
+        this.piModalTitle.textContent = '🔴 Shutdown Raspberry Pi';
+        this.piModalMessage.textContent = 'Are you sure you want to shutdown the Raspberry Pi?';
+        this.warningText.textContent = 'This will safely power off the system. All connections will be lost and the server will stop. You will need to manually power on the Pi again.';
+        this.piConfirmInput.value = '';
+        this.piModalConfirm.disabled = true;
+        this.piCommandModal.style.display = 'flex';
+    }
+    
+    confirmReboot() {
+        this.currentCommand = 'reboot';
+        this.piModalTitle.textContent = '🔄 Reboot Raspberry Pi';
+        this.piModalMessage.textContent = 'Are you sure you want to reboot the Raspberry Pi?';
+        this.warningText.textContent = 'The system will restart. The server will be unavailable for 30-60 seconds during reboot. All active timers will be cancelled.';
+        this.piConfirmInput.value = '';
+        this.piModalConfirm.disabled = true;
+        this.piCommandModal.style.display = 'flex';
+    }
+    
+    confirmRestartService() {
+        this.currentCommand = 'restart_service';
+        this.piModalTitle.textContent = '🔄 Restart Relay Service';
+        this.piModalMessage.textContent = 'Are you sure you want to restart the relay server service?';
+        this.warningText.textContent = 'The relay server will restart. This will take 5-10 seconds. All active timers will be cancelled.';
+        this.piConfirmInput.value = '';
+        this.piModalConfirm.disabled = true;
+        this.piCommandModal.style.display = 'flex';
+    }
+    
+    validateConfirmation(input) {
+        if (!this.piModalConfirm) return;
+        
+        const normalizedInput = input.trim().toUpperCase();
+        this.piModalConfirm.disabled = normalizedInput !== 'CONFIRM';
+    }
+    
+    async executeCommand() {
+        if (!this.currentCommand) return;
+        
+        const endpointMap = {
+            'shutdown': 'system/shutdown',
+            'reboot': 'system/reboot',
+            'restart_service': 'system/service/restart'
+        };
+        
+        const endpoint = endpointMap[this.currentCommand];
+        if (!endpoint) return;
+        
+        try {
+            this.piModalConfirm.disabled = true;
+            this.piModalConfirm.textContent = 'Executing...';
+            
+            const response = await this.sendRequest(endpoint);
+            
+            if (response && response.status === 'success') {
+                this.showConnectionResult(`✅ ${response.message}`, 'success');
+                
+                // For shutdown/reboot, show countdown
+                if (this.currentCommand === 'shutdown' || this.currentCommand === 'reboot') {
+                    this.piStatusText.textContent = this.currentCommand === 'shutdown' ? 'Shutting down...' : 'Rebooting...';
+                    this.piStatusIndicator.className = 'status-indicator status-unknown';
+                    
+                    // Start checking for connection loss
+                    this.monitorForDisconnect();
+                }
+                
+                this.closeCommandModal();
+            }
+        } catch (error) {
+            this.showConnectionResult(`❌ Command failed: ${error.message}`, 'error');
+            this.closeCommandModal();
+        }
+    }
+    
+    monitorForDisconnect() {
+        let checks = 0;
+        const maxChecks = 30; // 30 seconds
+        
+        const checkInterval = setInterval(async () => {
+            checks++;
+            
+            try {
+                await this.testConnection(true);
+                if (checks >= maxChecks) {
+                    clearInterval(checkInterval);
+                }
+            } catch (error) {
+                // Connection lost - expected for shutdown/reboot
+                this.piStatusText.textContent = 'Server offline';
+                this.piStatusIndicator.className = 'status-indicator status-offline';
+                clearInterval(checkInterval);
+            }
+        }, 1000);
+    }
+    
+    closeCommandModal() {
+        this.piCommandModal.style.display = 'none';
+        this.currentCommand = null;
+        this.piModalConfirm.disabled = true;
+        this.piModalConfirm.textContent = 'Execute';
+        this.piConfirmInput.value = '';
+    }
+    
+    // Detailed status modal
+    async showDetailedStatus() {
+        this.systemStatusModal.style.display = 'flex';
+        this.updateDetailedStatus();
+    }
+    
+    async updateDetailedStatus() {
+        try {
+            this.systemStatusContent.innerHTML = '<div style="text-align: center; padding: 20px;">Loading system status...</div>';
+            
+            const response = await this.sendRequest('system/status');
+            
+            if (response && response.status === 'success') {
+                this.renderDetailedStatus(response);
+                this.statusUpdateTime.textContent = new Date().toLocaleTimeString();
+            }
+        } catch (error) {
+            this.systemStatusContent.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #f00;">
+                    ❌ Failed to load system status: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    renderDetailedStatus(data) {
+        const formatBytes = (bytes) => {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let i = 0;
+            while (bytes >= 1024 && i < units.length - 1) {
+                bytes /= 1024;
+                i++;
+            }
+            return `${bytes.toFixed(2)} ${units[i]}`;
+        };
+        
+        const getProgressBar = (percent, label) => {
+            const color = percent > 80 ? '#f00' : percent > 60 ? '#ff5500' : '#0a0';
+            return `
+                <div style="display: flex; align-items: center; gap: 10px; margin: 5px 0;">
+                    <div style="flex: 1; height: 10px; background: var(--progress-bg); border-radius: 5px; overflow: hidden;">
+                        <div style="height: 100%; width: ${percent}%; background: ${color};"></div>
+                    </div>
+                    <span style="min-width: 60px; text-align: right; font-family: monospace;">${percent}%</span>
+                </div>
+            `;
+        };
+        
+        let html = `
+            <div class="system-info-grid" style="margin-bottom: 20px;">
+                <div class="info-item">
+                    <div class="info-label">Hostname</div>
+                    <div class="info-value">${data.system.hostname}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Platform</div>
+                    <div class="info-value">${data.system.platform}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Server Version</div>
+                    <div class="info-value">${data.system.server_version}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Python Version</div>
+                    <div class="info-value">${data.system.python_version}</div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <!-- CPU Section -->
+                <div style="background: var(--panel-light); padding: 15px; border-radius: 6px;">
+                    <div class="settings-title" style="margin-bottom: 10px;">CPU</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent); margin-bottom: 5px;">
+                        ${data.cpu.percent}%
+                    </div>
+                    ${getProgressBar(data.cpu.percent, 'CPU Usage')}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px;">
+                        Cores: ${data.cpu.cores}<br>
+                        Load: ${data.cpu.load_avg['1min']} (1min) / ${data.cpu.load_avg['5min']} (5min) / ${data.cpu.load_avg['15min']} (15min)
+                    </div>
+                </div>
+                
+                <!-- Memory Section -->
+                <div style="background: var(--panel-light); padding: 15px; border-radius: 6px;">
+                    <div class="settings-title" style="margin-bottom: 10px;">Memory</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent); margin-bottom: 5px;">
+                        ${data.memory.percent}%
+                    </div>
+                    ${getProgressBar(data.memory.percent, 'Memory Usage')}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px;">
+                        Used: ${data.memory.used_gb} GB<br>
+                        Total: ${data.memory.total_gb} GB<br>
+                        Available: ${data.memory.available_gb} GB
+                    </div>
+                </div>
+                
+                <!-- Disk Section -->
+                <div style="background: var(--panel-light); padding: 15px; border-radius: 6px;">
+                    <div class="settings-title" style="margin-bottom: 10px;">Disk</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent); margin-bottom: 5px;">
+                        ${data.disk.percent}%
+                    </div>
+                    ${getProgressBar(data.disk.percent, 'Disk Usage')}
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px;">
+                        Used: ${data.disk.used_gb} GB<br>
+                        Total: ${data.disk.total_gb} GB<br>
+                        Free: ${data.disk.free_gb} GB
+                    </div>
+                </div>
+                
+                <!-- System Section -->
+                <div style="background: var(--panel-light); padding: 15px; border-radius: 6px;">
+                    <div class="settings-title" style="margin-bottom: 10px;">System</div>
+                    <div style="font-size: 0.9rem;">
+                        <div style="margin-bottom: 8px;">
+                            <strong>Uptime:</strong> ${data.uptime.formatted}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Temperature:</strong> ${data.temperature}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Processes:</strong> ${data.processes}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Active Timers:</strong> ${data.active_timers}
+                        </div>
+                        <div>
+                            <strong>Server Time:</strong> ${data.server_time}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Information -->
+            <div style="background: var(--panel-light); padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                <div class="settings-title" style="margin-bottom: 10px;">Network</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+        `;
+        
+        if (data.network && data.network.length > 0) {
+            data.network.forEach(net => {
+                html += `
+                    <div style="background: var(--panel); padding: 10px; border-radius: 4px;">
+                        <div style="font-weight: bold; font-size: 0.9rem;">${net.interface}</div>
+                        <div style="font-family: monospace; font-size: 0.8rem; color: var(--accent);">${net.ip}</div>
+                    </div>
+                `;
+            });
+        } else {
+            html += '<div>No network information available</div>';
+        }
+        
+        html += `
+                </div>
+            </div>
+            
+            <!-- Relay States -->
+            <div style="background: var(--panel-light); padding: 15px; border-radius: 6px;">
+                <div class="settings-title" style="margin-bottom: 10px;">Relay States</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+        `;
+        
+        if (data.relay_states) {
+            Object.entries(data.relay_states).forEach(([pin, state]) => {
+                const pinInfo = this.relayManager?.relayStates[pin] || { name: `GPIO ${pin}` };
+                const stateColor = state ? '#0a0' : '#f00';
+                const stateText = state ? 'ON' : 'OFF';
+                
+                html += `
+                    <div style="background: var(--panel); padding: 10px; border-radius: 4px; text-align: center;">
+                        <div style="font-weight: bold;">${pinInfo.name}</div>
+                        <div style="color: ${stateColor}; font-family: monospace; font-weight: bold;">${stateText}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary);">GPIO ${pin}</div>
+                    </div>
+                `;
+            });
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        this.systemStatusContent.innerHTML = html;
+    }
+    
+    closeStatusModal() {
+        this.systemStatusModal.style.display = 'none';
+    }
+    
+    async sendRequest(endpoint, params = {}) {
+        // Use the relay manager's sendRequest method
+        if (this.relayManager) {
+            return await this.relayManager.sendRequest(endpoint, params);
+        }
+        
+        // Fallback implementation
+        const url = `http://${this.relayManager.serverIP}:${this.relayManager.serverPort}/${endpoint}`;
+        const queryString = Object.keys(params)
+            .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+            .join('&');
+        
+        const fullUrl = queryString ? `${url}?${queryString}` : url;
+        
+        try {
+            const response = await fetch(fullUrl, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                return await response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+}
         
         // Load settings to UI - UPDATED with countdown settings AND auto advance
         function loadSettingsToUI() {
@@ -7799,6 +8668,9 @@ async toggle() {
 
 	// Initialize relay manager
 	window.relayManager = new RelayManager();
+
+    // Initialize SystemManager
+    window.systemManager = new SystemManager(window.relayManager);
         
         // Color scheme selector
         document.querySelectorAll('.color-scheme-btn').forEach(btn => {
