@@ -1680,29 +1680,50 @@ body.day-scheme #autoAdvanceToggle:checked + .slider-switch {
 }
 
 /* ===== FULLSCREEN STYLES ===== */
+/* ===== FULLSCREEN STYLES ===== */
 body.fullscreen-mode {
     padding: 0;
 }
 
+/* Container: use a single canonical set of rules for fullscreen */
 body.fullscreen-mode .container {
     max-width: none;
     margin: 0;
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* container shouldn't scroll; tab content should */
 }
 
+/* Tabs should stay at top in fullscreen */
+body.fullscreen-mode .tabs {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+body.fullscreen-mode .tab-button {
+    padding: 12px 3px;
+}
+
+/* Hide header and footer in fullscreen */
+body.fullscreen-mode header,
+body.fullscreen-mode footer {
+    display: none;
+}
+
+/* Tab content: scrollable and flexible in fullscreen */
 body.fullscreen-mode .tab-content.active {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 8px;
-    overflow-y: auto; /* Changed from hidden to auto */
+    overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Ensure all tab contents are scrollable in fullscreen */
+/* Ensure tab contents are scrollable by default in fullscreen */
 body.fullscreen-mode .tab-content {
     overflow-y: auto;
     overflow-x: hidden;
@@ -1713,56 +1734,42 @@ body.fullscreen-mode .tab-content {
 body.fullscreen-mode #timer.tab-content.active {
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Changed from hidden */
+    overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
-/* Adjust timer grid to be flexible */
+/* Make the timer grid flexible within fullscreen layout */
 body.fullscreen-mode #timer .timer-grid {
     flex: 1;
-    min-height: 0; /* Allow flex shrink */
+    min-height: 0;
     height: auto;
-    margin-bottom: 8px; /* Added margin for spacing */
+    margin-bottom: 8px;
 }
 
-/* Adjust settings section in timer tab */
+/* Timer settings and profiles: keep visible and non-scrolling internally */
 body.fullscreen-mode #timer .settings-section {
     flex-shrink: 0;
     margin-top: 8px;
-    margin-bottom: 8px; /* Added bottom margin */
+    margin-bottom: 8px;
     padding: 10px;
     background: var(--settings-panel-bg);
     border-radius: 4px;
-    max-height: none; /* Remove max height restriction */
-    overflow-y: visible; /* Don't scroll inside, let the whole page scroll */
+    max-height: none;
+    overflow-y: visible;
 }
 
-/* Calculator tab adjustments */
-body.fullscreen-mode #calc.tab-content.active {
+/* Tab-specific small adjustments (calc/chart/chemical/test) */
+body.fullscreen-mode #calc.tab-content.active,
+body.fullscreen-mode #chart.tab-content.active,
+body.fullscreen-mode #fstop-test.tab-content.active,
+body.fullscreen-mode #chemical.tab-content.active,
+body.fullscreen-mode #settings.tab-content.active {
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* Chart tab adjustments */
-body.fullscreen-mode #chart.tab-content.active {
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* F-stop test tab adjustments */
-body.fullscreen-mode #fstop-test.tab-content.active {
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* Chemical tab adjustments */
-body.fullscreen-mode #chemical.tab-content.active {
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-/* ===== RELAY TAB STYLES ===== */
+/* Relay styles remain outside fullscreen concerns */
 .relay-controls {
     background: var(--panel);
     padding: 10px;
@@ -1795,47 +1802,8 @@ body.fullscreen-mode #settings.tab-content.active {
     overflow-x: hidden;
 }
 
-/* Make sure the container allows scrolling */
-body.fullscreen-mode .container {
-    max-width: none;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Container doesn't scroll, tab content does */
-}
-
-/* Ensure header and footer don't interfere */
-body.fullscreen-mode header,
-body.fullscreen-mode footer {
-    display: none;
-}
-
-/* Tabs should stay at top */
-body.fullscreen-mode .tabs {
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
-    flex-shrink: 0;
-}
-
-/* Timer tab specific fullscreen adjustments - FIXED for mobile scrolling */
-body.fullscreen-mode #timer.tab-content.active {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto; /* Allow scrolling */
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-}
-
 body.fullscreen-mode #timer .timer-settings {
     flex-shrink: 0;
-    margin-bottom: 8px;
-}
-
-body.fullscreen-mode #timer .timer-grid {
-    flex: 1; /* Take available space */
-    min-height: 0; /* Allow flex shrink */
-    height: auto; /* Let content determine height */
     margin-bottom: 8px;
 }
 
@@ -1857,11 +1825,6 @@ body.fullscreen-mode #timer .settings-section {
     position: relative; /* Normal flow positioning */
     top: auto;
     bottom: auto;
-}
-
-/* Remove the problematic height calculation */
-body.fullscreen-mode #timer .timer-grid {
-    height: auto; /* Let content determine height */
 }
 
 /* Additional styles for fullscreen profiles */
@@ -1887,33 +1850,15 @@ body.fullscreen-mode .profile-btn {
     font-size: 0.7rem;
 }
 
-/* Hide elements in fullscreen */
-body.fullscreen-mode header,
-body.fullscreen-mode footer {
-    display: none;
-}
-
-body.fullscreen-mode .tabs {
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
-    flex-shrink: 0;
-}
-
-body.fullscreen-mode .tab-button {
-    padding: 12px 3px;
-}
-
-/* Ensure tab content doesn't overflow */
-body.fullscreen-mode .tab-content {
-    overflow: hidden;
-}
-
 /* Mobile adjustments for fullscreen with profiles */
 @media (max-width: 400px) {
     body.fullscreen-mode #timer .timer-grid {
-        height: auto; /* Changed from calc(55vh - 120px) */
-        min-height: 0;
-        display: contents;
+        height: auto; /* Maintain flexible height */
+        min-height: 320px; /* ensure space for 2x2 grid */
+        display: grid; /* keep 2-column grid in fullscreen on mobile */
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 6px;
     }
     
     body.fullscreen-mode #timer .settings-section {
@@ -1933,6 +1878,21 @@ body.fullscreen-mode .tab-content {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
         height: auto; /* Changed from calc(100vh - 120px) */
+    }
+
+    /* Ensure timer tab can scroll and the grid can flex in fullscreen on wider screens */
+    body.fullscreen-mode #timer.tab-content.active {
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* allow flex children to shrink */
+        overflow-y: auto; /* enable scrolling if content overflows */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.fullscreen-mode #timer .timer-grid {
+        flex: 0 0 auto; /* let grid size by content so the parent tab scrolls */
+        min-height: 0; /* allow flex shrink when necessary */
+        overflow: visible; /* no internal scrolling; let the tab handle scrolling */
     }
     
     body.fullscreen-mode .timer-title {
@@ -2072,12 +2032,6 @@ body.fullscreen-mode .tab-content {
         min-height: 320px;
     }
     
-    /* Fullscreen mode adjustments for mobile */
-    body.fullscreen-mode #timer .timer-grid {
-        height: auto; /* Changed from calc(55vh - 120px) */
-        min-height: 0;
-    }
-    
     /* Ensure content doesn't overflow */
     .container {
         padding-bottom: 10px;
@@ -2087,15 +2041,6 @@ body.fullscreen-mode .tab-content {
     #timer.tab-content.active {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Timer controls */
-    .timer-controls {
-        flex-direction: column;
-    }
-    
-    .exp-btn {
-        min-width: 0;
     }
     
     /* Chart container */
@@ -2189,10 +2134,6 @@ body.fullscreen-mode .tab-content {
         grid-template-columns: 1fr;
     }
     
-    .test-strip-preview {
-        height: 50px;
-    }
-    
     .paper-selector {
         grid-template-columns: 1fr;
     }
@@ -2262,6 +2203,20 @@ body.fullscreen-mode .tab-content {
     flex-direction: column;
     justify-content: space-between;
 }
+
+/* Collapsible rows in CALC tab */
+.collapsible { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 6px; }
+.collapsible-header { width: 100%; text-align: left; background: transparent; border: none; color: var(--text); font-weight: bold; padding: 8px 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
+.collapsible-header::after { content: '▾'; transition: transform 0.2s ease; color: var(--text-secondary); font-size: 0.9rem; }
+.collapsible-header[aria-expanded="false"]::after { transform: rotate(-90deg); }
+.collapsible-content { overflow: hidden; transition: max-height 0.28s ease; max-height: 0; }
+.collapsible .exp-info { margin-top: 6px; }
+.collapsible .info-box { margin-bottom: 6px; }
+.collapsible-header:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 400px) {
+  .collapsible-header { font-size: 1rem; padding: 10px 6px; }
+}
 </style>
 </head>
     <body>
@@ -2273,10 +2228,10 @@ body.fullscreen-mode .tab-content {
         <div class="tabs">
             <button class="tab-button active" data-tab="calc">CALC</button>
             <button class="tab-button" data-tab="chart">CHART</button>
-            <button class="tab-button" data-tab="fstop-test">F-STOP TEST</button>
+            <button class="tab-button" data-tab="fstop-test">TEST</button>
             <button class="tab-button" data-tab="chemical">CHEMICAL</button>
             <button class="tab-button" data-tab="timer">TIMER</button>
-	    <button class="tab-button" data-tab="relay">RELAY</button>
+	    <button class="tab-button" data-tab="relay">CONTROL</button>
             <button class="tab-button" data-tab="settings">SETTINGS</button>
         </div>
         
@@ -2380,10 +2335,12 @@ body.fullscreen-mode .tab-content {
                         <div style="display: flex; gap: 5px; margin-top: 5px;">
                             <button class="adjust-btn" id="copyCurrentTime" style="flex: 1; font-size: 0.6rem; padding: 2px 4px;">Use Current</button>
                         </div>
-                    </div>
-                
+                    </div>    
+
                 <!-- Height Adjustments -->
-<div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Head Height</div>
+                <section class="collapsible" data-id="head-height">
+                    <button class="collapsible-header" aria-expanded="true">Head Height</button>
+                    <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Original Height (cm)</div>
@@ -2406,9 +2363,13 @@ body.fullscreen-mode .tab-content {
                         </div>
                     </div>
                 </div>
+                    </div>
+                </section>
                 
                 <!-- F-Stop Adjustment -->
-<div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">F-Stop Adjustment</div>
+                <section class="collapsible" data-id="fstop">
+                    <button class="collapsible-header" aria-expanded="true">F-Stop Adjustment</button>
+                    <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Original F-Stop</div>
@@ -2437,9 +2398,13 @@ body.fullscreen-mode .tab-content {
                         </select>
                     </div>
                 </div>
+                    </div>
+                </section>
                 
                 <!-- Paper Size Adjustment -->
-<div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Paper Size Adjustment</div>
+                <section class="collapsible" data-id="paper-size">
+                    <button class="collapsible-header" aria-expanded="true">Paper Size Adjustment</button>
+                    <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
                     <!-- Original Paper Size -->
 <div class="info-box">
@@ -2471,8 +2436,8 @@ body.fullscreen-mode .tab-content {
         <option value="0.013">4×5" (0.013 m²)</option>
         <option value="0.023">5×7" (0.023 m²)</option>
         <option value="0.052" selected>8×10" (0.052 m²)</option>
-        <option value="0.099">11×14" (0.099 m²)</option>
-        <option value="0.206">16×20" (0.206 m²)</option>
+        <option value="0.099">11x14" (0.099 m²)</option>
+        <option value="0.206">16x20" (0.206 m²)</option>
         <option value="custom">Custom size...</option>
     </select>
     <!-- ADD "style" attribute to this div -->
@@ -2485,9 +2450,13 @@ body.fullscreen-mode .tab-content {
     </div>
 </div>
                 </div>
+                    </div>
+                </section>
                 
                 <!-- CONTRAST CONTROL INTEGRATED -->
-<div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Contrast Filter Adjustment</div>
+                <section class="collapsible" data-id="contrast-filter">
+                    <button class="collapsible-header" aria-expanded="true">Contrast Filter Adjustment</button>
+                    <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Paper Type</div>
@@ -2517,14 +2486,17 @@ body.fullscreen-mode .tab-content {
                                 <div class="info-value" id="isoValue">105</div>
                             </div>
                             <div class="info-box" style="padding: 3px;">
-                                <div class="info-label">Filter Factor</div>
+                                <div class="info-label">Contrast Factor</div>
                                 <div class="info-value" id="filterFactorValue">1.0×</div>
                             </div>
                         </div>
                     </div>
                 </div>
+                    </div>
+                </section>
                 
                 <!-- Combined Factors Display -->
+                <div class="timer-status" style="font-size: 0.65rem; margin-top: 15px;">Factors & Time</div>
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Height Factor</div>
@@ -2539,18 +2511,18 @@ body.fullscreen-mode .tab-content {
                         <div class="info-value" id="paperSizeFactor">1.00x</div>
                     </div>
                     <div class="info-box">
-                        <div class="info-label">Filter Factor</div>
+                        <div class="info-label">Contrast Factor</div>
                         <div class="info-value" id="filterFactorValueDisplay">1.00x</div>
                     </div>
                 </div>
-                
+
                 <div class="exp-info" style="grid-template-columns: 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">Combined Factor</div>
                         <div class="info-value" id="combinedFactor">1.00x</div>
                     </div>
                 </div>
-                
+
                 <div class="exp-info" style="grid-template-columns: 1fr; margin-top: 8px;">
                     <div class="info-box">
                         <div class="info-label">New Adjusted Time (s)</div>
@@ -2560,7 +2532,7 @@ body.fullscreen-mode .tab-content {
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="margin-top: 10px; text-align: center;">
                     <button class="exp-btn" id="applyHeightTime" style="margin-bottom: 5px;">Apply Adjusted Time as Base Time</button>
                     <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px;">
@@ -8044,6 +8016,63 @@ async toggle() {
             }
         });
         
+        // Initialize collapsible rows in the CALC tab
+        (function initCalcCollapsibles() {
+            const STORAGE_KEY = 'calc_collapsed';
+            let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const sections = document.querySelectorAll('#calc .collapsible');
+            // Clean up any stored keys that no longer correspond to existing sections
+            const existingIds = Array.from(sections).map(s => s.getAttribute('data-id')).filter(Boolean);
+            Object.keys(stored).forEach(key => {
+                if (!existingIds.includes(key)) {
+                    delete stored[key];
+                }
+            });
+            // Persist cleaned state back to storage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+            sections.forEach(sec => {
+                const id = sec.getAttribute('data-id') || '';
+                const header = sec.querySelector('.collapsible-header');
+                const content = sec.querySelector('.collapsible-content');
+                if (!header || !content) return;
+
+                const collapsed = stored[id] === true;
+                header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                content.style.maxHeight = collapsed ? '0px' : content.scrollHeight + 'px';
+
+                header.addEventListener('click', () => {
+                    const expanded = header.getAttribute('aria-expanded') === 'true';
+                    header.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    if (expanded) {
+                        content.style.maxHeight = '0px';
+                        stored[id] = true;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        stored[id] = false;
+                    }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+                });
+
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        header.click();
+                    }
+                });
+            });
+
+            // Recalculate max-heights on resize (for fluid content)
+            window.addEventListener('resize', () => {
+                sections.forEach(sec => {
+                    const header = sec.querySelector('.collapsible-header');
+                    const content = sec.querySelector('.collapsible-content');
+                    if (header && content && header.getAttribute('aria-expanded') === 'true') {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                    }
+                });
+            });
+        })();
+
         // Initial chart update
         updateChart();
     });
