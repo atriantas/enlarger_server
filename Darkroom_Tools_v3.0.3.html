@@ -388,6 +388,7 @@ h1 {
 .slider {
     width: 100%;
     height: 24px;
+    appearance: none;
     -webkit-appearance: none;
     background: transparent;
 }
@@ -399,6 +400,7 @@ h1 {
 }
 
 .slider::-webkit-slider-thumb {
+    appearance: none;
     -webkit-appearance: none;
     width: 20px;
     height: 20px;
@@ -2339,7 +2341,7 @@ body.fullscreen-mode .profile-btn {
 
                 <!-- Height Adjustments -->
                 <section class="collapsible" data-id="head-height">
-                    <button class="collapsible-header" aria-expanded="true">Head Height</button>
+                    <button class="collapsible-header" aria-expanded="false">Head Height</button>
                     <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
@@ -2368,7 +2370,7 @@ body.fullscreen-mode .profile-btn {
                 
                 <!-- F-Stop Adjustment -->
                 <section class="collapsible" data-id="fstop">
-                    <button class="collapsible-header" aria-expanded="true">F-Stop Adjustment</button>
+                    <button class="collapsible-header" aria-expanded="false">F-Stop Adjustment</button>
                     <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
@@ -2403,7 +2405,7 @@ body.fullscreen-mode .profile-btn {
                 
                 <!-- Paper Size Adjustment -->
                 <section class="collapsible" data-id="paper-size">
-                    <button class="collapsible-header" aria-expanded="true">Paper Size Adjustment</button>
+                    <button class="collapsible-header" aria-expanded="false">Paper Size Adjustment</button>
                     <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
                     <!-- Original Paper Size -->
@@ -2455,7 +2457,7 @@ body.fullscreen-mode .profile-btn {
                 
                 <!-- CONTRAST CONTROL INTEGRATED -->
                 <section class="collapsible" data-id="contrast-filter">
-                    <button class="collapsible-header" aria-expanded="true">Contrast Filter Adjustment</button>
+                    <button class="collapsible-header" aria-expanded="false">Contrast Filter Adjustment</button>
                     <div class="collapsible-content">
                 <div class="exp-info" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
                     <div class="info-box">
@@ -2780,6 +2782,9 @@ body.fullscreen-mode .profile-btn {
         <!-- UPDATED: CHEMICAL MANAGEMENT TAB -->
         <div id="chemical" class="tab-content">
             <!-- Mix Calculator -->
+            <section class="collapsible" data-id="chemical-mix">
+                <button class="collapsible-header" aria-expanded="false">CHEMICAL MIX CALCULATOR</button>
+                <div class="collapsible-content">
             <div class="chemical-calculator">
                 <div class="timer-status">CHEMICAL MIX CALCULATOR</div>
                 
@@ -2825,8 +2830,13 @@ body.fullscreen-mode .profile-btn {
                     </div>
                 </div>
             </div>
+                </div>
+            </section> 
             
             <!-- Chemical Presets Section - NEW -->
+            <section class="collapsible" data-id="chemical-presets">
+                <button class="collapsible-header" aria-expanded="false">CHEMICAL PRESETS</button>
+                <div class="collapsible-content">
             <div class="chemical-presets">
                 <div class="timer-status">CHEMICAL PRESETS</div>
                 
@@ -2850,8 +2860,13 @@ body.fullscreen-mode .profile-btn {
                     <button class="settings-btn danger" id="clearChemicalPresets">Clear All Chemical Presets</button>
                 </div>
             </div>
+                </div>
+            </section> 
             
             <!-- UPDATED: Developer Capacity Tracker with Paper Area Calculations -->
+            <section class="collapsible" data-id="capacity-tracker">
+                <button class="collapsible-header" aria-expanded="false">DEVELOPER CAPACITY TRACKER</button>
+                <div class="collapsible-content">
             <div class="capacity-tracker">
                 <div class="timer-status">DEVELOPER CAPACITY TRACKER</div>
                 
@@ -2928,8 +2943,13 @@ body.fullscreen-mode .profile-btn {
                     </div>
                 </div>
             </div>
+                </div>
+            </section> 
             
             <!-- UPDATED: Shelf Life Tracker with Custom Chemical Name -->
+            <section class="collapsible" data-id="shelf-life">
+                <button class="collapsible-header" aria-expanded="false">SHELF LIFE TRACKER</button>
+                <div class="collapsible-content">
             <div class="shelf-life-tracker">
                 <div class="timer-status">SHELF LIFE TRACKER</div>
                 
@@ -2978,6 +2998,8 @@ body.fullscreen-mode .profile-btn {
                     </div>
                 </div>
             </div>
+                </div>
+            </section> 
         </div>
         
         <!-- Timer Tab with Photo Wash Toggle AND Timer Profiles -->
@@ -3281,8 +3303,14 @@ body.fullscreen-mode .profile-btn {
         <!-- UPDATED: Settings Tab WITH Countdown Settings AND Auto Advance -->
         <div id="settings" class="tab-content">
             <div class="settings-panel">
-                <!-- Color Scheme Section -->
+
+                 <!-- Fullscreen Section -->
                 <div class="settings-section">
+                    <div class="settings-title">Display</div>
+                    <button class="fullscreen-btn" id="toggleFullscreen">Toggle Fullscreen</button>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 5px;">
+                        Press F11 for desktop fullscreen
+                    </div>
                     <div class="settings-title">Color Scheme</div>
                     <div class="color-scheme-selector">
                         <button class="color-scheme-btn active" data-scheme="dark">Darkroom (Default)</button>
@@ -3456,15 +3484,6 @@ body.fullscreen-mode .profile-btn {
                     
                     <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 8px;">
                         Exports Timer Profiles, Chemical Presets, Capacity Tracker, and Shelf Life Data in one file
-                    </div>
-                </div>
-                
-                <!-- Fullscreen Section -->
-                <div class="settings-section">
-                    <div class="settings-title">Display</div>
-                    <button class="fullscreen-btn" id="toggleFullscreen">Toggle Fullscreen</button>
-                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; margin-top: 5px;">
-                        Press F11 for desktop fullscreen
                     </div>
                 </div>
                 
@@ -4265,7 +4284,8 @@ body.fullscreen-mode .profile-btn {
                 }
             }
             
-            saveGlobalSettings() {
+            // Read current UI settings into this.settings
+            readSettingsFromUI() {
                 this.settings = {
                     baseTime: parseFloat(document.getElementById('settingBaseTime').value),
                     defaultStop: parseInt(document.getElementById('settingDefaultStop').value),
@@ -4283,38 +4303,113 @@ body.fullscreen-mode .profile-btn {
                     colorScheme: this.colorScheme,
                     countdownDelay: parseInt(document.getElementById('settingCountdownDelay').value),
                     countdownBeep: document.getElementById('settingCountdownBeep').checked,
-                    countdownPattern: document.getElementById('settingCountdownPattern').value, // NEW
-                    autoAdvance: document.getElementById('settingAutoAdvance').checked, // NEW
-        countdownDelay: parseInt(document.getElementById('settingCountdownDelay').value),
-        countdownBeep: document.getElementById('settingCountdownBeep').checked,
-        countdownPattern: document.getElementById('settingCountdownPattern').value,
-        autoAdvance: document.getElementById('settingAutoAdvance').checked,
-        autoAdvanceDelay: parseInt(document.getElementById('settingAutoAdvanceDelay').value),
-        safelightAutoOff: document.getElementById('safelightAutoOff').checked  // NEW
-    };
-                
-                if (StorageManager.saveSettings(this.settings)) {
-                    // Apply to UI
-                    this.applySoundSettings();
-                    
-                    // Apply Photo Wash
-                    const photoFloToggle = document.getElementById('photoFloToggle');
+                    countdownPattern: document.getElementById('settingCountdownPattern').value,
+                    autoAdvance: document.getElementById('settingAutoAdvance').checked,
+                    autoAdvanceDelay: parseInt(document.getElementById('settingAutoAdvanceDelay').value),
+                    safelightAutoOff: document.getElementById('safelightAutoOff').checked  // NEW
+                };
+            }
+
+            // Apply the current this.settings values to the UI and runtime objects
+            applySettingsToRuntime() {
+                // Apply to UI
+                this.applySoundSettings();
+
+                // Apply Photo Wash
+                const photoFloToggle = document.getElementById('photoFloToggle');
+                if (photoFloToggle) {
                     photoFloToggle.checked = this.settings.defaultPhotoFlo;
-                    if (timerManager && timerManager.timers) {
-                        const floTimer = timerManager.timers.find(t => t.name === 'Flo');
-                        if (floTimer) {
-                            floTimer.updateEnabledState(this.settings.defaultPhotoFlo);
-                        }
+                }
+                if (timerManager && timerManager.timers) {
+                    const floTimer = timerManager.timers.find(t => t.name === 'Flo');
+                    if (floTimer) {
+                        floTimer.updateEnabledState(this.settings.defaultPhotoFlo);
                     }
-                    
-                    // Apply auto advance to F-Stop Test generator
-    if (window.fstopTestGenerator) {
-        window.fstopTestGenerator.setAutoAdvance(this.settings.autoAdvance);
-        window.fstopTestGenerator.setAutoAdvanceDelay(this.settings.autoAdvanceDelay * 1000); // Convert to ms
-    }
-                    
+                }
+
+                // Apply auto advance to F-Stop Test generator
+                if (window.fstopTestGenerator) {
+                    window.fstopTestGenerator.setAutoAdvance(this.settings.autoAdvance);
+                    window.fstopTestGenerator.setAutoAdvanceDelay(this.settings.autoAdvanceDelay * 1000); // Convert to ms
+                }
+
+                // Apply base time to calculators and test generator so UI updates immediately
+                const newBase = parseFloat(this.settings.baseTime);
+                const baseSliderEl = document.getElementById('baseTimeSlider');
+                if (baseSliderEl) {
+                    baseSliderEl.value = newBase;
+                    baseSliderEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                const testBaseEl = document.getElementById('testBaseSlider');
+                if (testBaseEl) {
+                    testBaseEl.value = newBase;
+                    testBaseEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                if (window.incrementalTimer) {
+                    window.incrementalTimer.baseTime = newBase;
+                    window.incrementalTimer.updateCalculations();
+                    window.incrementalTimer.updateAllDisplays();
+                }
+                if (window.fstopTestGenerator) {
+                    window.fstopTestGenerator.baseTime = newBase;
+                    if (window.fstopTestGenerator.testBaseSlider) {
+                        window.fstopTestGenerator.testBaseSlider.value = newBase;
+                    }
+                    window.fstopTestGenerator.generateSteps();
+                    window.fstopTestGenerator.updateDisplay();
+                }
+
+                // Apply saved timer default times to Timer instances and DEFAULT_TIMER_TIMES
+                if (typeof DEFAULT_TIMER_TIMES !== 'undefined' && timerManager && timerManager.timers) {
+                    const mapping = {
+                        Dev: parseInt(this.settings.devTime, 10),
+                        Stop: parseInt(this.settings.stopTime, 10),
+                        Fix: parseInt(this.settings.fixTime, 10),
+                        Flo: parseInt(this.settings.floTime, 10)
+                    };
+
+                    // Update DEFAULT_TIMER_TIMES so newly created timers use the saved defaults
+                    Object.keys(mapping).forEach(k => {
+                        if (typeof mapping[k] === 'number' && !isNaN(mapping[k])) {
+                            DEFAULT_TIMER_TIMES[k] = mapping[k];
+                        }
+                    });
+
+                    // Update existing timer instances
+                    timerManager.timers.forEach(timer => {
+                        const newTime = mapping[timer.name];
+                        if (typeof newTime === 'number' && !isNaN(newTime)) {
+                            if (!timer.isRunning) {
+                                // Reset to new default
+                                timer.setTime(newTime);
+                            } else {
+                                // If running, update total and remaining time without interrupting display logic
+                                timer.totalTime = newTime;
+                                timer.timeLeft = newTime;
+                                timer.warningPlayed = false;
+                                timer.updateDisplay();
+                                timer.updateButtonStates();
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Called when user clicks "Save"
+            saveGlobalSettings() {
+                this.readSettingsFromUI();
+                if (StorageManager.saveSettings(this.settings)) {
+                    this.applySettingsToRuntime();
                     this.showAllProfilesFeedback('Global settings saved!', 'success');
                 }
+            }
+
+            // Apply settings live without showing feedback
+            applyLiveSettings() {
+                this.readSettingsFromUI();
+                // Save immediately for persistence but don't show the save feedback
+                StorageManager.saveSettings(this.settings);
+                this.applySettingsToRuntime();
             }
             
             saveCurrentProfile(name) {
@@ -5849,6 +5944,70 @@ async allRelaysOff() {
         window.fstopTestGenerator.setAutoAdvance(settingsManager.settings.autoAdvance);
         window.fstopTestGenerator.setAutoAdvanceDelay((settingsManager.settings.autoAdvanceDelay || 1) * 1000);
     }
+
+    // Apply base time to calculator and test generator (on load)
+    (function applyLoadedBaseAndTimerDefaults() {
+        const newBase = parseFloat(settingsManager.settings.baseTime || DEFAULT_SETTINGS.baseTime);
+        const baseSlider = document.getElementById('baseTimeSlider');
+        if (baseSlider) {
+            baseSlider.value = newBase;
+            baseSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const testBase = document.getElementById('testBaseSlider');
+        if (testBase) {
+            testBase.value = newBase;
+            testBase.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        if (window.incrementalTimer) {
+            window.incrementalTimer.baseTime = newBase;
+            window.incrementalTimer.updateCalculations();
+            window.incrementalTimer.updateAllDisplays();
+        }
+
+        if (window.fstopTestGenerator) {
+            window.fstopTestGenerator.baseTime = newBase;
+            if (window.fstopTestGenerator.testBaseSlider) {
+                window.fstopTestGenerator.testBaseSlider.value = newBase;
+            }
+            window.fstopTestGenerator.generateSteps();
+            window.fstopTestGenerator.updateDisplay();
+        }
+
+        // Apply saved default timer values
+        const mapping = {
+            Dev: parseInt(settingsManager.settings.devTime, 10),
+            Stop: parseInt(settingsManager.settings.stopTime, 10),
+            Fix: parseInt(settingsManager.settings.fixTime, 10),
+            Flo: parseInt(settingsManager.settings.floTime, 10)
+        };
+
+        // Update DEFAULT_TIMER_TIMES so future timers use these defaults
+        Object.keys(mapping).forEach(k => {
+            if (typeof mapping[k] === 'number' && !isNaN(mapping[k])) {
+                DEFAULT_TIMER_TIMES[k] = mapping[k];
+            }
+        });
+
+        // Update any existing timers
+        if (timerManager && timerManager.timers) {
+            timerManager.timers.forEach(timer => {
+                const newTime = mapping[timer.name];
+                if (typeof newTime === 'number' && !isNaN(newTime)) {
+                    if (!timer.isRunning) {
+                        timer.setTime(newTime);
+                    } else {
+                        timer.totalTime = newTime;
+                        timer.timeLeft = newTime;
+                        timer.warningPlayed = false;
+                        timer.updateDisplay();
+                        timer.updateButtonStates();
+                    }
+                }
+            });
+        }
+    })();
+
     // NEW: Safelight auto-off setting
     document.getElementById('safelightAutoOff').checked = settingsManager.settings.safelightAutoOff !== false; // Default to true
 }
@@ -7765,6 +7924,9 @@ async toggle() {
         
         // Initialize timers
         timerManager.init();
+
+        // Apply saved settings to UI and instances on startup
+        loadSettingsToUI();
         
         // Initialize fullscreen manager
         const fullscreenManager = new FullscreenManager();
@@ -7792,6 +7954,41 @@ async toggle() {
         document.getElementById('saveGlobalSettings').addEventListener('click', () => {
             settingsManager.saveGlobalSettings();
         });
+
+        // Live-apply settings as user edits (debounced)
+        (function bindLiveSettings() {
+            const toBind = [
+                { id: 'settingBaseTime', evt: 'input' },
+                { id: 'settingDefaultStop', evt: 'input' },
+                { id: 'settingDevTime', evt: 'input' },
+                { id: 'settingStopTime', evt: 'input' },
+                { id: 'settingFixTime', evt: 'input' },
+                { id: 'settingFloTime', evt: 'input' },
+                { id: 'settingCountdownDelay', evt: 'input' },
+                { id: 'settingCountdownBeep', evt: 'change' },
+                { id: 'settingCountdownPattern', evt: 'change' },
+                { id: 'settingAutoAdvance', evt: 'change' },
+                { id: 'settingAutoAdvanceDelay', evt: 'input' },
+                { id: 'safelightAutoOff', evt: 'change' },
+                { id: 'settingCalcWarningBeep', evt: 'change' },
+                { id: 'settingCalcEndBeep', evt: 'change' },
+                { id: 'settingAutoStart', evt: 'change' },
+                { id: 'settingTimerWarningBeep', evt: 'change' },
+                { id: 'settingTimerEndBeep', evt: 'change' },
+                { id: 'settingDefaultPhotoFlo', evt: 'change' }
+            ];
+            toBind.forEach(({ id, evt }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                let t = null;
+                el.addEventListener(evt, () => {
+                    clearTimeout(t);
+                    t = setTimeout(() => {
+                        settingsManager.applyLiveSettings();
+                    }, 150);
+                });
+            });
+        })();
         
         // Timer profile management in timer tab
         document.getElementById('saveTimerProfile')?.addEventListener('click', () => {
@@ -8020,7 +8217,7 @@ async toggle() {
         (function initCalcCollapsibles() {
             const STORAGE_KEY = 'calc_collapsed';
             let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            const sections = document.querySelectorAll('#calc .collapsible');
+            const sections = document.querySelectorAll('#calc .collapsible, #chemical .collapsible');
             // Clean up any stored keys that no longer correspond to existing sections
             const existingIds = Array.from(sections).map(s => s.getAttribute('data-id')).filter(Boolean);
             Object.keys(stored).forEach(key => {
@@ -8036,7 +8233,8 @@ async toggle() {
                 const content = sec.querySelector('.collapsible-content');
                 if (!header || !content) return;
 
-                const collapsed = stored[id] === true;
+                // Default: collapsed unless explicitly set to false in storage
+                const collapsed = stored[id] !== false;
                 header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
                 content.style.maxHeight = collapsed ? '0px' : content.scrollHeight + 'px';
 
