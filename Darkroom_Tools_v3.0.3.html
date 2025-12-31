@@ -2294,6 +2294,54 @@
           padding: 10px 6px;
         }
       }
+
+      /* Segmented control for stop increment */
+      .segmented-control {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--panel);
+      }
+      .segmented-control .segmented-btn {
+        background: transparent;
+        border: none;
+        padding: 6px 10px;
+        cursor: pointer;
+        color: var(--text);
+        font-size: 0.9rem;
+        min-width: 48px;
+        text-align: center;
+      }
+      .segmented-control .segmented-btn:not(:last-child) {
+        border-right: 1px solid var(--border);
+      }
+      .segmented-control .segmented-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .segmented-control .segmented-btn.active,
+      .segmented-control .segmented-btn[aria-pressed="true"] {
+        background: var(--button-active-bg);
+        color: var(--button-active-border);
+      }
+      .segmented-control .segmented-btn:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.25); /* uses accent color in light/dark by design */
+        z-index: 1;
+      }
+
+      /* Accessibility helper: visually-hidden */
+      .visually-hidden {
+        position: absolute !important;
+        height: 1px;
+        width: 1px;
+        overflow: hidden;
+        clip: rect(1px, 1px, 1px, 1px);
+        white-space: nowrap;
+        border: 0;
+        padding: 0;
+        margin: -1px;
+      }
     </style>
   </head>
   <body>
@@ -2301,6 +2349,14 @@
       <header>
         <h1>DARKROOM F-STOP TIMER</h1>
       </header>
+
+      <!-- Accessibility: live status for settings updates -->
+      <div
+        id="settingsLiveStatus"
+        class="visually-hidden"
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
 
       <div class="tabs">
         <button class="tab-button active" data-tab="calc">CALC</button>
@@ -2344,7 +2400,10 @@
             class="slider"
             id="stopSlider"
           />
+
+          <!-- Dynamic ruler that will be populated based on selected increment denominator -->
           <div
+            id="calcStopRuler"
             style="
               display: flex;
               justify-content: space-between;
@@ -2352,45 +2411,59 @@
               padding: 0 5px;
             "
           >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-2</span
+            <!-- labels populated by JS -->
+          </div>
+
+          <div
+            style="
+              margin-top: 6px;
+              display: flex;
+              gap: 8px;
+              align-items: center;
+            "
+          >
+            <label style="font-size: 0.8rem; color: var(--text-secondary)"
+              >Increment</label
             >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-1⅔</span
+            <div
+              class="segmented-control"
+              id="calcIncrementSeg"
+              role="tablist"
+              aria-label="Calc stop increment"
             >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-1⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-1</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-⅔</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >-⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >0</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+⅔</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+1</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+1⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+1⅔</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >+2</span
-            >
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="1"
+                aria-pressed="false"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="2"
+                aria-pressed="false"
+              >
+                1/2
+              </button>
+              <button
+                type="button"
+                class="segmented-btn active"
+                data-denom="3"
+                aria-pressed="true"
+              >
+                1/3
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="4"
+                aria-pressed="false"
+              >
+                1/4
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2846,20 +2919,19 @@
 
       <!-- Chart Tab with Incremental Time Column -->
       <div id="chart" class="tab-content">
-        <div class="control">
-          <div class="control-label">
-            <span>BASE TIME</span>
-            <span class="value-display" id="chartBaseValue">10.0s</span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            step="0.5"
-            value="10"
-            class="slider"
-            id="chartBaseSlider"
-          />
+        <!-- BASE TIME slider removed per user request -->
+        <div
+          class="chart-note"
+          role="note"
+          title="This chart uses the main BASE TIME control in the CALC tab."
+          aria-label="Chart uses base time from CALC"
+          style="
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+          "
+        >
+          ⓘ Uses BASE TIME from CALC tab
         </div>
 
         <div class="chart-container">
@@ -2909,7 +2981,10 @@
             class="slider"
             id="testIncrementSlider"
           />
+
+          <!-- Dynamic ruler populated by JS based on denominator -->
           <div
+            id="testIncrementRuler"
             style="
               display: flex;
               justify-content: space-between;
@@ -2917,33 +2992,59 @@
               padding: 0 5px;
             "
           >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >⅓</span
+            <!-- labels populated by JS -->
+          </div>
+
+          <div
+            style="
+              margin-top: 6px;
+              display: flex;
+              gap: 8px;
+              align-items: center;
+            "
+          >
+            <label style="font-size: 0.8rem; color: var(--text-secondary)"
+              >Increment</label
             >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >⅔</span
+            <div
+              class="segmented-control"
+              id="testIncrementSeg"
+              role="tablist"
+              aria-label="Test stop increment"
             >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >1</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >1⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >1⅔</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >2</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >2⅓</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >2⅔</span
-            >
-            <span style="font-size: 0.7rem; color: var(--text-secondary)"
-              >3</span
-            >
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="1"
+                aria-pressed="false"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="2"
+                aria-pressed="false"
+              >
+                1/2
+              </button>
+              <button
+                type="button"
+                class="segmented-btn active"
+                data-denom="3"
+                aria-pressed="true"
+              >
+                1/3
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-denom="4"
+                aria-pressed="false"
+              >
+                1/4
+              </button>
+            </div>
           </div>
         </div>
 
@@ -4105,6 +4206,15 @@
                   value="0"
                 />
               </div>
+              <div class="settings-item">
+                <div class="settings-label">Default Stop Increment</div>
+                <select id="settingStopIncrement" class="settings-input">
+                  <option value="1">1 stop</option>
+                  <option value="2">1/2 stop</option>
+                  <option value="3">1/3 stop</option>
+                  <option value="4">1/4 stop</option>
+                </select>
+              </div>
             </div>
 
             <!-- NEW: Countdown Settings -->
@@ -4434,6 +4544,7 @@
         autoAdvance: false,
         autoAdvanceDelay: 1,
         safelightAutoOff: true, // NEW: Turn off safelight when enlarger is on
+        stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
       };
 
       // Default timer times (seconds)
@@ -5276,6 +5387,33 @@
             ),
             safelightAutoOff:
               document.getElementById("safelightAutoOff").checked, // NEW
+            // F-stop denominator setting (2, 3, or 4) - Settings select takes precedence, then segmented controls, then legacy selects
+            stopDenominator: (function () {
+              const settingsSel = document.getElementById(
+                "settingStopIncrement"
+              );
+              if (settingsSel && settingsSel.value)
+                return parseInt(settingsSel.value, 10) || 3;
+              function fromSeg(id) {
+                const s = document.getElementById(id);
+                if (!s) return null;
+                const active =
+                  s.querySelector(".segmented-btn.active") ||
+                  s.querySelector('.segmented-btn[aria-pressed="true"]');
+                if (active) return parseInt(active.dataset.denom, 10);
+                return null;
+              }
+              const cs = fromSeg("calcIncrementSeg");
+              if (cs) return cs;
+              const ts = fromSeg("testIncrementSeg");
+              if (ts) return ts;
+              // backward compatibility with legacy <select>
+              const c = document.getElementById("calcIncrementDenom");
+              const t = document.getElementById("testIncrementDenom");
+              if (c) return parseInt(c.value, 10) || 3;
+              if (t) return parseInt(t.value, 10) || 3;
+              return 3;
+            })(),
           };
         }
 
@@ -5368,6 +5506,53 @@
               }
             });
           }
+
+          // Apply f-stop denominator setting (2, 3, 4)
+          (function applyDenominator() {
+            const denom = parseInt(this.settings.stopDenominator, 10) || 3;
+            window.stopDenominator = denom;
+            // Apply to segmented controls if present
+            function setSeg(containerId, d) {
+              const cont = document.getElementById(containerId);
+              if (!cont) return;
+              Array.from(cont.querySelectorAll(".segmented-btn")).forEach(
+                (b) => {
+                  if (parseInt(b.dataset.denom, 10) === d) {
+                    b.classList.add("active");
+                    b.setAttribute("aria-pressed", "true");
+                  } else {
+                    b.classList.remove("active");
+                    b.setAttribute("aria-pressed", "false");
+                  }
+                }
+              );
+            }
+            setSeg("calcIncrementSeg", denom);
+            setSeg("testIncrementSeg", denom);
+            // Legacy selects (back-compat)
+            const c = document.getElementById("calcIncrementDenom");
+            const t = document.getElementById("testIncrementDenom");
+            if (c) c.value = denom;
+            if (t) t.value = denom;
+            const settingsSel = document.getElementById("settingStopIncrement");
+            if (settingsSel) settingsSel.value = denom;
+            if (window.incrementalTimer) {
+              window.incrementalTimer.updateCalculations();
+              window.incrementalTimer.updateAllDisplays();
+            }
+            if (window.fstopTestGenerator) {
+              window.fstopTestGenerator.generateSteps();
+              window.fstopTestGenerator.updateDisplay();
+            }
+            try {
+              updateAllRulers();
+            } catch (e) {
+              /* ignore if not yet defined */
+            }
+            try {
+              updateChart();
+            } catch (e) {}
+          }).call(this);
         }
 
         // Called when user clicks "Save"
@@ -5385,6 +5570,16 @@
           // Save immediately for persistence but don't show the save feedback
           StorageManager.saveSettings(this.settings);
           this.applySettingsToRuntime();
+          // Announce setting change to assistive tech
+          try {
+            const live = document.getElementById("settingsLiveStatus");
+            if (live) {
+              const denom = this.settings.stopDenominator || 3;
+              live.textContent = `Default stop increment set to ${denomLabel(
+                denom
+              )}`;
+            }
+          } catch (e) {}
         }
 
         saveCurrentProfile(name) {
@@ -7201,6 +7396,34 @@
           );
         }
 
+        // F-stop increment denominator (persisted setting)
+        const savedDenom = settingsManager.settings.stopDenominator || 3;
+        const cSeg = document.getElementById("calcIncrementSeg");
+        const tSeg = document.getElementById("testIncrementSeg");
+        if (cSeg) {
+          Array.from(cSeg.querySelectorAll(".segmented-btn")).forEach((b) => {
+            const bd = parseInt(b.dataset.denom, 10);
+            const active = bd === savedDenom;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        }
+        if (tSeg) {
+          Array.from(tSeg.querySelectorAll(".segmented-btn")).forEach((b) => {
+            const bd = parseInt(b.dataset.denom, 10);
+            const active = bd === savedDenom;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        }
+        const oldC = document.getElementById("calcIncrementDenom");
+        if (oldC) oldC.value = savedDenom;
+        const oldT = document.getElementById("testIncrementDenom");
+        if (oldT) oldT.value = savedDenom;
+        const settingsSel = document.getElementById("settingStopIncrement");
+        if (settingsSel) settingsSel.value = savedDenom;
+        window.stopDenominator = savedDenom;
+
         // Apply base time to calculator and test generator (on load)
         (function applyLoadedBaseAndTimerDefaults() {
           const newBase = parseFloat(
@@ -7370,33 +7593,34 @@
       const stopSlider = document.getElementById("stopSlider");
       const chartBaseSlider = document.getElementById("chartBaseSlider");
 
-      function formatStop(stop) {
-        const stopValue = stop / 3;
+      function formatStop(value) {
+        const denom = window.stopDenominator || 3;
+        const val = value / denom; // actual stops
+        const sign = val < 0 ? "-" : "";
+        const absVal = Math.abs(val);
+        const whole = Math.floor(absVal);
+        const frac = absVal - whole;
+        const tol = 1e-6;
 
-        if (stopValue === 0) return "0.0";
+        if (Math.abs(frac) < tol) return `${sign}${whole}.0`;
 
-        const absValue = Math.abs(stopValue);
-        const sign = stopValue < 0 ? "-" : "+";
-        const whole = Math.floor(absValue);
-
-        if (whole === 0) {
-          if (Math.abs(stop) === 1) return `${sign}⅓`;
-          if (Math.abs(stop) === 2) return `${sign}⅔`;
-        } else {
-          if (Math.abs(stop % 3) === 0) {
-            return `${sign}${whole}.0`;
-          } else if (Math.abs(stop % 3) === 1) {
-            return `${sign}${whole}⅓`;
-          } else if (Math.abs(stop % 3) === 2) {
-            return `${sign}${whole}⅔`;
-          }
+        if (denom === 2) {
+          if (Math.abs(frac - 0.5) < tol) return `${sign}${whole}½`;
+        } else if (denom === 3) {
+          if (Math.abs(frac - 1 / 3) < tol) return `${sign}${whole}⅓`;
+          if (Math.abs(frac - 2 / 3) < tol) return `${sign}${whole}⅔`;
+        } else if (denom === 4) {
+          if (Math.abs(frac - 0.25) < tol) return `${sign}${whole}¼`;
+          if (Math.abs(frac - 0.5) < tol) return `${sign}${whole}½`;
+          if (Math.abs(frac - 0.75) < tol) return `${sign}${whole}¾`;
         }
 
-        return `${sign}${absValue.toFixed(1)}`;
+        return `${sign}${absVal.toFixed(1)}`;
       }
 
       function calculateTime(base, stop) {
-        return base * Math.pow(2, stop / 3);
+        const denom = window.stopDenominator || 3;
+        return base * Math.pow(2, stop / denom);
       }
 
       // FIXED: Enhanced IncrementalTimer with proper button states
@@ -7558,7 +7782,13 @@
           document.getElementById("calcTimerDisplay").textContent =
             this.currentTime.toFixed(2);
 
-          chartBaseSlider.value = this.baseTime;
+          if (typeof chartBaseSlider !== "undefined" && chartBaseSlider) {
+            if (typeof chartBaseSlider !== "undefined" && chartBaseSlider)
+              chartBaseSlider.value = this.baseTime;
+          } else {
+            const cbVal = document.getElementById("chartBaseValue");
+            if (cbVal) cbVal.textContent = `${this.baseTime.toFixed(1)}s`;
+          }
           updateChart();
         }
 
@@ -8236,7 +8466,9 @@
       class FStopTestStripGenerator {
         constructor() {
           this.baseTime = 10.0;
-          this.stepIncrement = 1; // 1 = ⅓ stop (1-9 representing ⅓ to 3 stops)
+          this.stepIncrement = 1; // 1 = one fractional step (denominator controlled by stopDenominator)
+          // Denominator applied in calculations; default to 3 (1/3 stop)
+          window.stopDenominator = window.stopDenominator || 3;
           this.numSteps = 6;
           this.method = "cumulative"; // 'cumulative' or 'incremental'
           this.autoAdvance = false; // NEW: Auto advance mode
@@ -8508,7 +8740,8 @@
             // Existing cumulative method
             let totalTime = 0;
             for (let i = 0; i < this.numSteps; i++) {
-              const stopValue = (i * this.stepIncrement) / 3; // Convert to stop value
+              const denom = window.stopDenominator || 3;
+              const stopValue = (i * this.stepIncrement) / denom; // Convert to stop value
               const time = this.baseTime * Math.pow(2, stopValue);
               totalTime += time;
 
@@ -8526,7 +8759,8 @@
             let previousTotalTime = this.baseTime;
 
             for (let i = 0; i < this.numSteps; i++) {
-              const stopValue = (i * this.stepIncrement) / 3;
+              const denom = window.stopDenominator || 3;
+              const stopValue = (i * this.stepIncrement) / denom;
               const totalExposure = this.baseTime * Math.pow(2, stopValue);
 
               // For first step: incremental time = base time
@@ -8535,7 +8769,7 @@
               if (i === 0) {
                 incrementalTime = this.baseTime;
               } else {
-                const previousStop = ((i - 1) * this.stepIncrement) / 3;
+                const previousStop = ((i - 1) * this.stepIncrement) / denom;
                 const previousTotal = this.baseTime * Math.pow(2, previousStop);
                 incrementalTime = totalExposure - previousTotal;
               }
@@ -8555,20 +8789,25 @@
         }
 
         getIncrementLabel(increment) {
-          const stopValue = increment / 3;
+          const denom = window.stopDenominator || 3;
+          const stopValue = increment / denom;
           const whole = Math.floor(stopValue);
           const fraction = stopValue - whole;
 
           // Use tolerance for floating point comparison
           const tolerance = 0.0001;
 
-          if (whole === 0) {
-            if (Math.abs(fraction - 1 / 3) < tolerance) return "⅓";
-            if (Math.abs(fraction - 2 / 3) < tolerance) return "⅔";
-          } else {
-            if (Math.abs(fraction - 1 / 3) < tolerance) return `${whole}⅓`;
-            if (Math.abs(fraction - 2 / 3) < tolerance) return `${whole}⅔`;
-            if (Math.abs(fraction) < tolerance) return `${whole}`;
+          if (Math.abs(fraction) < tolerance) return `${whole}`;
+
+          if (denom === 2) {
+            if (Math.abs(fraction - 0.5) < tolerance) return `½`;
+          } else if (denom === 3) {
+            if (Math.abs(fraction - 1 / 3) < tolerance) return `⅓`;
+            if (Math.abs(fraction - 2 / 3) < tolerance) return `⅔`;
+          } else if (denom === 4) {
+            if (Math.abs(fraction - 0.25) < tolerance) return `¼`;
+            if (Math.abs(fraction - 0.5) < tolerance) return `½`;
+            if (Math.abs(fraction - 0.75) < tolerance) return `¾`;
           }
 
           // Fallback: show as decimal
@@ -8576,13 +8815,22 @@
         }
 
         formatStop(stopValue) {
+          const denom = window.stopDenominator || 3;
           const whole = Math.floor(stopValue);
           const fraction = stopValue - whole;
           const tolerance = 0.0001;
 
           if (Math.abs(fraction) < tolerance) return `${whole}.0`;
-          if (Math.abs(fraction - 1 / 3) < tolerance) return `${whole}⅓`;
-          if (Math.abs(fraction - 2 / 3) < tolerance) return `${whole}⅔`;
+          if (denom === 2) {
+            if (Math.abs(fraction - 0.5) < tolerance) return `${whole}½`;
+          } else if (denom === 3) {
+            if (Math.abs(fraction - 1 / 3) < tolerance) return `${whole}⅓`;
+            if (Math.abs(fraction - 2 / 3) < tolerance) return `${whole}⅔`;
+          } else if (denom === 4) {
+            if (Math.abs(fraction - 0.25) < tolerance) return `${whole}¼`;
+            if (Math.abs(fraction - 0.5) < tolerance) return `${whole}½`;
+            if (Math.abs(fraction - 0.75) < tolerance) return `${whole}¾`;
+          }
 
           return `${stopValue.toFixed(1)}`;
         }
@@ -8655,13 +8903,11 @@
 
             // Update step size display with method-specific info
             if (this.method === "incremental") {
-              this.stepSizeDisplay.textContent = `+${(
-                this.stepIncrement / 3
-              ).toFixed(1)} stops`;
-            } else {
-              this.stepSizeDisplay.textContent = `${(
-                this.stepIncrement / 3
-              ).toFixed(1)} stops`;
+              const denom = window.stopDenominator || 3;
+              this.stepSizeDisplay.textContent =
+                this.method === "incremental"
+                  ? `+${(this.stepIncrement / denom).toFixed(1)} stops`
+                  : `${(this.stepIncrement / denom).toFixed(1)} stops`;
             }
           }
         }
@@ -9333,10 +9579,20 @@
       }
 
       function updateChart() {
-        const baseTime = parseFloat(chartBaseSlider.value);
-        document.getElementById(
-          "chartBaseValue"
-        ).textContent = `${baseTime.toFixed(1)}s`;
+        const baseTime = (function () {
+          // Prefer chart slider if present, otherwise fall back to the main base time slider
+          if (typeof chartBaseSlider !== "undefined" && chartBaseSlider)
+            return parseFloat(chartBaseSlider.value);
+          const bt = document.getElementById("baseTimeSlider");
+          if (bt) return parseFloat(bt.value);
+          if (window.incrementalTimer)
+            return parseFloat(window.incrementalTimer.baseTime) || 10;
+          if (settingsManager)
+            return parseFloat(settingsManager.settings.baseTime) || 10;
+          return 10;
+        })();
+        const chartBaseEl = document.getElementById("chartBaseValue");
+        if (chartBaseEl) chartBaseEl.textContent = `${baseTime.toFixed(1)}s`;
 
         const tableBody = document.getElementById("tableBody");
         const currentStop = parseInt(stopSlider.value);
@@ -9559,6 +9815,7 @@
             { id: "settingTimerWarningBeep", evt: "change" },
             { id: "settingTimerEndBeep", evt: "change" },
             { id: "settingDefaultPhotoFlo", evt: "change" },
+            { id: "settingStopIncrement", evt: "change" },
           ];
           toBind.forEach(({ id, evt }) => {
             const el = document.getElementById(id);
@@ -9572,6 +9829,205 @@
             });
           });
         })();
+
+        // Helper: render/refresh rulers and denominator handling for stops
+        function renderRuler(containerId, minStep, maxStep) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          container.setAttribute("aria-label", "Stops scale");
+          const total = maxStep - minStep;
+          const frag = document.createDocumentFragment();
+          for (let i = 0; i <= total; i++) {
+            const step = minStep + i;
+            const span = document.createElement("span");
+            span.style.fontSize = "0.7rem";
+            span.style.color = "var(--text-secondary)";
+            span.style.flex = "1";
+            span.style.textAlign = "center";
+            span.textContent = formatStop(step);
+            span.setAttribute("aria-hidden", "true");
+            frag.appendChild(span);
+          }
+          container.innerHTML = "";
+          container.appendChild(frag);
+        }
+
+        function updateAllRulers() {
+          renderRuler("calcStopRuler", -6, 6);
+
+          const testContainer = document.getElementById("testIncrementRuler");
+          if (!testContainer) return;
+          const min = parseInt(
+            document.getElementById("testIncrementSlider").min,
+            10
+          );
+          const max = parseInt(
+            document.getElementById("testIncrementSlider").max,
+            10
+          );
+          const total = max - min;
+          const frag = document.createDocumentFragment();
+          for (let i = 0; i <= total; i++) {
+            const val = min + i;
+            const span = document.createElement("span");
+            span.style.fontSize = "0.7rem";
+            span.style.color = "var(--text-secondary)";
+            span.style.flex = "1";
+            span.style.textAlign = "center";
+            const denom = window.stopDenominator || 3;
+            const stopValue = val / denom;
+            const whole = Math.floor(stopValue);
+            const frac = stopValue - whole;
+            const tol = 1e-6;
+            if (Math.abs(frac) < tol) span.textContent = `${whole}`;
+            else if (denom === 2) span.textContent = `${whole}½`;
+            else if (denom === 3) span.textContent = frac < 0.5 ? "⅓" : "⅔";
+            else if (denom === 4)
+              span.textContent = frac === 0.25 ? "¼" : frac === 0.5 ? "½" : "¾";
+            else span.textContent = stopValue.toFixed(1);
+            frag.appendChild(span);
+          }
+          testContainer.innerHTML = "";
+          testContainer.appendChild(frag);
+        }
+
+        // Segmented controls for denominator
+        function getSelectedFromSeg(containerId) {
+          const cont = document.getElementById(containerId);
+          if (!cont) return null;
+          const btn =
+            cont.querySelector(".segmented-btn.active") ||
+            cont.querySelector('.segmented-btn[aria-pressed="true"]');
+          return btn ? parseInt(btn.dataset.denom, 10) : null;
+        }
+        function setActiveSeg(containerOrId, d) {
+          const cont =
+            typeof containerOrId === "string"
+              ? document.getElementById(containerOrId)
+              : containerOrId;
+          if (!cont) return;
+          Array.from(cont.querySelectorAll(".segmented-btn")).forEach((b) => {
+            const bd = parseInt(b.dataset.denom, 10);
+            const active = bd === d;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        }
+        function initSegControl(containerId) {
+          const cont = document.getElementById(containerId);
+          if (!cont) return;
+          cont.addEventListener("click", (e) => {
+            const btn = e.target.closest(".segmented-btn");
+            if (!btn) return;
+            const d = parseInt(btn.dataset.denom, 10);
+            setActiveSeg(cont, d);
+            applyDenomChange(d);
+          });
+          cont.addEventListener("keydown", (e) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key))
+              return;
+            const buttons = Array.from(cont.querySelectorAll(".segmented-btn"));
+            const idx = buttons.findIndex((b) =>
+              b.classList.contains("active")
+            );
+            let next = idx;
+            if (e.key === "ArrowLeft") next = Math.max(0, idx - 1);
+            if (e.key === "ArrowRight")
+              next = Math.min(buttons.length - 1, idx + 1);
+            if (e.key === "Home") next = 0;
+            if (e.key === "End") next = buttons.length - 1;
+            if (next !== idx) {
+              buttons[next].focus();
+              buttons[next].click();
+            }
+            e.preventDefault();
+          });
+        }
+
+        // applyDenomChange now takes numeric denom and rescales sliders to preserve absolute stop values
+        function applyDenomChange(d) {
+          const newDenom = parseInt(d, 10) || 3;
+          const prevDenom =
+            window.stopDenominator ||
+            (settingsManager && settingsManager.settings.stopDenominator) ||
+            3;
+
+          // If denom changed, rescale relevant sliders so the same absolute stop is preserved
+          if (newDenom !== prevDenom) {
+            // Rescale calculator stop slider (stopSlider values are fractional-step counts)
+            const stopSlider = document.getElementById("stopSlider");
+            if (stopSlider) {
+              const oldVal = parseInt(stopSlider.value, 10) || 0;
+              const stopInStops = oldVal / prevDenom; // current stop in full stops
+              const newVal = Math.round(stopInStops * newDenom);
+              stopSlider.value = newVal;
+              // Trigger input handler to update displays
+              stopSlider.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+
+            // Rescale test increment slider (step increments expressed in fractional-step counts)
+            const testInc = document.getElementById("testIncrementSlider");
+            if (testInc) {
+              const oldInc = parseInt(testInc.value, 10) || 0;
+              const incInStops = oldInc / prevDenom;
+              let newInc = Math.round(incInStops * newDenom);
+              const min = parseInt(testInc.min, 10) || 1;
+              const max = parseInt(testInc.max, 10) || 99;
+              newInc = Math.max(min, Math.min(max, newInc));
+              testInc.value = newInc;
+              testInc.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          }
+
+          window.stopDenominator = newDenom;
+
+          // Persist setting and keep UI in sync
+          if (settingsManager) {
+            settingsManager.settings.stopDenominator = newDenom;
+            StorageManager.saveSettings(settingsManager.settings);
+          }
+          const settingsSel = document.getElementById("settingStopIncrement");
+          if (settingsSel) settingsSel.value = newDenom;
+          // Update assistive live region
+          try {
+            const live = document.getElementById("settingsLiveStatus");
+            if (live)
+              live.textContent = `Default stop increment set to ${denomLabel(
+                newDenom
+              )}`;
+          } catch (e) {}
+
+          // Reflect change in segmented controls (if not already set) - keeps buttons active
+          setActiveSeg("calcIncrementSeg", newDenom);
+          setActiveSeg("testIncrementSeg", newDenom);
+
+          if (window.incrementalTimer) {
+            window.incrementalTimer.updateCalculations();
+            window.incrementalTimer.updateAllDisplays();
+          }
+          if (window.fstopTestGenerator) {
+            window.fstopTestGenerator.generateSteps();
+            window.fstopTestGenerator.updateDisplay();
+          }
+          updateAllRulers();
+          updateChart();
+        }
+
+        // Initialize denom and controls
+        window.stopDenominator =
+          window.stopDenominator ||
+          (settingsManager && settingsManager.settings.stopDenominator) ||
+          3;
+        setActiveSeg("calcIncrementSeg", window.stopDenominator);
+        setActiveSeg("testIncrementSeg", window.stopDenominator);
+        initSegControl("calcIncrementSeg");
+        initSegControl("testIncrementSeg");
+        // Backwards compatibility: update select values if present
+        const calcOld = document.getElementById("calcIncrementDenom");
+        const testOld = document.getElementById("testIncrementDenom");
+        if (calcOld) calcOld.value = window.stopDenominator;
+        if (testOld) testOld.value = window.stopDenominator;
+        updateAllRulers();
 
         // Timer profile management in timer tab
         document
@@ -9685,8 +10141,19 @@
                   window.incrementalTimer.updateFromSliders();
                 }
               } else if (activeTab === "chart") {
-                chartBaseSlider.value = parseFloat(chartBaseSlider.value) - 0.5;
-                updateChart();
+                if (typeof baseTimeSlider !== "undefined" && baseTimeSlider) {
+                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) - 0.5;
+                  // trigger the calculator display update which also updates the chart
+                  if (window.incrementalTimer)
+                    window.incrementalTimer.updateFromSliders();
+                } else if (
+                  typeof chartBaseSlider !== "undefined" &&
+                  chartBaseSlider
+                ) {
+                  chartBaseSlider.value =
+                    parseFloat(chartBaseSlider.value) - 0.5;
+                  updateChart();
+                }
               } else if (activeTab === "fstop-test") {
                 window.fstopTestGenerator.testBaseSlider.value =
                   parseFloat(window.fstopTestGenerator.testBaseSlider.value) -
@@ -9711,8 +10178,18 @@
                   window.incrementalTimer.updateFromSliders();
                 }
               } else if (activeTab === "chart") {
-                chartBaseSlider.value = parseFloat(chartBaseSlider.value) + 0.5;
-                updateChart();
+                if (typeof baseTimeSlider !== "undefined" && baseTimeSlider) {
+                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) + 0.5;
+                  if (window.incrementalTimer)
+                    window.incrementalTimer.updateFromSliders();
+                } else if (
+                  typeof chartBaseSlider !== "undefined" &&
+                  chartBaseSlider
+                ) {
+                  chartBaseSlider.value =
+                    parseFloat(chartBaseSlider.value) + 0.5;
+                  updateChart();
+                }
               } else if (activeTab === "fstop-test") {
                 window.fstopTestGenerator.testBaseSlider.value =
                   parseFloat(window.fstopTestGenerator.testBaseSlider.value) +
