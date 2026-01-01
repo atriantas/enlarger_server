@@ -344,6 +344,7 @@
         display: flex;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--tab-border);
+        gap: 2px;
       }
 
       .tab-button {
@@ -353,13 +354,25 @@
         color: var(--tab-inactive);
         border: none;
         border-bottom: 2px solid transparent;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
         font-size: 0.8rem;
         cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .tab-button:first-child {
+        border-left: none;
+      }
+
+      .tab-button:last-child {
+        border-right: none;
       }
 
       .tab-button.active {
         color: var(--title);
         border-bottom: 2px solid var(--title);
+        background: var(--panel);
       }
 
       .tab-content {
@@ -709,6 +722,23 @@
         color: var(--text-secondary);
       }
 
+      /* Base input field */
+      .input-field {
+        background: var(--settings-input-bg);
+        border: 1px solid var(--settings-input-border);
+        border-radius: 3px;
+        color: var(--text);
+        padding: 4px 6px;
+        font-size: 0.8rem;
+        font-family: monospace;
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      /* Aliases */
       .settings-input {
         background: var(--settings-input-bg);
         border: 1px solid var(--settings-input-border);
@@ -760,22 +790,7 @@
         gap: 4px;
       }
 
-      .profile-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--accent);
-        border-radius: 2px;
-        padding: 3px 6px;
-        font-size: 0.7rem;
-        cursor: pointer;
-        min-width: 50px;
-      }
-
-      .profile-btn.delete {
-        background: var(--button-bg);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
+      /* .profile-btn and .profile-btn.delete now use .btn-action aliases */
 
       .settings-btn {
         background: var(--button-bg);
@@ -1133,29 +1148,58 @@
         margin-top: 5px;
       }
 
-      /* Repeat button styling */
-      .repeat-btn {
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--text);
-        border-radius: 3px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        flex: 1;
+      /* Repeat button styling - now uses .btn-flex alias */
+
+      /* Base container for panels */
+      .panel-container {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
       }
 
-      .repeat-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
+      /* Aliases for backwards compatibility */
+      .chemical-calculator {
+        background: var(--chemical-calc-bg);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
       }
 
-      /* Contrast calculator styles */
       .contrast-calculator {
         background: var(--panel);
         padding: 10px;
         border-radius: 4px;
         margin-top: 10px;
+      }
+
+      .chemical-presets {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+
+      .capacity-tracker {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 12px;
+      }
+
+      .shelf-life-tracker {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 12px;
+      }
+
+      .instructions-panel {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        margin-bottom: 12px;
       }
 
       .paper-selector {
@@ -1165,7 +1209,8 @@
         margin-bottom: 10px;
       }
 
-      .paper-btn {
+      /* Base toggle button (paper, dilution, size, etc.) */
+      .btn-toggle {
         padding: 8px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
@@ -1176,7 +1221,33 @@
         font-size: 0.75rem;
       }
 
-      .paper-btn.active {
+      .btn-toggle.active {
+        background: var(--button-bg);
+        border-color: var(--button-border);
+        font-weight: bold;
+      }
+
+      /* Aliases for backwards compatibility */
+      .paper-btn,
+      .dilution-btn,
+      .paper-size-btn,
+      .preset-btn,
+      .method-btn {
+        padding: 8px;
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.75rem;
+      }
+
+      .paper-btn.active,
+      .dilution-btn.active,
+      .paper-size-btn.active,
+      .preset-btn.active,
+      .method-btn.active {
         background: var(--button-bg);
         border-color: var(--button-border);
         font-weight: bold;
@@ -1188,23 +1259,6 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 12px;
-      }
-
-      .dilution-btn {
-        padding: 8px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.75rem;
-      }
-
-      .dilution-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
       }
 
       .custom-dilution {
@@ -1230,13 +1284,7 @@
         border-color: var(--accent);
       }
 
-      /* Chemical Preset Styles */
-      .chemical-presets {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-      }
+      /* Chemical Preset Styles - now using .panel-container */
 
       .chemical-preset-list {
         background: var(--panel-light);
@@ -1247,6 +1295,25 @@
         margin-bottom: 10px;
       }
 
+      /* Base list item */
+      .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
+      }
+
+      .list-item:last-child {
+        border-bottom: none;
+      }
+
+      .list-item.active {
+        background: var(--panel-lighter);
+      }
+
+      /* Aliases */
       .chemical-preset-item {
         display: flex;
         justify-content: space-between;
@@ -1269,6 +1336,23 @@
         gap: 4px;
       }
 
+      /* Base action button (small) */
+      .btn-action {
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        color: var(--accent);
+        border-radius: 2px;
+        padding: 2px 6px;
+        font-size: 0.65rem;
+        cursor: pointer;
+      }
+
+      .btn-action.delete {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* Aliases */
       .chemical-preset-btn {
         background: var(--button-bg);
         border: 1px solid var(--button-border);
@@ -1279,13 +1363,34 @@
         cursor: pointer;
       }
 
-      /* Capacity tracker */
-      .capacity-tracker {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 12px;
+      .shelf-life-btn {
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        color: var(--accent);
+        border-radius: 2px;
+        padding: 3px 6px;
+        font-size: 0.6rem;
+        cursor: pointer;
       }
+
+      .profile-btn {
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        color: var(--accent);
+        border-radius: 2px;
+        padding: 3px 6px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        min-width: 50px;
+      }
+
+      .profile-btn.delete {
+        background: var(--button-bg);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* Capacity tracker - now using .panel-container */
 
       .capacity-controls {
         display: flex;
@@ -1293,6 +1398,24 @@
         margin: 10px 0;
       }
 
+      /* Base flexible button (used for capacity, repeat, etc.) */
+      .btn-flex {
+        flex: 1;
+        padding: 8px;
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        border-radius: 3px;
+        color: var(--text);
+        font-size: 0.75rem;
+        cursor: pointer;
+      }
+
+      .btn-flex:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* Aliases */
       .capacity-btn {
         flex: 1;
         padding: 8px;
@@ -1302,6 +1425,27 @@
         color: var(--text);
         font-size: 0.75rem;
         cursor: pointer;
+      }
+
+      .capacity-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .repeat-btn {
+        flex: 1;
+        padding: 8px;
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        border-radius: 3px;
+        color: var(--text);
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+
+      .repeat-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
       }
 
       .progress-container {
@@ -1341,23 +1485,6 @@
         margin-bottom: 8px;
       }
 
-      .paper-size-btn {
-        padding: 6px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.7rem;
-      }
-
-      .paper-size-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
-      }
-
       .custom-paper-size {
         display: flex;
         gap: 8px;
@@ -1376,13 +1503,12 @@
         font-family: monospace;
       }
 
-      /* Shelf life tracker */
-      .shelf-life-tracker {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 12px;
+      .custom-paper-size input:focus {
+        outline: none;
+        border-color: var(--accent);
       }
+
+      /* Shelf life tracker - now using .panel-container */
 
       .shelf-life-list {
         background: var(--panel-light);
@@ -1435,15 +1561,7 @@
         gap: 4px;
       }
 
-      .shelf-life-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--accent);
-        border-radius: 2px;
-        padding: 3px 6px;
-        font-size: 0.6rem;
-        cursor: pointer;
-      }
+      /* .shelf-life-btn now uses .btn-action with padding override */
 
       /* F-STOP TEST STRIP GENERATOR STYLES */
       .preview-controls {
@@ -1551,49 +1669,12 @@
         gap: 8px;
       }
 
-      .preset-btn {
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.75rem;
-        cursor: pointer;
-        text-align: center;
-      }
-
       /* Method selector styles */
       .method-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-top: 5px;
-      }
-
-      .method-btn {
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.75rem;
-      }
-
-      .method-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
-      }
-
-      /* Instructions panel styles */
-      .instructions-panel {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-        margin-bottom: 12px;
       }
 
       /* Countdown display styles */
@@ -2360,7 +2441,7 @@
   <body>
     <div class="container">
       <header>
-        <h1>DARKROOM F-STOP TIMER</h1>
+        <h1>CYANOWOOD DARKROOM TIMER & TOOLS</h1>
       </header>
 
       <!-- Accessibility: live status for settings updates -->
@@ -2373,11 +2454,11 @@
 
       <div class="tabs">
         <button class="tab-button active" data-tab="calc">CALC</button>
-        <button class="tab-button" data-tab="chart">CHART</button>
         <button class="tab-button" data-tab="fstop-test">TEST</button>
-        <button class="tab-button" data-tab="chemical">CHEMICAL</button>
         <button class="tab-button" data-tab="timer">TIMER</button>
         <button class="tab-button" data-tab="relay">CONTROL</button>
+        <button class="tab-button" data-tab="chemical">CHEMICAL</button>
+        <button class="tab-button" data-tab="chart">CHART</button>
         <button class="tab-button" data-tab="settings">SETTINGS</button>
       </div>
 
@@ -4212,6 +4293,32 @@
                   </label>
                 </div>
               </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Min (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMin"
+                    class="settings-input"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    value="0.4"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Max (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMax"
+                    class="settings-input"
+                    min="10"
+                    max="300"
+                    step="1"
+                    value="50"
+                  />
+                </div>
+              </div>
             </div>
           </section>
 
@@ -4239,6 +4346,32 @@
                     class="settings-input"
                     id="settingAutoAdvanceDelay"
                     value="1"
+                  />
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Test Base Time Min (s)</div>
+                  <input
+                    type="number"
+                    id="testBaseTimeMin"
+                    class="settings-input"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                    value="1"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Test Base Time Max (s)</div>
+                  <input
+                    type="number"
+                    id="testBaseTimeMax"
+                    class="settings-input"
+                    min="10"
+                    max="300"
+                    step="1"
+                    value="50"
                   />
                 </div>
               </div>
@@ -4561,6 +4694,12 @@
         autoAdvanceDelay: 1,
         safelightAutoOff: true, // Turn off safelight when enlarger is on
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
+        // Base time slider limits
+        baseTimeMin: 0.4,
+        baseTimeMax: 50,
+        // Test base time slider limits
+        testBaseTimeMin: 1,
+        testBaseTimeMax: 50,
       };
 
       // Default timer times (seconds)
@@ -4622,6 +4761,64 @@
         button.addEventListener("click", () => {
           switchTab(button.getAttribute("data-tab"));
         });
+      });
+
+      // Add event listeners for base time limit inputs
+      document.addEventListener("DOMContentLoaded", () => {
+        const baseTimeMinInput = document.getElementById("baseTimeMin");
+        const baseTimeMaxInput = document.getElementById("baseTimeMax");
+
+        if (baseTimeMinInput && baseTimeMaxInput) {
+          baseTimeMinInput.addEventListener("change", () => {
+            const minVal = parseFloat(baseTimeMinInput.value);
+            const maxVal = parseFloat(baseTimeMaxInput.value);
+            if (minVal >= maxVal) {
+              baseTimeMinInput.value = (maxVal - 1).toFixed(1);
+            }
+            if (settingsManager) {
+              settingsManager.applyLiveSettings();
+            }
+          });
+
+          baseTimeMaxInput.addEventListener("change", () => {
+            const minVal = parseFloat(baseTimeMinInput.value);
+            const maxVal = parseFloat(baseTimeMaxInput.value);
+            if (maxVal <= minVal) {
+              baseTimeMaxInput.value = (minVal + 1).toFixed(1);
+            }
+            if (settingsManager) {
+              settingsManager.applyLiveSettings();
+            }
+          });
+        }
+
+        // Add event listeners for test base time limit inputs
+        const testBaseTimeMinInput = document.getElementById("testBaseTimeMin");
+        const testBaseTimeMaxInput = document.getElementById("testBaseTimeMax");
+        
+        if (testBaseTimeMinInput && testBaseTimeMaxInput) {
+          testBaseTimeMinInput.addEventListener("change", () => {
+            const minVal = parseFloat(testBaseTimeMinInput.value);
+            const maxVal = parseFloat(testBaseTimeMaxInput.value);
+            if (minVal >= maxVal) {
+              testBaseTimeMinInput.value = (maxVal - 1).toFixed(1);
+            }
+            if (settingsManager) {
+              settingsManager.applyLiveSettings();
+            }
+          });
+
+          testBaseTimeMaxInput.addEventListener("change", () => {
+            const minVal = parseFloat(testBaseTimeMinInput.value);
+            const maxVal = parseFloat(testBaseTimeMaxInput.value);
+            if (maxVal <= minVal) {
+              testBaseTimeMaxInput.value = (minVal + 1).toFixed(1);
+            }
+            if (settingsManager) {
+              settingsManager.applyLiveSettings();
+            }
+          });
+        }
       });
 
       // Audio context initialization
@@ -5323,6 +5520,20 @@
             ),
             safelightAutoOff:
               document.getElementById("safelightAutoOff").checked, // NEW
+            // Base time slider limits
+            baseTimeMin: parseFloat(
+              document.getElementById("baseTimeMin")?.value || 0.4
+            ),
+            baseTimeMax: parseFloat(
+              document.getElementById("baseTimeMax")?.value || 50
+            ),
+            // Test base time slider limits
+            testBaseTimeMin: parseFloat(
+              document.getElementById("testBaseTimeMin")?.value || 1
+            ),
+            testBaseTimeMax: parseFloat(
+              document.getElementById("testBaseTimeMax")?.value || 50
+            ),
             // F-stop denominator setting (2, 3, or 4) - Settings select takes precedence, then segmented controls, then legacy selects
             stopDenominator: (function () {
               const settingsSel = document.getElementById(
@@ -5376,6 +5587,32 @@
             window.fstopTestGenerator.setAutoAdvanceDelay(
               this.settings.autoAdvanceDelay * 1000
             ); // Convert to ms
+          }
+
+          // Apply base time slider limits
+          const baseSlider = document.getElementById("baseTimeSlider");
+          if (baseSlider) {
+            const newMin = parseFloat(this.settings.baseTimeMin) || 0.4;
+            const newMax = parseFloat(this.settings.baseTimeMax) || 50;
+            baseSlider.min = newMin;
+            baseSlider.max = newMax;
+            // Ensure current value is within new range
+            const currentValue = parseFloat(baseSlider.value);
+            if (currentValue < newMin) baseSlider.value = newMin;
+            if (currentValue > newMax) baseSlider.value = newMax;
+          }
+
+          // Apply test base time slider limits
+          const testBaseSlider = document.getElementById("testBaseSlider");
+          if (testBaseSlider) {
+            const newMin = parseFloat(this.settings.testBaseTimeMin) || 1;
+            const newMax = parseFloat(this.settings.testBaseTimeMax) || 50;
+            testBaseSlider.min = newMin;
+            testBaseSlider.max = newMax;
+            // Ensure current value is within new range
+            const currentValue = parseFloat(testBaseSlider.value);
+            if (currentValue < newMin) testBaseSlider.value = newMin;
+            if (currentValue > newMax) testBaseSlider.value = newMax;
           }
 
           // Apply base time to calculators and test generator so UI updates immediately
@@ -7356,6 +7593,40 @@
           window.fstopTestGenerator.setAutoAdvanceDelay(
             (settingsManager.settings.autoAdvanceDelay || 1) * 1000
           );
+        }
+
+        // Load base time slider limits
+        const baseTimeMinInput = document.getElementById("baseTimeMin");
+        const baseTimeMaxInput = document.getElementById("baseTimeMax");
+        if (baseTimeMinInput) {
+          baseTimeMinInput.value = settingsManager.settings.baseTimeMin || 0.4;
+        }
+        if (baseTimeMaxInput) {
+          baseTimeMaxInput.value = settingsManager.settings.baseTimeMax || 50;
+        }
+
+        // Apply limits to BASE TIME slider
+        const baseTimeSlider = document.getElementById("baseTimeSlider");
+        if (baseTimeSlider) {
+          baseTimeSlider.min = settingsManager.settings.baseTimeMin || 0.4;
+          baseTimeSlider.max = settingsManager.settings.baseTimeMax || 50;
+        }
+
+        // Load test base time slider limits
+        const testBaseTimeMinInput = document.getElementById("testBaseTimeMin");
+        const testBaseTimeMaxInput = document.getElementById("testBaseTimeMax");
+        if (testBaseTimeMinInput) {
+          testBaseTimeMinInput.value = settingsManager.settings.testBaseTimeMin || 1;
+        }
+        if (testBaseTimeMaxInput) {
+          testBaseTimeMaxInput.value = settingsManager.settings.testBaseTimeMax || 50;
+        }
+
+        // Apply limits to TEST BASE TIME slider
+        const testBaseSlider = document.getElementById("testBaseSlider");
+        if (testBaseSlider) {
+          testBaseSlider.min = settingsManager.settings.testBaseTimeMin || 1;
+          testBaseSlider.max = settingsManager.settings.testBaseTimeMax || 50;
         }
 
         // F-stop increment denominator (persisted setting)
