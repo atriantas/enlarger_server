@@ -2473,7 +2473,7 @@
             type="range"
             min="0.4"
             max="50"
-            step="0.2"
+            step="0.1"
             value="10"
             class="slider"
             id="baseTimeSlider"
@@ -4795,7 +4795,7 @@
         // Add event listeners for test base time limit inputs
         const testBaseTimeMinInput = document.getElementById("testBaseTimeMin");
         const testBaseTimeMaxInput = document.getElementById("testBaseTimeMax");
-        
+
         if (testBaseTimeMinInput && testBaseTimeMaxInput) {
           testBaseTimeMinInput.addEventListener("change", () => {
             const minVal = parseFloat(testBaseTimeMinInput.value);
@@ -7616,10 +7616,12 @@
         const testBaseTimeMinInput = document.getElementById("testBaseTimeMin");
         const testBaseTimeMaxInput = document.getElementById("testBaseTimeMax");
         if (testBaseTimeMinInput) {
-          testBaseTimeMinInput.value = settingsManager.settings.testBaseTimeMin || 1;
+          testBaseTimeMinInput.value =
+            settingsManager.settings.testBaseTimeMin || 1;
         }
         if (testBaseTimeMaxInput) {
-          testBaseTimeMaxInput.value = settingsManager.settings.testBaseTimeMax || 50;
+          testBaseTimeMaxInput.value =
+            settingsManager.settings.testBaseTimeMax || 50;
         }
 
         // Apply limits to TEST BASE TIME slider
