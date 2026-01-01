@@ -342,14 +342,17 @@
       /* ===== TABS (EXACT MATCH) ===== */
       .tabs {
         display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--tab-border);
         gap: 2px;
       }
 
       .tab-button {
-        flex: 1;
-        padding: 6px 3px;
+        flex: 0 0 auto;
+        min-width: 70px;
+        padding: 6px 8px;
         background: var(--bg);
         color: var(--tab-inactive);
         border: none;
@@ -359,6 +362,7 @@
         font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s ease;
+        white-space: nowrap;
       }
 
       .tab-button:first-child {
@@ -372,7 +376,7 @@
       .tab-button.active {
         color: var(--title);
         border-bottom: 2px solid var(--title);
-        background: var(--panel);
+        background: var(--tab-border);
       }
 
       .tab-content {
@@ -2441,7 +2445,7 @@
   <body>
     <div class="container">
       <header>
-        <h1>CYANOWOOD DARKROOM TIMER & TOOLS</h1>
+        <h1>CYANOWOOD TIMER & TOOLS</h1>
       </header>
 
       <!-- Accessibility: live status for settings updates -->
@@ -4275,26 +4279,6 @@
             <div class="collapsible-content">
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Calc 3s Beep</div>
-                  <label class="switch">
-                    <input
-                      type="checkbox"
-                      id="settingCalcWarningBeep"
-                      checked
-                    />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Calc End Beep</div>
-                  <label class="switch">
-                    <input type="checkbox" id="settingCalcEndBeep" checked />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-              </div>
-              <div class="settings-group">
-                <div class="settings-item">
                   <div class="settings-label">Base Time Min (s)</div>
                   <input
                     type="number"
@@ -4317,6 +4301,26 @@
                     step="1"
                     value="50"
                   />
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Calc 3s Beep</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingCalcWarningBeep"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Calc End Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingCalcEndBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
                 </div>
               </div>
             </div>
