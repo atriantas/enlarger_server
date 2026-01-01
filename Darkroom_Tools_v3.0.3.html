@@ -342,14 +342,17 @@
       /* ===== TABS (EXACT MATCH) ===== */
       .tabs {
         display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--tab-border);
         gap: 2px;
       }
 
       .tab-button {
-        flex: 1;
-        padding: 6px 3px;
+        flex: 0 0 auto;
+        min-width: 70px;
+        padding: 6px 8px;
         background: var(--bg);
         color: var(--tab-inactive);
         border: none;
@@ -359,6 +362,7 @@
         font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s ease;
+        white-space: nowrap;
       }
 
       .tab-button:first-child {
@@ -372,7 +376,7 @@
       .tab-button.active {
         color: var(--title);
         border-bottom: 2px solid var(--title);
-        background: var(--panel);
+        background: var(--tab-border);
       }
 
       .tab-content {
@@ -2441,7 +2445,7 @@
   <body>
     <div class="container">
       <header>
-        <h1>CYANOWOOD DARKROOM TIMER & TOOLS</h1>
+        <h1>CYANOWOOD TIMER & TOOLS</h1>
       </header>
 
       <!-- Accessibility: live status for settings updates -->
