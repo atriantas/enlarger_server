@@ -471,96 +471,32 @@
         margin-top: 10px;
       }
 
-      /* ===== UNIVERSAL BUTTON STYLES ===== */
-      /* Base button style - used by most buttons */
-      .exp-btn,
-      .timer-btn,
-      .settings-btn,
-      .global-btn,
-      .json-btn,
-      .capacity-btn,
-      .repeat-btn {
+      /* ===== BUTTON STYLES (EXACT MATCH) ===== */
+      .exp-btn {
+        flex: 1;
+        padding: 8px;
         background: var(--button-bg);
         border: 1px solid var(--button-border);
         color: var(--text);
         border-radius: 3px;
-        cursor: pointer;
-        text-align: center;
-      }
-
-      /* Size variants */
-      .exp-btn {
-        flex: 1;
-        padding: 8px;
         font-size: 0.8rem;
+        cursor: pointer;
         min-width: 120px;
       }
 
-      .timer-btn {
-        flex: 1;
-        padding: 4px;
-        font-size: 0.7rem;
-        white-space: nowrap;
-      }
-
-      .settings-btn,
-      .capacity-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        width: 100%;
-      }
-
-      .capacity-btn {
-        flex: 1;
-        width: auto;
-        padding: 8px;
-        font-size: 0.75rem;
-      }
-
-      .global-btn {
-        flex: 1;
-        padding: 8px;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        border-color: var(--button-active-bg);
-      }
-
-      .repeat-btn {
-        padding: 8px;
-        font-size: 0.8rem;
-        flex: 1;
-      }
-
-      /* Active state - shared across buttons */
-      .exp-btn.active,
-      .timer-btn.active {
+      .exp-btn.active {
         background: var(--button-active-bg);
         border-color: var(--button-active-border);
       }
 
-      /* Disabled state - shared */
-      .exp-btn:disabled,
-      .timer-btn:disabled,
-      .repeat-btn:disabled {
+      .exp-btn:disabled {
         opacity: 0.3;
         cursor: not-allowed;
       }
 
-      /* Special states */
       .exp-btn.warning {
         border-color: var(--warning);
         animation: pulse 1s infinite;
-      }
-
-      /* Settings button variants */
-      .settings-btn.primary {
-        background: var(--button-active-bg);
-        border-color: var(--button-active-border);
-      }
-
-      .settings-btn.danger,
-      .settings-btn.warning {
-        border-color: var(--accent);
       }
 
       .exp-info {
@@ -667,7 +603,6 @@
         margin-bottom: 2px;
       }
 
-      /* Small adjustment buttons */
       .adjust-btn {
         flex: 1;
         padding: 3px 4px;
@@ -684,9 +619,35 @@
         cursor: not-allowed;
       }
 
+      .adjust-btn:active:not(:disabled) {
+        background: var(--panel-lighter);
+      }
+
       .action-row {
         display: flex;
         gap: 4px;
+      }
+
+      .timer-btn {
+        flex: 1;
+        padding: 4px;
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        color: var(--text);
+        border-radius: 2px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .timer-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .timer-btn.active {
+        background: var(--button-bg);
+        border-color: var(--button-active-border);
       }
 
       /* Timer states */
@@ -799,35 +760,64 @@
         gap: 4px;
       }
 
-      /* Small buttons (profile, preset, shelf-life) */
-      .profile-btn,
-      .chemical-preset-btn,
-      .shelf-life-btn {
+      .profile-btn {
         background: var(--button-bg);
         border: 1px solid var(--button-border);
         color: var(--accent);
         border-radius: 2px;
-        cursor: pointer;
-      }
-
-      .profile-btn {
         padding: 3px 6px;
         font-size: 0.7rem;
+        cursor: pointer;
         min-width: 50px;
       }
 
+      .profile-btn:hover {
+        background: var(--button-active-bg);
+      }
+
       .profile-btn.delete {
+        background: var(--button-bg);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .profile-btn.delete:hover {
+        background: var(--button-active-bg);
         border-color: var(--accent);
       }
 
-      .chemical-preset-btn {
-        padding: 2px 6px;
-        font-size: 0.65rem;
+      .settings-btn {
+        background: var(--button-bg);
+        border: 1px solid var(--button-border);
+        color: var(--text);
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        width: 100%;
       }
 
-      .shelf-life-btn {
-        padding: 3px 6px;
-        font-size: 0.6rem;
+      .settings-btn:hover {
+        background: var(--button-active-bg);
+      }
+
+      .settings-btn.primary {
+        background: var(--button-active-bg);
+        border-color: var(--button-active-border);
+      }
+
+      .settings-btn.primary:hover {
+        background: var(--button-bg);
+      }
+
+      .settings-btn.danger {
+        background: var(--button-bg);
+        border-color: var(--accent);
+      }
+
+      .settings-btn.danger:hover {
+        background: var(--button-active-bg);
+        border-color: var(--accent);
       }
 
       .settings-btn-group {
@@ -846,21 +836,37 @@
         margin-top: 8px;
       }
 
-      /* Timer settings toggle buttons - all in one line */
-      .timer-settings {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 10px;
-        justify-content: space-between;
-        align-items: center;
+      .global-btn {
+        flex: 1;
+        padding: 8px;
+        background: var(--button-bg);
+        border: 1px solid var(--button-active-bg);
+        color: var(--text);
+        border-radius: 3px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        text-transform: uppercase;
       }
 
-      .timer-settings .setting-item {
+      /* ===== TIMER SETTINGS (EXACT MATCH) ===== */
+      .timer-settings {
         display: flex;
-        flex-direction: column;
+        justify-content: space-between;
+        background: var(--panel);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+      }
+
+      .setting-item {
+        display: flex;
         align-items: center;
-        gap: 2px;
-        flex: 1;
+        gap: 4px;
+      }
+
+      .setting-label {
+        font-size: 0.7rem;
+        white-space: nowrap;
       }
 
       .switch {
@@ -1045,7 +1051,7 @@
         width: 100%;
       }
 
-      /* ===== FOOTER ===== */
+      /* ===== FOOTER (EXACT MATCH) ===== */
       footer {
         text-align: center;
         margin-top: 10px;
@@ -1055,7 +1061,27 @@
         color: var(--text-secondary);
       }
 
-      /* ===== TIME TABLE ===== */
+      /* ===== ANIMATIONS (EXACT MATCH) ===== */
+      @keyframes pulse {
+        0% {
+          border-color: var(--warning);
+        }
+        50% {
+          border-color: var(--warning-light);
+        }
+        100% {
+          border-color: var(--warning);
+        }
+      }
+
+      /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
+
+      /* Chart styles */
+      .chart-container {
+        overflow-x: auto;
+        margin-bottom: 10px;
+      }
+
       .time-table {
         width: 100%;
         min-width: 400px;
@@ -1129,51 +1155,21 @@
         margin-top: 5px;
       }
 
-      /* ===== PAPER SELECTOR ===== */
-      .paper-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      /* Chemical management styles */
-      .dilution-selector {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      /* Toggle/selector buttons (paper, dilution, method, preset, paper-size) */
-      .paper-btn,
-      .dilution-btn,
-      .method-btn,
-      .preset-btn,
-      .paper-size-btn {
+      /* Repeat button styling */
+      .repeat-btn {
         padding: 8px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.75rem;
-      }
-
-      .paper-size-btn {
-        padding: 6px;
-        font-size: 0.7rem;
-      }
-
-      .paper-btn.active,
-      .dilution-btn.active,
-      .method-btn.active,
-      .preset-btn.active,
-      .paper-size-btn.active {
         background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
+        border: 1px solid var(--button-border);
+        color: var(--text);
+        border-radius: 3px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        flex: 1;
+      }
+
+      .repeat-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
       }
 
       /* Contrast calculator styles */
@@ -1184,9 +1180,110 @@
         margin-top: 10px;
       }
 
+      .paper-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .paper-btn {
+        padding: 8px;
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.75rem;
+      }
+
+      .paper-btn.active {
+        background: var(--button-bg);
+        border-color: var(--button-border);
+        font-weight: bold;
+      }
+
+      /* Chemical management styles */
+      .dilution-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .dilution-btn {
+        padding: 8px;
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.75rem;
+      }
+
+      .dilution-btn.active {
+        background: var(--button-bg);
+        border-color: var(--button-border);
+        font-weight: bold;
+      }
+
       .custom-dilution {
         display: flex;
         gap: 8px;
+        margin-top: 8px;
+      }
+
+      .custom-dilution input {
+        flex: 1;
+        text-align: center;
+        padding: 4px 6px;
+        background: var(--settings-input-bg);
+        border: 1px solid var(--settings-input-border);
+        border-radius: 3px;
+        color: var(--text);
+        font-size: 0.8rem;
+        font-family: monospace;
+      }
+
+      .custom-dilution input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      /* Chemical Preset Styles */
+      .chemical-presets {
+        background: var(--panel);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+
+      .chemical-preset-list {
+        background: var(--panel-light);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        max-height: 150px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+
+      .chemical-preset-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
+      }
+
+      .chemical-preset-item:last-child {
+        border-bottom: none;
+      }
+
+      .chemical-preset-item.active {
+        background: var(--panel-lighter);
       }
 
       .chemical-preset-actions {
@@ -1253,6 +1350,54 @@
         margin-top: 5px;
       }
 
+      /* Paper Size Selector */
+      .paper-size-selector {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .paper-size-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .paper-size-btn {
+        padding: 6px;
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
+        border-radius: 3px;
+        color: var(--text);
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.7rem;
+      }
+
+      .paper-size-btn.active {
+        background: var(--button-bg);
+        border-color: var(--button-border);
+        font-weight: bold;
+      }
+
+      .custom-paper-size {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+      }
+
+      .custom-paper-size input {
+        flex: 1;
+        text-align: center;
+        padding: 4px 6px;
+        background: var(--settings-input-bg);
+        border: 1px solid var(--settings-input-border);
+        border-radius: 3px;
+        color: var(--text);
+        font-size: 0.8rem;
+        font-family: monospace;
+      }
+
       /* Shelf life tracker */
       .shelf-life-tracker {
         background: var(--panel);
@@ -1281,6 +1426,17 @@
 
       .shelf-life-item:last-child {
         border-bottom: none;
+      }
+
+      .shelf-life-item.expiring {
+        background: var(--panel-lighter);
+        border-left: 3px solid var(--accent);
+      }
+
+      .shelf-life-item.expired {
+        background: var(--panel);
+        border-left: 3px solid var(--accent);
+        animation: pulse 2s infinite;
       }
 
       .shelf-life-days {
@@ -1376,7 +1532,16 @@
       .test-progress-container {
         margin: 15px 0;
       }
-      test-progress-labels {
+
+      .test-progress-bar {
+        height: 6px;
+        background: var(--progress-bg);
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .test-progress-labels {
         display: flex;
         justify-content: space-between;
         margin-top: 5px;
@@ -1417,6 +1582,10 @@
         font-size: 0.75rem;
         cursor: pointer;
         text-align: center;
+      }
+
+      .preset-btn:hover {
+        background: var(--panel-lighter);
       }
 
       /* Method selector styles */
@@ -1491,22 +1660,48 @@
 
       @keyframes pulse-glow {
         0% {
-          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4);
+          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
         }
-        50% {
+        70% {
+          box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+        }
+      }
+
+      /* Light scheme adjustment */
+      body.light-scheme #autoAdvanceToggle:checked + .slider-switch {
+        animation: pulse-glow-light 2s infinite;
+      }
+
+      @keyframes pulse-glow-light {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(0, 102, 204, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0);
+        }
+      }
+
+      /* Day scheme adjustment */
+      body.day-scheme #autoAdvanceToggle:checked + .slider-switch {
+        animation: pulse-glow-day 2s infinite;
+      }
+
+      @keyframes pulse-glow-day {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7);
+        }
+        70% {
           box-shadow: 0 0 0 10px rgba(255, 204, 0, 0);
         }
         100% {
           box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
         }
-      }
-
-      /* Method selector styles */
-      .method-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-top: 5px;
       }
 
       /* For the timer tab profiles section */
@@ -2130,6 +2325,10 @@
 
       .segmented-control .segmented-btn:not(:last-child) {
         border-right: 1px solid var(--border);
+      }
+
+      .segmented-control .segmented-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.02);
       }
 
       .segmented-control .segmented-btn.active,
