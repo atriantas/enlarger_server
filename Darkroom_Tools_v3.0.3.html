@@ -471,32 +471,96 @@
         margin-top: 10px;
       }
 
-      /* ===== BUTTON STYLES (EXACT MATCH) ===== */
-      .exp-btn {
-        flex: 1;
-        padding: 8px;
+      /* ===== UNIVERSAL BUTTON STYLES ===== */
+      /* Base button style - used by most buttons */
+      .exp-btn,
+      .timer-btn,
+      .settings-btn,
+      .global-btn,
+      .json-btn,
+      .capacity-btn,
+      .repeat-btn {
         background: var(--button-bg);
         border: 1px solid var(--button-border);
         color: var(--text);
         border-radius: 3px;
-        font-size: 0.8rem;
         cursor: pointer;
+        text-align: center;
+      }
+
+      /* Size variants */
+      .exp-btn {
+        flex: 1;
+        padding: 8px;
+        font-size: 0.8rem;
         min-width: 120px;
       }
 
-      .exp-btn.active {
+      .timer-btn {
+        flex: 1;
+        padding: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+      }
+
+      .settings-btn,
+      .capacity-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        width: 100%;
+      }
+
+      .capacity-btn {
+        flex: 1;
+        width: auto;
+        padding: 8px;
+        font-size: 0.75rem;
+      }
+
+      .global-btn {
+        flex: 1;
+        padding: 8px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-color: var(--button-active-bg);
+      }
+
+      .repeat-btn {
+        padding: 8px;
+        font-size: 0.8rem;
+        flex: 1;
+      }
+
+      /* Active state - shared across buttons */
+      .exp-btn.active,
+      .timer-btn.active {
         background: var(--button-active-bg);
         border-color: var(--button-active-border);
       }
 
-      .exp-btn:disabled {
+      /* Disabled state - shared */
+      .exp-btn:disabled,
+      .timer-btn:disabled,
+      .repeat-btn:disabled {
         opacity: 0.3;
         cursor: not-allowed;
       }
 
+      /* Special states */
       .exp-btn.warning {
         border-color: var(--warning);
         animation: pulse 1s infinite;
+      }
+
+      /* Settings button variants */
+      .settings-btn.primary {
+        background: var(--button-active-bg);
+        border-color: var(--button-active-border);
+      }
+
+      .settings-btn.danger,
+      .settings-btn.warning {
+        border-color: var(--accent);
       }
 
       .exp-info {
@@ -603,6 +667,7 @@
         margin-bottom: 2px;
       }
 
+      /* Small adjustment buttons */
       .adjust-btn {
         flex: 1;
         padding: 3px 4px;
@@ -619,35 +684,9 @@
         cursor: not-allowed;
       }
 
-      .adjust-btn:active:not(:disabled) {
-        background: var(--panel-lighter);
-      }
-
       .action-row {
         display: flex;
         gap: 4px;
-      }
-
-      .timer-btn {
-        flex: 1;
-        padding: 4px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--text);
-        border-radius: 2px;
-        font-size: 0.7rem;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-
-      .timer-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-      .timer-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-active-border);
       }
 
       /* Timer states */
@@ -760,64 +799,35 @@
         gap: 4px;
       }
 
-      .profile-btn {
+      /* Small buttons (profile, preset, shelf-life) */
+      .profile-btn,
+      .chemical-preset-btn,
+      .shelf-life-btn {
         background: var(--button-bg);
         border: 1px solid var(--button-border);
         color: var(--accent);
         border-radius: 2px;
+        cursor: pointer;
+      }
+
+      .profile-btn {
         padding: 3px 6px;
         font-size: 0.7rem;
-        cursor: pointer;
         min-width: 50px;
       }
 
-      .profile-btn:hover {
-        background: var(--button-active-bg);
-      }
-
       .profile-btn.delete {
-        background: var(--button-bg);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      .profile-btn.delete:hover {
-        background: var(--button-active-bg);
         border-color: var(--accent);
       }
 
-      .settings-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--text);
-        border-radius: 3px;
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        width: 100%;
+      .chemical-preset-btn {
+        padding: 2px 6px;
+        font-size: 0.65rem;
       }
 
-      .settings-btn:hover {
-        background: var(--button-active-bg);
-      }
-
-      .settings-btn.primary {
-        background: var(--button-active-bg);
-        border-color: var(--button-active-border);
-      }
-
-      .settings-btn.primary:hover {
-        background: var(--button-bg);
-      }
-
-      .settings-btn.danger {
-        background: var(--button-bg);
-        border-color: var(--accent);
-      }
-
-      .settings-btn.danger:hover {
-        background: var(--button-active-bg);
-        border-color: var(--accent);
+      .shelf-life-btn {
+        padding: 3px 6px;
+        font-size: 0.6rem;
       }
 
       .settings-btn-group {
@@ -836,37 +846,21 @@
         margin-top: 8px;
       }
 
-      .global-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-active-bg);
-        color: var(--text);
-        border-radius: 3px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        text-transform: uppercase;
-      }
-
-      /* ===== TIMER SETTINGS (EXACT MATCH) ===== */
+      /* Timer settings toggle buttons - all in one line */
       .timer-settings {
         display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
         justify-content: space-between;
-        background: var(--panel);
-        padding: 6px 8px;
-        border-radius: 4px;
-        margin-bottom: 8px;
-      }
-
-      .setting-item {
-        display: flex;
         align-items: center;
-        gap: 4px;
       }
 
-      .setting-label {
-        font-size: 0.7rem;
-        white-space: nowrap;
+      .timer-settings .setting-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        flex: 1;
       }
 
       .switch {
@@ -1051,7 +1045,7 @@
         width: 100%;
       }
 
-      /* ===== FOOTER (EXACT MATCH) ===== */
+      /* ===== FOOTER ===== */
       footer {
         text-align: center;
         margin-top: 10px;
@@ -1061,27 +1055,7 @@
         color: var(--text-secondary);
       }
 
-      /* ===== ANIMATIONS (EXACT MATCH) ===== */
-      @keyframes pulse {
-        0% {
-          border-color: var(--warning);
-        }
-        50% {
-          border-color: var(--warning-light);
-        }
-        100% {
-          border-color: var(--warning);
-        }
-      }
-
-      /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
-
-      /* Chart styles */
-      .chart-container {
-        overflow-x: auto;
-        margin-bottom: 10px;
-      }
-
+      /* ===== TIME TABLE ===== */
       .time-table {
         width: 100%;
         min-width: 400px;
@@ -1155,53 +1129,12 @@
         margin-top: 5px;
       }
 
-      /* Repeat button styling */
-      .repeat-btn {
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--text);
-        border-radius: 3px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        flex: 1;
-      }
-
-      .repeat-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-      /* Contrast calculator styles */
-      .contrast-calculator {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-      }
-
+      /* ===== PAPER SELECTOR ===== */
       .paper-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-bottom: 10px;
-      }
-
-      .paper-btn {
-        padding: 8px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.75rem;
-      }
-
-      .paper-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
       }
 
       /* Chemical management styles */
@@ -1212,7 +1145,12 @@
         margin-bottom: 12px;
       }
 
-      .dilution-btn {
+      /* Toggle/selector buttons (paper, dilution, method, preset, paper-size) */
+      .paper-btn,
+      .dilution-btn,
+      .method-btn,
+      .preset-btn,
+      .paper-size-btn {
         padding: 8px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
@@ -1223,67 +1161,32 @@
         font-size: 0.75rem;
       }
 
-      .dilution-btn.active {
+      .paper-size-btn {
+        padding: 6px;
+        font-size: 0.7rem;
+      }
+
+      .paper-btn.active,
+      .dilution-btn.active,
+      .method-btn.active,
+      .preset-btn.active,
+      .paper-size-btn.active {
         background: var(--button-bg);
         border-color: var(--button-border);
         font-weight: bold;
       }
 
-      .custom-dilution {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      .custom-dilution input {
-        flex: 1;
-        text-align: center;
-        padding: 4px 6px;
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.8rem;
-        font-family: monospace;
-      }
-
-      .custom-dilution input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-
-      /* Chemical Preset Styles */
-      .chemical-presets {
+      /* Contrast calculator styles */
+      .contrast-calculator {
         background: var(--panel);
         padding: 10px;
         border-radius: 4px;
         margin-top: 10px;
       }
 
-      .chemical-preset-list {
-        background: var(--panel-light);
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        max-height: 150px;
-        overflow-y: auto;
-        margin-bottom: 10px;
-      }
-
-      .chemical-preset-item {
+      .custom-dilution {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .chemical-preset-item:last-child {
-        border-bottom: none;
-      }
-
-      .chemical-preset-item.active {
-        background: var(--panel-lighter);
+        gap: 8px;
       }
 
       .chemical-preset-actions {
@@ -1350,54 +1253,6 @@
         margin-top: 5px;
       }
 
-      /* Paper Size Selector */
-      .paper-size-selector {
-        margin-top: 10px;
-        margin-bottom: 10px;
-      }
-
-      .paper-size-buttons {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-        margin-bottom: 8px;
-      }
-
-      .paper-size-btn {
-        padding: 6px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.7rem;
-      }
-
-      .paper-size-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
-      }
-
-      .custom-paper-size {
-        display: flex;
-        gap: 8px;
-        margin-top: 5px;
-      }
-
-      .custom-paper-size input {
-        flex: 1;
-        text-align: center;
-        padding: 4px 6px;
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.8rem;
-        font-family: monospace;
-      }
-
       /* Shelf life tracker */
       .shelf-life-tracker {
         background: var(--panel);
@@ -1426,17 +1281,6 @@
 
       .shelf-life-item:last-child {
         border-bottom: none;
-      }
-
-      .shelf-life-item.expiring {
-        background: var(--panel-lighter);
-        border-left: 3px solid var(--accent);
-      }
-
-      .shelf-life-item.expired {
-        background: var(--panel);
-        border-left: 3px solid var(--accent);
-        animation: pulse 2s infinite;
       }
 
       .shelf-life-days {
@@ -1532,16 +1376,7 @@
       .test-progress-container {
         margin: 15px 0;
       }
-
-      .test-progress-bar {
-        height: 6px;
-        background: var(--progress-bg);
-        border-radius: 3px;
-        overflow: hidden;
-        position: relative;
-      }
-
-      .test-progress-labels {
+      test-progress-labels {
         display: flex;
         justify-content: space-between;
         margin-top: 5px;
@@ -1582,10 +1417,6 @@
         font-size: 0.75rem;
         cursor: pointer;
         text-align: center;
-      }
-
-      .preset-btn:hover {
-        background: var(--panel-lighter);
       }
 
       /* Method selector styles */
@@ -1660,48 +1491,22 @@
 
       @keyframes pulse-glow {
         0% {
-          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4);
         }
-        70% {
-          box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
-        }
-      }
-
-      /* Light scheme adjustment */
-      body.light-scheme #autoAdvanceToggle:checked + .slider-switch {
-        animation: pulse-glow-light 2s infinite;
-      }
-
-      @keyframes pulse-glow-light {
-        0% {
-          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.7);
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(0, 102, 204, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0);
-        }
-      }
-
-      /* Day scheme adjustment */
-      body.day-scheme #autoAdvanceToggle:checked + .slider-switch {
-        animation: pulse-glow-day 2s infinite;
-      }
-
-      @keyframes pulse-glow-day {
-        0% {
-          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7);
-        }
-        70% {
+        50% {
           box-shadow: 0 0 0 10px rgba(255, 204, 0, 0);
         }
         100% {
           box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
         }
+      }
+
+      /* Method selector styles */
+      .method-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 5px;
       }
 
       /* For the timer tab profiles section */
@@ -2325,10 +2130,6 @@
 
       .segmented-control .segmented-btn:not(:last-child) {
         border-right: 1px solid var(--border);
-      }
-
-      .segmented-control .segmented-btn:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.02);
       }
 
       .segmented-control .segmented-btn.active,
@@ -4055,7 +3856,7 @@
           </div>
 
           <div class="settings-section">
-            <div class="settings-title">Relay Server Settings</div>
+            <div class="settings-title">Controller Manager</div>
             <div class="settings-group">
               <div class="settings-item">
                 <div class="settings-label">Server IP</div>
@@ -4107,83 +3908,6 @@
               </div>
             </div>
           </div>
-          <div class="settings-section">
-            <div class="settings-title">Safelight Auto-Off Status</div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Current Status</div>
-                <div
-                  id="safelightAutoOffStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  Loading...
-                </div>
-              </div>
-            </div>
-
-            <!-- Add this after the Auto-trigger Timer Relay setting -->
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Safelight Auto-Off</div>
-                <label class="switch">
-                  <input type="checkbox" id="safelightAutoOff" />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">&nbsp;</div>
-                <div
-                  style="
-                    font-size: 0.7rem;
-                    color: var(--text-secondary);
-                    text-align: center;
-                  "
-                >
-                  Turn off safelight when enlarger is on
-                </div>
-              </div>
-            </div>
-            <div class="settings-title">Timer Relay Settings</div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Auto-trigger Timer Relay</div>
-                <label class="switch">
-                  <input type="checkbox" id="autoTriggerRelay" checked />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Test Timer Relay</div>
-                <div style="display: flex; gap: 5px">
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="testTimerSeconds"
-                    value="5"
-                    min="0.1"
-                    max="60"
-                    step="0.1"
-                    style="flex: 1"
-                  />
-                  <button class="settings-btn" id="testTimerRelay">Test</button>
-                </div>
-              </div>
-            </div>
-            <div
-              style="
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-                margin-top: 10px;
-              "
-            >
-              Note: When enabled, the timer relay (GPIO 25) will automatically
-              trigger during countdown timers in CALC and F-STOP TEST tabs. Time
-              is sent as a single request with delay parameter for maximum
-              accuracy.
-            </div>
-          </div>
         </div>
       </div>
 
@@ -4216,254 +3940,337 @@
             </div>
           </div>
 
-          <!-- Global Settings Section -->
-          <div class="settings-section">
-            <div class="settings-title">Global Settings</div>
+          <!-- GLOBAL SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="global-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              GLOBAL SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Default Base Time (s)</div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    step="0.5"
+                    class="settings-input"
+                    id="settingBaseTime"
+                    value="10"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Default Stop Increment</div>
+                  <select id="settingStopIncrement" class="settings-input">
+                    <option value="1">1 stop</option>
+                    <option value="2">1/2 stop</option>
+                    <option value="3">1/3 stop</option>
+                    <option value="4">1/4 stop</option>
+                    <option value="6">1/6 stop</option>
+                  </select>
+                </div>
+              </div>
 
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Default Base Time (s)</div>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  step="0.5"
-                  class="settings-input"
-                  id="settingBaseTime"
-                  value="10"
-                />
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Countdown Delay (s)</div>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="1"
+                    class="settings-input"
+                    id="settingCountdownDelay"
+                    value="5"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Countdown Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingCountdownBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
               </div>
-              <div class="settings-item">
-                <div class="settings-label">Default Stop</div>
-                <input
-                  type="number"
-                  min="-6"
-                  max="6"
-                  step="1"
-                  class="settings-input"
-                  id="settingDefaultStop"
-                  value="0"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Default Stop Increment</div>
-                <select id="settingStopIncrement" class="settings-input">
-                  <option value="1">1 stop</option>
-                  <option value="2">1/2 stop</option>
-                  <option value="3">1/3 stop</option>
-                  <option value="4">1/4 stop</option>
-                  <option value="6">1/6 stop</option>
-                </select>
-              </div>
-            </div>
 
-            <div class="settings-title" style="margin-top: 12px">
-              Calc Settings
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Calc 3s Beep</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingCalcWarningBeep" checked />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Calc End Beep</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingCalcEndBeep" checked />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-            </div>
-
-            <!-- NEW: Countdown Settings -->
-            <div class="settings-title" style="margin-top: 15px">
-              Countdown Settings
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Countdown Delay (s)</div>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  step="1"
-                  class="settings-input"
-                  id="settingCountdownDelay"
-                  value="5"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Countdown Beep</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingCountdownBeep" checked />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-            </div>
-
-            <!-- NEW: Beep Pattern Settings -->
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Beep Pattern</div>
-                <select class="settings-input" id="settingCountdownPattern">
-                  <option value="every-second">Beep every second</option>
-                  <option value="last3">Beep last 3 seconds only</option>
-                  <option value="last5">Beep last 5 seconds only</option>
-                  <option value="none">No beeps</option>
-                </select>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Test Pattern</div>
-                <button
-                  class="settings-btn"
-                  id="testCountdownBeep"
-                  style="font-size: 0.7rem; padding: 4px 8px"
-                >
-                  Test Beep
-                </button>
-              </div>
-            </div>
-
-            <!-- NEW: Test Strip Auto Advance Setting -->
-            <div class="settings-title" style="margin-top: 15px">
-              Test Strip Settings
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Auto Advance</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingAutoAdvance" />
-                  <span class="slider-switch"></span>
-                </label>
-              </div>
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Auto Advance Delay (s)</div>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  step="1"
-                  class="settings-input"
-                  id="settingAutoAdvanceDelay"
-                  value="1"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">&nbsp;</div>
-                <div
-                  id="autoAdvanceDelayStatus"
-                  style="
-                    font-size: 0.7rem;
-                    color: var(--text-secondary);
-                    text-align: center;
-                  "
-                >
-                  Delay between test strip steps
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Beep Pattern</div>
+                  <select class="settings-input" id="settingCountdownPattern">
+                    <option value="every-second">Beep every second</option>
+                    <option value="last3">Beep last 3 seconds only</option>
+                    <option value="last5">Beep last 5 seconds only</option>
+                    <option value="none">No beeps</option>
+                  </select>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Test Pattern</div>
+                  <button
+                    class="settings-btn"
+                    id="testCountdownBeep"
+                    style="font-size: 0.7rem; padding: 4px 8px"
+                  >
+                    Test Beep
+                  </button>
                 </div>
               </div>
             </div>
+          </section>
 
-            <div class="settings-title" style="margin-top: 15px">
-              Timer Default Times
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Default Developer (s)</div>
-                <input
-                  type="number"
-                  min="5"
-                  max="600"
-                  step="5"
-                  class="settings-input time-input"
-                  id="settingDevTime"
-                  value="60"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Default Stop Bath (s)</div>
-                <input
-                  type="number"
-                  min="5"
-                  max="300"
-                  step="5"
-                  class="settings-input time-input"
-                  id="settingStopTime"
-                  value="30"
-                />
+          <!-- CALC SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="calc-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              CALC SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Calc 3s Beep</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingCalcWarningBeep"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Calc End Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingCalcEndBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
               </div>
             </div>
+          </section>
 
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Default Fixer (s)</div>
-                <input
-                  type="number"
-                  min="5"
-                  max="600"
-                  step="5"
-                  class="settings-input time-input"
-                  id="settingFixTime"
-                  value="300"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Default Photo Wash (s)</div>
-                <input
-                  type="number"
-                  min="5"
-                  max="300"
-                  step="5"
-                  class="settings-input time-input"
-                  id="settingFloTime"
-                  value="60"
-                />
+          <!-- TEST STRIP SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="test-strip-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              TEST STRIP SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Auto Advance</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingAutoAdvance" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Auto Advance Delay (s)</div>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="1"
+                    class="settings-input"
+                    id="settingAutoAdvanceDelay"
+                    value="1"
+                  />
+                </div>
               </div>
             </div>
+          </section>
 
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Timer Auto Start</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingAutoStart" checked />
-                  <span class="slider-switch"></span>
-                </label>
+          <!-- TIMER SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="timer-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              TIMER SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Default Developer (s)</div>
+                  <input
+                    type="number"
+                    min="5"
+                    max="600"
+                    step="5"
+                    class="settings-input time-input"
+                    id="settingDevTime"
+                    value="60"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Default Stop Bath (s)</div>
+                  <input
+                    type="number"
+                    min="5"
+                    max="300"
+                    step="5"
+                    class="settings-input time-input"
+                    id="settingStopTime"
+                    value="30"
+                  />
+                </div>
               </div>
-              <div class="settings-item">
-                <div class="settings-label">Timer 10s Beep</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingTimerWarningBeep" checked />
-                  <span class="slider-switch"></span>
-                </label>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Default Fixer (s)</div>
+                  <input
+                    type="number"
+                    min="5"
+                    max="600"
+                    step="5"
+                    class="settings-input time-input"
+                    id="settingFixTime"
+                    value="300"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Default Photo Wash (s)</div>
+                  <input
+                    type="number"
+                    min="5"
+                    max="300"
+                    step="5"
+                    class="settings-input time-input"
+                    id="settingFloTime"
+                    value="60"
+                  />
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Timer Auto Start</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingAutoStart" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Timer 10s Beep</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingTimerWarningBeep"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Timer End Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingTimerEndBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Default Photo Wash</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingDefaultPhotoFlo"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
               </div>
             </div>
+          </section>
 
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Timer End Beep</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingTimerEndBeep" checked />
-                  <span class="slider-switch"></span>
-                </label>
+          <!-- CONTROLLER SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="controller-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              CONTROLLER SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div
+                    id="safelightAutoOffStatus"
+                    style="color: var(--text-secondary); font-size: 0.8rem"
+                  >
+                    Loading...
+                  </div>
+                </div>
               </div>
-              <div class="settings-item">
-                <div class="settings-label">Default Photo Wash</div>
-                <label class="switch">
-                  <input type="checkbox" id="settingDefaultPhotoFlo" checked />
-                  <span class="slider-switch"></span>
-                </label>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Safelight Auto-Off</div>
+                  <label class="switch">
+                    <input type="checkbox" id="safelightAutoOff" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">&nbsp;</div>
+                  <div
+                    style="
+                      font-size: 0.7rem;
+                      color: var(--text-secondary);
+                      text-align: center;
+                    "
+                  >
+                    Turn off safelight when enlarger is on
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-title" style="margin-top: 12px">
+                Auto - Manual Enlarger Control
+              </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Auto-trigger Enlarger</div>
+                  <label class="switch">
+                    <input type="checkbox" id="autoTriggerRelay" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Test Timer Relay</div>
+                  <div style="display: flex; gap: 5px">
+                    <input
+                      type="number"
+                      class="settings-input"
+                      id="testTimerSeconds"
+                      value="5"
+                      min="0.1"
+                      max="60"
+                      step="0.1"
+                      style="flex: 1"
+                    />
+                    <button class="settings-btn" id="testTimerRelay">
+                      Test
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style="
+                  font-size: 0.7rem;
+                  color: var(--text-secondary);
+                  margin-top: 10px;
+                "
+              >
+                Note: When enabled, the timer relay (GPIO 25) will automatically
+                trigger during countdown timers in CALC and F-STOP TEST tabs.
+                Time is sent as a single request with delay parameter for
+                maximum accuracy.
               </div>
             </div>
+          </section>
 
+          <div class="settings-section">
             <button class="settings-btn primary" id="saveGlobalSettings">
-              Save Global Settings
+              Save All Settings
             </button>
           </div>
 
@@ -4564,7 +4371,6 @@
       // Default settings - UPDATED with countdown settings AND auto advance
       const DEFAULT_SETTINGS = {
         baseTime: 10.0,
-        defaultStop: 0,
         devTime: 60,
         stopTime: 30,
         fixTime: 300,
@@ -4577,16 +4383,14 @@
         defaultPhotoFlo: true,
         currentProfile: null,
         colorScheme: "dark",
+        // Countdown settings
         countdownDelay: 5, // Countdown delay in seconds
         countdownBeep: true, // Countdown beep enabled
-        countdownPattern: "every-second", // NEW: Countdown beep pattern
-        autoAdvance: false, // NEW: Test strip auto advance
-        countdownDelay: 5,
-        countdownBeep: true,
-        countdownPattern: "every-second",
+        countdownPattern: "every-second", // Countdown beep pattern: 'every-second'|'last3'|'last5'|'none'
+        // Test strip auto-advance
         autoAdvance: false,
         autoAdvanceDelay: 1,
-        safelightAutoOff: true, // NEW: Turn off safelight when enlarger is on
+        safelightAutoOff: true, // Turn off safelight when enlarger is on
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
       };
 
@@ -4694,188 +4498,111 @@
 
       // Storage Manager - UPDATED
       class StorageManager {
-        static saveSettings(settings) {
+        // Generic helpers to avoid duplicated try/catch
+        static saveJSON(key, value) {
           try {
-            localStorage.setItem(
-              STORAGE_KEYS.SETTINGS,
-              JSON.stringify(settings)
-            );
+            localStorage.setItem(key, JSON.stringify(value));
             return true;
           } catch (e) {
-            console.error("Failed to save settings:", e);
+            console.error(`Failed to save ${key}:`, e);
             return false;
           }
         }
 
-        static loadSettings() {
+        static loadJSON(key, fallback) {
           try {
-            const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-            return saved ? JSON.parse(saved) : { ...DEFAULT_SETTINGS };
+            const saved = localStorage.getItem(key);
+            return saved ? JSON.parse(saved) : fallback;
           } catch (e) {
-            console.error("Failed to load settings:", e);
-            return { ...DEFAULT_SETTINGS };
+            console.error(`Failed to load ${key}:`, e);
+            return fallback;
           }
         }
 
-        static saveProfiles(profiles) {
+        static removeKeys(keys) {
           try {
-            localStorage.setItem(
-              STORAGE_KEYS.PROFILES,
-              JSON.stringify(profiles)
-            );
-            return true;
-          } catch (e) {
-            console.error("Failed to save profiles:", e);
-            return false;
-          }
-        }
-
-        static loadProfiles() {
-          try {
-            const saved = localStorage.getItem(STORAGE_KEYS.PROFILES);
-            return saved ? JSON.parse(saved) : [];
-          } catch (e) {
-            console.error("Failed to load profiles:", e);
-            return [];
-          }
-        }
-
-        static saveCurrentProfile(profileName) {
-          try {
-            localStorage.setItem(STORAGE_KEYS.CURRENT_PROFILE, profileName);
-            return true;
-          } catch (e) {
-            console.error("Failed to save current profile:", e);
-            return false;
-          }
-        }
-
-        static loadCurrentProfile() {
-          try {
-            return localStorage.getItem(STORAGE_KEYS.CURRENT_PROFILE);
-          } catch (e) {
-            console.error("Failed to load current profile:", e);
-            return null;
-          }
-        }
-
-        static saveColorScheme(scheme) {
-          try {
-            localStorage.setItem(STORAGE_KEYS.COLOR_SCHEME, scheme);
-            return true;
-          } catch (e) {
-            console.error("Failed to save color scheme:", e);
-            return false;
-          }
-        }
-
-        static loadColorScheme() {
-          try {
-            return localStorage.getItem(STORAGE_KEYS.COLOR_SCHEME) || "dark";
-          } catch (e) {
-            console.error("Failed to load color scheme:", e);
-            return "dark";
-          }
-        }
-
-        // Chemical presets storage
-        static saveChemicalPresets(presets) {
-          try {
-            localStorage.setItem(
-              STORAGE_KEYS.CHEMICAL_PRESETS,
-              JSON.stringify(presets)
-            );
-            return true;
-          } catch (e) {
-            console.error("Failed to save chemical presets:", e);
-            return false;
-          }
-        }
-
-        static loadChemicalPresets() {
-          try {
-            const saved = localStorage.getItem(STORAGE_KEYS.CHEMICAL_PRESETS);
-            return saved ? JSON.parse(saved) : [];
-          } catch (e) {
-            console.error("Failed to load chemical presets:", e);
-            return [];
-          }
-        }
-
-        // Capacity tracker storage - UPDATED with area calculations
-        static saveCapacityTracker(data) {
-          try {
-            localStorage.setItem(
-              STORAGE_KEYS.CAPACITY_TRACKER,
-              JSON.stringify(data)
-            );
-            return true;
-          } catch (e) {
-            console.error("Failed to save capacity tracker:", e);
-            return false;
-          }
-        }
-
-        static loadCapacityTracker() {
-          try {
-            const saved = localStorage.getItem(STORAGE_KEYS.CAPACITY_TRACKER);
-            return saved
-              ? JSON.parse(saved)
-              : {
-                  printsDone: 0,
-                  areaUsed: 0,
-                  paperSize: 0.052,
-                  lastReset: new Date().toISOString(),
-                };
-          } catch (e) {
-            console.error("Failed to load capacity tracker:", e);
-            return {
-              printsDone: 0,
-              areaUsed: 0,
-              paperSize: 0.052,
-              lastReset: new Date().toISOString(),
-            };
-          }
-        }
-
-        // Shelf life storage
-        static saveShelfLife(chemicals) {
-          try {
-            localStorage.setItem(
-              STORAGE_KEYS.SHELF_LIFE,
-              JSON.stringify(chemicals)
-            );
-            return true;
-          } catch (e) {
-            console.error("Failed to save shelf life:", e);
-            return false;
-          }
-        }
-
-        static loadShelfLife() {
-          try {
-            const saved = localStorage.getItem(STORAGE_KEYS.SHELF_LIFE);
-            return saved ? JSON.parse(saved) : [];
-          } catch (e) {
-            console.error("Failed to load shelf life:", e);
-            return [];
-          }
-        }
-
-        static clearAll() {
-          try {
-            localStorage.removeItem(STORAGE_KEYS.SETTINGS);
-            localStorage.removeItem(STORAGE_KEYS.PROFILES);
-            localStorage.removeItem(STORAGE_KEYS.CURRENT_PROFILE);
-            localStorage.removeItem(STORAGE_KEYS.COLOR_SCHEME);
-            localStorage.removeItem(STORAGE_KEYS.CHEMICAL_PRESETS);
-            localStorage.removeItem(STORAGE_KEYS.CAPACITY_TRACKER);
-            localStorage.removeItem(STORAGE_KEYS.SHELF_LIFE);
+            keys.forEach((k) => localStorage.removeItem(k));
             return true;
           } catch (e) {
             console.error("Failed to clear storage:", e);
             return false;
           }
+        }
+
+        static saveSettings(settings) {
+          return this.saveJSON(STORAGE_KEYS.SETTINGS, settings);
+        }
+
+        static loadSettings() {
+          return this.loadJSON(STORAGE_KEYS.SETTINGS, { ...DEFAULT_SETTINGS });
+        }
+
+        static saveProfiles(profiles) {
+          return this.saveJSON(STORAGE_KEYS.PROFILES, profiles);
+        }
+
+        static loadProfiles() {
+          return this.loadJSON(STORAGE_KEYS.PROFILES, []);
+        }
+
+        static saveCurrentProfile(profileName) {
+          return this.saveJSON(STORAGE_KEYS.CURRENT_PROFILE, profileName);
+        }
+
+        static loadCurrentProfile() {
+          return this.loadJSON(STORAGE_KEYS.CURRENT_PROFILE, null);
+        }
+
+        static saveColorScheme(scheme) {
+          return this.saveJSON(STORAGE_KEYS.COLOR_SCHEME, scheme);
+        }
+
+        static loadColorScheme() {
+          return this.loadJSON(STORAGE_KEYS.COLOR_SCHEME, "dark");
+        }
+
+        // Chemical presets storage
+        static saveChemicalPresets(presets) {
+          return this.saveJSON(STORAGE_KEYS.CHEMICAL_PRESETS, presets);
+        }
+
+        static loadChemicalPresets() {
+          return this.loadJSON(STORAGE_KEYS.CHEMICAL_PRESETS, []);
+        }
+
+        // Capacity tracker storage - UPDATED with area calculations
+        static saveCapacityTracker(data) {
+          return this.saveJSON(STORAGE_KEYS.CAPACITY_TRACKER, data);
+        }
+
+        static loadCapacityTracker() {
+          return this.loadJSON(STORAGE_KEYS.CAPACITY_TRACKER, {
+            printsDone: 0,
+            areaUsed: 0,
+            paperSize: 0.052,
+            lastReset: new Date().toISOString(),
+          });
+        }
+
+        // Shelf life storage
+        static saveShelfLife(chemicals) {
+          return this.saveJSON(STORAGE_KEYS.SHELF_LIFE, chemicals);
+        }
+
+        static loadShelfLife() {
+          return this.loadJSON(STORAGE_KEYS.SHELF_LIFE, []);
+        }
+
+        static clearAll() {
+          return this.removeKeys([
+            STORAGE_KEYS.SETTINGS,
+            STORAGE_KEYS.PROFILES,
+            STORAGE_KEYS.CURRENT_PROFILE,
+            STORAGE_KEYS.COLOR_SCHEME,
+            STORAGE_KEYS.CHEMICAL_PRESETS,
+            STORAGE_KEYS.CAPACITY_TRACKER,
+            STORAGE_KEYS.SHELF_LIFE,
+          ]);
         }
       }
 
@@ -5396,9 +5123,6 @@
             baseTime: parseFloat(
               document.getElementById("settingBaseTime").value
             ),
-            defaultStop: parseInt(
-              document.getElementById("settingDefaultStop").value
-            ),
             devTime: parseInt(document.getElementById("settingDevTime").value),
             stopTime: parseInt(
               document.getElementById("settingStopTime").value
@@ -5764,10 +5488,23 @@
         }
 
         exportAllData() {
+          // Ensure we export the latest UI state
+          this.readSettingsFromUI();
+
+          // Normalize settings to guarantee stop increment is present and numeric
+          const settingsToExport = {
+            ...DEFAULT_SETTINGS,
+            ...this.settings,
+            stopDenominator:
+              parseInt(this.settings.stopDenominator, 10) ||
+              DEFAULT_SETTINGS.stopDenominator,
+          };
+
           const exportData = {
             app: "Darkroom Timer",
             version: "2.9.1",
             exportDate: new Date().toISOString(),
+            settings: settingsToExport,
             timerProfiles: this.profiles,
             chemicalPresets: window.chemicalManager
               ? window.chemicalManager.chemicalPresets
@@ -5800,6 +5537,21 @@
           try {
             const data = JSON.parse(jsonData);
             let importedCount = 0;
+
+            // Import global settings
+            if (data.settings && typeof data.settings === "object") {
+              this.settings = { ...DEFAULT_SETTINGS, ...data.settings };
+              this.colorScheme = this.settings.colorScheme || "dark";
+              StorageManager.saveSettings(this.settings);
+              StorageManager.saveColorScheme(this.colorScheme);
+              this.applyColorScheme();
+              this.applySoundSettings();
+              this.applySettingsToRuntime();
+              if (typeof loadSettingsToUI === "function") {
+                loadSettingsToUI();
+              }
+              importedCount++;
+            }
 
             // Import timer profiles
             if (data.timerProfiles && Array.isArray(data.timerProfiles)) {
@@ -7385,8 +7137,6 @@
 
         document.getElementById("settingBaseTime").value =
           settingsManager.settings.baseTime;
-        document.getElementById("settingDefaultStop").value =
-          settingsManager.settings.defaultStop;
         document.getElementById("settingDevTime").value =
           settingsManager.settings.devTime;
         document.getElementById("settingStopTime").value =
@@ -9859,7 +9609,6 @@
         (function bindLiveSettings() {
           const toBind = [
             { id: "settingBaseTime", evt: "input" },
-            { id: "settingDefaultStop", evt: "input" },
             { id: "settingDevTime", evt: "input" },
             { id: "settingStopTime", evt: "input" },
             { id: "settingFixTime", evt: "input" },
@@ -10389,7 +10138,7 @@
           const STORAGE_KEY = "calc_collapsed";
           let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
           const sections = document.querySelectorAll(
-            "#calc .collapsible, #chemical .collapsible, #timer .collapsible"
+            "#calc .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible"
           );
           // Clean up any stored keys that no longer correspond to existing sections
           const existingIds = Array.from(sections)
