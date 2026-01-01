@@ -771,19 +771,10 @@
         min-width: 50px;
       }
 
-      .profile-btn:hover {
-        background: var(--button-active-bg);
-      }
-
       .profile-btn.delete {
         background: var(--button-bg);
         border-color: var(--accent);
         color: var(--accent);
-      }
-
-      .profile-btn.delete:hover {
-        background: var(--button-active-bg);
-        border-color: var(--accent);
       }
 
       .settings-btn {
@@ -797,26 +788,13 @@
         width: 100%;
       }
 
-      .settings-btn:hover {
-        background: var(--button-active-bg);
-      }
-
       .settings-btn.primary {
         background: var(--button-active-bg);
         border-color: var(--button-active-border);
       }
 
-      .settings-btn.primary:hover {
-        background: var(--button-bg);
-      }
-
       .settings-btn.danger {
         background: var(--button-bg);
-        border-color: var(--accent);
-      }
-
-      .settings-btn.danger:hover {
-        background: var(--button-active-bg);
         border-color: var(--accent);
       }
 
@@ -1584,10 +1562,6 @@
         text-align: center;
       }
 
-      .preset-btn:hover {
-        background: var(--panel-lighter);
-      }
-
       /* Method selector styles */
       .method-selector {
         display: grid;
@@ -2325,10 +2299,6 @@
 
       .segmented-control .segmented-btn:not(:last-child) {
         border-right: 1px solid var(--border);
-      }
-
-      .segmented-control .segmented-btn:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.02);
       }
 
       .segmented-control .segmented-btn.active,
@@ -10123,214 +10093,6 @@
         // Initialize audio context on any user interaction
         document.addEventListener("click", initAudioContext);
         document.addEventListener("keydown", initAudioContext);
-
-        // Keyboard shortcuts
-        document.addEventListener("keydown", (e) => {
-          if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
-            return;
-
-          const activeTab = document
-            .querySelector(".tab-button.active")
-            .getAttribute("data-tab");
-
-          switch (e.key) {
-            case "1":
-              switchTab("calc");
-              break;
-            case "2":
-              switchTab("chart");
-              break;
-            case "3":
-              switchTab("fstop-test");
-              break;
-            case "4":
-              switchTab("chemical");
-              break;
-            case "5":
-              switchTab("timer");
-              break;
-            case "6":
-              switchTab("settings");
-              break;
-            case "ArrowLeft":
-              if (activeTab === "calc") {
-                if (e.altKey) {
-                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) - 0.5;
-                  window.incrementalTimer.updateFromSliders();
-                } else {
-                  stopSlider.value = parseInt(stopSlider.value) - 1;
-                  window.incrementalTimer.updateFromSliders();
-                }
-              } else if (activeTab === "chart") {
-                if (typeof baseTimeSlider !== "undefined" && baseTimeSlider) {
-                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) - 0.5;
-                  // trigger the calculator display update which also updates the chart
-                  if (window.incrementalTimer)
-                    window.incrementalTimer.updateFromSliders();
-                } else if (
-                  typeof chartBaseSlider !== "undefined" &&
-                  chartBaseSlider
-                ) {
-                  chartBaseSlider.value =
-                    parseFloat(chartBaseSlider.value) - 0.5;
-                  updateChart();
-                }
-              } else if (activeTab === "fstop-test") {
-                window.fstopTestGenerator.testBaseSlider.value =
-                  parseFloat(window.fstopTestGenerator.testBaseSlider.value) -
-                  0.5;
-                window.fstopTestGenerator.updateFromControls();
-              } else if (activeTab === "chemical") {
-                if (window.chemicalManager) {
-                  window.chemicalManager.totalVolumeSlider.value =
-                    parseInt(window.chemicalManager.totalVolumeSlider.value) -
-                    50;
-                  window.chemicalManager.updateMixCalculator();
-                }
-              }
-              break;
-            case "ArrowRight":
-              if (activeTab === "calc") {
-                if (e.altKey) {
-                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) + 0.5;
-                  window.incrementalTimer.updateFromSliders();
-                } else {
-                  stopSlider.value = parseInt(stopSlider.value) + 1;
-                  window.incrementalTimer.updateFromSliders();
-                }
-              } else if (activeTab === "chart") {
-                if (typeof baseTimeSlider !== "undefined" && baseTimeSlider) {
-                  baseTimeSlider.value = parseFloat(baseTimeSlider.value) + 0.5;
-                  if (window.incrementalTimer)
-                    window.incrementalTimer.updateFromSliders();
-                } else if (
-                  typeof chartBaseSlider !== "undefined" &&
-                  chartBaseSlider
-                ) {
-                  chartBaseSlider.value =
-                    parseFloat(chartBaseSlider.value) + 0.5;
-                  updateChart();
-                }
-              } else if (activeTab === "fstop-test") {
-                window.fstopTestGenerator.testBaseSlider.value =
-                  parseFloat(window.fstopTestGenerator.testBaseSlider.value) +
-                  0.5;
-                window.fstopTestGenerator.updateFromControls();
-              } else if (activeTab === "chemical") {
-                if (window.chemicalManager) {
-                  window.chemicalManager.totalVolumeSlider.value =
-                    parseInt(window.chemicalManager.totalVolumeSlider.value) +
-                    50;
-                  window.chemicalManager.updateMixCalculator();
-                }
-              }
-              break;
-            case "ArrowUp":
-              if (activeTab === "fstop-test") {
-                window.fstopTestGenerator.testStepsSlider.value =
-                  parseInt(window.fstopTestGenerator.testStepsSlider.value) + 1;
-                window.fstopTestGenerator.updateFromControls();
-              } else if (activeTab === "chemical") {
-                if (window.chemicalManager) {
-                  window.chemicalManager.capacitySlider.value =
-                    parseFloat(window.chemicalManager.capacitySlider.value) +
-                    0.1;
-                  window.chemicalManager.updateCapacityDisplay();
-                }
-              }
-              break;
-            case "ArrowDown":
-              if (activeTab === "fstop-test") {
-                window.fstopTestGenerator.testStepsSlider.value =
-                  parseInt(window.fstopTestGenerator.testStepsSlider.value) - 1;
-                window.fstopTestGenerator.updateFromControls();
-              } else if (activeTab === "chemical") {
-                if (window.chemicalManager) {
-                  window.chemicalManager.capacitySlider.value =
-                    parseFloat(window.chemicalManager.capacitySlider.value) -
-                    0.1;
-                  window.chemicalManager.updateCapacityDisplay();
-                }
-              }
-              break;
-            case "Home":
-              baseTimeSlider.value = 10;
-              stopSlider.value = 0;
-              chartBaseSlider.value = 10;
-              window.incrementalTimer.updateFromSliders();
-              break;
-            case " ":
-              if (activeTab === "calc") {
-                e.preventDefault();
-                window.incrementalTimer.toggle();
-              } else if (activeTab === "fstop-test") {
-                e.preventDefault();
-                window.fstopTestGenerator.toggle();
-              }
-              break;
-            case "r":
-            case "R":
-              if (activeTab === "calc") {
-                window.incrementalTimer.reset();
-              } else if (activeTab === "fstop-test") {
-                window.fstopTestGenerator.reset();
-              } else if (activeTab === "chemical") {
-                if (window.chemicalManager) {
-                  window.chemicalManager.resetPrints();
-                }
-              }
-              break;
-            case "n":
-            case "N":
-              if (activeTab === "fstop-test" && window.fstopTestGenerator) {
-                // Allow Next Step when:
-                // 1. Not currently running a step
-                // 2. Not currently in a countdown
-                // 3. Has more steps available
-                // 4. Auto advance is OFF (or we wouldn't need to press N)
-                const canProceed =
-                  !window.fstopTestGenerator.isRunning &&
-                  !window.fstopTestGenerator.isPaused &&
-                  window.fstopTestGenerator.currentStep <
-                    window.fstopTestGenerator.steps.length &&
-                  !window.fstopTestGenerator.autoAdvance;
-
-                // Also allow if paused between steps
-                const isPausedBetweenSteps =
-                  window.fstopTestGenerator.isPaused &&
-                  !window.fstopTestGenerator.autoAdvance &&
-                  window.fstopTestGenerator.currentStep <
-                    window.fstopTestGenerator.steps.length - 1;
-
-                if (canProceed || isPausedBetweenSteps) {
-                  window.fstopTestGenerator.nextStep();
-                }
-              }
-              break;
-            case "a":
-            case "A":
-              if (activeTab === "fstop-test") {
-                e.preventDefault();
-                const currentState = window.fstopTestGenerator.autoAdvance;
-                window.fstopTestGenerator.setAutoAdvance(!currentState);
-
-                // Visual feedback
-                const toggle = document.getElementById("autoAdvanceToggle");
-                if (toggle) {
-                  toggle.style.transform = "scale(1.2)";
-                  setTimeout(() => {
-                    toggle.style.transform = "";
-                  }, 300);
-                }
-              }
-              break;
-            case "t":
-            case "T":
-              // Test beep from any tab
-              playBeep();
-              break;
-          }
-        });
 
         // Initialize collapsible rows in the CALC, CHEMICAL and TIMER tabs
         (function initCalcCollapsibles() {
