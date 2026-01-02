@@ -8,6 +8,19 @@
     />
     <title>Darkroom Timer</title>
     <style>
+      /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
+      /* The following similar classes have been consolidated:
+         1. Input fields: .input-field + .settings-input merged
+         2. List containers: .profile-list + .chemical-preset-list merged
+         3. List items: .list-item + .chemical-preset-item merged
+         4. Toggle buttons: .btn-toggle consolidates .paper-btn, .dilution-btn, 
+            .paper-size-btn, .preset-btn, .method-btn
+         5. Action buttons: .btn-action consolidates .chemical-preset-btn, 
+            .shelf-life-btn, .profile-btn
+         6. Flexible buttons: .btn-flex consolidates .capacity-btn, .repeat-btn
+         All variants use the same base styles with class-specific overrides.
+      */
+
       /* ===== CSS VARIABLES - PRECISE MATCH TO ORIGINAL ===== */
       :root {
         /* Dark Scheme (Original Default) - EXACT matches */
@@ -18,7 +31,7 @@
 
         --accent: #f00;
         --accent-dark: #700;
-        --accent-light: #f00;
+        --accent-light: var(--accent);
 
         --panel: #100;
         --panel-light: #200;
@@ -30,20 +43,7 @@
         --border-lighter: #600;
         --border-dark: #200;
 
-        --button-bg: #300;
-        --button-border: #600;
-        --button-active-bg: #600;
-        --button-active-border: #f00;
         --button-disabled-bg: #150;
-        --button-disabled-border: #400;
-        --button-disabled-text: #900;
-
-        --switch-bg: #300;
-        --switch-active: #f00;
-        --switch-knob: #000;
-
-        --progress-bg: #300;
-        --progress-fill: #f00;
 
         --success-bg: #0a0;
         --success-border: #080;
@@ -54,54 +54,11 @@
         --warning-light: #ffaa00;
 
         --slider-track: linear-gradient(to right, #300, #600, #f00);
-        --slider-thumb-bg: #000;
-        --slider-thumb-border: #f00;
+        --slider-thumb-bg: var(--bg);
+        --slider-thumb-border: var(--accent);
 
         /* Specific component colors that were different in original */
-        --header-border: #300;
-        --footer-border: #300;
-        --tab-inactive: #900;
-        --tab-border: #300;
-
-        --timer-box-bg: #100;
-        --timer-box-border: #300;
-        --timer-box-running-bg: #200;
-        --timer-box-complete-bg: #300;
-
-        --info-box-bg: #200;
-        --info-box-border: #300;
-
-        --settings-panel-bg: #100;
-        --settings-section-border: #300;
-        --settings-input-bg: #200;
-        --settings-input-border: #400;
-
-        --profile-list-bg: #200;
-        --profile-list-border: #300;
-        --profile-item-bg: #300;
-
-        --chemical-calc-bg: #100;
-        --chemical-results-bg: #200;
-        --chemical-result-box-bg: #300;
-
-        --test-strip-preview-bg: #100;
-        --test-strip-border: #300;
-        --test-step-bg: #300;
-        --test-step-active-bg: #400;
-
-        --json-btn-bg: #300;
-        --json-btn-border: #600;
-
-        --fullscreen-btn-bg: #400;
         --fullscreen-btn-border: #700;
-
-        --legend-color-exposed: #300;
-        --legend-color-masked: #000;
-
-        /* Countdown specific */
-        --countdown-bg: #300;
-        --countdown-bg-final: #400;
-        --countdown-text: #f00;
       }
 
       /* Light Scheme - EXACT matches to original */
@@ -131,16 +88,16 @@
         --button-border: #0055aa;
         --button-active-bg: #004488;
         --button-active-border: #003366;
-        --button-disabled-bg: #aaa;
+        --button-disabled-bg: var(--border-lighter);
         --button-disabled-border: #888;
-        --button-disabled-text: #666;
+        --button-disabled-text: var(--text-secondary);
 
-        --switch-bg: #ccc;
-        --switch-active: #0066cc;
+        --switch-bg: var(--border-light);
+        --switch-active: var(--accent-light);
         --switch-knob: #fff;
 
-        --progress-bg: #ccc;
-        --progress-fill: #0066cc;
+        --progress-bg: var(--border-light);
+        --progress-fill: var(--accent-light);
 
         --success-bg: #0a0;
         --success-border: #080;
@@ -150,55 +107,60 @@
         --warning: #ff5500;
         --warning-light: #ffaa00;
 
-        --slider-track: linear-gradient(to right, #ddd, #999, #0066cc);
-        --slider-thumb-bg: #f8f8f8;
-        --slider-thumb-border: #0066cc;
+        --slider-track: linear-gradient(
+          to right,
+          var(--border),
+          #999,
+          var(--accent-light)
+        );
+        --slider-thumb-bg: var(--bg);
+        --slider-thumb-border: var(--accent-light);
 
         /* Specific component colors */
-        --header-border: #ddd;
-        --footer-border: #ddd;
-        --tab-inactive: #333;
-        --tab-border: #ddd;
+        --header-border: var(--border);
+        --footer-border: var(--border);
+        --tab-inactive: var(--text);
+        --tab-border: var(--border);
 
-        --timer-box-bg: #eee;
-        --timer-box-border: #ddd;
-        --timer-box-running-bg: #eee;
-        --timer-box-complete-bg: #eee;
+        --timer-box-bg: var(--panel);
+        --timer-box-border: var(--border);
+        --timer-box-running-bg: var(--panel);
+        --timer-box-complete-bg: var(--panel);
 
-        --info-box-bg: #f0f0f0;
-        --info-box-border: #ccc;
+        --info-box-bg: var(--panel-light);
+        --info-box-border: var(--border-light);
 
-        --settings-panel-bg: #eee;
-        --settings-section-border: #ddd;
+        --settings-panel-bg: var(--panel);
+        --settings-section-border: var(--border);
         --settings-input-bg: #fff;
-        --settings-input-border: #ccc;
+        --settings-input-border: var(--border-light);
 
         --profile-list-bg: #fff;
-        --profile-list-border: #ddd;
+        --profile-list-border: var(--border);
         --profile-item-bg: #e6f0ff;
 
-        --chemical-calc-bg: #eee;
-        --chemical-results-bg: #f0f0f0;
-        --chemical-result-box-bg: #e0e0e0;
+        --chemical-calc-bg: var(--panel);
+        --chemical-results-bg: var(--panel-light);
+        --chemical-result-box-bg: var(--panel-dark);
 
-        --test-strip-preview-bg: #eee;
-        --test-strip-border: #ccc;
-        --test-step-bg: #0066cc;
-        --test-step-active-bg: #cce5ff;
+        --test-strip-preview-bg: var(--panel);
+        --test-strip-border: var(--border-light);
+        --test-step-bg: var(--accent-light);
+        --test-step-active-bg: var(--panel-lighter);
 
-        --json-btn-bg: #0066cc;
-        --json-btn-border: #0055aa;
+        --json-btn-bg: var(--accent-light);
+        --json-btn-border: var(--accent-dark);
 
-        --fullscreen-btn-bg: #0066cc;
-        --fullscreen-btn-border: #0055aa;
+        --fullscreen-btn-bg: var(--accent-light);
+        --fullscreen-btn-border: var(--accent-dark);
 
-        --legend-color-exposed: #0066cc;
-        --legend-color-masked: #000;
+        --legend-color-exposed: var(--accent-light);
+        --legend-color-masked: var(--bg);
 
         /* Countdown specific */
-        --countdown-bg: #cce5ff;
-        --countdown-bg-final: #0066cc;
-        --countdown-text: #0066cc;
+        --countdown-bg: var(--panel-lighter);
+        --countdown-bg-final: var(--accent-light);
+        --countdown-text: var(--accent-light);
       }
 
       /* Day Scheme - EXACT matches to original */
@@ -210,9 +172,9 @@
 
         --accent: #ffcc00;
         --accent-dark: #e6b800;
-        --accent-light: #ffcc00;
+        --accent-light: var(--accent);
 
-        --title: #ffcc00;
+        --title: var(--accent);
 
         --panel: #2a2a2a;
         --panel-light: #333;
@@ -224,20 +186,20 @@
         --border-lighter: #555;
         --border-dark: #333;
 
-        --button-bg: #ffcc00;
-        --button-border: #e6b800;
-        --button-active-bg: #e6b800;
+        --button-bg: var(--accent);
+        --button-border: var(--accent-dark);
+        --button-active-bg: var(--accent-dark);
         --button-active-border: #cc9900;
         --button-disabled-bg: #666;
-        --button-disabled-border: #555;
-        --button-disabled-text: #999;
+        --button-disabled-border: var(--border-lighter);
+        --button-disabled-text: var(--text-disabled);
 
-        --switch-bg: #444;
-        --switch-active: #ffcc00;
-        --switch-knob: #1a1a1a;
+        --switch-bg: var(--border-light);
+        --switch-active: var(--accent);
+        --switch-knob: var(--bg);
 
-        --progress-bg: #444;
-        --progress-fill: #ffcc00;
+        --progress-bg: var(--border-light);
+        --progress-fill: var(--accent);
 
         --success-bg: #0a0;
         --success-border: #080;
@@ -247,55 +209,60 @@
         --warning: #ff5500;
         --warning-light: #ffaa00;
 
-        --slider-track: linear-gradient(to right, #333, #666, #ffcc00);
-        --slider-thumb-bg: #1a1a1a;
-        --slider-thumb-border: #ffcc00;
+        --slider-track: linear-gradient(
+          to right,
+          var(--border),
+          #666,
+          var(--accent)
+        );
+        --slider-thumb-bg: var(--bg);
+        --slider-thumb-border: var(--accent);
 
         /* Specific component colors */
-        --header-border: #333;
-        --footer-border: #333;
-        --tab-inactive: #fff;
-        --tab-border: #333;
+        --header-border: var(--border);
+        --footer-border: var(--border);
+        --tab-inactive: var(--text);
+        --tab-border: var(--border);
 
-        --timer-box-bg: #2a2a2a;
-        --timer-box-border: #333;
-        --timer-box-running-bg: #2a2a2a;
-        --timer-box-complete-bg: #2a2a2a;
+        --timer-box-bg: var(--panel);
+        --timer-box-border: var(--border);
+        --timer-box-running-bg: var(--panel);
+        --timer-box-complete-bg: var(--panel);
 
-        --info-box-bg: #2a2a2a;
-        --info-box-border: #444;
+        --info-box-bg: var(--panel);
+        --info-box-border: var(--border-light);
 
-        --settings-panel-bg: #2a2a2a;
-        --settings-section-border: #333;
-        --settings-input-bg: #1a1a1a;
-        --settings-input-border: #444;
+        --settings-panel-bg: var(--panel);
+        --settings-section-border: var(--border);
+        --settings-input-bg: var(--bg);
+        --settings-input-border: var(--border-light);
 
-        --profile-list-bg: #1a1a1a;
-        --profile-list-border: #333;
-        --profile-item-bg: #333;
+        --profile-list-bg: var(--bg);
+        --profile-list-border: var(--border);
+        --profile-item-bg: var(--panel-light);
 
-        --chemical-calc-bg: #2a2a2a;
-        --chemical-results-bg: #2a2a2a;
-        --chemical-result-box-bg: #333;
+        --chemical-calc-bg: var(--panel);
+        --chemical-results-bg: var(--panel);
+        --chemical-result-box-bg: var(--panel-light);
 
-        --test-strip-preview-bg: #2a2a2a;
-        --test-strip-border: #444;
-        --test-step-bg: #ffcc00;
-        --test-step-active-bg: #ffcc00;
+        --test-strip-preview-bg: var(--panel);
+        --test-strip-border: var(--border-light);
+        --test-step-bg: var(--accent);
+        --test-step-active-bg: var(--accent);
 
-        --json-btn-bg: #ffcc00;
-        --json-btn-border: #e6b800;
+        --json-btn-bg: var(--accent);
+        --json-btn-border: var(--accent-dark);
 
-        --fullscreen-btn-bg: #ffcc00;
-        --fullscreen-btn-border: #e6b800;
+        --fullscreen-btn-bg: var(--accent);
+        --fullscreen-btn-border: var(--accent-dark);
 
-        --legend-color-exposed: #ffcc00;
-        --legend-color-masked: #000;
+        --legend-color-exposed: var(--accent);
+        --legend-color-masked: var(--bg);
 
         /* Countdown specific */
         --countdown-bg: #ffdd66;
-        --countdown-bg-final: #ffcc00;
-        --countdown-text: #ffcc00;
+        --countdown-bg-final: var(--accent);
+        --countdown-text: var(--accent);
       }
 
       /* ===== BASE STYLES (IDENTICAL TO ORIGINAL) ===== */
@@ -326,7 +293,7 @@
         text-align: center;
         margin-bottom: 8px;
         padding-bottom: 6px;
-        border-bottom: 1px solid var(--header-border);
+        border-bottom: 1px solid var(--border);
       }
 
       h1 {
@@ -345,7 +312,7 @@
         flex-wrap: wrap;
         justify-content: center;
         margin-bottom: 8px;
-        border-bottom: 1px solid var(--tab-border);
+        border-bottom: 1px solid var(--border);
         gap: 2px;
       }
 
@@ -354,7 +321,7 @@
         min-width: 70px;
         padding: 6px 8px;
         background: var(--bg);
-        color: var(--tab-inactive);
+        color: var(--text-secondary);
         border: none;
         border-bottom: 2px solid transparent;
         border-left: 1px solid var(--border);
@@ -376,7 +343,7 @@
       .tab-button.active {
         color: var(--title);
         border-bottom: 2px solid var(--title);
-        background: var(--tab-border);
+        background: var(--border);
       }
 
       .tab-content {
@@ -392,18 +359,7 @@
         margin-bottom: 10px;
       }
 
-      .control-label {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 3px;
-        font-size: 0.8rem;
-      }
-
-      .value-display {
-        font-family: monospace;
-        font-weight: bold;
-        font-size: 0.8rem;
-      }
+      /* control-label now consolidated with settings-label */
 
       .slider {
         width: 100%;
@@ -430,26 +386,34 @@
         margin-top: -8px;
       }
 
-      /* ===== RESULT DISPLAY (EXACT MATCH) ===== */
-      .result {
+      /* Unified result display containers */
+      .result,
+      .chemical-result-box,
+      .info-box {
         text-align: center;
+        background: var(--panel);
+        border-radius: 3px;
+        padding: 8px;
+      }
+
+      .result {
         margin: 12px 0;
         padding: 10px;
-        background: var(--panel);
         border-radius: 4px;
       }
 
-      .result-value {
-        font-size: 1.2rem;
-        font-family: monospace;
-        font-weight: bold;
-        margin: 3px 0;
-        color: var(--text);
+      .info-box {
+        border: 1px solid var(--border);
+        padding: 6px;
       }
 
-      .result-label {
-        font-size: 0.7rem;
-        color: var(--text-secondary);
+      .chemical-result-box {
+        background: var(--border);
+        border: 1px solid var(--border-light);
+      }
+
+      .result-value {
+        margin: 3px 0;
       }
 
       /* ===== INCREMENTAL TIMER (EXACT MATCH) ===== */
@@ -484,7 +448,7 @@
       .timer-controls {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
         margin-top: 10px;
       }
 
@@ -492,8 +456,8 @@
       .exp-btn {
         flex: 1;
         padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.8rem;
@@ -502,8 +466,8 @@
       }
 
       .exp-btn.active {
-        background: var(--button-active-bg);
-        border-color: var(--button-active-border);
+        background: var(--border-lighter);
+        border-color: var(--accent);
       }
 
       .exp-btn:disabled {
@@ -519,29 +483,47 @@
       .exp-info {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 6px;
-        margin-top: 12px;
+        gap: 8px;
+        margin-top: 10px;
       }
 
-      .info-box {
-        background: var(--info-box-bg);
-        border: 1px solid var(--info-box-border);
-        border-radius: 3px;
-        padding: 6px;
-        text-align: center;
-      }
+      /* info-box and chemical-result-box now consolidated with result */
 
-      .info-label {
+      /* Unified small label class - consolidates info-label, result-label, chemical-result-label, step-label */
+      .label-sm,
+      .info-label,
+      .result-label,
+      .chemical-result-label,
+      .step-label {
         font-size: 0.65rem;
         color: var(--text-secondary);
         margin-bottom: 3px;
       }
 
-      .info-value {
-        font-size: 0.85rem;
+      /* Unified value display class - consolidates info-value, result-value, chemical-result-value, step-value */
+      .value-display,
+      .info-value,
+      .result-value,
+      .chemical-result-value,
+      .step-value {
         font-family: monospace;
         font-weight: bold;
         color: var(--text);
+      }
+
+      /* Size variants for value displays */
+      .value-display {
+        font-size: 0.8rem;
+      }
+
+      .info-value,
+      .step-value {
+        font-size: 0.85rem;
+      }
+
+      .result-value,
+      .chemical-result-value {
+        font-size: 1.2rem;
       }
 
       /* ===== TIMER GRID (EXACT MATCH) ===== */
@@ -549,14 +531,14 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        gap: 6px;
+        gap: 8px;
         height: 320px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
       .timer-box {
-        background: var(--timer-box-bg);
-        border: 1px solid var(--timer-box-border);
+        background: var(--panel);
+        border: 1px solid var(--border);
         border-radius: 4px;
         padding: 6px;
         display: flex;
@@ -568,30 +550,40 @@
       /* Disabled state - black and red only */
       .timer-box.disabled {
         opacity: 0.2;
-        background: var(--json-btn-border);
+        background: var(--border-lighter);
       }
 
       .timer-box.disabled .timer-title {
-        color: var(--json-btn-border);
+        color: var(--border-lighter);
       }
 
       .timer-box.disabled .time-display {
-        color: var(--json-btn-border);
+        color: var(--border-lighter);
       }
 
       .timer-box.disabled .adjust-btn,
       .timer-box.disabled .timer-btn {
-        background: var(--json-btn-border);
-        border-color: var(--button-disabled-border);
-        color: var(--button-disabled-text);
+        background: var(--border-lighter);
+        border-color: var(--border-light);
+        color: var(--text-secondary);
         cursor: not-allowed;
       }
 
+      /* Unified title classes */
+      .title-sm,
       .timer-title {
         font-size: 0.75rem;
         color: var(--text);
         text-transform: uppercase;
         margin-bottom: 4px;
+      }
+
+      .title-md,
+      .settings-title {
+        font-size: 0.9rem;
+        color: var(--title);
+        margin-bottom: 8px;
+        text-transform: uppercase;
       }
 
       .time-display {
@@ -616,7 +608,7 @@
 
       .adjust-row {
         display: flex;
-        gap: 4px;
+        gap: 6px;
         margin-bottom: 2px;
       }
 
@@ -626,7 +618,7 @@
         background: var(--panel-light);
         border: 1px solid var(--border-light);
         color: var(--text-secondary);
-        border-radius: 2px;
+        border-radius: 3px;
         font-size: 0.65rem;
         cursor: pointer;
       }
@@ -642,16 +634,16 @@
 
       .action-row {
         display: flex;
-        gap: 4px;
+        gap: 6px;
       }
 
       .timer-btn {
         flex: 1;
         padding: 4px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--text);
-        border-radius: 2px;
+        border-radius: 3px;
         font-size: 0.7rem;
         cursor: pointer;
         white-space: nowrap;
@@ -663,14 +655,14 @@
       }
 
       .timer-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-active-border);
+        background: var(--border);
+        border-color: var(--accent);
       }
 
       /* Timer states */
       .timer-box.running {
         border-color: var(--accent);
-        background: var(--timer-box-running-bg);
+        background: var(--panel-light);
       }
 
       .timer-box.warning {
@@ -680,20 +672,20 @@
 
       .timer-box.complete {
         border-color: var(--accent);
-        background: var(--timer-box-complete-bg);
+        background: var(--border);
       }
 
       /* ===== SETTINGS PANEL (EXACT MATCH) ===== */
       .settings-panel {
-        background: var(--settings-panel-bg);
+        background: var(--panel);
         padding: 10px;
         border-radius: 4px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
       .settings-section {
-        margin-bottom: 15px;
-        border-bottom: 1px solid var(--settings-section-border);
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border);
         padding-bottom: 10px;
       }
 
@@ -701,18 +693,13 @@
         border-bottom: none;
       }
 
-      .settings-title {
-        font-size: 0.9rem;
-        color: var(--title);
-        margin-bottom: 8px;
-        text-transform: uppercase;
-      }
+      /* settings-title now uses .title-md */
 
       .settings-group {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
       .settings-item {
@@ -721,31 +708,24 @@
         gap: 3px;
       }
 
+      /* Unified label for form controls */
+      .control-label,
       .settings-label {
         font-size: 0.75rem;
         color: var(--text-secondary);
       }
 
-      /* Base input field */
-      .input-field {
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
-        border-radius: 3px;
-        color: var(--text);
-        padding: 4px 6px;
-        font-size: 0.8rem;
-        font-family: monospace;
+      .control-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
       }
 
-      .input-field:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-
-      /* Aliases */
+      /* Base input field (consolidated) */
+      .input-field,
       .settings-input {
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
         border-radius: 3px;
         color: var(--text);
         padding: 4px 6px;
@@ -753,6 +733,7 @@
         font-family: monospace;
       }
 
+      .input-field:focus,
       .settings-input:focus {
         outline: none;
         border-color: var(--accent);
@@ -762,22 +743,41 @@
         text-align: center;
       }
 
-      .profile-list {
-        background: var(--profile-list-bg);
-        border: 1px solid var(--profile-list-border);
+      /* Unified list container - consolidates profile-list, chemical-preset-list, shelf-life-list */
+      .list-container,
+      .profile-list,
+      .chemical-preset-list,
+      .shelf-life-list {
+        background: var(--panel-light);
+        border: 1px solid var(--border);
         border-radius: 3px;
         max-height: 200px;
         overflow-y: auto;
         margin-bottom: 10px;
       }
 
-      .profile-item {
+      .shelf-life-list {
+        background: var(--panel-light);
+        margin-top: 10px;
+      }
+
+      /* Unified list item - consolidates profile-item, chemical-preset-item, shelf-life-item */
+      .list-item-base,
+      .profile-item,
+      .chemical-preset-item,
+      .shelf-life-item,
+      .list-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 6px 8px;
-        border-bottom: 1px solid var(--profile-list-border);
-        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
+      }
+
+      .shelf-life-item {
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
       }
 
       .profile-item:last-child {
@@ -785,20 +785,13 @@
       }
 
       .profile-item.active {
-        background: var(--profile-item-bg);
+        background: var(--border);
         font-weight: bold;
       }
 
-      .profile-actions {
-        display: flex;
-        gap: 4px;
-      }
-
-      /* .profile-btn and .profile-btn.delete now use .btn-action aliases */
-
       .settings-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--text);
         border-radius: 3px;
         padding: 6px 12px;
@@ -808,18 +801,18 @@
       }
 
       .settings-btn.primary {
-        background: var(--button-active-bg);
-        border-color: var(--button-active-border);
+        background: var(--border-lighter);
+        border-color: var(--accent);
       }
 
       .settings-btn.danger {
-        background: var(--button-bg);
+        background: var(--border);
         border-color: var(--accent);
       }
 
       .settings-btn-group {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         margin-top: 10px;
       }
 
@@ -829,15 +822,15 @@
 
       .global-controls {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         margin-top: 8px;
       }
 
       .global-btn {
         flex: 1;
         padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-active-bg);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.75rem;
@@ -852,16 +845,16 @@
         background: var(--panel);
         padding: 6px 8px;
         border-radius: 4px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
-      .setting-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
+      /* setting-item now uses .item-container */
 
-      .setting-label {
+      /* Unified medium label class - consolidates setting-label, sound-label, preview-label */
+      .label-md,
+      .setting-label,
+      .sound-label,
+      .preview-label {
         font-size: 0.7rem;
         white-space: nowrap;
       }
@@ -886,7 +879,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: var(--switch-bg);
+        background-color: var(--border);
         transition: 0.2s;
         border-radius: 14px;
       }
@@ -898,13 +891,13 @@
         width: 10px;
         left: 2px;
         bottom: 2px;
-        background-color: var(--switch-knob);
+        background-color: var(--bg);
         transition: 0.2s;
         border-radius: 50%;
       }
 
       input:checked + .slider-switch {
-        background-color: var(--switch-active);
+        background-color: var(--accent);
       }
 
       input:checked + .slider-switch:before {
@@ -913,53 +906,37 @@
 
       /* ===== CHEMICAL CALCULATOR (EXACT MATCH) ===== */
       .chemical-calculator {
-        background: var(--chemical-calc-bg);
+        background: var(--panel);
         padding: 10px;
         border-radius: 4px;
         margin-top: 10px;
       }
 
-      .chemical-results {
-        background: var(--chemical-results-bg);
+      .chemical-results,
+      .test-strip-preview-container {
+        background: var(--panel-light);
         padding: 10px;
         border-radius: 4px;
         margin-top: 12px;
       }
 
-      .chemical-result-box {
-        background: var(--chemical-result-box-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        padding: 8px;
-        text-align: center;
-      }
-
-      .chemical-result-label {
-        font-size: 0.65rem;
-        color: var(--text-secondary);
-        margin-bottom: 3px;
-      }
-
-      .chemical-result-value {
-        font-size: 1.2rem;
-        font-family: monospace;
-        font-weight: bold;
-        color: var(--text);
-      }
-
-      /* ===== TEST STRIP GENERATOR (EXACT MATCH) ===== */
       .test-strip-preview-container {
-        background: var(--test-strip-preview-bg);
-        padding: 10px;
-        border-radius: 4px;
+        background: var(--panel);
         margin: 12px 0;
       }
+
+      /* chemical-result-box now consolidated with result */
+
+      /* chemical-result-label now uses .label-sm */
+      /* chemical-result-value now uses unified value classes */
+
+      /* test-strip-preview-container now consolidated with chemical-results */
 
       .test-strip-preview {
         display: flex;
         height: 60px;
         margin: 10px 0;
-        border: 1px solid var(--test-strip-border);
+        border: 1px solid var(--border);
         border-radius: 3px;
         overflow: hidden;
       }
@@ -975,7 +952,7 @@
       }
 
       .test-step.active {
-        background: var(--test-step-active-bg) !important;
+        background: var(--border-light) !important;
       }
 
       .step-time {
@@ -987,7 +964,7 @@
       }
 
       .step-stop {
-        font-size: 0.5rem;
+        font-size: 0.6rem;
         color: var(--bg);
         margin-top: 2px;
       }
@@ -997,7 +974,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
       }
 
       .color-scheme-btn {
@@ -1019,15 +996,15 @@
       /* ===== JSON BUTTONS (EXACT MATCH) ===== */
       .json-buttons {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         margin-top: 10px;
       }
 
       .json-btn {
         flex: 1;
         padding: 8px 12px;
-        background: var(--json-btn-bg);
-        border: 1px solid var(--json-btn-border);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.8rem;
@@ -1037,7 +1014,7 @@
       /* ===== FULLSCREEN BUTTON (EXACT MATCH) ===== */
       .fullscreen-btn {
         padding: 8px 16px;
-        background: var(--fullscreen-btn-bg);
+        background: var(--border-light);
         border: 1px solid var(--fullscreen-btn-border);
         color: var(--text);
         border-radius: 3px;
@@ -1053,7 +1030,7 @@
         text-align: center;
         margin-top: 10px;
         padding-top: 6px;
-        border-top: 1px solid var(--footer-border);
+        border-top: 1px solid var(--border);
         font-size: 0.6rem;
         color: var(--text-secondary);
       }
@@ -1086,19 +1063,18 @@
         font-size: 0.7rem;
       }
 
+      .time-table th,
+      .time-table td {
+        padding: 5px 3px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-dark);
+      }
+
       .time-table th {
         background: var(--panel-light);
         color: var(--text);
-        padding: 5px 3px;
-        text-align: center;
         border-bottom: 1px solid var(--border);
         white-space: nowrap;
-      }
-
-      .time-table td {
-        padding: 4px 3px;
-        text-align: center;
-        border-bottom: 1px solid var(--border-dark);
       }
 
       .time-table tr:nth-child(even) {
@@ -1110,20 +1086,22 @@
         font-weight: bold;
       }
 
-      .increment-cell {
-        font-size: 0.65rem;
-        color: var(--text-secondary);
-      }
+      /* increment-cell can use .label-sm */
 
-      /* Sound controls */
-      .sound-controls {
+      /* Unified flex control groups */
+      .sound-controls,
+      .preview-controls {
         display: flex;
         justify-content: space-around;
         margin-top: 10px;
       }
 
+      .preview-controls {
+        justify-content: space-between;
+        align-items: center;
+      }
+
       .sound-label {
-        font-size: 0.7rem;
         color: var(--text-secondary);
       }
 
@@ -1141,97 +1119,62 @@
       .fstop-select {
         width: 100%;
         padding: 4px 6px;
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
         border-radius: 3px;
         color: var(--text);
         font-size: 0.8rem;
         font-family: monospace;
         text-align: center;
         cursor: pointer;
-        margin-top: 5px;
+        margin-top: 8px;
       }
 
       /* Repeat button styling - now uses .btn-flex alias */
 
-      /* Base container for panels */
-      .panel-container {
+      /* Unified panel-base class for all panel-style containers */
+      .panel-base,
+      .panel-container,
+      .contrast-calculator,
+      .chemical-presets,
+      .capacity-tracker,
+      .shelf-life-tracker,
+      .instructions-panel,
+      .incremental-timer {
         background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 3px;
         margin-top: 10px;
       }
 
-      /* Aliases for backwards compatibility */
+      /* Special case: chemical calculator uses different background */
       .chemical-calculator {
-        background: var(--chemical-calc-bg);
+        background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 3px;
         margin-top: 10px;
       }
 
-      .contrast-calculator {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-      }
+      /* Incremental timer - removed override, uses panel-base margin-top: 10px */
 
-      .chemical-presets {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-      }
-
-      .capacity-tracker {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 12px;
-      }
-
-      .shelf-life-tracker {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 12px;
-      }
-
-      .instructions-panel {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-        margin-bottom: 12px;
-      }
-
-      .paper-selector {
+      /* Unified grid-2col class for 2-column layouts */
+      .grid-2col,
+      .paper-selector,
+      .method-selector,
+      .paper-size-buttons {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-bottom: 10px;
       }
 
-      /* Base toggle button (paper, dilution, size, etc.) */
-      .btn-toggle {
-        padding: 8px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 3px;
-        color: var(--text);
-        cursor: pointer;
-        text-align: center;
-        font-size: 0.75rem;
+      .method-selector {
+        margin-top: 8px;
+        margin-bottom: 0;
       }
 
-      .btn-toggle.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
-        font-weight: bold;
-      }
-
-      /* Aliases for backwards compatibility */
+      /* Base toggle button (consolidated for all variants) */
+      .btn-toggle,
       .paper-btn,
       .dilution-btn,
       .paper-size-btn,
@@ -1247,13 +1190,14 @@
         font-size: 0.75rem;
       }
 
+      .btn-toggle.active,
       .paper-btn.active,
       .dilution-btn.active,
       .paper-size-btn.active,
       .preset-btn.active,
       .method-btn.active {
-        background: var(--button-bg);
-        border-color: var(--button-border);
+        background: var(--border);
+        border-color: var(--border-lighter);
         font-weight: bold;
       }
 
@@ -1262,62 +1206,39 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
-      .custom-dilution {
+      /* Unified flex-gap class */
+      .flex-gap,
+      .custom-dilution,
+      .capacity-controls,
+      .custom-paper-size {
         display: flex;
         gap: 8px;
         margin-top: 8px;
+      }
+
+      .capacity-controls {
+        margin: 10px 0;
       }
 
       .custom-dilution input {
         flex: 1;
         text-align: center;
         padding: 4px 6px;
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
+        background: var(--panel-light);
+        border: 1px solid var(--border-light);
         border-radius: 3px;
         color: var(--text);
         font-size: 0.8rem;
         font-family: monospace;
       }
 
-      .custom-dilution input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
+      /* Unified input focus already handled by .input-field:focus */
 
-      /* Chemical Preset Styles - now using .panel-container */
-
-      .chemical-preset-list {
-        background: var(--panel-light);
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        max-height: 150px;
-        overflow-y: auto;
-        margin-bottom: 10px;
-      }
-
-      /* Base list item */
-      .list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .list-item:last-child {
-        border-bottom: none;
-      }
-
-      .list-item.active {
-        background: var(--panel-lighter);
-      }
-
-      /* Aliases */
+      /* Chemical Preset Styles - now using consolidated classes */
+      .list-item,
       .chemical-preset-item {
         display: flex;
         justify-content: space-between;
@@ -1327,126 +1248,68 @@
         font-size: 0.75rem;
       }
 
+      .list-item:last-child,
       .chemical-preset-item:last-child {
         border-bottom: none;
       }
 
+      .list-item.active,
       .chemical-preset-item.active {
         background: var(--panel-lighter);
       }
 
-      .chemical-preset-actions {
+      /* Unified flex-row class for action buttons */
+      .flex-row,
+      .chemical-preset-actions,
+      .shelf-life-actions,
+      .profile-actions {
         display: flex;
-        gap: 4px;
+        gap: 6px;
       }
 
-      /* Base action button (small) */
-      .btn-action {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
+      /* Base action button (consolidated) */
+      .btn-action,
+      .chemical-preset-btn,
+      .shelf-life-btn,
+      .profile-btn {
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         color: var(--accent);
-        border-radius: 2px;
+        border-radius: 3px;
         padding: 2px 6px;
         font-size: 0.65rem;
         cursor: pointer;
       }
 
-      .btn-action.delete {
+      .btn-action.delete,
+      .profile-btn.delete {
         border-color: var(--accent);
         color: var(--accent);
       }
 
-      /* Aliases */
-      .chemical-preset-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--accent);
-        border-radius: 2px;
-        padding: 2px 6px;
-        font-size: 0.65rem;
-        cursor: pointer;
-      }
-
-      .shelf-life-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--accent);
-        border-radius: 2px;
-        padding: 3px 6px;
-        font-size: 0.6rem;
-        cursor: pointer;
-      }
-
+      .shelf-life-btn,
       .profile-btn {
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        color: var(--accent);
-        border-radius: 2px;
         padding: 3px 6px;
-        font-size: 0.7rem;
-        cursor: pointer;
+        font-size: 0.65rem;
         min-width: 50px;
       }
 
-      .profile-btn.delete {
-        background: var(--button-bg);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      /* Capacity tracker - now using .panel-container */
-
-      .capacity-controls {
-        display: flex;
-        gap: 8px;
-        margin: 10px 0;
-      }
-
-      /* Base flexible button (used for capacity, repeat, etc.) */
-      .btn-flex {
-        flex: 1;
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.75rem;
-        cursor: pointer;
-      }
-
-      .btn-flex:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-      /* Aliases */
-      .capacity-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.75rem;
-        cursor: pointer;
-      }
-
-      .capacity-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
+      /* Base flexible button (consolidated) */
+      .btn-flex,
+      .capacity-btn,
       .repeat-btn {
         flex: 1;
         padding: 8px;
-        background: var(--button-bg);
-        border: 1px solid var(--button-border);
+        background: var(--border);
+        border: 1px solid var(--border-lighter);
         border-radius: 3px;
         color: var(--text);
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         cursor: pointer;
       }
 
+      .btn-flex:disabled,
+      .capacity-btn:disabled,
       .repeat-btn:disabled {
         opacity: 0.3;
         cursor: not-allowed;
@@ -1454,7 +1317,7 @@
 
       .progress-container {
         height: 8px;
-        background: var(--progress-bg);
+        background: var(--border);
         border-radius: 4px;
         overflow: hidden;
         margin: 10px 0;
@@ -1463,12 +1326,13 @@
 
       .progress-bar {
         height: 100%;
-        background: var(--progress-fill);
+        background: var(--accent);
         width: 0%;
         transition: width 0.3s ease;
       }
 
-      .progress-labels {
+      .progress-labels,
+      .test-progress-labels {
         display: flex;
         justify-content: space-between;
         font-size: 0.6rem;
@@ -1482,37 +1346,15 @@
         margin-bottom: 10px;
       }
 
-      .paper-size-buttons {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-        margin-bottom: 8px;
-      }
-
       .custom-paper-size {
-        display: flex;
-        gap: 8px;
-        margin-top: 5px;
+        margin-top: 8px;
       }
 
-      .custom-paper-size input {
+      .custom-paper-size input,
+      .custom-dilution input {
         flex: 1;
         text-align: center;
-        padding: 4px 6px;
-        background: var(--settings-input-bg);
-        border: 1px solid var(--settings-input-border);
-        border-radius: 3px;
-        color: var(--text);
-        font-size: 0.8rem;
-        font-family: monospace;
       }
-
-      .custom-paper-size input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-
-      /* Shelf life tracker - now using .panel-container */
 
       .shelf-life-list {
         background: var(--panel-light);
@@ -1523,16 +1365,11 @@
         margin-top: 10px;
       }
 
-      .shelf-life-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .shelf-life-item:last-child {
+      .list-item-base:last-child,
+      .profile-item:last-child,
+      .chemical-preset-item:last-child,
+      .shelf-life-item:last-child,
+      .list-item:last-child {
         border-bottom: none;
       }
 
@@ -1568,43 +1405,44 @@
       /* .shelf-life-btn now uses .btn-action with padding override */
 
       /* F-STOP TEST STRIP GENERATOR STYLES */
-      .preview-controls {
+      /* preview-controls now consolidated with sound-controls */
+
+      /* Unified small display groups */
+      .preview-legend,
+      .preview-options {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
+        gap: 8px;
       }
 
       .preview-legend {
-        display: flex;
         gap: 15px;
+      }
+
+      .preview-options {
+        align-items: center;
       }
 
       .legend-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
         font-size: 0.7rem;
       }
 
       .legend-color {
         width: 12px;
         height: 12px;
-        border-radius: 2px;
+        border-radius: 3px;
       }
 
-      .preview-options {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+      /* preview-options now consolidated with preview-legend */
 
       .preview-label {
-        font-size: 0.7rem;
         color: var(--text-secondary);
       }
 
-      .test-timer-display {
+      .test-timer-display,
+      .current-step-info {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1614,20 +1452,10 @@
       .current-step-info {
         text-align: center;
         flex: 1;
+        justify-content: center;
       }
 
-      .step-label {
-        font-size: 0.7rem;
-        color: var(--text-secondary);
-        margin-bottom: 3px;
-      }
-
-      .step-value {
-        font-size: 1rem;
-        font-family: monospace;
-        font-weight: bold;
-        color: var(--text);
-      }
+      /* step-label now uses .label-sm, step-value uses unified value classes */
 
       .test-progress-container {
         margin: 15px 0;
@@ -1635,19 +1463,13 @@
 
       .test-progress-bar {
         height: 6px;
-        background: var(--progress-bg);
-        border-radius: 3px;
+        background: var(--border);
+        border-radius: 4px;
         overflow: hidden;
         position: relative;
       }
 
-      .test-progress-labels {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 5px;
-        font-size: 0.6rem;
-        color: var(--text-secondary);
-      }
+      /* test-progress-labels now consolidated with progress-labels */
 
       .progress-fill {
         height: 100%;
@@ -1660,11 +1482,18 @@
         transition: width 0.5s ease;
       }
 
-      .test-presets {
+      .test-presets,
+      .relay-controls {
         background: var(--panel-light);
         padding: 10px;
         border-radius: 4px;
-        margin-top: 12px;
+        margin-bottom: 10px;
+      }
+
+      .test-presets {
+        background: var(--panel-light);
+        margin-top: 10px;
+        margin-bottom: 0;
       }
 
       .preset-buttons {
@@ -1705,7 +1534,7 @@
       }
 
       .control .slider-switch {
-        background-color: var(--button-bg);
+        background-color: var(--border);
       }
 
       .control input:checked + .slider-switch {
@@ -1851,7 +1680,7 @@
         margin-top: 8px;
         margin-bottom: 8px;
         padding: 10px;
-        background: var(--settings-panel-bg);
+        background: var(--panel);
         border-radius: 4px;
         max-height: none;
         overflow-y: visible;
@@ -1868,20 +1697,17 @@
       }
 
       /* Relay styles remain outside fullscreen concerns */
-      .relay-controls {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 4px;
-        margin-bottom: 10px;
-      }
+      /* relay-controls now consolidated with test-presets */
 
-      .relay-item {
+      .relay-item,
+      .shelf-life-item {
         padding: 8px;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--border);
       }
 
-      .relay-item:last-child {
+      .relay-item:last-child,
+      .shelf-life-item:last-child {
         border-bottom: none;
       }
 
@@ -1890,8 +1716,8 @@
       }
 
       .relay-toggle-btn.on {
-        background: var(--button-active-bg);
-        border-color: var(--button-active-border);
+        background: var(--border-lighter);
+        border-color: var(--accent);
       }
 
       /* Settings tab adjustments */
@@ -1918,7 +1744,7 @@
         margin-top: 8px;
         margin-bottom: 8px;
         padding: 10px;
-        background: var(--settings-panel-bg);
+        background: var(--panel);
         border-radius: 4px;
         position: relative; /* Normal flow positioning */
         top: auto;
@@ -2284,14 +2110,14 @@
       }
 
       .fine-slider-label {
-        font-size: 0.55rem;
-        color: #600;
+        font-size: 0.6rem;
+        color: var(--text-disabled);
         transition: all 0.2s;
       }
 
       .fine-slider-label.active {
         font-weight: bold;
-        color: #f00;
+        color: var(--accent);
       }
 
       /* Adjust info-box height to accommodate both sliders */
@@ -2388,8 +2214,8 @@
 
       .segmented-control .segmented-btn.active,
       .segmented-control .segmented-btn[aria-pressed="true"] {
-        background: var(--button-active-bg);
-        color: var(--button-active-border);
+        background: var(--border-lighter);
+        color: var(--accent);
       }
 
       /* Prefer the more semantic :focus-visible when available */
