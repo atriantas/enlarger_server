@@ -27,242 +27,69 @@
         --bg: #000;
         --text: #f00;
         --text-secondary: #900;
-        --text-disabled: #600;
 
         --accent: #f00;
         --accent-dark: #700;
-        --accent-light: var(--accent);
 
         --panel: #100;
         --panel-light: #200;
-        --panel-lighter: #300;
-        --panel-dark: #080;
 
         --border: #300;
         --border-light: #400;
-        --border-lighter: #600;
-        --border-dark: #200;
-
-        --button-disabled-bg: #150;
-
-        --success-bg: #0a0;
-        --success-border: #080;
-        --error-bg: #a00;
-        --error-border: #800;
 
         --warning: #ff5500;
-        --warning-light: #ffaa00;
 
         --slider-track: linear-gradient(to right, #300, #600, #f00);
-        --slider-thumb-bg: var(--bg);
-        --slider-thumb-border: var(--accent);
-
-        /* Specific component colors that were different in original */
-        --fullscreen-btn-border: #700;
       }
 
       /* Light Scheme - EXACT matches to original */
       body.light-scheme {
-        --bg: #f8f8f8;
-        --text: #333;
-        --text-secondary: #666;
-        --text-disabled: #600;
+        --bg: #ffffff;
+        --text: rgb(0, 0, 0);
+        --text-secondary: rgb(60, 60, 60);
 
-        --accent: #ffffff;
-        --accent-dark: #0055aa;
-        --accent-light: #0066cc;
+        --accent: rgb(38, 133, 228);
+        --accent-dark: rgb(89, 90, 92);
 
-        --title: #0066cc;
+        --panel: rgb(243, 243, 243);
+        --panel-light: rgb(255, 255, 255);
 
-        --panel: #eee;
-        --panel-light: #f0f0f0;
-        --panel-lighter: #cce5ff;
-        --panel-dark: #e0e0e0;
-
-        --border: #ddd;
-        --border-light: #ccc;
-        --border-lighter: #aaa;
-        --border-dark: #ccc;
-
-        --button-bg: #b0cfee;
-        --button-border: #0055aa;
-        --button-active-bg: #004488;
-        --button-active-border: #003366;
-        --button-disabled-bg: var(--border-lighter);
-        --button-disabled-border: #888;
-        --button-disabled-text: var(--text-secondary);
-
-        --switch-bg: var(--border-light);
-        --switch-active: var(--accent-light);
-        --switch-knob: #fff;
-
-        --progress-bg: var(--border-light);
-        --progress-fill: var(--accent-light);
-
-        --success-bg: #0a0;
-        --success-border: #080;
-        --error-bg: #a00;
-        --error-border: #800;
+        --border: rgb(154, 195, 255);
+        --border-light: rgb(184, 192, 209);
 
         --warning: #ff5500;
-        --warning-light: #ffaa00;
 
         --slider-track: linear-gradient(
           to right,
-          var(--border),
-          #999,
-          var(--accent-light)
+          rgb(0, 25, 51),
+          rgb(0, 49, 102),
+          rgb(0, 157, 255)
         );
-        --slider-thumb-bg: var(--bg);
-        --slider-thumb-border: var(--accent-light);
-
-        /* Specific component colors */
-        --header-border: var(--border);
-        --footer-border: var(--border);
-        --tab-inactive: var(--text);
-        --tab-border: var(--border);
-
-        --timer-box-bg: var(--panel);
-        --timer-box-border: var(--border);
-        --timer-box-running-bg: var(--panel);
-        --timer-box-complete-bg: var(--panel);
-
-        --info-box-bg: var(--panel-light);
-        --info-box-border: var(--border-light);
-
-        --settings-panel-bg: var(--panel);
-        --settings-section-border: var(--border);
-        --settings-input-bg: #fff;
-        --settings-input-border: var(--border-light);
-
-        --profile-list-bg: #fff;
-        --profile-list-border: var(--border);
-        --profile-item-bg: #e6f0ff;
-
-        --chemical-calc-bg: var(--panel);
-        --chemical-results-bg: var(--panel-light);
-        --chemical-result-box-bg: var(--panel-dark);
-
-        --test-strip-preview-bg: var(--panel);
-        --test-strip-border: var(--border-light);
-        --test-step-bg: var(--accent-light);
-        --test-step-active-bg: var(--panel-lighter);
-
-        --json-btn-bg: var(--accent-light);
-        --json-btn-border: var(--accent-dark);
-
-        --fullscreen-btn-bg: var(--accent-light);
-        --fullscreen-btn-border: var(--accent-dark);
-
-        --legend-color-exposed: var(--accent-light);
-        --legend-color-masked: var(--bg);
-
-        /* Countdown specific */
-        --countdown-bg: var(--panel-lighter);
-        --countdown-bg-final: var(--accent-light);
-        --countdown-text: var(--accent-light);
       }
 
       /* Day Scheme - EXACT matches to original */
       body.day-scheme {
-        --bg: #1a1a1a;
-        --text: #fff;
-        --text-secondary: #ccc;
-        --text-disabled: #999;
+        --bg: #000000;
+        --text: rgb(255, 255, 255);
+        --text-secondary: rgb(194, 194, 194);
 
-        --accent: #ffcc00;
-        --accent-dark: #e6b800;
-        --accent-light: var(--accent);
+        --accent: rgb(255, 207, 118);
+        --accent-dark: rgb(89, 90, 92);
 
-        --title: var(--accent);
+        --panel: rgb(24, 24, 24);
+        --panel-light: rgb(107, 107, 107);
 
-        --panel: #2a2a2a;
-        --panel-light: #333;
-        --panel-lighter: #ffcc00;
-        --panel-dark: #222;
-
-        --border: #333;
-        --border-light: #444;
-        --border-lighter: #555;
-        --border-dark: #333;
-
-        --button-bg: var(--accent);
-        --button-border: var(--accent-dark);
-        --button-active-bg: var(--accent-dark);
-        --button-active-border: #cc9900;
-        --button-disabled-bg: #666;
-        --button-disabled-border: var(--border-lighter);
-        --button-disabled-text: var(--text-disabled);
-
-        --switch-bg: var(--border-light);
-        --switch-active: var(--accent);
-        --switch-knob: var(--bg);
-
-        --progress-bg: var(--border-light);
-        --progress-fill: var(--accent);
-
-        --success-bg: #0a0;
-        --success-border: #080;
-        --error-bg: #a00;
-        --error-border: #800;
+        --border: rgb(201, 148, 0);
+        --border-light: rgb(162, 116, 24);
 
         --warning: #ff5500;
-        --warning-light: #ffaa00;
 
         --slider-track: linear-gradient(
           to right,
-          var(--border),
-          #666,
-          var(--accent)
+          rgb(51, 32, 0),
+          rgb(102, 61, 0),
+          rgb(255, 157, 0)
         );
-        --slider-thumb-bg: var(--bg);
-        --slider-thumb-border: var(--accent);
-
-        /* Specific component colors */
-        --header-border: var(--border);
-        --footer-border: var(--border);
-        --tab-inactive: var(--text);
-        --tab-border: var(--border);
-
-        --timer-box-bg: var(--panel);
-        --timer-box-border: var(--border);
-        --timer-box-running-bg: var(--panel);
-        --timer-box-complete-bg: var(--panel);
-
-        --info-box-bg: var(--panel);
-        --info-box-border: var(--border-light);
-
-        --settings-panel-bg: var(--panel);
-        --settings-section-border: var(--border);
-        --settings-input-bg: var(--bg);
-        --settings-input-border: var(--border-light);
-
-        --profile-list-bg: var(--bg);
-        --profile-list-border: var(--border);
-        --profile-item-bg: var(--panel-light);
-
-        --chemical-calc-bg: var(--panel);
-        --chemical-results-bg: var(--panel);
-        --chemical-result-box-bg: var(--panel-light);
-
-        --test-strip-preview-bg: var(--panel);
-        --test-strip-border: var(--border-light);
-        --test-step-bg: var(--accent);
-        --test-step-active-bg: var(--accent);
-
-        --json-btn-bg: var(--accent);
-        --json-btn-border: var(--accent-dark);
-
-        --fullscreen-btn-bg: var(--accent);
-        --fullscreen-btn-border: var(--accent-dark);
-
-        --legend-color-exposed: var(--accent);
-        --legend-color-masked: var(--bg);
-
-        /* Countdown specific */
-        --countdown-bg: #ffdd66;
-        --countdown-bg-final: var(--accent);
-        --countdown-text: var(--accent);
       }
 
       /* ===== BASE STYLES (IDENTICAL TO ORIGINAL) ===== */
@@ -381,8 +208,8 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--slider-thumb-bg);
-        border: 2px solid var(--slider-thumb-border);
+        background: var(--bg);
+        border: 2px solid var(--accent);
         margin-top: -8px;
       }
 
@@ -457,7 +284,7 @@
         flex: 1;
         padding: 8px;
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.8rem;
@@ -466,7 +293,7 @@
       }
 
       .exp-btn.active {
-        background: var(--border-lighter);
+        background: var(--border-light);
         border-color: var(--accent);
       }
 
@@ -550,20 +377,20 @@
       /* Disabled state - black and red only */
       .timer-box.disabled {
         opacity: 0.2;
-        background: var(--border-lighter);
+        background: var(--border-light);
       }
 
       .timer-box.disabled .timer-title {
-        color: var(--border-lighter);
+        color: var(--border-light);
       }
 
       .timer-box.disabled .time-display {
-        color: var(--border-lighter);
+        color: var(--border-light);
       }
 
       .timer-box.disabled .adjust-btn,
       .timer-box.disabled .timer-btn {
-        background: var(--border-lighter);
+        background: var(--border-light);
         border-color: var(--border-light);
         color: var(--text-secondary);
         cursor: not-allowed;
@@ -629,7 +456,7 @@
       }
 
       .adjust-btn:active:not(:disabled) {
-        background: var(--panel-lighter);
+        background: var(--panel-light);
       }
 
       .action-row {
@@ -641,7 +468,7 @@
         flex: 1;
         padding: 4px;
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.7rem;
@@ -791,7 +618,7 @@
 
       .settings-btn {
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         padding: 6px 12px;
@@ -801,7 +628,7 @@
       }
 
       .settings-btn.primary {
-        background: var(--border-lighter);
+        background: var(--border-light);
         border-color: var(--accent);
       }
 
@@ -830,7 +657,7 @@
         flex: 1;
         padding: 8px;
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.75rem;
@@ -1004,7 +831,7 @@
         flex: 1;
         padding: 8px 12px;
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.8rem;
@@ -1015,7 +842,7 @@
       .fullscreen-btn {
         padding: 8px 16px;
         background: var(--border-light);
-        border: 1px solid var(--fullscreen-btn-border);
+        border: 1px solid var(--border-light);
         color: var(--text);
         border-radius: 3px;
         font-size: 0.8rem;
@@ -1041,7 +868,7 @@
           border-color: var(--warning);
         }
         50% {
-          border-color: var(--warning-light);
+          border-color: var(--warning);
         }
         100% {
           border-color: var(--warning);
@@ -1067,7 +894,7 @@
       .time-table td {
         padding: 5px 3px;
         text-align: center;
-        border-bottom: 1px solid var(--border-dark);
+        border-bottom: 1px solid var(--border);
       }
 
       .time-table th {
@@ -1082,7 +909,7 @@
       }
 
       .current-stop {
-        background: var(--panel-lighter) !important;
+        background: var(--panel-light) !important;
         font-weight: bold;
       }
 
@@ -1197,7 +1024,7 @@
       .preset-btn.active,
       .method-btn.active {
         background: var(--border);
-        border-color: var(--border-lighter);
+        border-color: var(--border-light);
         font-weight: bold;
       }
 
@@ -1255,7 +1082,7 @@
 
       .list-item.active,
       .chemical-preset-item.active {
-        background: var(--panel-lighter);
+        background: var(--panel-light);
       }
 
       /* Unified flex-row class for action buttons */
@@ -1273,7 +1100,7 @@
       .shelf-life-btn,
       .profile-btn {
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         color: var(--accent);
         border-radius: 3px;
         padding: 2px 6px;
@@ -1301,7 +1128,7 @@
         flex: 1;
         padding: 8px;
         background: var(--border);
-        border: 1px solid var(--border-lighter);
+        border: 1px solid var(--border-light);
         border-radius: 3px;
         color: var(--text);
         font-size: 0.75rem;
@@ -1374,7 +1201,7 @@
       }
 
       .shelf-life-item.expiring {
-        background: var(--panel-lighter);
+        background: var(--panel-light);
         border-left: 3px solid var(--accent);
       }
 
@@ -1473,11 +1300,7 @@
 
       .progress-fill {
         height: 100%;
-        background: linear-gradient(
-          90deg,
-          var(--border-lighter),
-          var(--accent)
-        );
+        background: linear-gradient(90deg, var(--border-light), var(--accent));
         width: 0%;
         transition: width 0.5s ease;
       }
@@ -1607,7 +1430,6 @@
       }
 
       /* ===== FULLSCREEN STYLES ===== */
-      /* ===== FULLSCREEN STYLES ===== */
       body.fullscreen-mode {
         padding: 0;
       }
@@ -1716,7 +1538,7 @@
       }
 
       .relay-toggle-btn.on {
-        background: var(--border-lighter);
+        background: var(--border-light);
         border-color: var(--accent);
       }
 
@@ -2111,7 +1933,7 @@
 
       .fine-slider-label {
         font-size: 0.6rem;
-        color: var(--text-disabled);
+        color: var(--text-secondary);
         transition: all 0.2s;
       }
 
@@ -2214,7 +2036,7 @@
 
       .segmented-control .segmented-btn.active,
       .segmented-control .segmented-btn[aria-pressed="true"] {
-        background: var(--border-lighter);
+        background: var(--border-light);
         color: var(--accent);
       }
 
