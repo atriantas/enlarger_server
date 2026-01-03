@@ -4324,8 +4324,8 @@
         baseTime: 10.0,
         devTime: 60,
         stopTime: 30,
-        fixTime: 300,
-        floTime: 60,
+        fixTime: 60,
+        floTime: 30,
         calcWarningBeep: true,
         calcEndBeep: true,
         autoStart: true,
@@ -4355,8 +4355,8 @@
       const DEFAULT_TIMER_TIMES = {
         Dev: 60,
         Stop: 30,
-        Fix: 300,
-        Flo: 60,
+        Fix: 60,
+        Flo: 30,
       };
 
       // Global variables for timer management
@@ -9552,13 +9552,6 @@
           document.addEventListener("MSFullscreenChange", () =>
             this.handleFullscreenChange()
           );
-
-          document.addEventListener("keydown", (e) => {
-            if (e.key === "F11") {
-              e.preventDefault();
-              this.toggle();
-            }
-          });
         }
 
         toggle() {
@@ -9828,25 +9821,6 @@
             setActiveSeg(cont, d);
             applyDenomChange(d);
           });
-          cont.addEventListener("keydown", (e) => {
-            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key))
-              return;
-            const buttons = Array.from(cont.querySelectorAll(".segmented-btn"));
-            const idx = buttons.findIndex((b) =>
-              b.classList.contains("active")
-            );
-            let next = idx;
-            if (e.key === "ArrowLeft") next = Math.max(0, idx - 1);
-            if (e.key === "ArrowRight")
-              next = Math.min(buttons.length - 1, idx + 1);
-            if (e.key === "Home") next = 0;
-            if (e.key === "End") next = buttons.length - 1;
-            if (next !== idx) {
-              buttons[next].focus();
-              buttons[next].click();
-            }
-            e.preventDefault();
-          });
         }
 
         // applyDenomChange now takes numeric denom and rescales sliders to preserve absolute stop values
@@ -9985,19 +9959,6 @@
             reader.readAsText(file);
           });
 
-        // Update profile name input to work with Enter key in timer tab
-        document
-          .getElementById("timerProfileName")
-          ?.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-              const profileName =
-                document.getElementById("timerProfileName").value;
-              if (settingsManager.saveCurrentProfile(profileName)) {
-                document.getElementById("timerProfileName").value = "";
-              }
-            }
-          });
-
         document
           .getElementById("resetAllSettings")
           .addEventListener("click", () => {
@@ -10006,7 +9967,6 @@
 
         // Initialize audio context on any user interaction
         document.addEventListener("click", initAudioContext);
-        document.addEventListener("keydown", initAudioContext);
 
         // Initialize collapsible rows in the CALC, CHEMICAL and TIMER tabs
         (function initCalcCollapsibles() {
@@ -10050,13 +10010,6 @@
                 stored[id] = false;
               }
               localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-            });
-
-            header.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                header.click();
-              }
             });
           });
 
