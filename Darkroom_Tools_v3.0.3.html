@@ -2987,9 +2987,6 @@
               Start Test Strip
             </button>
             <button class="exp-btn" id="stopTestTimer" disabled>Stop</button>
-            <button class="exp-btn" id="nextTestStep" disabled>
-              Next Step
-            </button>
             <button class="exp-btn" id="resetTestTimer">Reset</button>
           </div>
 
@@ -8380,6 +8377,7 @@
           this.steps = [];
           this.isRunning = false;
           this.isPaused = false;
+          this.isWaitingForNextStep = false;
           this.interval = null;
           this.lastBeepSecond = null;
           this.currentStepTime = 0;
@@ -8440,7 +8438,6 @@
           // Control buttons
           this.startTestStripBtn = document.getElementById("startTestStrip");
           this.stopTestTimerBtn = document.getElementById("stopTestTimer");
-          this.nextTestStepBtn = document.getElementById("nextTestStep");
           this.resetTestTimerBtn = document.getElementById("resetTestTimer");
 
           // Sound controls
@@ -8474,7 +8471,6 @@
           this.stopTestTimerBtn.addEventListener("click", () =>
             this.stopCurrentTest()
           );
-          this.nextTestStepBtn.addEventListener("click", () => this.nextStep());
           this.resetTestTimerBtn.addEventListener("click", () => this.reset());
 
           this.previewMode.addEventListener("change", () =>
@@ -8912,7 +8908,9 @@
 
           // Update progress bar
           const progressFill = document.getElementById("progressFill");
-          const progressPercent = (this.currentStep / this.steps.length) * 100;
+          // Show progress including the current step being executed (currentStep is 0-indexed)
+          const progressPercent =
+            ((this.currentStep + 1) / this.steps.length) * 100;
           if (progressFill) {
             progressFill.style.width = `${progressPercent}%`;
           }
@@ -8924,8 +8922,7 @@
 
           // Disable buttons during countdown
           this.startTestStripBtn.disabled = true;
-          this.stopTestTimerBtn.disabled = true;
-          this.nextTestStepBtn.disabled = true;
+          this.stopTestTimerBtn.disabled = false; // Keep Stop enabled
           this.resetTestTimerBtn.disabled = true;
 
           // Start countdown
@@ -8952,7 +8949,6 @@
           this.startTestStripBtn.textContent = "Pause";
           this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = false;
-          this.nextTestStepBtn.disabled = true;
           this.resetTestTimerBtn.disabled = true;
 
           // Play start beep
@@ -8987,6 +8983,9 @@
           this.currentStepTime = step.time;
           this.lastBeepSecond = null;
 
+          // Always show running status while the timer counts down
+          this.testTimerStatus.textContent = "TEST STRIP IN PROGRESS";
+
           this.currentStepDisplay.textContent = `${this.currentStep + 1}/${
             this.steps.length
           }`;
@@ -9010,21 +9009,11 @@
             this.timeMultiplierDisplay.textContent = `${totalExposure.toFixed(
               1
             )}s total`;
-
-            if (this.currentStep > 0) {
-              this.testTimerStatus.textContent =
-                "SLIDE MASK → EXPOSE NEXT STRIP";
-            } else {
-              this.testTimerStatus.textContent = "TEST STRIP IN PROGRESS";
-            }
           }
 
           this.testTimerDisplay.textContent = step.time.toFixed(2);
 
           this.updatePreview();
-
-          // Disable Next Step button during step execution
-          this.nextTestStepBtn.disabled = true;
 
           // TRIGGER RELAY FOR THIS STEP - AWAIT HERE
           if (window.relayManager && window.relayManager.autoTrigger) {
@@ -9108,28 +9097,32 @@
               this.complete();
             }
           } else {
-            // Manual advance: pause and wait for user input
-            this.isRunning = false; // Pause the timer
-            this.testTimerStatus.textContent =
-              "STEP COMPLETE - PRESS NEXT STEP";
+            // Manual advance mode
+            // Check if this was the last step
+            if (this.currentStep >= this.steps.length - 1) {
+              // Last step completed - finish immediately
+              this.complete();
+            } else {
+              // More steps remain - pause and wait for user input
+              this.isRunning = false; // Pause the timer
+              this.isWaitingForNextStep = true; // Track waiting state
+              this.testTimerStatus.textContent =
+                "STEP COMPLETE - PRESS NEXT STEP";
 
-            // Enable Next Step button
-            this.nextTestStepBtn.disabled = false;
+              // Update Start button to act as Next Step and keep Stop enabled
+              this.startTestStripBtn.textContent = "Next Step";
+              this.stopTestTimerBtn.disabled = false;
 
-            // Update step number to show current (completed) step
-            if (this.currentStep < this.steps.length - 1) {
+              // Update step number to show current (completed) step
               this.currentStepDisplay.textContent = `${this.currentStep + 1}/${
                 this.steps.length
               } (Completed)`;
-            }
 
-            // Show instruction based on method
-            if (
-              this.method === "incremental" &&
-              this.currentStep < this.steps.length - 1
-            ) {
-              this.testTimerStatus.textContent =
-                "SLIDE MASK → THEN PRESS NEXT STEP";
+              // Show instruction based on method
+              if (this.method === "incremental") {
+                this.testTimerStatus.textContent =
+                  "SLIDE MASK → THEN PRESS NEXT STEP";
+              }
             }
           }
         }
@@ -9155,11 +9148,6 @@
           this.startTestStripBtn.textContent = "Resume";
           this.testTimerDisplay.classList.remove("warning");
 
-          // Enable Next Step button if in manual mode and not at last step
-          if (!this.autoAdvance && this.currentStep < this.steps.length - 1) {
-            this.nextTestStepBtn.disabled = false;
-          }
-
           playBeep(400, 0.1, 0.2);
         }
 
@@ -9177,7 +9165,7 @@
         }
 
         stopCurrentTest() {
-          if (!this.isRunning && !this.isPaused) return;
+          // Allow stopping at any time - no return check
 
           // Cancel any ongoing countdown
           if (window.countdownManager && window.countdownManager.isActive) {
@@ -9192,18 +9180,21 @@
           clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = false;
+          this.isWaitingForNextStep = false;
+          this.currentStep = 0;
+          this.currentStepTime = 0;
           this.lastBeepSecond = null;
 
-          this.testTimerStatus.textContent = "TEST STRIP STOPPED";
+          this.testTimerStatus.textContent = "READY FOR TEST STRIP";
           this.startTestStripBtn.textContent = "Start Test Strip";
+          this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = true;
-          this.nextTestStepBtn.disabled = true;
           this.resetTestTimerBtn.disabled = false;
+          this.testTimerDisplay.textContent = "0.00";
           this.testTimerDisplay.classList.remove("warning");
 
-          // Reset to first step display
+          // Reset step display
           if (this.steps.length > 0) {
-            this.currentStep = 0;
             const firstStep = this.steps[0];
             this.currentStepDisplay.textContent = `1/${this.steps.length}`;
             this.currentTimeDisplay.textContent = `${firstStep.time.toFixed(
@@ -9247,10 +9238,9 @@
             console.warn("Countdown already active");
             return;
           }
-          // Disable buttons during countdown
+          // Disable buttons during countdown, but keep Stop enabled
           this.startTestStripBtn.disabled = true;
-          this.stopTestTimerBtn.disabled = true;
-          this.nextTestStepBtn.disabled = true;
+          this.stopTestTimerBtn.disabled = false; // Keep Stop enabled
           this.resetTestTimerBtn.disabled = true;
 
           // Save original display values AND style properties
@@ -9327,7 +9317,6 @@
           // Re-enable appropriate buttons
           this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = false;
-          this.nextTestStepBtn.disabled = true;
           this.resetTestTimerBtn.disabled = true;
         }
 
@@ -9342,10 +9331,10 @@
           if (this.currentStep < this.steps.length) {
             this.isRunning = true;
             this.isPaused = false;
+            this.isWaitingForNextStep = false;
             await this.startStep(); // Add await here
 
             // Update button states
-            this.nextTestStepBtn.disabled = true;
             this.startTestStripBtn.textContent = "Pause";
             this.stopTestTimerBtn.disabled = false;
             this.resetTestTimerBtn.disabled = true;
@@ -9376,7 +9365,6 @@
           this.testTimerStatus.textContent = "TEST STRIP COMPLETE";
           this.startTestStripBtn.textContent = "Start Test Strip";
           this.stopTestTimerBtn.disabled = true;
-          this.nextTestStepBtn.disabled = true;
           this.resetTestTimerBtn.disabled = false;
 
           // Highlight all steps as complete
@@ -9398,6 +9386,7 @@
           clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = false;
+          this.isWaitingForNextStep = false;
           this.currentStep = 0;
           this.currentStepTime = 0;
 
@@ -9405,7 +9394,6 @@
           this.startTestStripBtn.textContent = "Start Test Strip";
           this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = true;
-          this.nextTestStepBtn.disabled = true; // Disabled until step completes
           this.resetTestTimerBtn.disabled = false;
           this.testTimerDisplay.textContent = "0.00";
           this.testTimerDisplay.classList.remove("warning");
@@ -9437,6 +9425,9 @@
             this.pause();
           } else if (this.isPaused) {
             await this.resume();
+          } else if (this.isWaitingForNextStep) {
+            // Waiting for next step - act like Next Step button
+            this.nextStep();
           } else {
             await this.start();
           }
