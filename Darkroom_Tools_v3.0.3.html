@@ -2088,6 +2088,60 @@
         padding: 0;
         margin: -1px;
       }
+
+      /* Custom filter bank layout */
+      .custom-filter-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .custom-filter-rows {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .custom-filter-row {
+        display: grid;
+        grid-template-columns: 1.1fr 0.6fr 0.6fr;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .custom-filter-row input[type="text"] {
+        width: 100%;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .custom-filter-row input[type="number"] {
+        width: 100%;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .custom-filter-row button {
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--accent-muted);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .custom-filter-row button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -2291,7 +2345,7 @@
           <!-- Height Adjustments -->
           <section class="collapsible" data-id="head-height">
             <button class="collapsible-header" aria-expanded="false">
-              Head Height
+              Head Height Adjustment
             </button>
             <div class="collapsible-content">
               <div
@@ -2522,7 +2576,7 @@
           <!-- CONTRAST CONTROL INTEGRATED -->
           <section class="collapsible" data-id="contrast-filter">
             <button class="collapsible-header" aria-expanded="false">
-              Contrast Filter Adjustment
+              Foma Contrast Filter Adjustment
             </button>
             <div class="collapsible-content">
               <div
@@ -2574,6 +2628,49 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <!-- Custom Filter Bank -->
+          <section class="collapsible" data-id="custom-filter-bank">
+            <button class="collapsible-header" aria-expanded="false">
+              Custom Filter Bank
+            </button>
+            <div class="collapsible-content">
+              <div class="custom-filter-header">
+                <div>
+                  <div class="info-label">Group</div>
+                  <select class="fstop-select" id="customFilterGroup">
+                    <option value="0">Group A</option>
+                    <option value="1">Group B</option>
+                    <option value="2">Group C</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="info-label">Group Name</div>
+                  <input
+                    type="text"
+                    id="customFilterGroupName"
+                    class="settings-input"
+                    placeholder="Group name"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  font-size: 0.8rem;
+                  color: var(--text-secondary);
+                  margin-bottom: 6px;
+                "
+              >
+                Store up to 12 named factors per group (3 groups). Use these to
+                drive the Contrast Factor used in New Adjusted Time. Values
+                auto-save and are included in Export All Data.
+              </div>
+
+              <div class="custom-filter-rows" id="customFilterRows"></div>
             </div>
           </section>
 
@@ -4317,6 +4414,7 @@
         CHEMICAL_PRESETS: "darkroom_timer_chemical_presets",
         CAPACITY_TRACKER: "darkroom_timer_capacity_tracker",
         SHELF_LIFE: "darkroom_timer_shelf_life",
+        CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
       };
 
       // Default settings - UPDATED with countdown settings AND auto advance
@@ -4358,6 +4456,34 @@
         Fix: 60,
         Flo: 30,
       };
+
+      function getDefaultCustomFilterBanks() {
+        const defaultLabels = [
+          "Grade 00",
+          "Grade 0",
+          "Grade 0.5",
+          "Grade 1",
+          "Grade 1.5",
+          "Grade 2",
+          "Grade 2.5",
+          "Grade 3",
+          "Grade 3.5",
+          "Grade 4",
+          "Grade 4.5",
+          "Grade 5",
+        ];
+
+        const makeGroup = (name) => ({
+          name,
+          slots: defaultLabels.map((label) => ({ label, value: 1.0 })),
+        });
+
+        return [
+          makeGroup("Group A"),
+          makeGroup("Group B"),
+          makeGroup("Group C"),
+        ];
+      }
 
       // Global variables for timer management
       let settingsManager;
@@ -4544,6 +4670,7 @@
           accumulatedTime: 0,
           isRunning: false,
           isPaused: false,
+          isCountdown: false,
           currentTime: 10.0,
           lastExposureTime: 10.0,
         },
@@ -4645,7 +4772,13 @@
 
         statusElement.textContent = appState.ui.timerStatus;
 
-        if (state.isRunning) {
+        if (state.isCountdown) {
+          startBtn.textContent = "Start Exposure";
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+          resetBtn.disabled = true;
+          repeatBtn.disabled = true;
+        } else if (state.isRunning) {
           startBtn.textContent = "Pause";
           startBtn.disabled = false;
           stopBtn.disabled = false;
@@ -4970,6 +5103,17 @@
           return this.loadJSON(STORAGE_KEYS.SHELF_LIFE, []);
         }
 
+        static saveCustomFilterBanks(banks) {
+          return this.saveJSON(STORAGE_KEYS.CUSTOM_FILTER_BANKS, banks);
+        }
+
+        static loadCustomFilterBanks() {
+          return this.loadJSON(
+            STORAGE_KEYS.CUSTOM_FILTER_BANKS,
+            getDefaultCustomFilterBanks()
+          );
+        }
+
         static clearAll() {
           return this.removeKeys([
             STORAGE_KEYS.SETTINGS,
@@ -4979,6 +5123,7 @@
             STORAGE_KEYS.CHEMICAL_PRESETS,
             STORAGE_KEYS.CAPACITY_TRACKER,
             STORAGE_KEYS.SHELF_LIFE,
+            STORAGE_KEYS.CUSTOM_FILTER_BANKS,
           ]);
         }
       }
@@ -5882,6 +6027,7 @@
               : [],
             capacityTracker: StorageManager.loadCapacityTracker(),
             shelfLifeData: StorageManager.loadShelfLife(),
+            customFilterBanks: StorageManager.loadCustomFilterBanks(),
           };
 
           const jsonStr = JSON.stringify(exportData, null, 2);
@@ -6095,6 +6241,18 @@
 
             // Update all UIs
             this.updateTimerProfileListUI();
+
+            // Import custom filter banks
+            if (data.customFilterBanks) {
+              const banks = Array.isArray(data.customFilterBanks)
+                ? data.customFilterBanks
+                : getDefaultCustomFilterBanks();
+              StorageManager.saveCustomFilterBanks(banks);
+              if (window.customFilterBankManager) {
+                window.customFilterBankManager.replaceData(banks);
+              }
+              importedCount++;
+            }
 
             // Refresh the chemical tab if it's currently active
             const currentTab = document
@@ -7760,6 +7918,7 @@
 
           this.driftTimer = null; // Using drift-corrected timer
           this.lastBeepSecond = null;
+          this.countdownResolve = null;
 
           this.init();
           this.render();
@@ -7777,6 +7936,7 @@
           this.currentTime = state.currentTime;
           this.isRunning = state.isRunning;
           this.isPaused = state.isPaused;
+          this.isCountdown = state.isCountdown;
           this.lastExposureTime = state.lastExposureTime;
         }
 
@@ -7791,6 +7951,7 @@
           state.currentTime = this.currentTime;
           state.isRunning = this.isRunning;
           state.isPaused = this.isPaused;
+          state.isCountdown = this.isCountdown;
           state.lastExposureTime = this.lastExposureTime;
         }
 
@@ -7813,20 +7974,33 @@
 
         // Stop current exposure (resets current exposure time)
         stopCurrentExposure() {
-          if (!this.isRunning && !this.isPaused) return;
+          if (!this.isRunning && !this.isPaused && !this.isCountdown) return;
+
+          const wasCountdown = this.isCountdown;
+
+          if (this.isCountdown && window.countdownManager?.isActive) {
+            window.countdownManager.cancel();
+            if (this.countdownResolve) {
+              this.countdownResolve("cancelled");
+              this.countdownResolve = null;
+            }
+          }
 
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
           this.isRunning = false;
           this.isPaused = false;
+          this.isCountdown = false;
           this.lastBeepSecond = null;
 
           // Reset current time to current exposure time
           this.currentTime = this.thisExposureTime;
 
           // Update state and render
-          appState.ui.timerStatus = "EXPOSURE STOPPED";
+          appState.ui.timerStatus = wasCountdown
+            ? "COUNTDOWN CANCELLED"
+            : "EXPOSURE STOPPED";
           this.render();
 
           audioService?.playPreset("pause");
@@ -7896,28 +8070,50 @@
 
         // In the IncrementalTimer.start() method (around line 1500), update to async:
         async start() {
-          if (this.isRunning || this.thisExposureTime <= 0) return;
-
-          // Disable buttons during countdown
-          document.getElementById("startExposure").disabled = true;
-          document.getElementById("stopCalcTimer").disabled = true;
-          document.getElementById("resetCalcTimer").disabled = true;
-          document.getElementById("repeatExposure").disabled = true;
+          if (
+            this.isRunning ||
+            this.isPaused ||
+            this.isCountdown ||
+            this.thisExposureTime <= 0
+          )
+            return;
 
           // Start countdown
           const display = document.getElementById("calcTimerDisplay");
           const originalText = display.textContent;
+          this.isCountdown = true;
           appState.ui.timerStatus = "COUNTDOWN STARTING...";
           this.render();
 
-          await new Promise((resolve) => {
+          // During countdown: disable start/repeat/reset, keep stop enabled
+          const startBtn = document.getElementById("startExposure");
+          const stopBtn = document.getElementById("stopCalcTimer");
+          const resetBtn = document.getElementById("resetCalcTimer");
+          const repeatBtn = document.getElementById("repeatExposure");
+          if (startBtn) startBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = false;
+          if (resetBtn) resetBtn.disabled = true;
+          if (repeatBtn) repeatBtn.disabled = true;
+
+          const countdownResult = await new Promise((resolve) => {
+            this.countdownResolve = resolve;
             window.countdownManager.startCountdown(display, () => {
-              resolve();
+              resolve("complete");
             });
           });
 
-          // Restore display and enable buttons
+          this.countdownResolve = null;
+          this.isCountdown = false;
+
+          // Ensure display is restored even if countdown was cancelled
           display.textContent = originalText;
+
+          if (countdownResult === "cancelled") {
+            appState.ui.timerStatus = "COUNTDOWN CANCELLED";
+            this.render();
+            return;
+          }
+
           appState.ui.timerStatus = "EXPOSURE IN PROGRESS";
 
           // TRIGGER RELAY HERE
@@ -8040,6 +8236,7 @@
           }
           this.isRunning = false;
           this.isPaused = false;
+          this.isCountdown = false;
           this.lastBeepSecond = null;
 
           this.accumulatedTime = 0;
@@ -8051,6 +8248,7 @@
         }
 
         toggle() {
+          if (this.isCountdown) return;
           if (this.isRunning) {
             this.pause();
           } else if (this.isPaused) {
@@ -8113,6 +8311,9 @@
           this.paperSizeFactor = 1.0;
           this.combinedFactor = 1.0;
           this.newAdjustedTime = 10.0;
+          this.useCustomFilter = false;
+          this.customFilterName = "";
+          this.customFilterValue = 1.0;
 
           this.init();
           this.updateCalculations();
@@ -8287,6 +8488,7 @@
             this.selectPaper("fomatonemg")
           );
           this.contrastFilterSelect.addEventListener("change", () => {
+            this.clearCustomFilterOverride();
             this.currentFilter = this.contrastFilterSelect.value;
             this.updateCalculations();
             this.updateDisplay();
@@ -8298,6 +8500,7 @@
         // NEW: Paper selection method
         selectPaper(paperType) {
           this.currentPaper = paperType;
+          this.clearCustomFilterOverride();
 
           // Update button states
           this.btnFomaspeed.classList.remove("active");
@@ -8433,13 +8636,17 @@
             this.paperSizeFactor = 1.0;
           }
 
-          // NEW: Filter factor from contrast control
-          const paper = this.paperTypes[this.currentPaper];
-          const filter = paper.filters[this.currentFilter];
-          if (filter) {
-            this.filterFactor = filter.factor;
+          // NEW: Filter factor from contrast control or custom bank
+          if (this.useCustomFilter) {
+            this.filterFactor = this.customFilterValue || 1.0;
           } else {
-            this.filterFactor = 1.0;
+            const paper = this.paperTypes[this.currentPaper];
+            const filter = paper.filters[this.currentFilter];
+            if (filter) {
+              this.filterFactor = filter.factor;
+            } else {
+              this.filterFactor = 1.0;
+            }
           }
 
           // Combined factor includes ALL factors
@@ -8477,13 +8684,21 @@
             this.newAdjustedTime.toFixed(2);
 
           // NEW: Update contrast control displays
-          const paper = this.paperTypes[this.currentPaper];
-          const filter = paper.filters[this.currentFilter];
-          if (filter) {
-            this.isoValueElement.textContent = filter.iso;
-            this.filterFactorValueElement.textContent = `${filter.factor.toFixed(
-              1
+          if (this.useCustomFilter) {
+            this.isoValueElement.textContent =
+              this.customFilterName || "Custom";
+            this.filterFactorValueElement.textContent = `${this.filterFactor.toFixed(
+              2
             )}×`;
+          } else {
+            const paper = this.paperTypes[this.currentPaper];
+            const filter = paper.filters[this.currentFilter];
+            if (filter) {
+              this.isoValueElement.textContent = filter.iso;
+              this.filterFactorValueElement.textContent = `${filter.factor.toFixed(
+                1
+              )}×`;
+            }
           }
 
           // Update button text to show calculation
@@ -8498,6 +8713,23 @@
             this.applyHeightTimeBtn.textContent =
               "Apply Adjusted Time as Base Time";
           }
+        }
+
+        applyCustomFilterFactor(label, value) {
+          const factor = parseFloat(value);
+          if (!factor || factor <= 0) return;
+          this.useCustomFilter = true;
+          this.customFilterName = label || "Custom";
+          this.customFilterValue = factor;
+          this.currentFilter = "custom";
+          this.updateCalculations();
+          this.updateDisplay();
+        }
+
+        clearCustomFilterOverride() {
+          this.useCustomFilter = false;
+          this.customFilterName = "";
+          this.customFilterValue = 1.0;
         }
 
         applyNewTime() {
@@ -8518,6 +8750,183 @@
             btn.textContent = originalText;
             btn.classList.remove("active");
           }, 1000);
+        }
+      }
+
+      class CustomFilterBankManager {
+        constructor(enlargerCalculator) {
+          this.calculator = enlargerCalculator;
+          this.groups = this.normalize(StorageManager.loadCustomFilterBanks());
+          this.currentGroupIndex = 0;
+
+          this.groupSelect = document.getElementById("customFilterGroup");
+          this.groupNameInput = document.getElementById(
+            "customFilterGroupName"
+          );
+          this.rowsContainer = document.getElementById("customFilterRows");
+
+          this.bindEvents();
+          this.render();
+        }
+
+        normalize(banks) {
+          const defaults = getDefaultCustomFilterBanks();
+          if (!Array.isArray(banks)) return defaults;
+
+          const normalized = banks.slice(0, 3).map((group, idx) => {
+            const base = defaults[idx] || defaults[0];
+            const name =
+              (group && typeof group.name === "string" && group.name.trim()) ||
+              base.name;
+            const slots = Array.isArray(group?.slots) ? group.slots : [];
+            const paddedSlots = [...slots];
+            while (paddedSlots.length < 12) {
+              paddedSlots.push({
+                label: base.slots[paddedSlots.length].label,
+                value: 1.0,
+              });
+            }
+            return {
+              name,
+              slots: paddedSlots.slice(0, 12).map((slot, slotIdx) => ({
+                label:
+                  (slot &&
+                    typeof slot.label === "string" &&
+                    slot.label.trim()) ||
+                  base.slots[slotIdx].label,
+                value:
+                  typeof slot?.value === "number" && slot.value > 0
+                    ? slot.value
+                    : 1.0,
+              })),
+            };
+          });
+
+          while (normalized.length < 3) {
+            normalized.push(defaults[normalized.length]);
+          }
+
+          return normalized;
+        }
+
+        bindEvents() {
+          if (this.groupSelect) {
+            this.groupSelect.addEventListener("change", () => {
+              this.currentGroupIndex =
+                parseInt(this.groupSelect.value, 10) || 0;
+              this.renderGroupHeader();
+              this.renderRows();
+            });
+          }
+
+          if (this.groupNameInput) {
+            this.groupNameInput.addEventListener("input", (e) => {
+              const name = e.target.value || "Group";
+              this.groups[this.currentGroupIndex].name = name;
+              this.save();
+              this.renderGroupHeader();
+            });
+          }
+
+          if (this.rowsContainer) {
+            this.rowsContainer.addEventListener("input", (e) => {
+              const row = e.target.closest(".custom-filter-row");
+              if (!row) return;
+              const idx = parseInt(row.getAttribute("data-index"), 10);
+              const role = e.target.getAttribute("data-role");
+              if (Number.isNaN(idx) || idx < 0 || idx >= 12) return;
+
+              if (role === "name") {
+                this.groups[this.currentGroupIndex].slots[idx].label =
+                  e.target.value || `Slot ${idx + 1}`;
+                this.save();
+              } else if (role === "value") {
+                const val = parseFloat(e.target.value);
+                if (val && val > 0) {
+                  this.groups[this.currentGroupIndex].slots[idx].value = val;
+                  this.save();
+                }
+              }
+            });
+
+            this.rowsContainer.addEventListener("click", (e) => {
+              const btn = e.target.closest("button[data-role='use']");
+              if (!btn) return;
+              const row = btn.closest(".custom-filter-row");
+              if (!row) return;
+              const idx = parseInt(row.getAttribute("data-index"), 10);
+              const slot = this.groups[this.currentGroupIndex].slots[idx];
+              if (!slot) return;
+              this.calculator.applyCustomFilterFactor(
+                slot.label || `Slot ${idx + 1}`,
+                slot.value
+              );
+              btn.textContent = "Using";
+              btn.disabled = true;
+              setTimeout(() => {
+                btn.textContent = "Use";
+                btn.disabled = false;
+              }, 800);
+            });
+          }
+        }
+
+        render() {
+          this.renderGroupHeader();
+          this.renderRows();
+        }
+
+        renderGroupHeader() {
+          if (!this.groupSelect || !this.groupNameInput) return;
+          this.groupSelect.innerHTML = this.groups
+            .map(
+              (g, idx) =>
+                `<option value="${idx}" ${
+                  idx === this.currentGroupIndex ? "selected" : ""
+                }>${g.name || `Group ${idx + 1}`}</option>`
+            )
+            .join("");
+          const current = this.groups[this.currentGroupIndex];
+          this.groupNameInput.value = current.name;
+        }
+
+        renderRows() {
+          if (!this.rowsContainer) return;
+          const current = this.groups[this.currentGroupIndex];
+          const rowsHtml = current.slots
+            .map(
+              (slot, idx) => `
+                <div class="custom-filter-row" data-index="${idx}">
+                  <input
+                    type="text"
+                    data-role="name"
+                    value="${slot.label || `Slot ${idx + 1}`}"
+                    aria-label="Custom filter name ${idx + 1}"
+                  />
+                  <input
+                    type="number"
+                    data-role="value"
+                    step="0.01"
+                    min="0.001"
+                    value="${(slot.value || 1).toFixed(2)}"
+                    aria-label="Custom filter value ${idx + 1}"
+                  />
+                  <button type="button" data-role="use">Use</button>
+                </div>
+              `
+            )
+            .join("");
+          this.rowsContainer.innerHTML = rowsHtml;
+        }
+
+        save() {
+          StorageManager.saveCustomFilterBanks(this.groups);
+        }
+
+        replaceData(banks) {
+          this.groups = this.normalize(banks);
+          this.currentGroupIndex = 0;
+          this.render();
         }
       }
 
@@ -9808,6 +10217,11 @@
         // Initialize the combined calculator (replaces both old calculators)
         window.heightCalculator = new EnlargerHeightCalculator(
           window.incrementalTimer
+        );
+
+        // Initialize custom filter bank (feeds contrast factor)
+        window.customFilterBankManager = new CustomFilterBankManager(
+          window.heightCalculator
         );
 
         // Initialize test strip generator
