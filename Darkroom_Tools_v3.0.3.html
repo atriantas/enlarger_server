@@ -4362,7 +4362,390 @@
       // Global variables for timer management
       let settingsManager;
       let timerManager;
-      let globalAudioContext = null;
+      let audioService = null; // Centralized audio service
+
+      // ===== AUDIO SERVICE CLASS =====
+      class AudioService {
+        constructor() {
+          this.audioContext = null;
+          this.initialized = false;
+          this.presets = {
+            // Timer presets
+            warning: { frequency: 600, duration: 0.3, volume: 0.3 },
+            timerWarning: { frequency: 400, duration: 0.3, volume: 0.3 },
+            timerComplete: { frequency: 800, duration: 0.1, volume: 0.5 },
+
+            // Calculator presets
+            calcWarning: { frequency: 600, duration: 0.3, volume: 0.3 },
+            calcComplete: { frequency: 1600, duration: 0.1, volume: 0.5 },
+
+            // Countdown presets
+            countdown: { frequency: 400, duration: 0.2, volume: 0.2 },
+            countdownMid: { frequency: 600, duration: 0.3, volume: 0.3 },
+            countdownUrgent: { frequency: 800, duration: 0.2, volume: 0.4 },
+            countdownComplete: { frequency: 1600, duration: 0.5, volume: 0.5 },
+
+            // UI feedback presets
+            success: { frequency: 800, duration: 0.3, volume: 0.3 },
+            action: { frequency: 600, duration: 0.3, volume: 0.3 },
+            pause: { frequency: 600, duration: 0.3, volume: 0.2 },
+            error: { frequency: 400, duration: 0.3, volume: 0.3 },
+            lowTone: { frequency: 400, duration: 0.3, volume: 0.3 },
+
+            // Relay presets
+            relayOn: { frequency: 800, duration: 0.1, volume: 0.3 },
+            relayOff: { frequency: 400, duration: 0.5, volume: 0.3 },
+            relayTrigger: { frequency: 600, duration: 0.3, volume: 0.3 },
+            relayBurst: { frequency: 600, duration: 0.1, volume: 0.3 },
+
+            // Chemical presets
+            chemicalAction: { frequency: 600, duration: 0.3, volume: 0.2 },
+            chemicalSave: { frequency: 600, duration: 0.5, volume: 0.3 },
+            chemicalDelete: { frequency: 800, duration: 0.5, volume: 0.3 },
+
+            // Other presets
+            complete: { frequency: 1600, duration: 0.1, volume: 0.5 },
+          };
+        }
+
+        init() {
+          if (this.initialized) return true;
+
+          try {
+            this.audioContext = new (window.AudioContext ||
+              window.webkitAudioContext)();
+            this.initialized = true;
+            console.log("AudioService initialized");
+            return true;
+          } catch (e) {
+            console.warn("Web Audio API not supported:", e);
+            return false;
+          }
+        }
+
+        // Ensure audio context is running (resume if suspended)
+        async ensureRunning() {
+          if (!this.audioContext) {
+            this.init();
+          }
+
+          if (this.audioContext && this.audioContext.state === "suspended") {
+            try {
+              await this.audioContext.resume();
+            } catch (e) {
+              console.warn("Failed to resume audio context:", e);
+            }
+          }
+        }
+
+        // Play a beep with specified parameters
+        async playBeep(frequency = 800, duration = 0.1, volume = 0.3) {
+          await this.ensureRunning();
+
+          if (!this.audioContext) return;
+
+          try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = "sine";
+
+            gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(
+              0.01,
+              this.audioContext.currentTime + duration
+            );
+
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + duration);
+          } catch (e) {
+            console.warn("Could not play beep:", e);
+          }
+        }
+
+        // Play a preset beep
+        async playPreset(presetName) {
+          const preset = this.presets[presetName];
+          if (!preset) {
+            console.warn(`Unknown preset: ${presetName}`);
+            return;
+          }
+          await this.playBeep(preset.frequency, preset.duration, preset.volume);
+        }
+
+        // Countdown beep patterns
+        async playCountdownBeep(secondsRemaining) {
+          if (secondsRemaining <= 3) {
+            await this.playPreset("countdownUrgent");
+          } else if (secondsRemaining <= 5) {
+            await this.playPreset("countdownMid");
+          } else {
+            await this.playPreset("countdown");
+          }
+        }
+      }
+
+      // ===== DRIFT-CORRECTED TIMER UTILITY =====
+      class DriftCorrectedTimer {
+        constructor(callback, interval) {
+          this.callback = callback;
+          this.interval = interval;
+          this.expected = null;
+          this.timeout = null;
+          this.running = false;
+        }
+
+        start() {
+          if (this.running) return;
+
+          this.running = true;
+          this.expected = Date.now() + this.interval;
+          this.timeout = setTimeout(() => this.step(), this.interval);
+        }
+
+        step() {
+          if (!this.running) return;
+
+          const drift = Date.now() - this.expected;
+
+          // Call the callback
+          this.callback();
+
+          // Calculate next tick with drift correction
+          this.expected += this.interval;
+          const nextDelay = Math.max(0, this.interval - drift);
+
+          this.timeout = setTimeout(() => this.step(), nextDelay);
+        }
+
+        stop() {
+          this.running = false;
+          if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+          }
+        }
+
+        isRunning() {
+          return this.running;
+        }
+      }
+      const appState = {
+        // Calculator state
+        calculator: {
+          baseTime: 10.0,
+          currentStop: 0,
+          currentTotalTime: 10.0,
+          thisExposureTime: 10.0,
+          accumulatedTime: 0,
+          isRunning: false,
+          isPaused: false,
+          currentTime: 10.0,
+          lastExposureTime: 10.0,
+        },
+
+        // Timer states
+        timers: {
+          Dev: {
+            timeLeft: 60,
+            totalTime: 60,
+            isRunning: false,
+            isEnabled: true,
+          },
+          Stop: {
+            timeLeft: 30,
+            totalTime: 30,
+            isRunning: false,
+            isEnabled: true,
+          },
+          Fix: {
+            timeLeft: 60,
+            totalTime: 60,
+            isRunning: false,
+            isEnabled: true,
+          },
+          Flo: {
+            timeLeft: 30,
+            totalTime: 30,
+            isRunning: false,
+            isEnabled: true,
+          },
+        },
+
+        // Settings state (shared between UI and runtime)
+        settings: {
+          colorScheme: "dark",
+          calcWarningBeep: true,
+          calcEndBeep: true,
+          timerWarningBeep: true,
+          timerEndBeep: true,
+          autoStart: true,
+          defaultPhotoFlo: true,
+          countdownDelay: 5,
+          countdownBeep: true,
+          countdownPattern: "every-second",
+          autoAdvance: false,
+          autoAdvanceDelay: 1,
+          safelightAutoOff: true,
+          stopDenominator: 3,
+        },
+
+        // UI state
+        ui: {
+          activeTab: "calculator",
+          timerStatus: "READY FOR EXPOSURE",
+        },
+      };
+
+      // ===== RENDER FUNCTIONS =====
+
+      // Calculator render functions
+      function renderCalculatorDisplay() {
+        const state = appState.calculator;
+        document.getElementById(
+          "baseTimeValue"
+        ).textContent = `${state.baseTime.toFixed(1)}s`;
+        document.getElementById("stopValue").textContent = formatStop(
+          appState.calculator.currentStop
+        );
+        document.getElementById("resultTime").textContent =
+          state.currentTotalTime.toFixed(2);
+        document.getElementById("resultDetails").textContent = `${formatStop(
+          state.currentStop
+        )} STOPS`;
+        document.getElementById("calcTimerDisplay").textContent =
+          state.currentTime.toFixed(2);
+      }
+
+      function renderCalculatorExposureDetails() {
+        const state = appState.calculator;
+        document.getElementById("selectedStopDisplay").textContent = formatStop(
+          state.currentStop
+        );
+        document.getElementById("previousTotalDisplay").textContent =
+          state.accumulatedTime.toFixed(2);
+        document.getElementById("currentTotalDisplay").textContent =
+          state.currentTotalTime.toFixed(2);
+        document.getElementById("thisExposureDisplay").textContent =
+          state.thisExposureTime.toFixed(2);
+      }
+
+      function renderCalculatorTimerStatus() {
+        const state = appState.calculator;
+        const statusElement = document.getElementById("timerStatus");
+        const startBtn = document.getElementById("startExposure");
+        const stopBtn = document.getElementById("stopCalcTimer");
+        const resetBtn = document.getElementById("resetCalcTimer");
+        const repeatBtn = document.getElementById("repeatExposure");
+        const displayElement = document.getElementById("calcTimerDisplay");
+
+        statusElement.textContent = appState.ui.timerStatus;
+
+        if (state.isRunning) {
+          startBtn.textContent = "Pause";
+          startBtn.disabled = false;
+          stopBtn.disabled = false;
+          resetBtn.disabled = true;
+          repeatBtn.disabled = true;
+        } else if (state.isPaused) {
+          startBtn.textContent = "Resume";
+          startBtn.disabled = false;
+          stopBtn.disabled = false;
+          resetBtn.disabled = false;
+          repeatBtn.disabled = true;
+        } else {
+          startBtn.textContent =
+            state.accumulatedTime > 0 ? "Start Next" : "Start Exposure";
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          resetBtn.disabled = false;
+          repeatBtn.disabled = state.lastExposureTime <= 0;
+        }
+
+        if (state.currentTime <= 3 && state.isRunning) {
+          displayElement.classList.add("warning");
+        } else {
+          displayElement.classList.remove("warning");
+        }
+      }
+
+      // Timer render functions
+      function renderTimer(timerName) {
+        const state = appState.timers[timerName];
+        if (!state) return;
+
+        const display = document.getElementById(`display${timerName}`);
+        const button = document.getElementById(`btn${timerName}`);
+        const box = document.getElementById(`timer${timerName}`);
+        const resetButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="reset"]`
+        );
+        const plusButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="plus"]`
+        );
+        const minusButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="minus"]`
+        );
+
+        // Update display
+        if (display) {
+          const minutes = Math.floor(state.timeLeft / 60);
+          const seconds = state.timeLeft % 60;
+          display.textContent = `${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        }
+
+        // Update button states
+        if (!state.isEnabled) {
+          if (button) button.disabled = true;
+          if (resetButton) resetButton.disabled = true;
+          if (plusButton) plusButton.disabled = true;
+          if (minusButton) minusButton.disabled = true;
+          if (box) box.classList.add("disabled");
+          return;
+        }
+
+        if (button) {
+          button.disabled = false;
+          button.textContent = state.isRunning ? "Pause" : "Start";
+          button.classList.toggle("active", state.isRunning);
+        }
+
+        if (resetButton) resetButton.disabled = state.isRunning;
+        if (plusButton) plusButton.disabled = state.isRunning;
+        if (minusButton) minusButton.disabled = state.isRunning;
+
+        // Update box state
+        if (box) {
+          box.classList.remove("running", "warning", "complete", "disabled");
+          if (state.isRunning) box.classList.add("running");
+          if (state.timeLeft === 0) box.classList.add("complete");
+          if (!state.isEnabled) box.classList.add("disabled");
+        }
+      }
+
+      function renderAllTimers() {
+        Object.keys(appState.timers).forEach((timerName) =>
+          renderTimer(timerName)
+        );
+      }
+
+      // Settings render functions
+      function renderSoundSettings() {
+        const settings = appState.settings;
+        document.getElementById("calcWarningBeep").checked =
+          settings.calcWarningBeep;
+        document.getElementById("calcEndBeep").checked = settings.calcEndBeep;
+        document.getElementById("warningBeep").checked =
+          settings.timerWarningBeep;
+        document.getElementById("endBeep").checked = settings.timerEndBeep;
+        document.getElementById("autoStart").checked = settings.autoStart;
+      }
 
       // Tab management
       const tabButtons = document.querySelectorAll(".tab-button");
@@ -4404,10 +4787,13 @@
         }
       }
 
-      tabButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          switchTab(button.getAttribute("data-tab"));
-        });
+      // Event delegation for tabs - handles both existing and future tab buttons
+      document.addEventListener("click", (e) => {
+        const tabBtn = e.target.closest(".tab-button[data-tab]");
+        if (tabBtn) {
+          e.preventDefault();
+          switchTab(tabBtn.getAttribute("data-tab"));
+        }
       });
 
       // Add event listeners for base time limit inputs
@@ -4468,44 +4854,22 @@
         }
       });
 
-      // Audio context initialization
+      // Legacy audio wrapper for backward compatibility
+      let globalAudioContext = null; // Deprecated
+
       function initAudioContext() {
-        if (!globalAudioContext) {
-          try {
-            globalAudioContext = new (window.AudioContext ||
-              window.webkitAudioContext)();
-          } catch (e) {
-            console.warn("Web Audio API not supported:", e);
-          }
+        // Deprecated - AudioService handles this now
+        if (audioService) {
+          audioService.init();
+          return audioService.audioContext;
         }
-        return globalAudioContext;
+        return null;
       }
 
-      // Play beep function - SIMPLIFIED (no settings)
+      // Legacy playBeep wrapper - redirects to AudioService
       function playBeep(frequency = 800, duration = 0.1, volume = 0.3) {
-        const audioContext = initAudioContext();
-        if (!audioContext) return;
-
-        try {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-
-          oscillator.frequency.value = frequency;
-          oscillator.type = "sine";
-
-          gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(
-            0.01,
-            audioContext.currentTime + duration
-          );
-
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + duration);
-        } catch (e) {
-          console.warn("Could not play beep:", e);
+        if (audioService) {
+          audioService.playBeep(frequency, duration, volume);
         }
       }
 
@@ -4623,197 +4987,152 @@
       class Timer {
         constructor(name) {
           this.name = name;
-          this.isRunning = false;
-          this.interval = null;
+          this.driftTimer = null; // Using drift-corrected timer
           this.warningPlayed = false;
-          this.isEnabled = true;
 
-          // Initialize with default time
-          this.totalTime = DEFAULT_TIMER_TIMES[name] || 60;
-          this.timeLeft = this.totalTime;
+          // Initialize state if not exists
+          if (!appState.timers[name]) {
+            appState.timers[name] = {
+              timeLeft: DEFAULT_TIMER_TIMES[name] || 60,
+              totalTime: DEFAULT_TIMER_TIMES[name] || 60,
+              isRunning: false,
+              isEnabled: true,
+            };
+          }
 
           // Initialize display immediately
-          this.updateDisplay();
-          this.setupEventListeners();
+          this.render();
         }
 
-        setupEventListeners() {
-          const button = document.getElementById(`btn${this.name}`);
-          const resetButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="reset"]`
-          );
-          const plusButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="plus"]`
-          );
-          const minusButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="minus"]`
-          );
+        get state() {
+          return appState.timers[this.name];
+        }
 
-          if (button) button.addEventListener("click", () => this.toggle());
-          if (resetButton)
-            resetButton.addEventListener("click", () => this.reset());
-          if (plusButton)
-            plusButton.addEventListener("click", () => this.adjustTime(5));
-          if (minusButton)
-            minusButton.addEventListener("click", () => this.adjustTime(-5));
+        render() {
+          renderTimer(this.name);
         }
 
         updateDisplay() {
-          const display = document.getElementById(`display${this.name}`);
-          if (display) {
-            const minutes = Math.floor(this.timeLeft / 60);
-            const seconds = this.timeLeft % 60;
-            display.textContent = `${minutes
-              .toString()
-              .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-          }
+          // Deprecated - use render() instead
+          this.render();
         }
 
         updateButtonStates() {
-          const button = document.getElementById(`btn${this.name}`);
-          const resetButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="reset"]`
-          );
-          const plusButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="plus"]`
-          );
-          const minusButton = document.querySelector(
-            `button[data-timer="${this.name}"][data-action="minus"]`
-          );
-
-          if (!this.isEnabled) {
-            if (button) button.disabled = true;
-            if (resetButton) resetButton.disabled = true;
-            if (plusButton) plusButton.disabled = true;
-            if (minusButton) minusButton.disabled = true;
-            return;
-          }
-
-          if (button) {
-            button.disabled = false;
-            button.textContent = this.isRunning ? "Pause" : "Start";
-            button.classList.toggle("active", this.isRunning);
-          }
-
-          if (resetButton) resetButton.disabled = this.isRunning;
-          if (plusButton) plusButton.disabled = this.isRunning;
-          if (minusButton) minusButton.disabled = this.isRunning;
-
-          // Update box state
-          const box = document.getElementById(`timer${this.name}`);
-          if (box) {
-            box.classList.remove("running", "warning", "complete");
-            if (this.isRunning) box.classList.add("running");
-            if (this.timeLeft === 0) box.classList.add("complete");
-          }
+          // Deprecated - use render() instead
+          this.render();
         }
 
         setTime(seconds) {
           // Stop if running
-          if (this.isRunning) {
-            clearInterval(this.interval);
-            this.isRunning = false;
+          if (this.state.isRunning) {
+            if (this.driftTimer) {
+              this.driftTimer.stop();
+            }
+            this.state.isRunning = false;
           }
 
-          // Set new time
-          this.totalTime = seconds;
-          this.timeLeft = seconds;
+          // Set new time in state
+          this.state.totalTime = seconds;
+          this.state.timeLeft = seconds;
           this.warningPlayed = false;
 
-          // Update display and buttons
-          this.updateDisplay();
-          this.updateButtonStates();
-
-          // Update box state
-          const box = document.getElementById(`timer${this.name}`);
-          if (box) {
-            box.classList.remove("running", "warning", "complete");
-          }
+          // Update display
+          this.render();
         }
 
         adjustTime(seconds) {
-          if (this.isRunning || !this.isEnabled) return;
+          if (this.state.isRunning || !this.state.isEnabled) return;
 
-          const newTime = this.totalTime + seconds;
+          const newTime = this.state.totalTime + seconds;
           if (newTime >= 5 && newTime <= 600) {
-            this.totalTime = newTime;
-            this.timeLeft = newTime;
-            this.updateDisplay();
+            this.state.totalTime = newTime;
+            this.state.timeLeft = newTime;
+            this.render();
           }
         }
 
         start() {
-          if (this.isRunning || !this.isEnabled || this.timeLeft <= 0) return;
+          if (
+            this.state.isRunning ||
+            !this.state.isEnabled ||
+            this.state.timeLeft <= 0
+          )
+            return;
 
-          this.isRunning = true;
+          this.state.isRunning = true;
           this.warningPlayed = false;
-          this.updateButtonStates();
+          this.render();
 
-          this.interval = setInterval(() => {
-            this.timeLeft--;
-            this.updateDisplay();
+          // Use drift-corrected timer
+          this.driftTimer = new DriftCorrectedTimer(() => {
+            this.state.timeLeft--;
+            this.render();
 
             // 10-second warning
             if (
-              this.timeLeft === 10 &&
-              document.getElementById("warningBeep").checked &&
-              this.isEnabled
+              this.state.timeLeft === 10 &&
+              appState.settings.timerWarningBeep &&
+              this.state.isEnabled
             ) {
               const box = document.getElementById(`timer${this.name}`);
               if (box) box.classList.add("warning");
-              playBeep(400, 0.3, 0.3);
+              audioService?.playPreset("timerWarning");
               this.warningPlayed = true;
             }
 
             // Timer ended
-            if (this.timeLeft <= 0) {
+            if (this.state.timeLeft <= 0) {
               this.complete();
             }
           }, 1000);
+
+          this.driftTimer.start();
         }
 
         stop() {
-          if (!this.isRunning) return;
+          if (!this.state.isRunning) return;
 
-          clearInterval(this.interval);
-          this.isRunning = false;
-          this.updateButtonStates();
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
+          this.state.isRunning = false;
+          this.render();
         }
 
         reset() {
-          if (this.isRunning || !this.isEnabled) return;
+          if (this.state.isRunning || !this.state.isEnabled) return;
 
           this.stop();
-          this.timeLeft = this.totalTime;
+          this.state.timeLeft = this.state.totalTime;
           this.warningPlayed = false;
-          this.updateDisplay();
-          this.updateButtonStates();
+          this.render();
         }
 
         complete() {
-          this.isRunning = false;
-          clearInterval(this.interval);
-          this.timeLeft = 0;
-          this.updateDisplay();
-          this.updateButtonStates();
+          this.state.isRunning = false;
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
+          this.state.timeLeft = 0;
+          this.render();
 
-          if (document.getElementById("endBeep").checked && this.isEnabled) {
-            playBeep(800, 0.1, 0.5);
+          if (appState.settings.timerEndBeep && this.state.isEnabled) {
+            audioService?.playPreset("timerComplete");
           }
 
           // Auto-start next timer
-          if (document.getElementById("autoStart").checked) {
+          if (appState.settings.autoStart) {
             this.startNextTimer();
           }
         }
 
         toggle() {
-          if (!this.isEnabled) return;
+          if (!this.state.isEnabled) return;
 
-          if (this.isRunning) {
+          if (this.state.isRunning) {
             this.stop();
           } else {
-            if (this.timeLeft <= 0) {
+            if (this.state.timeLeft <= 0) {
               this.reset();
             }
             this.start();
@@ -4821,7 +5140,7 @@
         }
 
         updateEnabledState(enabled) {
-          this.isEnabled = enabled;
+          this.state.isEnabled = enabled;
           const box = document.getElementById(`timer${this.name}`);
           if (box) {
             if (enabled) {
@@ -4831,7 +5150,7 @@
               this.stop();
             }
           }
-          this.updateButtonStates();
+          this.render();
         }
 
         startNextTimer() {
@@ -4844,7 +5163,7 @@
               (t) => t.name === nextTimerName
             );
 
-            if (nextTimer && nextTimer.isEnabled) {
+            if (nextTimer && nextTimer.state.isEnabled) {
               setTimeout(() => {
                 nextTimer.reset();
                 nextTimer.start();
@@ -4855,7 +5174,7 @@
         }
 
         getCurrentTime() {
-          return this.totalTime;
+          return this.state.totalTime;
         }
       }
 
@@ -4900,7 +5219,7 @@
               (pattern === "last5" && this.countdownValue <= 5);
 
             if (shouldBeep) {
-              playBeep(400, 0.2, 0.2); // Initial beep
+              audioService?.playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -4974,17 +5293,8 @@
             }
 
             if (shouldBeep) {
-              // Different beep patterns based on remaining time
-              if (this.countdownValue <= 3) {
-                // Last 3 seconds: higher frequency, shorter duration
-                playBeep(800, 0.2, 0.4);
-              } else if (this.countdownValue <= 5) {
-                // Middle seconds: medium frequency
-                playBeep(600, 0.3, 0.3);
-              } else {
-                // Early seconds: lower frequency, softer
-                playBeep(400, 0.2, 0.2);
-              }
+              // Use AudioService countdown beep with time-based patterns
+              audioService?.playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -5003,7 +5313,7 @@
 
           // Final beep
           if (this.beepEnabled) {
-            playBeep(1600, 0.5, 0.5); // Final, longer beep
+            audioService?.playPreset("countdownComplete");
           }
 
           // Restore display
@@ -5057,6 +5367,10 @@
           this.profiles = StorageManager.loadProfiles();
           this.currentProfile = StorageManager.loadCurrentProfile();
           this.colorScheme = StorageManager.loadColorScheme();
+
+          // Sync loaded settings to appState
+          Object.assign(appState.settings, this.settings);
+
           this.applyColorScheme();
           this.applySoundSettings();
 
@@ -5080,27 +5394,25 @@
         }
 
         applySoundSettings() {
-          // Apply sound settings from saved settings
+          // Apply sound settings from saved settings and sync to appState
           if (this.settings.calcWarningBeep !== undefined) {
-            document.getElementById("calcWarningBeep").checked =
-              this.settings.calcWarningBeep;
+            appState.settings.calcWarningBeep = this.settings.calcWarningBeep;
           }
           if (this.settings.calcEndBeep !== undefined) {
-            document.getElementById("calcEndBeep").checked =
-              this.settings.calcEndBeep;
+            appState.settings.calcEndBeep = this.settings.calcEndBeep;
           }
           if (this.settings.autoStart !== undefined) {
-            document.getElementById("autoStart").checked =
-              this.settings.autoStart;
+            appState.settings.autoStart = this.settings.autoStart;
           }
           if (this.settings.timerWarningBeep !== undefined) {
-            document.getElementById("warningBeep").checked =
-              this.settings.timerWarningBeep;
+            appState.settings.timerWarningBeep = this.settings.timerWarningBeep;
           }
           if (this.settings.timerEndBeep !== undefined) {
-            document.getElementById("endBeep").checked =
-              this.settings.timerEndBeep;
+            appState.settings.timerEndBeep = this.settings.timerEndBeep;
           }
+
+          // Update UI to reflect state
+          renderSoundSettings();
         }
 
         applyColorScheme() {
@@ -5378,6 +5690,9 @@
         // Called when user clicks "Save"
         saveGlobalSettings() {
           this.readSettingsFromUI();
+          // Sync to appState
+          Object.assign(appState.settings, this.settings);
+
           if (StorageManager.saveSettings(this.settings)) {
             this.applySettingsToRuntime();
             this.showAllProfilesFeedback("Global settings saved!", "success");
@@ -5387,6 +5702,9 @@
         // Apply settings live without showing feedback
         applyLiveSettings() {
           this.readSettingsFromUI();
+          // Sync to appState
+          Object.assign(appState.settings, this.settings);
+
           // Save immediately for persistence but don't show the save feedback
           StorageManager.saveSettings(this.settings);
           this.applySettingsToRuntime();
@@ -5879,23 +6197,7 @@
             profileList.appendChild(item);
           });
 
-          // Add event listeners for timer tab
-          document.querySelectorAll(".load-timer-profile").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const profileName = e.target.getAttribute("data-name");
-              const profile = this.profiles.find((p) => p.name === profileName);
-              if (profile) {
-                this.loadProfile(profile);
-              }
-            });
-          });
-
-          document.querySelectorAll(".delete-timer-profile").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const profileName = e.target.getAttribute("data-name");
-              this.deleteProfile(profileName);
-            });
-          });
+          // Event handlers now via delegation - no individual listeners needed
         }
       }
 
@@ -5995,19 +6297,10 @@
           const today = new Date().toISOString().split("T")[0];
           this.chemicalDateInput.value = today;
 
-          // Add event listeners
+          // Add event listeners for inputs/sliders (not buttons - those use delegation)
           this.totalVolumeSlider.addEventListener("input", () =>
             this.updateMixCalculator()
           );
-
-          this.dilutionBtns.forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              this.dilutionBtns.forEach((b) => b.classList.remove("active"));
-              btn.classList.add("active");
-              this.dilutionRatio = btn.getAttribute("data-ratio");
-              this.updateMixCalculator();
-            });
-          });
 
           // FIX: Allow typing in custom inputs
           this.customStockPartsInput.addEventListener("input", () => {
@@ -6024,40 +6317,34 @@
             this.updateMixCalculator();
           });
 
-          // Chemical preset events
-          this.saveChemicalPresetBtn.addEventListener("click", () =>
-            this.saveChemicalPreset()
-          );
-          this.clearChemicalPresetsBtn.addEventListener("click", () =>
-            this.clearChemicalPresets()
-          );
-
-          // Capacity tracker events - UPDATED
+          // Capacity tracker slider events
           this.capacitySlider.addEventListener("input", () =>
             this.updateCapacityDisplay()
           );
           this.trayVolumeSlider.addEventListener("input", () =>
             this.updateCapacityDisplay()
           );
+
+          // Button click events now handled via delegation
           this.addPrintBtn.addEventListener("click", () => this.addPrints(1));
           this.add5PrintsBtn.addEventListener("click", () => this.addPrints(5));
           this.resetPrintsBtn.addEventListener("click", () =>
             this.resetPrints()
           );
+          this.saveChemicalPresetBtn.addEventListener("click", () =>
+            this.saveChemicalPreset()
+          );
+          this.clearChemicalPresetsBtn.addEventListener("click", () =>
+            this.clearChemicalPresets()
+          );
+          this.addChemicalBtn.addEventListener("click", () =>
+            this.addChemical()
+          );
+          this.clearExpiredBtn.addEventListener("click", () =>
+            this.clearExpired()
+          );
 
-          // Paper size events - FIXED
-          this.paperSizeBtns.forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const size = parseFloat(e.target.getAttribute("data-size"));
-              if (size) {
-                this.setPaperSize(size);
-                // Update custom input to match selected size
-                this.customPaperSizeInput.value = size.toFixed(3);
-              }
-            });
-          });
-
-          // Custom paper size button - FIXED
+          // Custom paper size button
           this.useCustomSizeBtn.addEventListener("click", () => {
             const customSize = parseFloat(this.customPaperSizeInput.value);
             if (customSize && customSize > 0) {
@@ -6071,14 +6358,6 @@
               }, 1000);
             }
           });
-
-          // Shelf life events
-          this.addChemicalBtn.addEventListener("click", () =>
-            this.addChemical()
-          );
-          this.clearExpiredBtn.addEventListener("click", () =>
-            this.clearExpired()
-          );
         }
 
         updateMixCalculator() {
@@ -6223,27 +6502,7 @@
             this.chemicalPresetList.appendChild(item);
           });
 
-          // Add event listeners
-          document.querySelectorAll(".load-chemical-preset").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const presetName = e.target.getAttribute("data-name");
-              const preset = this.chemicalPresets.find(
-                (p) => p.name === presetName
-              );
-              if (preset) {
-                this.loadChemicalPreset(preset);
-              }
-            });
-          });
-
-          document
-            .querySelectorAll(".delete-chemical-preset")
-            .forEach((btn) => {
-              btn.addEventListener("click", (e) => {
-                const presetName = e.target.getAttribute("data-name");
-                this.deleteChemicalPreset(presetName);
-              });
-            });
+          // Event handlers now via delegation - no individual listeners needed
         }
 
         clearChemicalPresets() {
@@ -6523,20 +6782,7 @@
             this.shelfLifeList.appendChild(item);
           });
 
-          // Add event listeners
-          document.querySelectorAll(".renew-chemical").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const id = parseInt(e.target.getAttribute("data-id"));
-              this.renewChemical(id);
-            });
-          });
-
-          document.querySelectorAll(".delete-chemical").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const id = parseInt(e.target.getAttribute("data-id"));
-              this.deleteChemical(id);
-            });
-          });
+          // Event handlers now via delegation - no individual listeners needed
         }
 
         renewChemical(id) {
@@ -6678,8 +6924,7 @@
               this.allRelaysOff()
             );
 
-          // Initialize relay toggle buttons
-          this.initRelayToggleButtons();
+          // Relay toggle buttons now use delegation - no init needed
 
           // Update UI
           this.updateRelayButtons();
@@ -6824,12 +7069,7 @@
           }
         }
 
-        initRelayToggleButtons() {
-          document.querySelectorAll(".relay-toggle-btn").forEach((btn) => {
-            const relayNum = parseInt(btn.getAttribute("data-relay"));
-            btn.addEventListener("click", () => this.toggleRelay(relayNum));
-          });
-        }
+        // initRelayToggleButtons removed - now using event delegation
 
         // In the saveSettings() method, add safelightAutoOff:
         saveSettings() {
@@ -7427,7 +7667,9 @@
           document
             .getElementById("startAll")
             .addEventListener("click", async () => {
-              const firstEnabledTimer = this.timers.find((t) => t.isEnabled);
+              const firstEnabledTimer = this.timers.find(
+                (t) => t.state.isEnabled
+              );
               if (!firstEnabledTimer) return;
 
               // Disable buttons during countdown
@@ -7459,14 +7701,13 @@
           // Reset All button
           document.getElementById("resetAll").addEventListener("click", () => {
             this.timers.forEach((timer) => {
-              if (!timer.isRunning && timer.isEnabled) {
+              if (!timer.state.isRunning && timer.state.isEnabled) {
                 timer.reset();
               }
             });
           });
 
-          // Initialize audio context on any click
-          document.addEventListener("click", initAudioContext);
+          // Audio context init is now in centralized delegation
         },
       };
 
@@ -7514,58 +7755,69 @@
       // FIXED: Enhanced IncrementalTimer with proper button states
       class IncrementalTimer {
         constructor() {
-          this.baseTime = 10.0;
-          this.currentStop = 0;
-          this.previousTotalTime = 0;
-          this.currentTotalTime = 10.0;
-          this.thisExposureTime = 10.0;
-          this.accumulatedTime = 0;
+          // Initialize state from appState
+          this.syncFromState();
 
-          this.currentTime = 10.0;
-          this.isRunning = false;
-          this.isPaused = false;
-          this.interval = null;
+          this.driftTimer = null; // Using drift-corrected timer
           this.lastBeepSecond = null;
 
-          // Track last exposure time for repeat
-          this.lastExposureTime = 10.0;
-
           this.init();
-          this.updateAllDisplays();
+          this.render();
+        }
+
+        // Sync local properties from central state
+        syncFromState() {
+          const state = appState.calculator;
+          this.baseTime = state.baseTime;
+          this.currentStop = state.currentStop;
+          this.previousTotalTime = 0;
+          this.currentTotalTime = state.currentTotalTime;
+          this.thisExposureTime = state.thisExposureTime;
+          this.accumulatedTime = state.accumulatedTime;
+          this.currentTime = state.currentTime;
+          this.isRunning = state.isRunning;
+          this.isPaused = state.isPaused;
+          this.lastExposureTime = state.lastExposureTime;
+        }
+
+        // Sync central state from local properties
+        syncToState() {
+          const state = appState.calculator;
+          state.baseTime = this.baseTime;
+          state.currentStop = this.currentStop;
+          state.currentTotalTime = this.currentTotalTime;
+          state.thisExposureTime = this.thisExposureTime;
+          state.accumulatedTime = this.accumulatedTime;
+          state.currentTime = this.currentTime;
+          state.isRunning = this.isRunning;
+          state.isPaused = this.isPaused;
+          state.lastExposureTime = this.lastExposureTime;
+        }
+
+        // Unified render method
+        render() {
+          this.syncToState();
+          renderCalculatorDisplay();
+          renderCalculatorExposureDetails();
+          renderCalculatorTimerStatus();
+          updateChart();
         }
 
         init() {
-          document
-            .getElementById("startExposure")
-            .addEventListener("click", () => this.toggle());
-          document
-            .getElementById("stopCalcTimer")
-            .addEventListener("click", () => this.stopCurrentExposure());
-          document
-            .getElementById("resetCalcTimer")
-            .addEventListener("click", () => this.reset());
-
-          // Add repeat button event listener
-          document
-            .getElementById("repeatExposure")
-            .addEventListener("click", () => this.repeatLast());
-
+          // Sliders still need direct listeners for input events
           baseTimeSlider.addEventListener("input", () =>
             this.updateFromSliders()
           );
           stopSlider.addEventListener("input", () => this.updateFromSliders());
-
-          // Initialize audio on first click
-          document
-            .getElementById("startExposure")
-            .addEventListener("click", initAudioContext);
         }
 
         // Stop current exposure (resets current exposure time)
         stopCurrentExposure() {
           if (!this.isRunning && !this.isPaused) return;
 
-          clearInterval(this.interval);
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.lastBeepSecond = null;
@@ -7573,21 +7825,11 @@
           // Reset current time to current exposure time
           this.currentTime = this.thisExposureTime;
 
-          // Update displays
-          document.getElementById("timerStatus").textContent =
-            "EXPOSURE STOPPED";
-          document.getElementById("calcTimerDisplay").textContent =
-            this.currentTime.toFixed(2);
-          document.getElementById("startExposure").textContent =
-            "Start Exposure";
-          document.getElementById("startExposure").disabled = false; // FIX: Enable start button
-          document.getElementById("stopCalcTimer").disabled = true;
-          document.getElementById("resetCalcTimer").disabled = false; // FIX: Enable reset button
-          document
-            .getElementById("calcTimerDisplay")
-            .classList.remove("warning");
+          // Update state and render
+          appState.ui.timerStatus = "EXPOSURE STOPPED";
+          this.render();
 
-          playBeep(600, 0.3, 0.2);
+          audioService?.playPreset("pause");
         }
 
         // Repeat last exposure method
@@ -7599,34 +7841,25 @@
           this.currentTime = this.lastExposureTime;
 
           // Reset timer state
-          clearInterval(this.interval);
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.lastBeepSecond = null;
 
-          // Update displays
-          document.getElementById("timerStatus").textContent =
-            "READY TO REPEAT";
-          document.getElementById("calcTimerDisplay").textContent =
-            this.currentTime.toFixed(2);
-          document.getElementById("thisExposureDisplay").textContent =
-            this.thisExposureTime.toFixed(2);
+          // Update state and render
+          appState.ui.timerStatus = "READY TO REPEAT";
+          this.render();
 
-          // Enable start button, disable stop button
-          document.getElementById("startExposure").disabled = false;
-          document.getElementById("startExposure").textContent =
-            "Start Exposure";
-          document.getElementById("stopCalcTimer").disabled = true;
-          document.getElementById("repeatExposure").disabled = false; // Keep repeat enabled
-
-          playBeep(600, 0.3, 0.2);
+          audioService?.playPreset("pause");
         }
 
         updateFromSliders() {
           this.baseTime = parseFloat(baseTimeSlider.value);
           this.currentStop = parseInt(stopSlider.value);
           this.updateCalculations();
-          this.updateAllDisplays();
+          this.render();
         }
 
         updateCalculations() {
@@ -7646,38 +7879,8 @@
         }
 
         updateAllDisplays() {
-          document.getElementById(
-            "baseTimeValue"
-          ).textContent = `${this.baseTime.toFixed(1)}s`;
-          document.getElementById("stopValue").textContent = formatStop(
-            this.currentStop
-          );
-          document.getElementById("resultTime").textContent =
-            this.currentTotalTime.toFixed(2);
-          document.getElementById("resultDetails").textContent = `${formatStop(
-            this.currentStop
-          )} STOPS`;
-
-          document.getElementById("selectedStopDisplay").textContent =
-            formatStop(this.currentStop);
-          document.getElementById("previousTotalDisplay").textContent =
-            this.accumulatedTime.toFixed(2);
-          document.getElementById("currentTotalDisplay").textContent =
-            this.currentTotalTime.toFixed(2);
-          document.getElementById("thisExposureDisplay").textContent =
-            this.thisExposureTime.toFixed(2);
-
-          document.getElementById("calcTimerDisplay").textContent =
-            this.currentTime.toFixed(2);
-
-          if (typeof chartBaseSlider !== "undefined" && chartBaseSlider) {
-            if (typeof chartBaseSlider !== "undefined" && chartBaseSlider)
-              chartBaseSlider.value = this.baseTime;
-          } else {
-            const cbVal = document.getElementById("chartBaseValue");
-            if (cbVal) cbVal.textContent = `${this.baseTime.toFixed(1)}s`;
-          }
-          updateChart();
+          // Deprecated - use render() instead
+          this.render();
         }
 
         // Add to IncrementalTimer class (around line 1500)
@@ -7704,8 +7907,8 @@
           // Start countdown
           const display = document.getElementById("calcTimerDisplay");
           const originalText = display.textContent;
-          document.getElementById("timerStatus").textContent =
-            "COUNTDOWN STARTING...";
+          appState.ui.timerStatus = "COUNTDOWN STARTING...";
+          this.render();
 
           await new Promise((resolve) => {
             window.countdownManager.startCountdown(display, () => {
@@ -7715,8 +7918,7 @@
 
           // Restore display and enable buttons
           display.textContent = originalText;
-          document.getElementById("timerStatus").textContent =
-            "EXPOSURE IN PROGRESS";
+          appState.ui.timerStatus = "EXPOSURE IN PROGRESS";
 
           // TRIGGER RELAY HERE
           if (window.relayManager && window.relayManager.autoTrigger) {
@@ -7734,31 +7936,26 @@
           this.isPaused = false;
           this.lastBeepSecond = null;
 
-          // Enable and set proper button states
-          document.getElementById("startExposure").disabled = false;
-          document.getElementById("startExposure").textContent = "Pause";
-          document.getElementById("stopCalcTimer").disabled = false;
-          document.getElementById("resetCalcTimer").disabled = true;
-          document.getElementById("repeatExposure").disabled = true;
-
+          this.render();
           this.startInterval();
         }
 
         startInterval() {
-          this.interval = setInterval(() => {
+          this.driftTimer = new DriftCorrectedTimer(() => {
             this.currentTime -= 0.1;
 
             if (this.currentTime <= 0) {
               this.currentTime = 0;
               this.complete();
             } else {
+              // Update display directly for performance
               document.getElementById("calcTimerDisplay").textContent =
                 this.currentTime.toFixed(2);
 
-              if (
-                this.currentTime <= 3 &&
-                document.getElementById("calcWarningBeep").checked
-              ) {
+              // Sync state periodically
+              appState.calculator.currentTime = this.currentTime;
+
+              if (this.currentTime <= 3 && appState.settings.calcWarningBeep) {
                 const currentSecond = Math.ceil(this.currentTime);
 
                 if (
@@ -7767,7 +7964,7 @@
                   currentSecond > 0
                 ) {
                   this.lastBeepSecond = currentSecond;
-                  playBeep(600, 0.3, 0.3);
+                  audioService?.playPreset("calcWarning");
                   document
                     .getElementById("calcTimerDisplay")
                     .classList.add("warning");
@@ -7781,24 +7978,23 @@
               }
             }
           }, 100);
+
+          this.driftTimer.start();
         }
 
         pause() {
           if (!this.isRunning) return;
 
-          clearInterval(this.interval);
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
           this.isRunning = false;
           this.isPaused = true;
 
-          document.getElementById("timerStatus").textContent =
-            "EXPOSURE PAUSED";
-          document.getElementById("startExposure").textContent = "Resume";
-          document.getElementById("startExposure").disabled = false; // FIX: Ensure button is enabled
-          document
-            .getElementById("calcTimerDisplay")
-            .classList.remove("warning");
+          appState.ui.timerStatus = "EXPOSURE PAUSED";
+          this.render();
 
-          playBeep(400, 0.3, 0.2);
+          audioService?.playPreset("pause");
         }
 
         resume() {
@@ -7808,16 +8004,16 @@
           this.isPaused = false;
           this.lastBeepSecond = null;
 
-          document.getElementById("timerStatus").textContent =
-            "EXPOSURE IN PROGRESS";
-          document.getElementById("startExposure").textContent = "Pause";
-          document.getElementById("startExposure").disabled = false; // FIX: Ensure button is enabled
+          appState.ui.timerStatus = "EXPOSURE IN PROGRESS";
+          this.render();
 
           this.startInterval();
         }
 
         complete() {
-          clearInterval(this.interval);
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.lastBeepSecond = null;
@@ -7827,34 +8023,21 @@
 
           this.accumulatedTime = this.currentTotalTime;
 
-          if (document.getElementById("calcEndBeep").checked) {
-            playBeep(1600, 0.1, 0.5);
+          if (appState.settings.calcEndBeep) {
+            audioService?.playPreset("calcComplete");
           }
 
-          document.getElementById("timerStatus").textContent =
-            "EXPOSURE COMPLETE";
-          document.getElementById("startExposure").textContent = "Start Next";
-          document.getElementById("startExposure").disabled = false; // FIX: Enable for next exposure
-          document.getElementById("stopCalcTimer").disabled = true;
-          document.getElementById("resetCalcTimer").disabled = false; // FIX: Enable reset button
-
-          // Enable repeat button
-          document.getElementById("repeatExposure").disabled = false;
-
-          document
-            .getElementById("calcTimerDisplay")
-            .classList.remove("warning");
-
+          appState.ui.timerStatus = "EXPOSURE COMPLETE";
           this.updateCalculations();
-          this.updateAllDisplays();
-
           this.currentTime = this.thisExposureTime;
-          document.getElementById("calcTimerDisplay").textContent =
-            this.currentTime.toFixed(2);
+
+          this.render();
         }
 
         reset() {
-          clearInterval(this.interval);
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.lastBeepSecond = null;
@@ -7863,20 +8046,8 @@
           this.updateCalculations();
           this.currentTime = this.thisExposureTime;
 
-          // FIX: Properly set button states on reset
-          document.getElementById("timerStatus").textContent =
-            "READY FOR EXPOSURE";
-          document.getElementById("startExposure").textContent =
-            "Start Exposure";
-          document.getElementById("startExposure").disabled = false; // FIX: Enable start button
-          document.getElementById("stopCalcTimer").disabled = true;
-          document.getElementById("resetCalcTimer").disabled = false; // FIX: Enable reset button
-          document.getElementById("repeatExposure").disabled = true; // Disable repeat until an exposure completes
-          document
-            .getElementById("calcTimerDisplay")
-            .classList.remove("warning");
-
-          this.updateAllDisplays();
+          appState.ui.timerStatus = "READY FOR EXPOSURE";
+          this.render();
         }
 
         toggle() {
@@ -9624,6 +9795,10 @@
 
       // Initialize everything
       document.addEventListener("DOMContentLoaded", () => {
+        // Initialize audio service first (for all sound functionality)
+        audioService = new AudioService();
+        audioService.init();
+
         // Initialize settings manager first
         settingsManager = new SettingsManager();
 
@@ -9667,11 +9842,14 @@
         document
           .getElementById("testCountdownBeep")
           ?.addEventListener("click", () => {
-            // Test the different beep patterns
-            playBeep(400, 0.2, 0.2); // Early second beep
-            setTimeout(() => playBeep(600, 0.3, 0.3), 300); // Middle second beep
-            setTimeout(() => playBeep(800, 0.2, 0.4), 600); // Last 3 seconds beep
-            setTimeout(() => playBeep(1600, 0.5, 0.5), 900); // Final beep
+            // Test the different countdown beep patterns
+            audioService?.playCountdownBeep(5); // Early second beep
+            setTimeout(() => audioService?.playCountdownBeep(4), 300);
+            setTimeout(() => audioService?.playCountdownBeep(3), 600); // Last 3 seconds beep
+            setTimeout(
+              () => audioService?.playPreset("countdownComplete"),
+              900
+            ); // Final beep
           });
 
         // Settings panel event listeners
@@ -9967,6 +10145,252 @@
 
         // Initialize audio context on any user interaction
         document.addEventListener("click", initAudioContext);
+
+        // ===== CENTRALIZED EVENT DELEGATION =====
+        // Handle all timer-related button clicks via delegation
+        document.addEventListener("click", (e) => {
+          // Timer toggle buttons (Start/Pause)
+          const timerBtn = e.target.closest(
+            '[id^="btn"][id$="Dev"], [id^="btn"][id$="Stop"], [id^="btn"][id$="Fix"], [id^="btn"][id$="Flo"]'
+          );
+          if (timerBtn && timerBtn.id.startsWith("btn")) {
+            const timerName = timerBtn.id.replace("btn", "");
+            const timer = timerManager?.timers.find(
+              (t) => t.name === timerName
+            );
+            if (timer) {
+              e.preventDefault();
+              timer.toggle();
+            }
+            return;
+          }
+
+          // Timer action buttons (reset, plus, minus)
+          const timerActionBtn = e.target.closest(
+            "button[data-timer][data-action]"
+          );
+          if (timerActionBtn) {
+            const timerName = timerActionBtn.getAttribute("data-timer");
+            const action = timerActionBtn.getAttribute("data-action");
+            const timer = timerManager?.timers.find(
+              (t) => t.name === timerName
+            );
+            if (timer) {
+              e.preventDefault();
+              if (action === "reset") timer.reset();
+              else if (action === "plus") timer.adjustTime(5);
+              else if (action === "minus") timer.adjustTime(-5);
+            }
+            return;
+          }
+
+          // Calculator buttons
+          if (e.target.id === "startExposure" && window.incrementalTimer) {
+            e.preventDefault();
+            window.incrementalTimer.toggle();
+            return;
+          }
+          if (e.target.id === "stopCalcTimer" && window.incrementalTimer) {
+            e.preventDefault();
+            window.incrementalTimer.stopCurrentExposure();
+            return;
+          }
+          if (e.target.id === "resetCalcTimer" && window.incrementalTimer) {
+            e.preventDefault();
+            window.incrementalTimer.reset();
+            return;
+          }
+          if (e.target.id === "repeatExposure" && window.incrementalTimer) {
+            e.preventDefault();
+            window.incrementalTimer.repeatLast();
+            return;
+          }
+
+          // Relay toggle buttons
+          const relayToggleBtn = e.target.closest(
+            ".relay-toggle-btn[data-relay]"
+          );
+          if (relayToggleBtn && window.relayManager) {
+            const relayNum = parseInt(
+              relayToggleBtn.getAttribute("data-relay")
+            );
+            e.preventDefault();
+            window.relayManager.toggleRelay(relayNum);
+            return;
+          }
+
+          // Profile load/delete buttons (dynamically created)
+          const loadProfileBtn = e.target.closest(
+            ".load-timer-profile[data-name]"
+          );
+          if (loadProfileBtn && settingsManager) {
+            const profileName = loadProfileBtn.getAttribute("data-name");
+            const profile = settingsManager.profiles.find(
+              (p) => p.name === profileName
+            );
+            if (profile) {
+              e.preventDefault();
+              settingsManager.loadProfile(profile);
+            }
+            return;
+          }
+
+          const deleteProfileBtn = e.target.closest(
+            ".delete-timer-profile[data-name]"
+          );
+          if (deleteProfileBtn && settingsManager) {
+            const profileName = deleteProfileBtn.getAttribute("data-name");
+            e.preventDefault();
+            settingsManager.deleteProfile(profileName);
+            return;
+          }
+
+          // Chemical preset buttons (dynamically created)
+          const loadChemicalBtn = e.target.closest(
+            ".load-chemical-preset[data-name]"
+          );
+          if (loadChemicalBtn && window.chemicalManager) {
+            const presetName = loadChemicalBtn.getAttribute("data-name");
+            const preset = window.chemicalManager.chemicalPresets.find(
+              (p) => p.name === presetName
+            );
+            if (preset) {
+              e.preventDefault();
+              window.chemicalManager.loadChemicalPreset(preset);
+            }
+            return;
+          }
+
+          const deleteChemicalBtn = e.target.closest(
+            ".delete-chemical-preset[data-name]"
+          );
+          if (deleteChemicalBtn && window.chemicalManager) {
+            const presetName = deleteChemicalBtn.getAttribute("data-name");
+            e.preventDefault();
+            window.chemicalManager.deleteChemicalPreset(presetName);
+            return;
+          }
+
+          // Shelf life buttons (dynamically created)
+          const renewChemicalBtn = e.target.closest(".renew-chemical[data-id]");
+          if (renewChemicalBtn && window.chemicalManager) {
+            const id = parseInt(renewChemicalBtn.getAttribute("data-id"));
+            e.preventDefault();
+            window.chemicalManager.renewChemical(id);
+            return;
+          }
+
+          const deleteChemicalShelfBtn = e.target.closest(
+            ".delete-chemical[data-id]"
+          );
+          if (deleteChemicalShelfBtn && window.chemicalManager) {
+            const id = parseInt(deleteChemicalShelfBtn.getAttribute("data-id"));
+            e.preventDefault();
+            window.chemicalManager.deleteChemical(id);
+            return;
+          }
+
+          // Dilution buttons
+          const dilutionBtn = e.target.closest(".dilution-btn[data-ratio]");
+          if (dilutionBtn && window.chemicalManager) {
+            e.preventDefault();
+            document
+              .querySelectorAll(".dilution-btn")
+              .forEach((b) => b.classList.remove("active"));
+            dilutionBtn.classList.add("active");
+            window.chemicalManager.dilutionRatio =
+              dilutionBtn.getAttribute("data-ratio");
+            window.chemicalManager.updateMixCalculator();
+            return;
+          }
+
+          // Paper size buttons
+          const paperSizeBtn = e.target.closest(".paper-size-btn[data-size]");
+          if (paperSizeBtn && window.chemicalManager) {
+            const size = parseFloat(paperSizeBtn.getAttribute("data-size"));
+            if (size) {
+              e.preventDefault();
+              window.chemicalManager.setPaperSize(size);
+              if (window.chemicalManager.customPaperSizeInput) {
+                window.chemicalManager.customPaperSizeInput.value =
+                  size.toFixed(3);
+              }
+            }
+            return;
+          }
+
+          // Color scheme buttons
+          const colorSchemeBtn = e.target.closest(
+            ".color-scheme-btn[data-scheme]"
+          );
+          if (colorSchemeBtn && settingsManager) {
+            const scheme = colorSchemeBtn.getAttribute("data-scheme");
+            e.preventDefault();
+            settingsManager.setColorScheme(scheme);
+            return;
+          }
+        });
+
+        // Event delegation for segmented controls (f-stop denominator)
+        document.addEventListener("click", (e) => {
+          const segmentedBtn = e.target.closest(".segmented-btn[data-denom]");
+          if (segmentedBtn) {
+            const container = segmentedBtn.closest(".segmented-control");
+            if (container) {
+              const denom = parseInt(
+                segmentedBtn.getAttribute("data-denom"),
+                10
+              );
+              e.preventDefault();
+
+              // Update all buttons in this container
+              container.querySelectorAll(".segmented-btn").forEach((btn) => {
+                btn.classList.remove("active");
+                btn.setAttribute("aria-pressed", "false");
+              });
+              segmentedBtn.classList.add("active");
+              segmentedBtn.setAttribute("aria-pressed", "true");
+
+              // Update global denominator
+              window.stopDenominator = denom;
+
+              // Sync all segmented controls
+              document
+                .querySelectorAll(".segmented-control")
+                .forEach((cont) => {
+                  cont.querySelectorAll(".segmented-btn").forEach((btn) => {
+                    const btnDenom = parseInt(
+                      btn.getAttribute("data-denom"),
+                      10
+                    );
+                    if (btnDenom === denom) {
+                      btn.classList.add("active");
+                      btn.setAttribute("aria-pressed", "true");
+                    } else {
+                      btn.classList.remove("active");
+                      btn.setAttribute("aria-pressed", "false");
+                    }
+                  });
+                });
+
+              // Update calculators
+              if (window.incrementalTimer) {
+                window.incrementalTimer.updateCalculations();
+                window.incrementalTimer.render();
+              }
+              if (window.fstopTestGenerator) {
+                window.fstopTestGenerator.generateSteps();
+                window.fstopTestGenerator.updateDisplay();
+              }
+              try {
+                updateAllRulers();
+              } catch (e) {}
+              try {
+                updateChart();
+              } catch (e) {}
+            }
+          }
+        });
 
         // Initialize collapsible rows in the CALC, CHEMICAL and TIMER tabs
         (function initCalcCollapsibles() {
