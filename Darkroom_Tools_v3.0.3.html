@@ -150,7 +150,7 @@
         background: var(--bg);
         color: var(--text-secondary);
         border: none;
-        border-bottom: 2px solid transparent;
+        border-bottom: 1px solid var(--border);
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
         font-size: 0.8rem;
@@ -159,18 +159,11 @@
         white-space: nowrap;
       }
 
-      .tab-button:first-child {
-        border-left: none;
-      }
-
-      .tab-button:last-child {
-        border-right: none;
-      }
-
       .tab-button.active {
         color: var(--title);
         border-bottom: 2px solid var(--title);
         background: var(--border);
+        border-radius: 8px 8px 0px 0px;
       }
 
       .tab-content {
@@ -219,18 +212,18 @@
       .info-box {
         text-align: center;
         background: var(--panel);
-        border-radius: 3px;
+        border-radius: 6px;
         padding: 8px;
       }
 
       .result {
         margin: 12px 0;
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
       }
 
       .info-box {
-        border: 1px solid var(--border);
+        border: 2px solid var(--border);
         padding: 6px;
       }
 
@@ -247,7 +240,7 @@
       .incremental-timer {
         background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-top: 12px;
       }
 
@@ -286,7 +279,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.8rem;
         cursor: pointer;
         min-width: 120px;
@@ -366,7 +359,7 @@
       .timer-box {
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 6px;
         padding: 6px;
         display: flex;
         flex-direction: column;
@@ -445,7 +438,7 @@
         background: var(--panel-light);
         border: 1px solid var(--border-light);
         color: var(--text-secondary);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.65rem;
         cursor: pointer;
       }
@@ -470,7 +463,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.7rem;
         cursor: pointer;
         white-space: nowrap;
@@ -506,7 +499,7 @@
       .settings-panel {
         background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-bottom: 10px;
       }
 
@@ -553,7 +546,7 @@
       .settings-input {
         background: var(--panel-light);
         border: 1px solid var(--border-light);
-        border-radius: 3px;
+        border-radius: 6px;
         color: var(--text);
         padding: 4px 6px;
         font-size: 0.8rem;
@@ -577,7 +570,7 @@
       .shelf-life-list {
         background: var(--panel-light);
         border: 1px solid var(--border);
-        border-radius: 3px;
+        border-radius: 6px;
         max-height: 200px;
         overflow-y: auto;
         margin-bottom: 10px;
@@ -620,7 +613,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         padding: 6px 12px;
         font-size: 0.8rem;
         cursor: pointer;
@@ -630,6 +623,7 @@
       .settings-btn.primary {
         background: var(--border-light);
         border-color: var(--accent);
+        margin-top: 0.5rem;
       }
 
       .settings-btn.danger {
@@ -659,7 +653,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.75rem;
         cursor: pointer;
         text-transform: uppercase;
@@ -671,7 +665,7 @@
         justify-content: space-between;
         background: var(--panel);
         padding: 6px 8px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-bottom: 10px;
       }
 
@@ -708,7 +702,7 @@
         bottom: 0;
         background-color: var(--border);
         transition: 0.2s;
-        border-radius: 14px;
+        border-radius: 6px;
       }
 
       .slider-switch:before {
@@ -735,7 +729,7 @@
       .chemical-calculator {
         background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-top: 10px;
       }
 
@@ -743,7 +737,7 @@
       .test-strip-preview-container {
         background: var(--panel-light);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-top: 12px;
       }
 
@@ -764,7 +758,7 @@
         height: 60px;
         margin: 10px 0;
         border: 1px solid var(--border);
-        border-radius: 3px;
+        border-radius: 6px;
         overflow: hidden;
       }
 
@@ -807,7 +801,7 @@
       .color-scheme-btn {
         padding: 8px;
         border: 2px solid transparent;
-        border-radius: 4px;
+        border-radius: 6px;
         background: var(--panel-light);
         color: var(--text);
         cursor: pointer;
@@ -833,7 +827,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.8rem;
         cursor: pointer;
       }
@@ -844,7 +838,7 @@
         background: var(--border-light);
         border: 1px solid var(--border-light);
         color: var(--text);
-        border-radius: 3px;
+        border-radius: 6px;
         font-size: 0.8rem;
         cursor: pointer;
         text-transform: uppercase;
@@ -948,7 +942,7 @@
         padding: 4px 6px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
-        border-radius: 3px;
+        border-radius: 6px;
         color: var(--text);
         font-size: 0.8rem;
         font-family: monospace;
@@ -970,7 +964,7 @@
       .incremental-timer {
         background: var(--panel);
         padding: 10px;
-        border-radius: 3px;
+        border-radius: 6px;
         margin-top: 10px;
       }
 
@@ -978,7 +972,7 @@
       .chemical-calculator {
         background: var(--panel);
         padding: 10px;
-        border-radius: 3px;
+        border-radius: 6px;
         margin-top: 10px;
       }
 
@@ -1010,7 +1004,7 @@
         padding: 8px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
-        border-radius: 3px;
+        border-radius: 6px;
         color: var(--text);
         cursor: pointer;
         text-align: center;
@@ -1056,7 +1050,7 @@
         padding: 4px 6px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
-        border-radius: 3px;
+        border-radius: 6px;
         color: var(--text);
         font-size: 0.8rem;
         font-family: monospace;
@@ -1102,7 +1096,7 @@
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--accent);
-        border-radius: 3px;
+        border-radius: 6px;
         padding: 2px 6px;
         font-size: 0.65rem;
         cursor: pointer;
@@ -1129,7 +1123,7 @@
         padding: 8px;
         background: var(--border);
         border: 1px solid var(--border-light);
-        border-radius: 3px;
+        border-radius: 6px;
         color: var(--text);
         font-size: 0.75rem;
         cursor: pointer;
@@ -1145,7 +1139,7 @@
       .progress-container {
         height: 8px;
         background: var(--border);
-        border-radius: 4px;
+        border-radius: 6px;
         overflow: hidden;
         margin: 10px 0;
         position: relative;
@@ -1186,7 +1180,7 @@
       .shelf-life-list {
         background: var(--panel-light);
         border: 1px solid var(--border);
-        border-radius: 3px;
+        border-radius: 6px;
         max-height: 200px;
         overflow-y: auto;
         margin-top: 10px;
@@ -1259,7 +1253,7 @@
       .legend-color {
         width: 12px;
         height: 12px;
-        border-radius: 3px;
+        border-radius: 6px;
       }
 
       /* preview-options now consolidated with preview-legend */
@@ -1291,7 +1285,7 @@
       .test-progress-bar {
         height: 6px;
         background: var(--border);
-        border-radius: 4px;
+        border-radius: 6px;
         overflow: hidden;
         position: relative;
       }
@@ -1309,7 +1303,7 @@
       .relay-controls {
         background: var(--panel-light);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-bottom: 10px;
       }
 
@@ -1420,7 +1414,7 @@
         margin-top: 15px;
         background: var(--panel);
         padding: 10px;
-        border-radius: 4px;
+        border-radius: 6px;
         margin-bottom: 8px;
       }
 
@@ -1503,7 +1497,7 @@
         margin-bottom: 8px;
         padding: 10px;
         background: var(--panel);
-        border-radius: 4px;
+        border-radius: 6px;
         max-height: none;
         overflow-y: visible;
       }
@@ -1567,7 +1561,7 @@
         margin-bottom: 8px;
         padding: 10px;
         background: var(--panel);
-        border-radius: 4px;
+        border-radius: 6px;
         position: relative; /* Normal flow positioning */
         top: auto;
         bottom: auto;
@@ -4320,6 +4314,7 @@
             <button class="settings-btn primary" id="saveGlobalSettings">
               Save All Settings
             </button>
+            <div id="allProfilesFeedback" class="json-feedback"></div>
           </div>
 
           <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
@@ -4339,7 +4334,6 @@
               accept=".json"
               style="display: none"
             />
-            <div id="allProfilesFeedback" class="json-feedback"></div>
 
             <div
               style="
