@@ -10,14 +10,17 @@
     <style>
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
-         1. Input fields: .input-field + .settings-input merged
-         2. List containers: .profile-list + .chemical-preset-list merged
-         3. List items: .list-item + .chemical-preset-item merged
-         4. Toggle buttons: .btn-toggle consolidates .paper-btn, .dilution-btn, 
-            .paper-size-btn, .preset-btn, .method-btn
-         5. Action buttons: .btn-action consolidates .chemical-preset-btn, 
-            .shelf-life-btn, .profile-btn
-         6. Flexible buttons: .btn-flex consolidates .capacity-btn, .repeat-btn
+         1. List containers: .chemical-preset-list + .shelf-life-list (replaces .profile-list)
+         2. List items: .chemical-preset-item + .shelf-life-item (replaces .profile-item, .list-item)
+         3. Toggle buttons: .toggle-btn (replaces .paper-btn, .paper-size-btn, 
+            .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle)
+         4. Action buttons: .btn-action consolidates .chemical-preset-btn, .shelf-life-btn (replaces .profile-btn)
+         5. Flexible buttons: .repeat-btn (replaces .btn-flex)
+         6. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
+         7. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
+            .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
+         8. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
+         9. Value classes: .value-display consolidates .result-value, .chemical-result-value
          All variants use the same base styles with class-specific overrides.
       */
 
@@ -108,11 +111,20 @@
         padding: 6px;
         min-height: 100vh;
         transition: background-color 0.3s, color 0.3s;
+        overflow: hidden; /* Hide scrollbar */
       }
 
       .container {
         max-width: 480px;
         margin: 0 auto;
+        height: 100vh; /* Full viewport height */
+        overflow-y: auto; /* Allow scrolling within container */
+        scrollbar-width: none; /* Firefox */
+      }
+
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .container::-webkit-scrollbar {
+        display: none;
       }
 
       /* ===== HEADER (EXACT MATCH) ===== */
@@ -126,11 +138,6 @@
       h1 {
         font-size: 1.2rem;
         margin-bottom: 3px;
-      }
-
-      .subtitle {
-        font-size: 0.7rem;
-        color: var(--text-secondary);
       }
 
       /* ===== TABS (EXACT MATCH) ===== */
@@ -147,23 +154,22 @@
         flex: 0 0 auto;
         min-width: 70px;
         padding: 6px 8px;
-        background: var(--bg);
-        color: var(--text-secondary);
+        background: var(--panel-light);
+        color: var(--text);
         border: none;
-        border-bottom: 1px solid var(--border);
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
+        border-radius: 12px 12px 0px 0px;
         font-size: 0.8rem;
+        font-weight: bold;
         cursor: pointer;
         transition: all 0.2s ease;
         white-space: nowrap;
       }
 
       .tab-button.active {
-        color: var(--title);
+        color: var(--bg);
         border-bottom: 2px solid var(--title);
-        background: var(--border);
-        border-radius: 8px 8px 0px 0px;
+        background: var(--text-secondary);
+        border-radius: 12px 12px 0px 0px;
       }
 
       .tab-content {
@@ -201,8 +207,7 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--bg);
-        border: 2px solid var(--accent);
+        background: var(--accent);
         margin-top: -8px;
       }
 
@@ -212,36 +217,9 @@
       .info-box {
         text-align: center;
         background: var(--panel);
-        border-radius: 6px;
-        padding: 8px;
-      }
-
-      .result {
-        margin: 12px 0;
-        padding: 10px;
-        border-radius: 6px;
-      }
-
-      .info-box {
         border: 2px solid var(--border);
-        padding: 6px;
-      }
-
-      .chemical-result-box {
-        background: var(--border);
-        border: 1px solid var(--border-light);
-      }
-
-      .result-value {
-        margin: 3px 0;
-      }
-
-      /* ===== INCREMENTAL TIMER (EXACT MATCH) ===== */
-      .incremental-timer {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 12px;
+        border-radius: 16px;
+        padding: 8px;
       }
 
       .timer-status {
@@ -254,7 +232,7 @@
 
       .timer-display {
         font-size: 2.5rem;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: bold;
         text-align: center;
         margin: 10px 0;
@@ -276,13 +254,15 @@
       .exp-btn {
         flex: 1;
         padding: 8px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.8rem;
+        background: var(--accent);
+        border: 1px solid var(--accent-dark);
+        color: var(--bg);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: bold;
         cursor: pointer;
         min-width: 120px;
+        min-height: 60px;
       }
 
       .exp-btn.active {
@@ -309,36 +289,21 @@
 
       /* info-box and chemical-result-box now consolidated with result */
 
-      /* Unified small label class - consolidates info-label, result-label, chemical-result-label, step-label */
-      .label-sm,
-      .info-label,
-      .result-label,
-      .chemical-result-label,
-      .step-label {
+      /* Unified small label class - consolidates info-label, label-sm, chemical-label-sm, label-sm */
+      .label-sm {
         font-size: 0.65rem;
         color: var(--text-secondary);
         margin-bottom: 3px;
       }
 
-      /* Unified value display class - consolidates info-value, result-value, chemical-result-value, step-value */
+      /* Unified value display class - consolidates result-value, chemical-result-value */
       .value-display,
-      .info-value,
       .result-value,
-      .chemical-result-value,
-      .step-value {
-        font-family: monospace;
+      .chemical-result-value {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: bold;
         color: var(--text);
-      }
-
-      /* Size variants for value displays */
-      .value-display {
         font-size: 0.8rem;
-      }
-
-      .info-value,
-      .step-value {
-        font-size: 0.85rem;
       }
 
       .result-value,
@@ -369,20 +334,15 @@
 
       /* Disabled state - black and red only */
       .timer-box.disabled {
-        opacity: 0.2;
         background: var(--border-light);
-      }
-
-      .timer-box.disabled .timer-title {
+        border-color: var(--border-light);
         color: var(--border-light);
+        color: var(--text-secondary);
+        opacity: 0.2;
+        cursor: not-allowed;
       }
 
-      .timer-box.disabled .time-display {
-        color: var(--border-light);
-      }
-
-      .timer-box.disabled .adjust-btn,
-      .timer-box.disabled .timer-btn {
+      .timer-btn .time-display {
         background: var(--border-light);
         border-color: var(--border-light);
         color: var(--text-secondary);
@@ -390,16 +350,14 @@
       }
 
       /* Unified title classes */
-      .title-sm,
-      .timer-title {
+      .title-sm {
         font-size: 0.75rem;
         color: var(--text);
         text-transform: uppercase;
         margin-bottom: 4px;
       }
 
-      .title-md,
-      .settings-title {
+      .title-md {
         font-size: 0.9rem;
         color: var(--title);
         margin-bottom: 8px;
@@ -408,7 +366,7 @@
 
       .time-display {
         font-size: 1.6rem;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: bold;
         color: var(--text);
         margin: 4px 0;
@@ -430,31 +388,6 @@
         display: flex;
         gap: 6px;
         margin-bottom: 2px;
-      }
-
-      .adjust-btn {
-        flex: 1;
-        padding: 3px 4px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        color: var(--text-secondary);
-        border-radius: 6px;
-        font-size: 0.65rem;
-        cursor: pointer;
-      }
-
-      .adjust-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-      .adjust-btn:active:not(:disabled) {
-        background: var(--panel-light);
-      }
-
-      .action-row {
-        display: flex;
-        gap: 6px;
       }
 
       .timer-btn {
@@ -493,14 +426,6 @@
       .timer-box.complete {
         border-color: var(--accent);
         background: var(--border);
-      }
-
-      /* ===== SETTINGS PANEL (EXACT MATCH) ===== */
-      .settings-panel {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 10px;
       }
 
       .settings-section {
@@ -542,7 +467,6 @@
       }
 
       /* Base input field (consolidated) */
-      .input-field,
       .settings-input {
         background: var(--panel-light);
         border: 1px solid var(--border-light);
@@ -550,10 +474,9 @@
         color: var(--text);
         padding: 4px 6px;
         font-size: 0.8rem;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
-      .input-field:focus,
       .settings-input:focus {
         outline: none;
         border-color: var(--accent);
@@ -563,30 +486,20 @@
         text-align: center;
       }
 
-      /* Unified list container - consolidates profile-list, chemical-preset-list, shelf-life-list */
-      .list-container,
-      .profile-list,
-      .chemical-preset-list,
+      /* Unified list container - consolidates chemical-preset-list, shelf-life-list */
       .shelf-life-list {
         background: var(--panel-light);
         border: 1px solid var(--border);
         border-radius: 6px;
         max-height: 200px;
         overflow-y: auto;
+        margin-top: 10px;
         margin-bottom: 10px;
       }
 
-      .shelf-life-list {
-        background: var(--panel-light);
-        margin-top: 10px;
-      }
-
-      /* Unified list item - consolidates profile-item, chemical-preset-item, shelf-life-item */
-      .list-item-base,
-      .profile-item,
+      /* Unified list item - consolidates chemical-preset-item, shelf-life-item */
       .chemical-preset-item,
-      .shelf-life-item,
-      .list-item {
+      .shelf-life-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -600,11 +513,11 @@
         border-bottom: 1px solid var(--border);
       }
 
-      .profile-item:last-child {
+      .shelf-life-item:last-child {
         border-bottom: none;
       }
 
-      .profile-item.active {
+      .shelf-life-item.active {
         background: var(--border);
         font-weight: bold;
       }
@@ -647,18 +560,6 @@
         margin-top: 8px;
       }
 
-      .global-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        text-transform: uppercase;
-      }
-
       /* ===== TIMER SETTINGS (EXACT MATCH) ===== */
       .timer-settings {
         display: flex;
@@ -672,7 +573,6 @@
       /* setting-item now uses .item-container */
 
       /* Unified medium label class - consolidates setting-label, sound-label, preview-label */
-      .label-md,
       .setting-label,
       .sound-label,
       .preview-label {
@@ -725,33 +625,10 @@
         transform: translateX(14px);
       }
 
-      /* ===== CHEMICAL CALCULATOR (EXACT MATCH) ===== */
-      .chemical-calculator {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-      }
-
-      .chemical-results,
-      .test-strip-preview-container {
-        background: var(--panel-light);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 12px;
-      }
-
-      .test-strip-preview-container {
-        background: var(--panel);
-        margin: 12px 0;
-      }
-
       /* chemical-result-box now consolidated with result */
 
-      /* chemical-result-label now uses .label-sm */
+      /* chemical-label-sm now uses .label-sm */
       /* chemical-result-value now uses unified value classes */
-
-      /* test-strip-preview-container now consolidated with chemical-results */
 
       .test-strip-preview {
         display: flex;
@@ -796,22 +673,6 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 10px;
-      }
-
-      .color-scheme-btn {
-        padding: 8px;
-        border: 2px solid transparent;
-        border-radius: 6px;
-        background: var(--panel-light);
-        color: var(--text);
-        cursor: pointer;
-        font-size: 0.75rem;
-        text-align: center;
-      }
-
-      .color-scheme-btn.active {
-        border-color: var(--title);
-        font-weight: bold;
       }
 
       /* ===== JSON BUTTONS (EXACT MATCH) ===== */
@@ -926,16 +787,6 @@
         color: var(--text-secondary);
       }
 
-      /* Height calculator specific styles */
-      .height-factor-display {
-        font-size: 1.2rem;
-        font-family: monospace;
-        font-weight: bold;
-        color: var(--accent);
-        text-align: center;
-        margin: 5px 0;
-      }
-
       /* F-stop dropdown styles */
       .fstop-select {
         width: 100%;
@@ -945,41 +796,40 @@
         border-radius: 6px;
         color: var(--text);
         font-size: 0.8rem;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         text-align: center;
         cursor: pointer;
         margin-top: 8px;
       }
 
-      /* Repeat button styling - now uses .btn-flex alias */
+      /* Repeat button styling */
+      .repeat-btn {
+        flex: 1;
+        padding: 8px;
+        background: var(--border);
+        border: 1px solid var(--border-light);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 0.9rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
 
-      /* Unified panel-base class for all panel-style containers */
-      .panel-base,
-      .panel-container,
-      .contrast-calculator,
-      .chemical-presets,
-      .capacity-tracker,
-      .shelf-life-tracker,
-      .instructions-panel,
+      .repeat-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* Panel container for all panel-style sections */
       .incremental-timer {
         background: var(--panel);
         padding: 10px;
         border-radius: 6px;
         margin-top: 10px;
+        margin-bottom: 10px;
       }
 
-      /* Special case: chemical calculator uses different background */
-      .chemical-calculator {
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-      }
-
-      /* Incremental timer - removed override, uses panel-base margin-top: 10px */
-
-      /* Unified grid-2col class for 2-column layouts */
-      .grid-2col,
+      /* 2-column grid layouts */
       .paper-selector,
       .method-selector,
       .paper-size-buttons {
@@ -995,12 +845,7 @@
       }
 
       /* Base toggle button (consolidated for all variants) */
-      .btn-toggle,
-      .paper-btn,
-      .dilution-btn,
-      .paper-size-btn,
-      .preset-btn,
-      .method-btn {
+      .toggle-btn {
         padding: 8px;
         background: var(--panel-light);
         border: 1px solid var(--border-light);
@@ -1011,12 +856,7 @@
         font-size: 0.75rem;
       }
 
-      .btn-toggle.active,
-      .paper-btn.active,
-      .dilution-btn.active,
-      .paper-size-btn.active,
-      .preset-btn.active,
-      .method-btn.active {
+      .toggle-btn.active {
         background: var(--border);
         border-color: var(--border-light);
         font-weight: bold;
@@ -1030,8 +870,7 @@
         margin-bottom: 10px;
       }
 
-      /* Unified flex-gap class */
-      .flex-gap,
+      /* Flex containers for various controls */
       .custom-dilution,
       .capacity-controls,
       .custom-paper-size {
@@ -1053,13 +892,12 @@
         border-radius: 6px;
         color: var(--text);
         font-size: 0.8rem;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
-      /* Unified input focus already handled by .input-field:focus */
+      /* Unified input focus already handled by .settings-input:focus */
 
       /* Chemical Preset Styles - now using consolidated classes */
-      .list-item,
       .chemical-preset-item {
         display: flex;
         justify-content: space-between;
@@ -1069,21 +907,17 @@
         font-size: 0.75rem;
       }
 
-      .list-item:last-child,
       .chemical-preset-item:last-child {
         border-bottom: none;
       }
 
-      .list-item.active,
       .chemical-preset-item.active {
         background: var(--panel-light);
       }
 
       /* Unified flex-row class for action buttons */
-      .flex-row,
       .chemical-preset-actions,
-      .shelf-life-actions,
-      .profile-actions {
+      .shelf-life-actions {
         display: flex;
         gap: 6px;
       }
@@ -1091,8 +925,7 @@
       /* Base action button (consolidated) */
       .btn-action,
       .chemical-preset-btn,
-      .shelf-life-btn,
-      .profile-btn {
+      .shelf-life-btn {
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--accent);
@@ -1103,37 +936,15 @@
       }
 
       .btn-action.delete,
-      .profile-btn.delete {
+      .shelf-life-btn.delete {
         border-color: var(--accent);
         color: var(--accent);
       }
 
-      .shelf-life-btn,
-      .profile-btn {
+      .shelf-life-btn {
         padding: 3px 6px;
         font-size: 0.65rem;
         min-width: 50px;
-      }
-
-      /* Base flexible button (consolidated) */
-      .btn-flex,
-      .capacity-btn,
-      .repeat-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 0.75rem;
-        cursor: pointer;
-      }
-
-      .btn-flex:disabled,
-      .capacity-btn:disabled,
-      .repeat-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
       }
 
       .progress-container {
@@ -1177,20 +988,10 @@
         text-align: center;
       }
 
-      .shelf-life-list {
-        background: var(--panel-light);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        max-height: 200px;
-        overflow-y: auto;
-        margin-top: 10px;
-      }
+      /* .shelf-life-list styles consolidated above */
 
-      .list-item-base:last-child,
-      .profile-item:last-child,
       .chemical-preset-item:last-child,
-      .shelf-life-item:last-child,
-      .list-item:last-child {
+      .shelf-life-item:last-child {
         border-bottom: none;
       }
 
@@ -1207,7 +1008,7 @@
 
       .shelf-life-days {
         font-weight: bold;
-        font-family: monospace;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
       .shelf-life-days.expiring {
@@ -1276,7 +1077,7 @@
         justify-content: center;
       }
 
-      /* step-label now uses .label-sm, step-value uses unified value classes */
+      /* label-sm now uses .label-sm, value-display uses unified value classes */
 
       .test-progress-container {
         margin: 15px 0;
@@ -1299,16 +1100,10 @@
         transition: width 0.5s ease;
       }
 
-      .test-presets,
-      .relay-controls {
+      .test-presets {
         background: var(--panel-light);
         padding: 10px;
         border-radius: 6px;
-        margin-bottom: 10px;
-      }
-
-      .test-presets {
-        background: var(--panel-light);
         margin-top: 10px;
         margin-bottom: 0;
       }
@@ -1344,69 +1139,8 @@
         }
       }
 
-      /* Auto advance toggle specific styles */
-      .control .switch {
-        margin-top: 5px;
-        align-self: center;
-      }
-
-      .control .slider-switch {
-        background-color: var(--border);
-      }
-
       .control input:checked + .slider-switch {
         background-color: var(--accent);
-      }
-
-      /* Visual feedback for auto advance toggle */
-      #autoAdvanceToggle:checked + .slider-switch {
-        animation: pulse-glow 2s infinite;
-      }
-
-      @keyframes pulse-glow {
-        0% {
-          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
-        }
-      }
-
-      /* Light scheme adjustment */
-      body.light-scheme #autoAdvanceToggle:checked + .slider-switch {
-        animation: pulse-glow-light 2s infinite;
-      }
-
-      @keyframes pulse-glow-light {
-        0% {
-          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.7);
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(0, 102, 204, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(0, 102, 204, 0);
-        }
-      }
-
-      /* Day scheme adjustment */
-      body.day-scheme #autoAdvanceToggle:checked + .slider-switch {
-        animation: pulse-glow-day 2s infinite;
-      }
-
-      @keyframes pulse-glow-day {
-        0% {
-          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7);
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(255, 204, 0, 0);
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
-        }
       }
 
       /* For the timer tab profiles section */
@@ -1430,8 +1164,8 @@
 
       /* Container: use a single canonical set of rules for fullscreen */
       body.fullscreen-mode .container {
-        max-width: none;
-        margin: 0;
+        max-width: 960px;
+        margin: 0 auto;
         height: 100vh;
         display: flex;
         flex-direction: column;
@@ -1464,6 +1198,12 @@
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+      }
+
+      /* Hide scrollbar for tab-content in fullscreen */
+      body.fullscreen-mode .tab-content.active::-webkit-scrollbar {
+        display: none;
       }
 
       /* Ensure tab contents are scrollable by default in fullscreen */
@@ -1471,6 +1211,11 @@
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+      }
+
+      body.fullscreen-mode .tab-content::-webkit-scrollbar {
+        display: none;
       }
 
       /* Timer tab specific adjustments */
@@ -1480,6 +1225,11 @@
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+      }
+
+      body.fullscreen-mode #timer.tab-content.active::-webkit-scrollbar {
+        display: none;
       }
 
       /* Make the timer grid flexible within fullscreen layout */
@@ -1510,10 +1260,19 @@
       body.fullscreen-mode #settings.tab-content.active {
         overflow-y: auto;
         overflow-x: hidden;
+        scrollbar-width: none; /* Firefox */
+      }
+
+      body.fullscreen-mode #calc.tab-content.active::-webkit-scrollbar,
+      body.fullscreen-mode #chart.tab-content.active::-webkit-scrollbar,
+      body.fullscreen-mode #fstop-test.tab-content.active::-webkit-scrollbar,
+      body.fullscreen-mode #chemical.tab-content.active::-webkit-scrollbar,
+      body.fullscreen-mode #settings.tab-content.active::-webkit-scrollbar {
+        display: none;
       }
 
       /* Relay styles remain outside fullscreen concerns */
-      /* relay-controls now consolidated with test-presets */
+      /* relay-controls now consolidated with test-presets - both replaced by test-presets */
 
       .relay-item,
       .shelf-life-item {
@@ -1568,23 +1327,23 @@
       }
 
       /* Additional styles for fullscreen profiles */
-      body.fullscreen-mode .profile-list {
+      body.fullscreen-mode .shelf-life-list {
         max-height: 150px; /* Limit height and make scrollable */
         overflow-y: auto;
       }
 
       /* Improve profile item visibility in fullscreen */
-      body.fullscreen-mode .profile-item {
+      body.fullscreen-mode .shelf-life-item {
         padding: 6px 8px;
         font-size: 0.75rem;
       }
 
-      body.fullscreen-mode .profile-actions {
+      body.fullscreen-mode .shelf-life-actions {
         display: flex;
         gap: 4px;
       }
 
-      body.fullscreen-mode .profile-btn {
+      body.fullscreen-mode .shelf-life-btn {
         min-width: 50px;
         padding: 3px 6px;
         font-size: 0.7rem;
@@ -1635,7 +1394,7 @@
           overflow: visible; /* no internal scrolling; let the tab handle scrolling */
         }
 
-        body.fullscreen-mode .timer-title {
+        body.fullscreen-mode .title-sm {
           font-size: 1rem;
         }
 
@@ -1643,8 +1402,7 @@
           font-size: 2.5rem;
         }
 
-        body.fullscreen-mode .timer-btn,
-        body.fullscreen-mode .adjust-btn {
+        body.fullscreen-mode .timer-btn {
           padding: 8px;
           font-size: 0.9rem;
         }
@@ -1684,14 +1442,8 @@
           margin-bottom: 3px;
         }
 
-        .action-row {
-          display: flex;
-          gap: 4px;
-        }
-
         /* Timer buttons */
-        .timer-btn,
-        .adjust-btn {
+        .timer-btn {
           padding: 6px 4px;
           font-size: 0.75rem;
         }
@@ -1701,7 +1453,7 @@
           margin: 8px 0;
         }
 
-        .timer-title {
+        .title-sm {
           font-size: 0.85rem;
           margin-bottom: 6px;
         }
@@ -1714,8 +1466,8 @@
           flex-direction: row;
         }
 
-        .global-btn {
-          padding: 10px;
+        .settings-btn {
+          padding: 10px 12px;
           font-size: 0.85rem;
         }
 
@@ -1735,7 +1487,7 @@
           margin-bottom: 8px;
         }
 
-        .settings-title {
+        .title-md {
           font-size: 0.85rem;
           margin-bottom: 10px;
         }
@@ -1746,21 +1498,21 @@
           margin-bottom: 10px;
         }
 
-        .profile-list {
+        .shelf-life-list {
           max-height: 150px;
         }
 
-        .profile-item {
+        .shelf-life-item {
           padding: 8px;
           font-size: 0.75rem;
         }
 
-        .profile-actions {
+        .shelf-life-actions {
           flex-direction: row;
           gap: 6px;
         }
 
-        .profile-btn {
+        .shelf-life-btn {
           min-width: 45px;
           padding: 4px 8px;
           font-size: 0.7rem;
@@ -1805,11 +1557,11 @@
           gap: 6px;
         }
 
-        .profile-actions {
+        .shelf-life-actions {
           flex-direction: row;
         }
 
-        .profile-btn {
+        .shelf-life-btn {
           min-width: 40px;
           font-size: 0.65rem;
           padding: 2px 4px;
@@ -1852,7 +1604,7 @@
           font-size: 0.9rem;
         }
 
-        body.fullscreen-mode .timer-title {
+        body.fullscreen-mode .title-sm {
           font-size: 0.9rem;
         }
 
@@ -1898,42 +1650,6 @@
           padding: 1px 4px;
           font-size: 0.6rem;
         }
-      }
-
-      /* Fine adjustment slider styles */
-      .fine-slider {
-        height: 16px !important;
-        margin-top: 3px !important;
-      }
-
-      .fine-slider::-webkit-slider-runnable-track {
-        height: 2px !important;
-        background: linear-gradient(to right, #300, #600, #900) !important;
-      }
-
-      .fine-slider::-webkit-slider-thumb {
-        width: 14px !important;
-        height: 14px !important;
-        margin-top: -6px !important;
-        border-width: 1px !important;
-      }
-
-      .fine-slider-labels {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 3px;
-        padding: 0 5px;
-      }
-
-      .fine-slider-label {
-        font-size: 0.6rem;
-        color: var(--text-secondary);
-        transition: all 0.2s;
-      }
-
-      .fine-slider-label.active {
-        font-weight: bold;
-        color: var(--accent);
       }
 
       /* Adjust info-box height to accommodate both sliders */
@@ -1983,10 +1699,6 @@
       }
       .collapsible .info-box {
         margin-bottom: 6px;
-      }
-      .collapsible-header:focus {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
       }
 
       @media (max-width: 400px) {
@@ -2112,6 +1824,7 @@
         border: 1px solid var(--border);
         background: var(--panel);
         color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
       .custom-filter-row input[type="number"] {
@@ -2121,6 +1834,7 @@
         border: 1px solid var(--border);
         background: var(--panel);
         color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
       .custom-filter-row button {
@@ -2260,9 +1974,9 @@
         </div>
 
         <div class="result">
-          <div class="result-label">SELECTED EXPOSURE</div>
+          <div class="label-sm">SELECTED EXPOSURE</div>
           <div class="result-value" id="resultTime">10.00</div>
-          <div class="result-label" id="resultDetails">BASE (0.0 stops)</div>
+          <div class="label-sm" id="resultDetails">BASE (0.0 stops)</div>
         </div>
 
         <!-- Simplified Incremental Exposure Timer -->
@@ -2299,20 +2013,20 @@
           <!-- Simplified Information Display -->
           <div class="exp-info">
             <div class="info-box">
-              <div class="info-label">Selected Stop</div>
-              <div class="info-value" id="selectedStopDisplay">0.0</div>
+              <div class="label-sm">Selected Stop</div>
+              <div class="value-display" id="selectedStopDisplay">0.0</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Previous Total</div>
-              <div class="info-value" id="previousTotalDisplay">0.00</div>
+              <div class="label-sm">Previous Total</div>
+              <div class="value-display" id="previousTotalDisplay">0.00</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Current Total</div>
-              <div class="info-value" id="currentTotalDisplay">10.00</div>
+              <div class="label-sm">Current Total</div>
+              <div class="value-display" id="currentTotalDisplay">10.00</div>
             </div>
             <div class="info-box">
-              <div class="info-label">This Exposure</div>
-              <div class="info-value" id="thisExposureDisplay">10.00</div>
+              <div class="label-sm">This Exposure</div>
+              <div class="value-display" id="thisExposureDisplay">10.00</div>
             </div>
           </div>
         </div>
@@ -2323,11 +2037,11 @@
 
           <!-- Original Settings Section -->
           <div class="info-box">
-            <div class="info-label">Original Time (s)</div>
-            <div class="info-value" id="originalTimeValue">10.00</div>
+            <div class="label-sm">Original Time (s)</div>
+            <div class="value-display" id="originalTimeValue">10.00</div>
             <div style="display: flex; gap: 5px; margin-top: 5px">
               <button
-                class="adjust-btn"
+                class="timer-btn"
                 id="copyCurrentTime"
                 style="flex: 1; font-size: 0.6rem; padding: 2px 4px"
               >
@@ -2347,8 +2061,8 @@
                 style="grid-template-columns: 1fr 1fr; margin-top: 8px"
               >
                 <div class="info-box">
-                  <div class="info-label">Original Height (cm)</div>
-                  <div class="info-value" id="originalHeightValue">30.0</div>
+                  <div class="label-sm">Original Height (cm)</div>
+                  <div class="value-display" id="originalHeightValue">30.0</div>
                   <div style="margin-top: 5px">
                     <div
                       style="
@@ -2391,8 +2105,8 @@
                   </div>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">New Height (cm)</div>
-                  <div class="info-value" id="newHeightValue">30.0</div>
+                  <div class="label-sm">New Height (cm)</div>
+                  <div class="value-display" id="newHeightValue">30.0</div>
                   <div style="margin-top: 5px">
                     <div
                       style="
@@ -2449,7 +2163,7 @@
                 style="grid-template-columns: 1fr 1fr; margin-top: 8px"
               >
                 <div class="info-box">
-                  <div class="info-label">Original F-Stop</div>
+                  <div class="label-sm">Original F-Stop</div>
                   <select class="fstop-select" id="originalFStop">
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -2462,7 +2176,7 @@
                   </select>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">New F-Stop</div>
+                  <div class="label-sm">New F-Stop</div>
                   <select class="fstop-select" id="newFStop">
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -2490,7 +2204,7 @@
               >
                 <!-- Original Paper Size -->
                 <div class="info-box">
-                  <div class="info-label">Original Paper Size</div>
+                  <div class="label-sm">Original Paper Size</div>
                   <select class="fstop-select" id="originalPaperSize">
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2517,7 +2231,7 @@
                       style="width: 80px; font-size: 0.7rem"
                     />
                     <button
-                      class="adjust-btn"
+                      class="timer-btn"
                       id="setOriginalCustomPaper"
                       style="font-size: 0.6rem; padding: 2px 4px"
                     >
@@ -2528,7 +2242,7 @@
 
                 <!-- New Paper Size -->
                 <div class="info-box">
-                  <div class="info-label">New Paper Size</div>
+                  <div class="label-sm">New Paper Size</div>
                   <select class="fstop-select" id="newPaperSize">
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2555,7 +2269,7 @@
                       style="width: 80px; font-size: 0.7rem"
                     />
                     <button
-                      class="adjust-btn"
+                      class="timer-btn"
                       id="setNewCustomPaper"
                       style="font-size: 0.6rem; padding: 2px 4px"
                     >
@@ -2578,17 +2292,17 @@
                 style="grid-template-columns: 1fr 1fr; margin-top: 8px"
               >
                 <div class="info-box">
-                  <div class="info-label">Paper Type</div>
+                  <div class="label-sm">Paper Type</div>
                   <div class="paper-selector" style="margin-top: 5px">
                     <button
-                      class="paper-btn active"
+                      class="toggle-btn active"
                       data-paper="fomaspeed"
                       id="btnFomaspeed"
                     >
                       FOMASPEED<br />Variant III
                     </button>
                     <button
-                      class="paper-btn"
+                      class="toggle-btn"
                       data-paper="fomatonemg"
                       id="btnFomatonemg"
                     >
@@ -2597,7 +2311,7 @@
                   </div>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">Contrast Filter</div>
+                  <div class="label-sm">Contrast Filter</div>
                   <select class="fstop-select" id="contrastFilterSelect">
                     <option value="2xY">2×Y</option>
                     <option value="Y">Y</option>
@@ -2612,12 +2326,14 @@
                     style="grid-template-columns: 1fr 1fr; margin-top: 5px"
                   >
                     <div class="info-box" style="padding: 3px">
-                      <div class="info-label">ISO R</div>
-                      <div class="info-value" id="isoValue">105</div>
+                      <div class="label-sm">ISO R</div>
+                      <div class="value-display" id="isoValue">105</div>
                     </div>
                     <div class="info-box" style="padding: 3px">
-                      <div class="info-label">Contrast Factor</div>
-                      <div class="info-value" id="filterFactorValue">1.0×</div>
+                      <div class="label-sm">Contrast Factor</div>
+                      <div class="value-display" id="filterFactorValue">
+                        1.0×
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2633,7 +2349,7 @@
             <div class="collapsible-content">
               <div class="custom-filter-header">
                 <div>
-                  <div class="info-label">Group</div>
+                  <div class="label-sm">Group</div>
                   <select class="fstop-select" id="customFilterGroup">
                     <option value="0">Group A</option>
                     <option value="1">Group B</option>
@@ -2641,7 +2357,7 @@
                   </select>
                 </div>
                 <div>
-                  <div class="info-label">Group Name</div>
+                  <div class="label-sm">Group Name</div>
                   <input
                     type="text"
                     id="customFilterGroupName"
@@ -2680,30 +2396,22 @@
             style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-top: 8px"
           >
             <div class="info-box">
-              <div class="info-label">Height Factor</div>
-              <div class="info-value" id="heightFactorDisplay">1.00x</div>
+              <div class="label-sm">Height Factor</div>
+              <div class="value-display" id="heightFactorDisplay">1.00x</div>
             </div>
             <div class="info-box">
-              <div class="info-label">F-Stop Factor</div>
-              <div class="info-value" id="fstopFactor">1.00x</div>
+              <div class="label-sm">F-Stop Factor</div>
+              <div class="value-display" id="fstopFactor">1.00x</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Paper Factor</div>
-              <div class="info-value" id="paperSizeFactor">1.00x</div>
+              <div class="label-sm">Paper Factor</div>
+              <div class="value-display" id="paperSizeFactor">1.00x</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Contrast Factor</div>
-              <div class="info-value" id="filterFactorValueDisplay">1.00x</div>
-            </div>
-          </div>
-
-          <div
-            class="exp-info"
-            style="grid-template-columns: 1fr; margin-top: 8px"
-          >
-            <div class="info-box">
-              <div class="info-label">Combined Factor</div>
-              <div class="info-value" id="combinedFactor">1.00x</div>
+              <div class="label-sm">Contrast Factor</div>
+              <div class="value-display" id="filterFactorValueDisplay">
+                1.00x
+              </div>
             </div>
           </div>
 
@@ -2712,8 +2420,18 @@
             style="grid-template-columns: 1fr; margin-top: 8px"
           >
             <div class="info-box">
-              <div class="info-label">New Adjusted Time (s)</div>
-              <div class="info-value" id="newAdjustedTime">10.00</div>
+              <div class="label-sm">Combined Factor</div>
+              <div class="value-display" id="combinedFactor">1.00x</div>
+            </div>
+          </div>
+
+          <div
+            class="exp-info"
+            style="grid-template-columns: 1fr; margin-top: 8px"
+          >
+            <div class="info-box">
+              <div class="label-sm">New Adjusted Time (s)</div>
+              <div class="value-display" id="newAdjustedTime">10.00</div>
               <div
                 style="
                   font-size: 0.6rem;
@@ -2904,10 +2622,10 @@
             <span class="value-display" id="testMethodValue">Cumulative</span>
           </div>
           <div class="method-selector">
-            <button class="method-btn active" data-method="cumulative">
+            <button class="toggle-btn active" data-method="cumulative">
               Cumulative
             </button>
-            <button class="method-btn" data-method="incremental">
+            <button class="toggle-btn" data-method="incremental">
               Incremental
             </button>
           </div>
@@ -2936,13 +2654,13 @@
         </div>
 
         <div class="result">
-          <div class="result-label">TEST STRIP SEQUENCE</div>
+          <div class="label-sm">TEST STRIP SEQUENCE</div>
           <div class="result-value" id="testSequenceInfo">6 steps × ⅓ stop</div>
-          <div class="result-label" id="testTimeRange">10.00s to 31.75s</div>
+          <div class="label-sm" id="testTimeRange">10.00s to 31.75s</div>
         </div>
 
         <!-- UPDATED: Instructions Panel with Auto Advance Info -->
-        <div class="instructions-panel">
+        <div class="incremental-timer">
           <div class="timer-status">INSTRUCTIONS</div>
           <div id="methodInstructions">
             <div
@@ -2995,7 +2713,7 @@
         </div>
 
         <!-- Visual Test Strip Preview -->
-        <div class="test-strip-preview-container">
+        <div class="incremental-timer">
           <div class="timer-status">TEST STRIP LAYOUT</div>
           <div class="test-strip-preview" id="testStripPreview">
             <!-- Will be populated by JavaScript -->
@@ -3028,13 +2746,13 @@
           </div>
           <div class="test-timer-display">
             <div class="current-step-info">
-              <div class="step-label">Current Step</div>
-              <div class="step-value" id="currentStepDisplay">1/6</div>
+              <div class="label-sm">Current Step</div>
+              <div class="value-display" id="currentStepDisplay">1/6</div>
             </div>
             <div class="timer-display" id="testTimerDisplay">10.00</div>
             <div class="current-step-info">
-              <div class="step-label">Time</div>
-              <div class="step-value" id="currentTimeDisplay">10.00s</div>
+              <div class="label-sm">Time</div>
+              <div class="value-display" id="currentTimeDisplay">10.00s</div>
             </div>
           </div>
 
@@ -3084,20 +2802,20 @@
           <!-- Test Strip Information -->
           <div class="exp-info">
             <div class="info-box">
-              <div class="info-label">Step Size</div>
-              <div class="info-value" id="stepSizeDisplay">0.0 stops</div>
+              <div class="label-sm">Step Size</div>
+              <div class="value-display" id="stepSizeDisplay">0.0 stops</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Current Stop</div>
-              <div class="info-value" id="currentStopDisplay">0.0</div>
+              <div class="label-sm">Current Stop</div>
+              <div class="value-display" id="currentStopDisplay">0.0</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Time Multiplier</div>
-              <div class="info-value" id="timeMultiplierDisplay">1.00×</div>
+              <div class="label-sm">Time Multiplier</div>
+              <div class="value-display" id="timeMultiplierDisplay">1.00×</div>
             </div>
             <div class="info-box">
-              <div class="info-label">Total Time</div>
-              <div class="info-value" id="totalTestTimeDisplay">68.3s</div>
+              <div class="label-sm">Total Time</div>
+              <div class="value-display" id="totalTestTimeDisplay">68.3s</div>
             </div>
           </div>
 
@@ -3107,16 +2825,16 @@
               QUICK PRESETS
             </div>
             <div class="preset-buttons">
-              <button class="preset-btn" data-preset="standard">
+              <button class="settings-btn" data-preset="standard">
                 Standard: 6×⅓ stop
               </button>
-              <button class="preset-btn" data-preset="fine">
+              <button class="settings-btn" data-preset="fine">
                 Fine: 8×¼ stop
               </button>
-              <button class="preset-btn" data-preset="coarse">
+              <button class="settings-btn" data-preset="coarse">
                 Coarse: 5×½ stop
               </button>
-              <button class="preset-btn" data-preset="full">
+              <button class="settings-btn" data-preset="full">
                 Full Range: 10×1 stop
               </button>
             </div>
@@ -3132,7 +2850,7 @@
             CHEMICAL MIX CALCULATOR
           </button>
           <div class="collapsible-content">
-            <div class="chemical-calculator">
+            <div class="incremental-timer">
               <div class="timer-status">CHEMICAL MIX CALCULATOR</div>
 
               <div class="control">
@@ -3160,22 +2878,22 @@
                 DILUTION RATIO
               </div>
               <div class="dilution-selector">
-                <button class="dilution-btn active" data-ratio="1+9">
+                <button class="toggle-btn active" data-ratio="1+9">
                   1+9 (1:10)
                 </button>
-                <button class="dilution-btn" data-ratio="1+14">
+                <button class="toggle-btn" data-ratio="1+14">
                   1+14 (1:15)
                 </button>
-                <button class="dilution-btn" data-ratio="1+19">
+                <button class="toggle-btn" data-ratio="1+19">
                   1+19 (1:20)
                 </button>
-                <button class="dilution-btn" data-ratio="1+24">
+                <button class="toggle-btn" data-ratio="1+24">
                   1+24 (1:25)
                 </button>
-                <button class="dilution-btn" data-ratio="1+29">
+                <button class="toggle-btn" data-ratio="1+29">
                   1+29 (1:30)
                 </button>
-                <button class="dilution-btn" data-ratio="1+39">
+                <button class="toggle-btn" data-ratio="1+39">
                   1+39 (1:40)
                 </button>
               </div>
@@ -3210,19 +2928,19 @@
                 />
               </div>
 
-              <div class="chemical-results">
+              <div class="test-presets">
                 <div class="timer-status" style="font-size: 0.75rem">
                   MIXING INSTRUCTIONS
                 </div>
                 <div class="chemical-results-grid">
                   <div class="chemical-result-box">
-                    <div class="chemical-result-label">STOCK SOLUTION</div>
+                    <div class="label-sm">STOCK SOLUTION</div>
                     <div class="chemical-result-value" id="stockVolume">
                       100ml
                     </div>
                   </div>
                   <div class="chemical-result-box">
-                    <div class="chemical-result-label">WATER</div>
+                    <div class="label-sm">WATER</div>
                     <div class="chemical-result-value" id="waterVolume">
                       900ml
                     </div>
@@ -3249,7 +2967,7 @@
             CHEMICAL PRESETS
           </button>
           <div class="collapsible-content">
-            <div class="chemical-presets">
+            <div class="incremental-timer">
               <div class="timer-status">CHEMICAL PRESETS</div>
 
               <div class="settings-group">
@@ -3277,7 +2995,7 @@
               >
                 SAVED PRESETS
               </div>
-              <div class="chemical-preset-list" id="chemicalPresetList">
+              <div class="shelf-life-list" id="chemicalPresetList">
                 <!-- Chemical presets will be listed here -->
               </div>
 
@@ -3296,7 +3014,7 @@
             DEVELOPER CAPACITY TRACKER
           </button>
           <div class="collapsible-content">
-            <div class="capacity-tracker">
+            <div class="incremental-timer">
               <div class="timer-status">DEVELOPER CAPACITY TRACKER</div>
 
               <div class="control">
@@ -3334,24 +3052,24 @@
               <!-- NEW: Paper Size Selector -->
               <div class="paper-size-selector">
                 <div class="paper-size-buttons">
-                  <button class="paper-size-btn" data-size="0.011">
+                  <button class="toggle-btn" data-size="0.011">
                     3.5x5" (0.011 m²)
                   </button>
-                  <button class="paper-size-btn active" data-size="0.013">
+                  <button class="toggle-btn active" data-size="0.013">
                     4x5" (0.013 m²)
                   </button>
-                  <button class="paper-size-btn" data-size="0.023">
+                  <button class="toggle-btn" data-size="0.023">
                     5x7" (0.023 m²)
                   </button>
-                  <button class="paper-size-btn" data-size="0.052">
+                  <button class="toggle-btn" data-size="0.052">
                     8x10" (0.052 m²)
                   </button>
                   <!-- CHANGED -->
-                  <button class="paper-size-btn" data-size="0.099">
+                  <button class="toggle-btn" data-size="0.099">
                     11x14" (0.099 m²)
                   </button>
                   <!-- CHANGED -->
-                  <button class="paper-size-btn" data-size="0.206">
+                  <button class="toggle-btn" data-size="0.206">
                     16x20" (0.206 m²)
                   </button>
                   <!-- CHANGED -->
@@ -3368,14 +3086,14 @@
                     id="customPaperSize"
                     placeholder="Custom m²"
                   />
-                  <button class="paper-size-btn" id="useCustomSize">Use</button>
+                  <button class="toggle-btn" id="useCustomSize">Use</button>
                 </div>
               </div>
 
               <div class="result" style="margin: 10px 0">
-                <div class="result-label">MAX PRINTS THIS BATCH</div>
+                <div class="label-sm">MAX PRINTS THIS BATCH</div>
                 <div class="result-value" id="maxPrintsValue">6</div>
-                <div class="result-label" id="printsRemaining">
+                <div class="label-sm" id="printsRemaining">
                   6 prints remaining (0.48 m²)
                 </div>
               </div>
@@ -3394,27 +3112,27 @@
               </div>
 
               <div class="capacity-controls">
-                <button class="capacity-btn" id="addPrint">+1 Print</button>
-                <button class="capacity-btn" id="add5Prints">+5 Prints</button>
-                <button class="capacity-btn" id="resetPrints">Reset</button>
+                <button class="settings-btn" id="addPrint">+1 Print</button>
+                <button class="settings-btn" id="add5Prints">+5 Prints</button>
+                <button class="settings-btn" id="resetPrints">Reset</button>
               </div>
 
               <div class="exp-info" style="margin-top: 12px">
                 <div class="info-box">
-                  <div class="info-label">Prints Done</div>
-                  <div class="info-value" id="printsDoneValue">0</div>
+                  <div class="label-sm">Prints Done</div>
+                  <div class="value-display" id="printsDoneValue">0</div>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">Area Used</div>
-                  <div class="info-value" id="areaUsedValue">0.00 m²</div>
+                  <div class="label-sm">Area Used</div>
+                  <div class="value-display" id="areaUsedValue">0.00 m²</div>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">% Used</div>
-                  <div class="info-value" id="percentUsedValue">0%</div>
+                  <div class="label-sm">% Used</div>
+                  <div class="value-display" id="percentUsedValue">0%</div>
                 </div>
                 <div class="info-box">
-                  <div class="info-label">Status</div>
-                  <div class="info-value" id="capacityStatus">Fresh</div>
+                  <div class="label-sm">Status</div>
+                  <div class="value-display" id="capacityStatus">Fresh</div>
                 </div>
               </div>
             </div>
@@ -3427,7 +3145,7 @@
             SHELF LIFE TRACKER
           </button>
           <div class="collapsible-content">
-            <div class="shelf-life-tracker">
+            <div class="incremental-timer">
               <div class="timer-status">SHELF LIFE TRACKER</div>
 
               <div class="settings-group" style="margin-top: 10px">
@@ -3501,7 +3219,9 @@
               </div>
 
               <div style="margin-top: 10px; text-align: center">
-                <button class="exp-btn" id="clearExpired">Clear Expired</button>
+                <button class="settings-btn" id="clearExpired">
+                  Clear Expired
+                </button>
                 <div
                   style="
                     font-size: 0.6rem;
@@ -3565,18 +3285,18 @@
         <div class="timer-grid">
           <!-- Developer Timer -->
           <div class="timer-box" id="timerDev">
-            <div class="timer-title">Developer</div>
+            <div class="title-sm">Developer</div>
             <div class="time-display" id="displayDev">01:00</div>
             <div class="timer-controls-2">
               <div class="adjust-row">
-                <button class="adjust-btn" data-timer="Dev" data-action="minus">
+                <button class="timer-btn" data-timer="Dev" data-action="minus">
                   -5s
                 </button>
-                <button class="adjust-btn" data-timer="Dev" data-action="plus">
+                <button class="timer-btn" data-timer="Dev" data-action="plus">
                   +5s
                 </button>
               </div>
-              <div class="action-row">
+              <div class="adjust-row">
                 <button class="timer-btn" id="btnDev">Start</button>
                 <button
                   class="timer-btn"
@@ -3592,22 +3312,18 @@
 
           <!-- Stop Bath Timer -->
           <div class="timer-box" id="timerStop">
-            <div class="timer-title">Stop Bath</div>
+            <div class="title-sm">Stop Bath</div>
             <div class="time-display" id="displayStop">00:30</div>
             <div class="timer-controls-2">
               <div class="adjust-row">
-                <button
-                  class="adjust-btn"
-                  data-timer="Stop"
-                  data-action="minus"
-                >
+                <button class="timer-btn" data-timer="Stop" data-action="minus">
                   -5s
                 </button>
-                <button class="adjust-btn" data-timer="Stop" data-action="plus">
+                <button class="timer-btn" data-timer="Stop" data-action="plus">
                   +5s
                 </button>
               </div>
-              <div class="action-row">
+              <div class="adjust-row">
                 <button class="timer-btn" id="btnStop">Start</button>
                 <button
                   class="timer-btn"
@@ -3623,18 +3339,18 @@
 
           <!-- Fixer Timer -->
           <div class="timer-box" id="timerFix">
-            <div class="timer-title">Fixer</div>
+            <div class="title-sm">Fixer</div>
             <div class="time-display" id="displayFix">05:00</div>
             <div class="timer-controls-2">
               <div class="adjust-row">
-                <button class="adjust-btn" data-timer="Fix" data-action="minus">
+                <button class="timer-btn" data-timer="Fix" data-action="minus">
                   -5s
                 </button>
-                <button class="adjust-btn" data-timer="Fix" data-action="plus">
+                <button class="timer-btn" data-timer="Fix" data-action="plus">
                   +5s
                 </button>
               </div>
-              <div class="action-row">
+              <div class="adjust-row">
                 <button class="timer-btn" id="btnFix">Start</button>
                 <button
                   class="timer-btn"
@@ -3650,18 +3366,18 @@
 
           <!-- Photo Wash Timer -->
           <div class="timer-box" id="timerFlo">
-            <div class="timer-title">Photo Wash</div>
+            <div class="title-sm">Photo Wash</div>
             <div class="time-display" id="displayFlo">01:00</div>
             <div class="timer-controls-2">
               <div class="adjust-row">
-                <button class="adjust-btn" data-timer="Flo" data-action="minus">
+                <button class="timer-btn" data-timer="Flo" data-action="minus">
                   -5s
                 </button>
-                <button class="adjust-btn" data-timer="Flo" data-action="plus">
+                <button class="timer-btn" data-timer="Flo" data-action="plus">
                   +5s
                 </button>
               </div>
-              <div class="action-row">
+              <div class="adjust-row">
                 <button class="timer-btn" id="btnFlo">Start</button>
                 <button
                   class="timer-btn"
@@ -3677,8 +3393,8 @@
         </div>
 
         <div class="global-controls">
-          <button class="global-btn" id="startAll">Start All</button>
-          <button class="global-btn" id="resetAll">Reset All</button>
+          <button class="settings-btn" id="startAll">Start All</button>
+          <button class="settings-btn" id="resetAll">Reset All</button>
         </div>
 
         <!-- Timer Profiles Section MOVED from SETTINGS tab -->
@@ -3688,7 +3404,7 @@
           </button>
           <div class="collapsible-content">
             <div class="settings-section" style="margin-top: 15px">
-              <div class="settings-title">Timer Profiles</div>
+              <div class="title-md">Timer Profiles</div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -3709,8 +3425,8 @@
                 </div>
               </div>
 
-              <div class="settings-title">Saved Timer Profiles</div>
-              <div class="profile-list" id="timerProfileList">
+              <div class="title-md">Saved Timer Profiles</div>
+              <div class="shelf-life-list" id="timerProfileList">
                 <!-- Timer profiles will be listed here -->
               </div>
 
@@ -3726,10 +3442,10 @@
 
       <!-- Add this new tab content section after the SETTINGS tab content -->
       <div id="relay" class="tab-content">
-        <div class="settings-panel">
+        <div class="incremental-timer">
           <div class="settings-section">
-            <div class="settings-title">Relay Control (Manual)</div>
-            <div class="relay-controls">
+            <div class="title-md">Relay Control (Manual)</div>
+            <div class="test-presets">
               <div class="relay-item">
                 <div class="settings-group">
                   <div class="settings-item">
@@ -3833,20 +3549,21 @@
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn" id="allRelaysOn">All ON</button>
-              </div>
-              <div class="settings-item">
-                <button class="settings-btn" id="allRelaysOff">All OFF</button>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <button class="settings-btn" id="allRelaysOn">All ON</button>
+                </div>
+                <div class="settings-item">
+                  <button class="settings-btn" id="allRelaysOff">
+                    All OFF
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="settings-section">
-            <div class="settings-title">Controller Manager</div>
+            <div class="title-md">Controller Manager</div>
             <div class="settings-group">
               <div class="settings-item">
                 <div class="settings-label">Server IP</div>
@@ -3903,10 +3620,10 @@
 
       <!-- UPDATED: Settings Tab WITH Countdown Settings AND Auto Advance -->
       <div id="settings" class="tab-content">
-        <div class="settings-panel">
+        <div class="incremental-timer">
           <!-- Fullscreen Section -->
           <div class="settings-section">
-            <div class="settings-title">Display</div>
+            <div class="title-md">Display</div>
             <button class="fullscreen-btn" id="toggleFullscreen">
               Toggle Fullscreen
             </button>
@@ -3920,13 +3637,13 @@
             >
               Press F11 for desktop fullscreen
             </div>
-            <div class="settings-title">Color Scheme</div>
+            <div class="title-md">Color Scheme</div>
             <div class="color-scheme-selector">
-              <button class="color-scheme-btn active" data-scheme="dark">
+              <button class="toggle-btn active" data-scheme="dark">
                 Darkroom (Default)
               </button>
-              <button class="color-scheme-btn" data-scheme="light">Day</button>
-              <button class="color-scheme-btn" data-scheme="day">Night</button>
+              <button class="toggle-btn" data-scheme="light">Day</button>
+              <button class="toggle-btn" data-scheme="day">Night</button>
             </div>
           </div>
 
@@ -4261,7 +3978,7 @@
                 </div>
               </div>
 
-              <div class="settings-title" style="margin-top: 12px">
+              <div class="title-md" style="margin-top: 12px">
                 Auto - Manual Enlarger Control
               </div>
               <div class="settings-group">
@@ -4319,7 +4036,7 @@
 
           <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
           <div class="settings-section">
-            <div class="settings-title">Profile & Chemical Presets Sharing</div>
+            <div class="title-md">Profile & Chemical Presets Sharing</div>
             <div class="json-buttons">
               <button class="json-btn" id="exportAllProfiles">
                 Export All Data
@@ -4349,7 +4066,7 @@
 
           <!-- Reset Section -->
           <div class="settings-section">
-            <div class="settings-title">Reset</div>
+            <div class="title-md">Reset</div>
             <button class="settings-btn danger" id="resetAllSettings">
               Reset All Settings
             </button>
@@ -5562,12 +5279,14 @@
           );
           document.body.classList.add(`${this.colorScheme}-scheme`);
 
-          document.querySelectorAll(".color-scheme-btn").forEach((btn) => {
-            btn.classList.remove("active");
-            if (btn.getAttribute("data-scheme") === this.colorScheme) {
-              btn.classList.add("active");
-            }
-          });
+          document
+            .querySelectorAll(".toggle-btn[data-scheme]")
+            .forEach((btn) => {
+              btn.classList.remove("active");
+              if (btn.getAttribute("data-scheme") === this.colorScheme) {
+                btn.classList.add("active");
+              }
+            });
 
           this.settings.colorScheme = this.colorScheme;
           StorageManager.saveSettings(this.settings);
@@ -6304,7 +6023,7 @@
 
           this.profiles.forEach((profile) => {
             const item = document.createElement("div");
-            item.className = `profile-item ${
+            item.className = `shelf-life-item ${
               this.currentProfile === profile.name ? "active" : ""
             }`;
 
@@ -6336,11 +6055,11 @@
                             ).toLocaleDateString()}</div>
                             <div style="font-size: 0.6rem; color: #600;">${timeStr}</div>
                         </div>
-                        <div class="profile-actions">
-                            <button class="profile-btn load-timer-profile" data-name="${
+                        <div class="shelf-life-actions">
+                            <button class="shelf-life-btn load-timer-profile" data-name="${
                               profile.name
                             }">Load</button>
-                            <button class="profile-btn delete delete-timer-profile" data-name="${
+                            <button class="shelf-life-btn delete delete-timer-profile" data-name="${
                               profile.name
                             }">Delete</button>
                         </div>
@@ -6385,7 +6104,9 @@
           // Get elements
           this.totalVolumeSlider = document.getElementById("totalVolumeSlider");
           this.totalVolumeValue = document.getElementById("totalVolumeValue");
-          this.dilutionBtns = document.querySelectorAll(".dilution-btn");
+          this.dilutionBtns = document.querySelectorAll(
+            ".toggle-btn[data-ratio]"
+          );
           this.customStockPartsInput =
             document.getElementById("customStockParts");
           this.customWaterPartsInput =
@@ -6427,7 +6148,9 @@
           this.capacityStatus = document.getElementById("capacityStatus");
 
           // Paper size elements - NEW
-          this.paperSizeBtns = document.querySelectorAll(".paper-size-btn");
+          this.paperSizeBtns = document.querySelectorAll(
+            ".toggle-btn[data-size]"
+          );
           this.customPaperSizeInput =
             document.getElementById("customPaperSize");
           this.useCustomSizeBtn = document.getElementById("useCustomSize");
@@ -6519,7 +6242,9 @@
           let stockParts, waterParts;
 
           // Check if a preset button is active
-          const activeBtn = document.querySelector(".dilution-btn.active");
+          const activeBtn = document.querySelector(
+            ".toggle-btn[data-ratio].active"
+          );
           if (activeBtn) {
             const parts = activeBtn.getAttribute("data-ratio").split("+");
             stockParts = parseInt(parts[0]);
@@ -9050,20 +8775,24 @@
           );
 
           // Method selector event listeners
-          document.querySelectorAll(".method-btn").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const method = e.target.getAttribute("data-method");
-              this.setMethod(method);
+          document
+            .querySelectorAll(".toggle-btn[data-method]")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const method = e.target.getAttribute("data-method");
+                this.setMethod(method);
+              });
             });
-          });
 
           // Preset buttons
-          document.querySelectorAll(".preset-btn").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-              const preset = e.target.getAttribute("data-preset");
-              this.applyPreset(preset);
+          document
+            .querySelectorAll(".settings-btn[data-preset]")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const preset = e.target.getAttribute("data-preset");
+                this.applyPreset(preset);
+              });
             });
-          });
 
           // Audio context initialization
           this.startTestStripBtn.addEventListener("click", initAudioContext);
@@ -9150,12 +8879,14 @@
           this.method = method;
 
           // Update UI
-          document.querySelectorAll(".method-btn").forEach((btn) => {
-            btn.classList.remove("active");
-            if (btn.getAttribute("data-method") === method) {
-              btn.classList.add("active");
-            }
-          });
+          document
+            .querySelectorAll(".toggle-btn[data-method]")
+            .forEach((btn) => {
+              btn.classList.remove("active");
+              if (btn.getAttribute("data-method") === method) {
+                btn.classList.add("active");
+              }
+            });
 
           document.getElementById("testMethodValue").textContent =
             method === "cumulative" ? "Cumulative" : "Incremental";
@@ -10240,7 +9971,7 @@
         window.relayManager = new RelayManager();
 
         // Color scheme selector
-        document.querySelectorAll(".color-scheme-btn").forEach((btn) => {
+        document.querySelectorAll(".toggle-btn[data-scheme]").forEach((btn) => {
           btn.addEventListener("click", () => {
             const scheme = btn.getAttribute("data-scheme");
             settingsManager.setColorScheme(scheme);
@@ -10699,11 +10430,11 @@
           }
 
           // Dilution buttons
-          const dilutionBtn = e.target.closest(".dilution-btn[data-ratio]");
+          const dilutionBtn = e.target.closest(".toggle-btn[data-ratio]");
           if (dilutionBtn && window.chemicalManager) {
             e.preventDefault();
             document
-              .querySelectorAll(".dilution-btn")
+              .querySelectorAll(".toggle-btn[data-ratio]")
               .forEach((b) => b.classList.remove("active"));
             dilutionBtn.classList.add("active");
             window.chemicalManager.dilutionRatio =
@@ -10713,7 +10444,7 @@
           }
 
           // Paper size buttons
-          const paperSizeBtn = e.target.closest(".paper-size-btn[data-size]");
+          const paperSizeBtn = e.target.closest(".toggle-btn[data-size]");
           if (paperSizeBtn && window.chemicalManager) {
             const size = parseFloat(paperSizeBtn.getAttribute("data-size"));
             if (size) {
@@ -10728,9 +10459,7 @@
           }
 
           // Color scheme buttons
-          const colorSchemeBtn = e.target.closest(
-            ".color-scheme-btn[data-scheme]"
-          );
+          const colorSchemeBtn = e.target.closest(".toggle-btn[data-scheme]");
           if (colorSchemeBtn && settingsManager) {
             const scheme = colorSchemeBtn.getAttribute("data-scheme");
             e.preventDefault();
