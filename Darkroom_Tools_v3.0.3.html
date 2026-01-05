@@ -21,6 +21,8 @@
             .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
          8. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
          9. Value classes: .value-display consolidates .result-value, .chemical-result-value
+         10. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
+         11. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
          All variants use the same base styles with class-specific overrides.
       */
 
@@ -202,8 +204,6 @@
       }
 
       /* Unified result display containers */
-      .result,
-      .chemical-result-box,
       .info-box {
         text-align: center;
         background: var(--panel-light);
@@ -277,7 +277,7 @@
         margin-top: 10px;
       }
 
-      /* info-box and chemical-result-box now consolidated with result */
+      /* info-box is the unified result display container */
 
       /* Unified small label class - consolidates info-label, label-sm, chemical-label-sm, label-sm */
       .label-sm {
@@ -615,10 +615,10 @@
         transform: translateX(14px);
       }
 
-      /* chemical-result-box now consolidated with result */
+      /* chemical-result-box removed - using info-box instead */
 
       /* chemical-label-sm now uses .label-sm */
-      /* chemical-result-value now uses unified value classes */
+      /* chemical-result-value uses unified value classes */
 
       .test-strip-preview {
         display: flex;
@@ -657,46 +657,6 @@
         margin-top: 2px;
       }
 
-      /* ===== COLOR SCHEME SELECTOR (EXACT MATCH) ===== */
-      .color-scheme-selector {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      /* ===== JSON BUTTONS (EXACT MATCH) ===== */
-      .json-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .json-btn {
-        flex: 1;
-        padding: 8px 12px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
-      }
-
-      /* ===== FULLSCREEN BUTTON (EXACT MATCH) ===== */
-      .fullscreen-btn {
-        padding: 8px 16px;
-        background: var(--border-light);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        text-transform: uppercase;
-        margin-top: 10px;
-        width: 100%;
-      }
-
       /* ===== FOOTER (EXACT MATCH) ===== */
       footer {
         text-align: center;
@@ -723,10 +683,6 @@
       /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
 
       /* Chart styles */
-      .chart-container {
-        overflow-x: auto;
-        margin-bottom: 10px;
-      }
 
       .time-table {
         width: 100%;
@@ -753,24 +709,13 @@
         background: var(--panel);
       }
 
-      .current-stop {
-        background: var(--panel-light) !important;
-        font-weight: bold;
-      }
-
       /* increment-cell can use .label-sm */
 
       /* Unified flex control groups */
-      .sound-controls,
-      .preview-controls {
+      .sound-controls {
         display: flex;
         justify-content: space-around;
         margin-top: 10px;
-      }
-
-      .preview-controls {
-        justify-content: space-between;
-        align-items: center;
       }
 
       .sound-label {
@@ -1525,11 +1470,7 @@
           -webkit-overflow-scrolling: touch;
         }
 
-        /* Chart container */
-        .chart-container {
-          margin-left: -6px;
-          margin-right: -6px;
-        }
+        /* Chart container - consolidated to inline styles */
 
         .time-table {
           min-width: 300px;
@@ -1963,7 +1904,7 @@
           </div>
         </div>
 
-        <div class="result">
+        <div class="info-box">
           <div class="label-sm">SELECTED EXPOSURE</div>
           <div class="result-value" id="resultTime">10.00</div>
           <div class="label-sm" id="resultDetails">BASE (0.0 stops)</div>
@@ -2483,8 +2424,12 @@
           ⓘ Uses BASE TIME from CALC tab
         </div>
 
-        <div class="chart-container">
-          <table class="time-table" id="timeTable">
+        <div style="overflow-x: auto; margin-bottom: 10px">
+          <table
+            class="time-table"
+            id="timeTable"
+            style="margin-left: -6px; margin-right: -6px"
+          >
             <thead>
               <tr>
                 <th>STOP</th>
@@ -2649,7 +2594,7 @@
           </div>
         </div>
 
-        <div class="result">
+        <div class="info-box">
           <div class="label-sm">TEST STRIP SEQUENCE</div>
           <div class="result-value" id="testSequenceInfo">6 steps × ⅓ stop</div>
           <div class="label-sm" id="testTimeRange">10.00s to 31.75s</div>
@@ -2714,7 +2659,10 @@
           <div class="test-strip-preview" id="testStripPreview">
             <!-- Will be populated by JavaScript -->
           </div>
-          <div class="preview-controls">
+          <div
+            class="sound-controls"
+            style="justify-content: space-between; align-items: center"
+          >
             <div class="preview-legend">
               <div class="legend-item">
                 <span class="legend-color" style="background: #300"></span>
@@ -2929,13 +2877,13 @@
                   MIXING INSTRUCTIONS
                 </div>
                 <div class="chemical-results-grid">
-                  <div class="chemical-result-box">
+                  <div class="info-box">
                     <div class="label-sm">STOCK SOLUTION</div>
                     <div class="chemical-result-value" id="stockVolume">
                       100ml
                     </div>
                   </div>
-                  <div class="chemical-result-box">
+                  <div class="info-box">
                     <div class="label-sm">WATER</div>
                     <div class="chemical-result-value" id="waterVolume">
                       900ml
@@ -3086,7 +3034,7 @@
                 </div>
               </div>
 
-              <div class="result" style="margin: 10px 0">
+              <div class="info-box" style="margin: 10px 0">
                 <div class="label-sm">MAX PRINTS THIS BATCH</div>
                 <div class="result-value" id="maxPrintsValue">6</div>
                 <div class="label-sm" id="printsRemaining">
@@ -3620,7 +3568,15 @@
           <!-- Fullscreen Section -->
           <div class="settings-section">
             <div class="title-md">Display</div>
-            <button class="fullscreen-btn" id="toggleFullscreen">
+            <button
+              class="settings-btn primary"
+              id="toggleFullscreen"
+              style="
+                padding: 8px 16px;
+                text-transform: uppercase;
+                margin-top: 10px;
+              "
+            >
               Toggle Fullscreen
             </button>
             <div
@@ -3634,7 +3590,7 @@
               Press F11 for desktop fullscreen
             </div>
             <div class="title-md">Color Scheme</div>
-            <div class="color-scheme-selector">
+            <div class="dilution-selector">
               <button class="toggle-btn active" data-scheme="dark">
                 Darkroom (Default)
               </button>
@@ -4033,11 +3989,11 @@
           <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
           <div class="settings-section">
             <div class="title-md">Profile & Chemical Presets Sharing</div>
-            <div class="json-buttons">
-              <button class="json-btn" id="exportAllProfiles">
+            <div class="settings-btn-group">
+              <button class="settings-btn" id="exportAllProfiles">
                 Export All Data
               </button>
-              <button class="json-btn" id="importAllProfiles">
+              <button class="settings-btn" id="importAllProfiles">
                 Import All Data
               </button>
             </div>
@@ -9807,7 +9763,8 @@
           const row = document.createElement("tr");
 
           if (stop === currentStop) {
-            row.className = "current-stop";
+            row.style.background = "var(--panel-light)";
+            row.style.fontWeight = "bold";
           }
 
           row.innerHTML = `
