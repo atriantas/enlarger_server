@@ -1542,7 +1542,7 @@
         }
 
         .time-table {
-          min-width: 380px;
+          min-width: 300px;
         }
 
         /* Calculator info - 2 columns on mobile */
@@ -2393,7 +2393,7 @@
           </div>
           <div
             class="exp-info"
-            style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-top: 8px"
+            style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; margin-top: 8px"
           >
             <div class="info-box">
               <div class="label-sm">Height Factor</div>
@@ -2410,6 +2410,12 @@
             <div class="info-box">
               <div class="label-sm">Contrast Factor</div>
               <div class="value-display" id="filterFactorValueDisplay">
+                1.00x
+              </div>
+            </div>
+            <div class="info-box">
+              <div class="label-sm">Custom Factor</div>
+              <div class="value-display" id="customBankFactorDisplay">
                 1.00x
               </div>
             </div>
@@ -7624,6 +7630,42 @@
         return `${sign}${absVal.toFixed(1)}`;
       }
 
+      // Compact stop formatter: returns fraction-only when <1 stop, includes whole number otherwise
+      function formatStopCompact(stopValue) {
+        const denom = window.stopDenominator || 3;
+        const whole = Math.floor(stopValue);
+        const fraction = stopValue - whole;
+        const tol = 1e-6;
+
+        if (Math.abs(fraction) < tol) {
+          return `${whole}`;
+        }
+
+        let fracLabel = "";
+        if (denom === 2) {
+          if (Math.abs(fraction - 0.5) < tol) fracLabel = "½";
+        } else if (denom === 3) {
+          if (Math.abs(fraction - 1 / 3) < tol) fracLabel = "⅓";
+          else if (Math.abs(fraction - 2 / 3) < tol) fracLabel = "⅔";
+        } else if (denom === 4) {
+          if (Math.abs(fraction - 0.25) < tol) fracLabel = "¹⁄₄";
+          else if (Math.abs(fraction - 0.5) < tol) fracLabel = "²⁄₄";
+          else if (Math.abs(fraction - 0.75) < tol) fracLabel = "³⁄₄";
+        } else if (denom === 6) {
+          if (Math.abs(fraction - 1 / 6) < tol) fracLabel = "¹⁄₆";
+          else if (Math.abs(fraction - 2 / 6) < tol) fracLabel = "²⁄₆";
+          else if (Math.abs(fraction - 3 / 6) < tol) fracLabel = "³⁄₆";
+          else if (Math.abs(fraction - 4 / 6) < tol) fracLabel = "⁴⁄₆";
+          else if (Math.abs(fraction - 5 / 6) < tol) fracLabel = "⁵⁄₆";
+        }
+
+        if (fracLabel) {
+          return whole === 0 ? fracLabel : `${whole}${fracLabel}`;
+        }
+
+        return stopValue.toFixed(1);
+      }
+
       function calculateTime(base, stop) {
         const denom = window.stopDenominator || 3;
         return base * Math.pow(2, stop / denom);
@@ -7996,6 +8038,8 @@
           this.currentPaper = "fomaspeed";
           this.currentFilter = "none";
           this.filterFactor = 1.0;
+          this.customBankFactor = 1.0;
+          this.customBankLabel = "";
 
           // Paper types data from contrast calculator
           this.paperTypes = {
@@ -8030,9 +8074,6 @@
           this.paperSizeFactor = 1.0;
           this.combinedFactor = 1.0;
           this.newAdjustedTime = 10.0;
-          this.useCustomFilter = false;
-          this.customFilterName = "";
-          this.customFilterValue = 1.0;
 
           this.init();
           this.updateCalculations();
@@ -8101,6 +8142,9 @@
             document.getElementById("filterFactorValue");
           this.filterFactorValueDisplay = document.getElementById(
             "filterFactorValueDisplay"
+          );
+          this.customBankFactorDisplay = document.getElementById(
+            "customBankFactorDisplay"
           );
 
           // Set initial values
@@ -8207,7 +8251,6 @@
             this.selectPaper("fomatonemg")
           );
           this.contrastFilterSelect.addEventListener("change", () => {
-            this.clearCustomFilterOverride();
             this.currentFilter = this.contrastFilterSelect.value;
             this.updateCalculations();
             this.updateDisplay();
@@ -8219,7 +8262,6 @@
         // NEW: Paper selection method
         selectPaper(paperType) {
           this.currentPaper = paperType;
-          this.clearCustomFilterOverride();
 
           // Update button states
           this.btnFomaspeed.classList.remove("active");
@@ -8355,25 +8397,22 @@
             this.paperSizeFactor = 1.0;
           }
 
-          // NEW: Filter factor from contrast control or custom bank
-          if (this.useCustomFilter) {
-            this.filterFactor = this.customFilterValue || 1.0;
+          // Filter factor comes from contrast control selection
+          const paper = this.paperTypes[this.currentPaper];
+          const filter = paper?.filters?.[this.currentFilter];
+          if (filter) {
+            this.filterFactor = filter.factor;
           } else {
-            const paper = this.paperTypes[this.currentPaper];
-            const filter = paper.filters[this.currentFilter];
-            if (filter) {
-              this.filterFactor = filter.factor;
-            } else {
-              this.filterFactor = 1.0;
-            }
+            this.filterFactor = 1.0;
           }
 
-          // Combined factor includes ALL factors
+          // Combined factor includes ALL factors plus custom bank factor
           this.combinedFactor =
             this.heightFactor *
             this.fstopFactor *
             this.paperSizeFactor *
-            this.filterFactor;
+            this.filterFactor *
+            this.customBankFactor;
           this.newAdjustedTime = this.originalTime * this.combinedFactor;
         }
 
@@ -8402,22 +8441,21 @@
           this.newAdjustedTimeElement.textContent =
             this.newAdjustedTime.toFixed(2);
 
-          // NEW: Update contrast control displays
-          if (this.useCustomFilter) {
-            this.isoValueElement.textContent =
-              this.customFilterName || "Custom";
-            this.filterFactorValueElement.textContent = `${this.filterFactor.toFixed(
-              2
+          // Update contrast control displays from selected paper/filter only
+          const paper = this.paperTypes[this.currentPaper];
+          const filter = paper?.filters?.[this.currentFilter];
+          if (filter) {
+            this.isoValueElement.textContent = filter.iso;
+            this.filterFactorValueElement.textContent = `${filter.factor.toFixed(
+              1
             )}×`;
-          } else {
-            const paper = this.paperTypes[this.currentPaper];
-            const filter = paper.filters[this.currentFilter];
-            if (filter) {
-              this.isoValueElement.textContent = filter.iso;
-              this.filterFactorValueElement.textContent = `${filter.factor.toFixed(
-                1
-              )}×`;
-            }
+          }
+
+          // Update custom bank factor display
+          if (this.customBankFactorDisplay) {
+            this.customBankFactorDisplay.textContent = `${this.customBankFactor.toFixed(
+              2
+            )}x`;
           }
 
           // Update button text to show calculation
@@ -8437,18 +8475,17 @@
         applyCustomFilterFactor(label, value) {
           const factor = parseFloat(value);
           if (!factor || factor <= 0) return;
-          this.useCustomFilter = true;
-          this.customFilterName = label || "Custom";
-          this.customFilterValue = factor;
-          this.currentFilter = "custom";
+          this.customBankLabel = label || "Custom";
+          this.customBankFactor = factor;
           this.updateCalculations();
           this.updateDisplay();
         }
 
         clearCustomFilterOverride() {
-          this.useCustomFilter = false;
-          this.customFilterName = "";
-          this.customFilterValue = 1.0;
+          this.customBankLabel = "";
+          this.customBankFactor = 1.0;
+          this.updateCalculations();
+          this.updateDisplay();
         }
 
         applyNewTime() {
@@ -8981,41 +9018,7 @@
         }
 
         getIncrementLabel(increment) {
-          const denom = window.stopDenominator || 3;
-          const stopValue = increment / denom;
-          const whole = Math.floor(stopValue);
-          const fraction = stopValue - whole;
-
-          // Use tolerance for floating point comparison
-          const tolerance = 0.0001;
-
-          if (Math.abs(fraction) < tolerance) return `${whole}`;
-
-          if (denom === 2) {
-            if (Math.abs(fraction - 0.5) < tolerance) return `½`;
-          } else if (denom === 3) {
-            if (Math.abs(fraction - 1 / 3) < tolerance) return `⅓`;
-            if (Math.abs(fraction - 2 / 3) < tolerance) return `⅔`;
-          } else if (denom === 4) {
-            if (Math.abs(fraction - 0.25) < tolerance) return `¹⁄₄`;
-            if (Math.abs(fraction - 0.5) < tolerance) return `²⁄₄`;
-            if (Math.abs(fraction - 0.75) < tolerance) return `³⁄₄`;
-          } else if (denom === 6) {
-            if (Math.abs(fraction - 1 / 6) < tolerance) return `¹⁄₆`;
-            if (Math.abs(fraction - 2 / 6) < tolerance) return `²⁄₆`;
-            if (Math.abs(fraction - 3 / 6) < tolerance) return `³⁄₆`;
-            if (Math.abs(fraction - 4 / 6) < tolerance) return `⁴⁄₆`;
-            if (Math.abs(fraction - 5 / 6) < tolerance) return `⁵⁄₆`;
-          } else if (denom === 6) {
-            if (Math.abs(fraction - 1 / 6) < tolerance) return `¹⁄₆`;
-            if (Math.abs(fraction - 2 / 6) < tolerance) return `²⁄₆`;
-            if (Math.abs(fraction - 3 / 6) < tolerance) return `³⁄₆`;
-            if (Math.abs(fraction - 4 / 6) < tolerance) return `⁴⁄₆`;
-            if (Math.abs(fraction - 5 / 6) < tolerance) return `⁵⁄₆`;
-          }
-
-          // Fallback: show as decimal
-          return `${stopValue.toFixed(1)}`;
+          return formatStopCompact(increment / (window.stopDenominator || 3));
         }
 
         formatStop(stopValue) {
@@ -10079,27 +10082,7 @@
             span.style.textAlign = "center";
             const denom = window.stopDenominator || 3;
             const stopValue = val / denom;
-            const whole = Math.floor(stopValue);
-            const frac = stopValue - whole;
-            const tol = 1e-6;
-            if (Math.abs(frac) < tol) span.textContent = `${whole}`;
-            else if (denom === 2) span.textContent = `${whole}½`;
-            else if (denom === 3) span.textContent = frac < 0.5 ? "⅓" : "⅔";
-            else if (denom === 4)
-              span.textContent =
-                frac === 0.25 ? "¹⁄₄" : frac === 0.5 ? "²⁄₄" : "³⁄₄";
-            else if (denom === 6) {
-              if (Math.abs(frac - 1 / 6) < tol)
-                span.textContent = `${whole}¹⁄₆`;
-              else if (Math.abs(frac - 2 / 6) < tol)
-                span.textContent = `${whole}²⁄₆`;
-              else if (Math.abs(frac - 3 / 6) < tol)
-                span.textContent = `${whole}³⁄₆`;
-              else if (Math.abs(frac - 4 / 6) < tol)
-                span.textContent = `${whole}⁴⁄₆`;
-              else if (Math.abs(frac - 5 / 6) < tol)
-                span.textContent = `${whole}⁵⁄₆`;
-            } else span.textContent = stopValue.toFixed(1);
+            span.textContent = formatStopCompact(stopValue);
             frag.appendChild(span);
           }
           testContainer.innerHTML = "";
