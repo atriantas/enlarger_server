@@ -11,18 +11,24 @@
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
          1. List containers: .chemical-preset-list + .shelf-life-list (replaces .profile-list)
-         2. List items: .chemical-preset-item + .shelf-life-item (replaces .profile-item, .list-item)
+         2. List items: .shelf-life-item (replaces .chemical-preset-item, .profile-item, .list-item)
          3. Toggle buttons: .toggle-btn (replaces .paper-btn, .paper-size-btn, 
-            .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle)
-         4. Action buttons: .btn-action consolidates .chemical-preset-btn, .shelf-life-btn (replaces .profile-btn)
-         5. Flexible buttons: .repeat-btn (replaces .btn-flex)
-         6. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
-         7. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
+            .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle, .paper-size-buttons)
+         4. Action buttons: .btn-action (replaces .chemical-preset-btn, .shelf-life-btn, .profile-btn)
+         5. Action containers: .shelf-life-actions (replaces .chemical-preset-actions)
+         6. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex) - uses inline styles for specific variants
+         7. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
+         8. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
             .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
-         8. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
-         9. Value classes: .value-display consolidates .result-value, .chemical-result-value
-         10. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
-         11. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
+         9. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
+         10. Value classes: .value-display (replaces .result-value, .chemical-result-value)
+         11. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
+         12. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
+         13. Medium label classes: .setting-label (replaces .sound-label, .preview-label)
+         14. Select dropdowns: .settings-input (replaces .fstop-select)
+         15. Panel containers: .incremental-timer (replaces .timer-settings)
+         16. Button groups: .settings-btn-group (replaces .global-controls, .timer-controls)
+         17. Section headers: .title-sm (replaces .timer-status)
          All variants use the same base styles with class-specific overrides.
       */
 
@@ -212,14 +218,6 @@
         padding: 8px;
       }
 
-      .timer-status {
-        font-size: 0.8rem;
-        color: var(--text);
-        text-align: center;
-        margin-bottom: 8px;
-        font-weight: bold;
-      }
-
       .timer-display {
         font-size: 2.5rem;
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -231,13 +229,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-      }
-
-      .timer-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
       }
 
       /* ===== BUTTON STYLES (EXACT MATCH) ===== */
@@ -287,18 +278,11 @@
       }
 
       /* Unified value display class - consolidates result-value, chemical-result-value */
-      .value-display,
-      .result-value,
-      .chemical-result-value {
+      .value-display {
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: bold;
         color: var(--text);
         font-size: 0.8rem;
-      }
-
-      .result-value,
-      .chemical-result-value {
-        font-size: 1.2rem;
       }
 
       /* ===== TIMER GRID (EXACT MATCH) ===== */
@@ -487,20 +471,14 @@
         margin-bottom: 10px;
       }
 
-      /* Unified list item - consolidates chemical-preset-item, shelf-life-item */
-      .chemical-preset-item,
+      /* Unified list item - replaces chemical-preset-item, shelf-life-item */
       .shelf-life-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .shelf-life-item {
         padding: 8px;
         border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
       }
 
       .shelf-life-item:last-child {
@@ -536,6 +514,7 @@
 
       .settings-btn-group {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         margin-top: 10px;
       }
@@ -544,27 +523,10 @@
         flex: 1;
       }
 
-      .global-controls {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      /* ===== TIMER SETTINGS (EXACT MATCH) ===== */
-      .timer-settings {
-        display: flex;
-        justify-content: space-between;
-        background: var(--panel);
-        padding: 6px 8px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-      }
-
       /* setting-item now uses .item-container */
 
-      /* Unified medium label class - consolidates setting-label, sound-label, preview-label */
+      /* Unified medium label class - consolidates setting-label, preview-label */
       .setting-label,
-      .sound-label,
       .preview-label {
         font-size: 0.7rem;
         white-space: nowrap;
@@ -718,42 +680,8 @@
         margin-top: 10px;
       }
 
-      .sound-label {
-        color: var(--text-secondary);
-      }
-
-      /* F-stop dropdown styles */
-      .fstop-select {
-        width: 100%;
-        padding: 4px 6px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 0.8rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        text-align: center;
-        cursor: pointer;
-        margin-top: 8px;
-      }
-
-      /* Repeat button styling */
-      .repeat-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 0.9rem;
-        font-weight: bold;
-        cursor: pointer;
-      }
-
-      .repeat-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
+      /* .repeat-btn consolidated into .settings-btn with inline styles */
+      /* .paper-size-buttons consolidated into .dilution-selector with inline styles */
 
       /* Panel container for all panel-style sections */
       .incremental-timer {
@@ -766,8 +694,7 @@
 
       /* 2-column grid layouts */
       .paper-selector,
-      .method-selector,
-      .paper-size-buttons {
+      .method-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
@@ -832,35 +759,14 @@
 
       /* Unified input focus already handled by .settings-input:focus */
 
-      /* Chemical Preset Styles - now using consolidated classes */
-      .chemical-preset-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .chemical-preset-item:last-child {
-        border-bottom: none;
-      }
-
-      .chemical-preset-item.active {
-        background: var(--panel-light);
-      }
-
-      /* Unified flex-row class for action buttons */
-      .chemical-preset-actions,
+      /* Unified flex-row class for action buttons - replaces .chemical-preset-actions */
       .shelf-life-actions {
         display: flex;
         gap: 6px;
       }
 
-      /* Base action button (consolidated) */
-      .btn-action,
-      .chemical-preset-btn,
-      .shelf-life-btn {
+      /* Base action button - replaces .chemical-preset-btn, .shelf-life-btn */
+      .btn-action {
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--accent);
@@ -870,15 +776,12 @@
         cursor: pointer;
       }
 
-      .btn-action.delete,
-      .shelf-life-btn.delete {
+      .btn-action.delete {
         border-color: var(--accent);
         color: var(--accent);
       }
 
-      .shelf-life-btn {
-        padding: 3px 6px;
-        font-size: 0.65rem;
+      .btn-action {
         min-width: 50px;
       }
 
@@ -925,7 +828,6 @@
 
       /* .shelf-life-list styles consolidated above */
 
-      .chemical-preset-item:last-child,
       .shelf-life-item:last-child {
         border-bottom: none;
       }
@@ -958,8 +860,6 @@
         display: flex;
         gap: 4px;
       }
-
-      /* .shelf-life-btn now uses .btn-action with padding override */
 
       /* F-STOP TEST STRIP GENERATOR STYLES */
       /* preview-controls now consolidated with sound-controls */
@@ -1209,15 +1109,13 @@
       /* Relay styles remain outside fullscreen concerns */
       /* relay-controls now consolidated with test-presets - both replaced by test-presets */
 
-      .relay-item,
-      .shelf-life-item {
+      .relay-item {
         padding: 8px;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--border);
       }
 
-      .relay-item:last-child,
-      .shelf-life-item:last-child {
+      .relay-item:last-child {
         border-bottom: none;
       }
 
@@ -1234,16 +1132,6 @@
       body.fullscreen-mode #settings.tab-content.active {
         overflow-y: auto;
         overflow-x: hidden;
-      }
-
-      body.fullscreen-mode #timer .timer-settings {
-        flex-shrink: 0;
-        margin-bottom: 8px;
-      }
-
-      body.fullscreen-mode #timer .global-controls {
-        flex-shrink: 0;
-        margin: 8px 0;
       }
 
       body.fullscreen-mode #timer .settings-section {
@@ -1278,7 +1166,7 @@
         gap: 4px;
       }
 
-      body.fullscreen-mode .shelf-life-btn {
+      body.fullscreen-mode .btn-action {
         min-width: 50px;
         padding: 3px 6px;
         font-size: 0.7rem;
@@ -1393,14 +1281,6 @@
           margin-bottom: 6px;
         }
 
-        /* Global controls */
-        .global-controls {
-          display: flex;
-          gap: 6px;
-          margin: 12px 0;
-          flex-direction: row;
-        }
-
         .settings-btn {
           padding: 10px 12px;
           font-size: 0.85rem;
@@ -1447,7 +1327,7 @@
           gap: 6px;
         }
 
-        .shelf-life-btn {
+        .btn-action {
           min-width: 45px;
           padding: 4px 8px;
           font-size: 0.7rem;
@@ -1492,15 +1372,10 @@
           flex-direction: row;
         }
 
-        .shelf-life-btn {
+        .btn-action {
           min-width: 40px;
           font-size: 0.65rem;
           padding: 2px 4px;
-        }
-
-        /* Global buttons */
-        .global-controls {
-          flex-direction: column;
         }
 
         /* Chemical management mobile adjustments */
@@ -1568,16 +1443,12 @@
         }
 
         /* Chemical preset mobile adjustments */
-        .paper-size-buttons {
-          grid-template-columns: 1fr;
-        }
-
-        .chemical-preset-actions {
+        .shelf-life-actions {
           flex-direction: column;
           gap: 2px;
         }
 
-        .chemical-preset-btn {
+        .btn-action {
           padding: 1px 4px;
           font-size: 0.6rem;
         }
@@ -1585,7 +1456,6 @@
 
       /* Adjust info-box height to accommodate both sliders */
       .info-box {
-        min-height: 50px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -1906,25 +1776,29 @@
 
         <div class="info-box">
           <div class="label-sm">SELECTED EXPOSURE</div>
-          <div class="result-value" id="resultTime">10.00</div>
+          <div class="value-display" id="resultTime" style="font-size: 1.2rem">
+            10.00
+          </div>
           <div class="label-sm" id="resultDetails">BASE (0.0 stops)</div>
         </div>
 
         <!-- Simplified Incremental Exposure Timer -->
         <div class="incremental-timer">
-          <div class="timer-status" id="timerStatus">READY FOR EXPOSURE</div>
+          <div class="title-sm" id="timerStatus" style="text-align: center">
+            READY FOR EXPOSURE
+          </div>
           <div class="timer-display" id="calcTimerDisplay">10.00</div>
 
           <div class="sound-controls">
             <div>
-              <div class="sound-label">3s Beeps</div>
+              <div class="setting-label">3s Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="calcWarningBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">End Beep</div>
+              <div class="setting-label">End Beep</div>
               <label class="switch">
                 <input type="checkbox" id="calcEndBeep" checked />
                 <span class="slider-switch"></span>
@@ -1932,11 +1806,21 @@
             </div>
           </div>
 
-          <div class="timer-controls">
+          <div class="settings-btn-group">
             <button class="exp-btn" id="startExposure">Start Exposure</button>
             <button class="exp-btn" id="stopCalcTimer" disabled>Stop</button>
             <button class="exp-btn" id="resetCalcTimer">Reset</button>
-            <button class="repeat-btn" id="repeatExposure" disabled>
+            <button
+              class="settings-btn"
+              id="repeatExposure"
+              disabled
+              style="
+                flex: 1;
+                font-size: 0.9rem;
+                font-weight: bold;
+                padding: 8px;
+              "
+            >
               Repeat Last
             </button>
           </div>
@@ -1964,8 +1848,9 @@
 
         <!-- MODIFIED ENLARGER HEIGHT CALCULATOR WITH CONTRAST CONTROL INTEGRATED -->
         <div class="incremental-timer" style="margin-top: 10px">
-          <div class="timer-status">ENLARGER & CONTRAST CALCULATOR</div>
-
+          <div class="title-sm" style="text-align: center">
+            ENLARGER & CONTRAST CALCULATOR
+          </div>
           <!-- Original Settings Section -->
           <div class="info-box">
             <div class="label-sm">Original Time (s)</div>
@@ -2095,7 +1980,16 @@
               >
                 <div class="info-box">
                   <div class="label-sm">Original F-Stop</div>
-                  <select class="fstop-select" id="originalFStop">
+                  <select
+                    class="settings-input"
+                    id="originalFStop"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
                     <option value="5.6" selected>f/5.6</option>
@@ -2108,7 +2002,16 @@
                 </div>
                 <div class="info-box">
                   <div class="label-sm">New F-Stop</div>
-                  <select class="fstop-select" id="newFStop">
+                  <select
+                    class="settings-input"
+                    id="newFStop"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
                     <option value="5.6" selected>f/5.6</option>
@@ -2136,7 +2039,16 @@
                 <!-- Original Paper Size -->
                 <div class="info-box">
                   <div class="label-sm">Original Paper Size</div>
-                  <select class="fstop-select" id="originalPaperSize">
+                  <select
+                    class="settings-input"
+                    id="originalPaperSize"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
                     <option value="0.023">5×7" (0.023 m²)</option>
@@ -2174,7 +2086,16 @@
                 <!-- New Paper Size -->
                 <div class="info-box">
                   <div class="label-sm">New Paper Size</div>
-                  <select class="fstop-select" id="newPaperSize">
+                  <select
+                    class="settings-input"
+                    id="newPaperSize"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
                     <option value="0.023">5×7" (0.023 m²)</option>
@@ -2243,7 +2164,16 @@
                 </div>
                 <div class="info-box">
                   <div class="label-sm">Contrast Filter</div>
-                  <select class="fstop-select" id="contrastFilterSelect">
+                  <select
+                    class="settings-input"
+                    id="contrastFilterSelect"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2xY">2×Y</option>
                     <option value="Y">Y</option>
                     <option value="none" selected>No filter</option>
@@ -2281,7 +2211,16 @@
               <div class="custom-filter-header">
                 <div>
                   <div class="label-sm">Group</div>
-                  <select class="fstop-select" id="customFilterGroup">
+                  <select
+                    class="settings-input"
+                    id="customFilterGroup"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0">Group A</option>
                     <option value="1">Group B</option>
                     <option value="2">Group C</option>
@@ -2317,8 +2256,8 @@
 
           <!-- Combined Factors Display -->
           <div
-            class="timer-status"
-            style="font-size: 0.65rem; margin-top: 15px"
+            class="title-sm"
+            style="text-align: center; font-size: 0.65rem; margin-top: 15px"
           >
             Factors & Time
           </div>
@@ -2596,13 +2535,19 @@
 
         <div class="info-box">
           <div class="label-sm">TEST STRIP SEQUENCE</div>
-          <div class="result-value" id="testSequenceInfo">6 steps × ⅓ stop</div>
+          <div
+            class="value-display"
+            id="testSequenceInfo"
+            style="font-size: 1.2rem"
+          >
+            6 steps × ⅓ stop
+          </div>
           <div class="label-sm" id="testTimeRange">10.00s to 31.75s</div>
         </div>
 
         <!-- UPDATED: Instructions Panel with Auto Advance Info -->
         <div class="incremental-timer">
-          <div class="timer-status">INSTRUCTIONS</div>
+          <div class="title-sm" style="text-align: center">INSTRUCTIONS</div>
           <div id="methodInstructions">
             <div
               class="cumulative-instructions"
@@ -2655,7 +2600,9 @@
 
         <!-- Visual Test Strip Preview -->
         <div class="incremental-timer">
-          <div class="timer-status">TEST STRIP LAYOUT</div>
+          <div class="title-sm" style="text-align: center">
+            TEST STRIP LAYOUT
+          </div>
           <div class="test-strip-preview" id="testStripPreview">
             <!-- Will be populated by JavaScript -->
           </div>
@@ -2685,7 +2632,7 @@
 
         <!-- Test Strip Timer Controls -->
         <div class="incremental-timer" style="margin-top: 10px">
-          <div class="timer-status" id="testTimerStatus">
+          <div class="title-sm" id="testTimerStatus" style="text-align: center">
             READY FOR TEST STRIP
           </div>
           <div class="test-timer-display">
@@ -2713,21 +2660,21 @@
 
           <div class="sound-controls">
             <div>
-              <div class="sound-label">3s Beeps</div>
+              <div class="setting-label">3s Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="testWarningBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">Step Beeps</div>
+              <div class="setting-label">Step Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="testStepBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">End Beep</div>
+              <div class="setting-label">End Beep</div>
               <label class="switch">
                 <input type="checkbox" id="testEndBeep" checked />
                 <span class="slider-switch"></span>
@@ -2735,7 +2682,7 @@
             </div>
           </div>
 
-          <div class="timer-controls">
+          <div class="settings-btn-group">
             <button class="exp-btn" id="startTestStrip">
               Start Test Strip
             </button>
@@ -2765,7 +2712,10 @@
 
           <!-- Test Strip Presets -->
           <div class="test-presets">
-            <div class="timer-status" style="margin-bottom: 8px">
+            <div
+              class="title-sm"
+              style="text-align: center; margin-bottom: 8px"
+            >
               QUICK PRESETS
             </div>
             <div class="preset-buttons">
@@ -2795,7 +2745,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">CHEMICAL MIX CALCULATOR</div>
+              <div class="title-sm" style="text-align: center">
+                CHEMICAL MIX CALCULATOR
+              </div>
 
               <div class="control">
                 <div class="control-label">
@@ -2816,8 +2768,12 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-bottom: 8px"
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-bottom: 8px;
+                "
               >
                 DILUTION RATIO
               </div>
@@ -2843,8 +2799,13 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 10px; margin-bottom: 5px"
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-top: 10px;
+                  margin-bottom: 5px;
+                "
               >
                 OR CUSTOM RATIO
               </div>
@@ -2873,19 +2834,30 @@
               </div>
 
               <div class="test-presets">
-                <div class="timer-status" style="font-size: 0.75rem">
+                <div
+                  class="title-sm"
+                  style="text-align: center; font-size: 0.75rem"
+                >
                   MIXING INSTRUCTIONS
                 </div>
                 <div class="chemical-results-grid">
                   <div class="info-box">
                     <div class="label-sm">STOCK SOLUTION</div>
-                    <div class="chemical-result-value" id="stockVolume">
+                    <div
+                      class="value-display"
+                      id="stockVolume"
+                      style="font-size: 1.2rem"
+                    >
                       100ml
                     </div>
                   </div>
                   <div class="info-box">
                     <div class="label-sm">WATER</div>
-                    <div class="chemical-result-value" id="waterVolume">
+                    <div
+                      class="value-display"
+                      id="waterVolume"
+                      style="font-size: 1.2rem"
+                    >
                       900ml
                     </div>
                   </div>
@@ -2912,7 +2884,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">CHEMICAL PRESETS</div>
+              <div class="title-sm" style="text-align: center">
+                CHEMICAL PRESETS
+              </div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -2934,8 +2908,8 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 10px"
+                class="title-sm"
+                style="text-align: center; font-size: 0.75rem; margin-top: 10px"
               >
                 SAVED PRESETS
               </div>
@@ -2959,7 +2933,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">DEVELOPER CAPACITY TRACKER</div>
+              <div class="title-sm" style="text-align: center">
+                DEVELOPER CAPACITY TRACKER
+              </div>
 
               <div class="control">
                 <div class="control-label">
@@ -2995,7 +2971,7 @@
 
               <!-- NEW: Paper Size Selector -->
               <div class="paper-size-selector">
-                <div class="paper-size-buttons">
+                <div class="dilution-selector">
                   <button class="toggle-btn" data-size="0.011">
                     3.5x5" (0.011 m²)
                   </button>
@@ -3036,7 +3012,13 @@
 
               <div class="info-box" style="margin: 10px 0">
                 <div class="label-sm">MAX PRINTS THIS BATCH</div>
-                <div class="result-value" id="maxPrintsValue">6</div>
+                <div
+                  class="value-display"
+                  id="maxPrintsValue"
+                  style="font-size: 1.2rem"
+                >
+                  6
+                </div>
                 <div class="label-sm" id="printsRemaining">
                   6 prints remaining (0.48 m²)
                 </div>
@@ -3090,7 +3072,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">SHELF LIFE TRACKER</div>
+              <div class="title-sm" style="text-align: center">
+                SHELF LIFE TRACKER
+              </div>
 
               <div class="settings-group" style="margin-top: 10px">
                 <div class="settings-item">
@@ -3153,8 +3137,8 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 15px"
+                class="title-sm"
+                style="text-align: center; font-size: 0.75rem; margin-top: 15px"
               >
                 ACTIVE CHEMICALS
               </div>
@@ -3183,7 +3167,16 @@
 
       <!-- Timer Tab with Photo Wash Toggle AND Timer Profiles -->
       <div id="timer" class="tab-content">
-        <div class="timer-settings">
+        <div
+          class="incremental-timer"
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0;
+            margin-bottom: 10px;
+            padding: 6px 8px;
+          "
+        >
           <div class="setting-item">
             <div class="setting-label">
               <span class="full-text">Auto</span>
@@ -3336,7 +3329,7 @@
           </div>
         </div>
 
-        <div class="global-controls">
+        <div class="settings-btn-group">
           <button class="settings-btn" id="startAll">Start All</button>
           <button class="settings-btn" id="resetAll">Reset All</button>
         </div>
@@ -6008,10 +6001,10 @@
                             <div style="font-size: 0.6rem; color: #600;">${timeStr}</div>
                         </div>
                         <div class="shelf-life-actions">
-                            <button class="shelf-life-btn load-timer-profile" data-name="${
+                            <button class="btn-action load-timer-profile" data-name="${
                               profile.name
                             }">Load</button>
-                            <button class="shelf-life-btn delete delete-timer-profile" data-name="${
+                            <button class="btn-action delete delete-timer-profile" data-name="${
                               profile.name
                             }">Delete</button>
                         </div>
@@ -6309,7 +6302,7 @@
 
           this.chemicalPresets.forEach((preset) => {
             const item = document.createElement("div");
-            item.className = "chemical-preset-item";
+            item.className = "shelf-life-item";
 
             const ratio = preset.dilutionRatio
               ? `Ratio: ${preset.dilutionRatio}`
@@ -6322,9 +6315,9 @@
                                 ${ratio} • ${preset.totalVolume}ml
                             </div>
                         </div>
-                        <div class="chemical-preset-actions">
-                            <button class="chemical-preset-btn load-chemical-preset" data-name="${preset.name}">Load</button>
-                            <button class="chemical-preset-btn delete-chemical-preset" data-name="${preset.name}">Del</button>
+                        <div class="shelf-life-actions">
+                            <button class="btn-action load-chemical-preset" data-name="${preset.name}">Load</button>
+                            <button class="btn-action delete-chemical-preset" data-name="${preset.name}">Del</button>
                         </div>
                     `;
 
@@ -6598,10 +6591,10 @@
                         <div style="text-align: right;">
                             <div class="shelf-life-days ${statusClass}">${statusText}</div>
                             <div class="shelf-life-actions">
-                                <button class="shelf-life-btn renew-chemical" data-id="${
+                                <button class="btn-action renew-chemical" data-id="${
                                   chemical.id
                                 }">Renew</button>
-                                <button class="shelf-life-btn delete-chemical" data-id="${
+                                <button class="btn-action delete-chemical" data-id="${
                                   chemical.id
                                 }">Delete</button>
                             </div>
