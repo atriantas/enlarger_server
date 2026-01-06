@@ -989,44 +989,6 @@
         overflow-x: hidden;
       }
 
-      /* Relay styles remain outside fullscreen concerns */
-      /* relay-controls now consolidated with .incremental-timer */
-
-      /* .relay-item consolidated into .shelf-life-item with inline styles */
-
-      /* .relay-toggle-btn consolidated into .settings-btn with inline styles */
-
-      /* Mobile adjustments for fullscreen with profiles */
-      @media (max-width: 400px) {
-        body.fullscreen-mode #timer .timer-grid {
-          height: auto; /* Maintain flexible height */
-          min-height: 320px; /* ensure space for 2x2 grid */
-          display: grid; /* keep 2-column grid in fullscreen on mobile */
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: 1fr 1fr;
-          gap: 6px;
-        }
-      }
-
-      /* Desktop adjustments */
-      @media (min-width: 401px) {
-        /* Fullscreen mode adjustments for desktop */
-        body.fullscreen-mode .timer-grid {
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: 1fr 1fr;
-          height: auto; /* Changed from calc(100vh - 120px) */
-        }
-
-        /* Ensure timer tab can scroll and the grid can flex in fullscreen on wider screens */
-        body.fullscreen-mode #timer.tab-content.active {
-          display: flex;
-          flex-direction: column;
-          min-height: 0; /* allow flex children to shrink */
-          overflow-y: auto; /* enable scrolling if content overflows */
-          -webkit-overflow-scrolling: touch;
-        }
-      }
-
       /* Collapsible rows in CALC tab */
       .collapsible {
         border-top: 1px solid var(--border);
@@ -1066,52 +1028,6 @@
       }
       .collapsible .info-box {
         margin-bottom: 6px;
-      }
-
-      /* ===== MOBILE STYLES - EXACT MATCH ===== */
-      @media (max-width: 400px) {
-        /* Calculator info - 2 columns on mobile */
-        .exp-info {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        /* Settings - 2 columns on mobile */
-        .settings-group {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        /* Chemical management mobile adjustments */
-        .dilution-selector {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .capacity-controls {
-          flex-direction: column;
-        }
-
-        /* Fullscreen mode adjustments for mobile */
-        body.fullscreen-mode {
-          padding: 0;
-        }
-
-        body.fullscreen-mode .container {
-          padding: 0;
-        }
-
-        body.fullscreen-mode .tabs {
-          margin-bottom: 0;
-          border-bottom: none;
-        }
-
-        /* Test strip mobile adjustments */
-        .test-timer-display {
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .paper-selector {
-          grid-template-columns: 1fr;
-        }
       }
 
       /* -------------------------------------------------------------
@@ -1161,22 +1077,6 @@
         outline: 2px solid var(--accent);
         box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12);
         z-index: 1;
-      }
-
-      /* Mobile / narrow layout: slightly smaller tappable targets and allow wrapping */
-      @media (max-width: 420px) {
-        .segmented-control {
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-        .segmented-control .segmented-btn {
-          padding: 6px 8px;
-          min-width: 36px;
-          font-size: 0.85rem;
-        }
-        .segmented-control-container {
-          gap: 6px;
-        }
       }
 
       /* Container for segmented controls (centers buttons) */
@@ -1255,6 +1155,102 @@
       .custom-filter-row button:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+      }
+
+      /* Relay styles remain outside fullscreen concerns */
+      /* relay-controls now consolidated with .incremental-timer */
+
+      /* .relay-item consolidated into .shelf-life-item with inline styles */
+
+      /* .relay-toggle-btn consolidated into .settings-btn with inline styles */
+
+      /* Mobile adjustments for fullscreen with profiles */
+      @media (max-width: 400px) {
+        body.fullscreen-mode #timer .timer-grid {
+          height: auto; /* Maintain flexible height */
+          min-height: 320px; /* ensure space for 2x2 grid */
+          display: grid; /* keep 2-column grid in fullscreen on mobile */
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          gap: 6px;
+        }
+      }
+
+      /* Desktop adjustments */
+      @media (min-width: 401px) {
+        /* Fullscreen mode adjustments for desktop */
+        body.fullscreen-mode .timer-grid {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          height: auto; /* Changed from calc(100vh - 120px) */
+        }
+
+        /* Ensure timer tab can scroll and the grid can flex in fullscreen on wider screens */
+        body.fullscreen-mode #timer.tab-content.active {
+          display: flex;
+          flex-direction: column;
+          min-height: 0; /* allow flex children to shrink */
+          overflow-y: auto; /* enable scrolling if content overflows */
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+
+      /* ===== MOBILE STYLES - EXACT MATCH ===== */
+      @media (max-width: 400px) {
+        /* Calculator info - 2 columns on mobile */
+        .exp-info {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        /* Settings - 2 columns on mobile */
+        .settings-group {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        /* Chemical management mobile adjustments */
+        .dilution-selector {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .capacity-controls {
+          flex-direction: column;
+        }
+
+        /* Fullscreen mode adjustments for mobile */
+        body.fullscreen-mode {
+          padding: 0;
+        }
+
+        body.fullscreen-mode .container {
+          padding: 0;
+        }
+
+        body.fullscreen-mode .tabs {
+          margin-bottom: 0;
+          border-bottom: none;
+        }
+
+        /* Test strip mobile adjustments */
+        .test-timer-display {
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .paper-selector {
+          grid-template-columns: 1fr;
+        }
+        .segmented-control {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .segmented-control .segmented-btn {
+          padding: 6px 8px;
+          min-width: 36px;
+          font-size: 0.85rem;
+        }
+        .segmented-control-container {
+          gap: 6px;
+        }
       }
     </style>
   </head>
