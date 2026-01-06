@@ -11,13 +11,13 @@
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
          1. List containers: .chemical-preset-list + .shelf-life-list (replaces .profile-list)
-         2. List items: .shelf-life-item (replaces .chemical-preset-item, .profile-item, .list-item)
+         2. List items: .shelf-life-item (replaces .chemical-preset-item, .profile-item, .list-item, .relay-item)
          3. Toggle buttons: .toggle-btn (replaces .paper-btn, .paper-size-btn, 
             .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle, .paper-size-buttons)
          4. Action buttons: .btn-action (replaces .chemical-preset-btn, .shelf-life-btn, .profile-btn)
          5. Action containers: .shelf-life-actions (replaces .chemical-preset-actions)
          6. Flex containers: .custom-dilution (replaces .custom-paper-size)
-         7. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex) - uses inline styles for specific variants
+         7. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex, .relay-toggle-btn) - uses inline styles for specific variants
          8. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
          9. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
             .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
@@ -960,11 +960,6 @@
         scrollbar-width: none; /* Firefox */
       }
 
-      /* Hide scrollbar for tab-content in fullscreen */
-      body.fullscreen-mode .tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
       /* Ensure tab contents are scrollable by default in fullscreen */
       body.fullscreen-mode .tab-content {
         overflow-y: auto;
@@ -987,81 +982,22 @@
         scrollbar-width: none; /* Firefox */
       }
 
-      body.fullscreen-mode #timer.tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Make the timer grid flexible within fullscreen layout */
-      body.fullscreen-mode #timer .timer-grid {
-        flex: 1;
-        min-height: 0;
-        height: auto;
-        margin-bottom: 8px;
-      }
-
-      /* Timer settings and profiles: keep visible and non-scrolling internally */
-      body.fullscreen-mode #timer .settings-section {
-        flex-shrink: 0;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        padding: 10px;
-        background: var(--panel);
-        border-radius: 6px;
-        max-height: none;
-        overflow-y: visible;
-      }
-
-      /* Tab-specific small adjustments (calc/chart/chemical/test) */
-      body.fullscreen-mode #calc.tab-content.active,
-      body.fullscreen-mode #chart.tab-content.active,
-      body.fullscreen-mode #fstop-test.tab-content.active,
-      body.fullscreen-mode #chemical.tab-content.active,
-      body.fullscreen-mode #settings.tab-content.active {
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none; /* Firefox */
-      }
-
-      body.fullscreen-mode #calc.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #chart.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #fstop-test.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #chemical.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #settings.tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Relay styles remain outside fullscreen concerns */
-      /* relay-controls now consolidated with .incremental-timer */
-
-      .relay-item {
-        padding: 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .relay-item:last-child {
-        border-bottom: none;
-      }
-
-      .relay-toggle-btn {
-        min-width: 80px;
-      }
-
-      .relay-toggle-btn.on {
-        background: var(--border-light);
-        border-color: var(--accent);
-      }
-
       /* Settings tab adjustments */
       body.fullscreen-mode #settings.tab-content.active {
         overflow-y: auto;
         overflow-x: hidden;
       }
 
+      /* Relay styles remain outside fullscreen concerns */
+      /* relay-controls now consolidated with .incremental-timer */
+
+      /* .relay-item consolidated into .shelf-life-item with inline styles */
+
+      /* .relay-toggle-btn consolidated into .settings-btn with inline styles */
+
       body.fullscreen-mode #timer .settings-section {
         display: block !important; /* Force show the profiles section */
         flex-shrink: 0;
-        max-height: none; /* Remove max height restriction */
         overflow-y: visible; /* Don't scroll inside, let the whole page scroll */
         margin-top: 8px;
         margin-bottom: 8px;
@@ -1073,29 +1009,6 @@
         bottom: auto;
       }
 
-      /* Additional styles for fullscreen profiles */
-      body.fullscreen-mode .shelf-life-list {
-        max-height: 150px; /* Limit height and make scrollable */
-        overflow-y: auto;
-      }
-
-      /* Improve profile item visibility in fullscreen */
-      body.fullscreen-mode .shelf-life-item {
-        padding: 6px 8px;
-        font-size: 0.75rem;
-      }
-
-      body.fullscreen-mode .shelf-life-actions {
-        display: flex;
-        gap: 4px;
-      }
-
-      body.fullscreen-mode .btn-action {
-        min-width: 50px;
-        padding: 3px 6px;
-        font-size: 0.7rem;
-      }
-
       /* Mobile adjustments for fullscreen with profiles */
       @media (max-width: 400px) {
         body.fullscreen-mode #timer .timer-grid {
@@ -1105,11 +1018,6 @@
           grid-template-columns: 1fr 1fr;
           grid-template-rows: 1fr 1fr;
           gap: 6px;
-        }
-
-        body.fullscreen-mode #timer .settings-section {
-          max-height: none; /* Changed from 30vh */
-          margin-bottom: 20px; /* Add some space at the bottom */
         }
       }
 
@@ -3327,7 +3235,7 @@
               class="incremental-timer"
               style="background: var(--panel-light); margin-bottom: 0"
             >
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 1 (GPIO 25)</div>
@@ -3342,7 +3250,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="1"
                       data-gpio="25"
                       id="toggleRelay1"
@@ -3353,7 +3262,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 2 (GPIO 17)</div>
@@ -3368,7 +3277,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="2"
                       data-gpio="17"
                       id="toggleRelay2"
@@ -3379,7 +3289,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 3 (GPIO 27)</div>
@@ -3394,7 +3304,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="3"
                       data-gpio="27"
                       id="toggleRelay3"
@@ -3405,7 +3316,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 4 (GPIO 22)</div>
@@ -3420,7 +3331,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="4"
                       data-gpio="22"
                       id="toggleRelay4"
@@ -7150,13 +7062,15 @@
         }
 
         updateRelayButtons() {
-          document.querySelectorAll(".relay-toggle-btn").forEach((btn) => {
-            const relayNum = parseInt(btn.getAttribute("data-relay"));
-            const state = this.relayStates[relayNum];
+          document
+            .querySelectorAll(".settings-btn[data-relay]")
+            .forEach((btn) => {
+              const relayNum = parseInt(btn.getAttribute("data-relay"));
+              const state = this.relayStates[relayNum];
 
-            btn.textContent = state ? "ON" : "OFF";
-            btn.classList.toggle("on", state);
-          });
+              btn.textContent = state ? "ON" : "OFF";
+              btn.classList.toggle("on", state);
+            });
         }
 
         updateStatus(message, type = "info") {
@@ -10209,9 +10123,7 @@
           }
 
           // Relay toggle buttons
-          const relayToggleBtn = e.target.closest(
-            ".relay-toggle-btn[data-relay]"
-          );
+          const relayToggleBtn = e.target.closest(".settings-btn[data-relay]");
           if (relayToggleBtn && window.relayManager) {
             const relayNum = parseInt(
               relayToggleBtn.getAttribute("data-relay")
