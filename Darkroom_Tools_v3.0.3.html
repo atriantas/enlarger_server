@@ -16,19 +16,26 @@
             .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle, .paper-size-buttons)
          4. Action buttons: .btn-action (replaces .chemical-preset-btn, .shelf-life-btn, .profile-btn)
          5. Action containers: .shelf-life-actions (replaces .chemical-preset-actions)
-         6. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex) - uses inline styles for specific variants
-         7. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
-         8. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
+         6. Flex containers: .custom-dilution (replaces .custom-paper-size)
+         7. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex) - uses inline styles for specific variants
+         8. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
+         9. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
             .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
-         9. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
-         10. Value classes: .value-display (replaces .result-value, .chemical-result-value)
-         11. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
-         12. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
-         13. Medium label classes: .setting-label (replaces .sound-label, .preview-label)
-         14. Select dropdowns: .settings-input (replaces .fstop-select)
-         15. Panel containers: .incremental-timer (replaces .timer-settings)
-         16. Button groups: .settings-btn-group (replaces .global-controls, .timer-controls)
-         17. Section headers: .title-sm (replaces .timer-status)
+         10. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
+         11. Value classes: .value-display (replaces .result-value, .chemical-result-value)
+         12. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
+         13. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
+         14. Medium label classes: .setting-label (replaces .sound-label, .preview-label) - CONSOLIDATED
+         15. Select dropdowns: .settings-input (replaces .fstop-select)
+         16. Panel containers: .incremental-timer (replaces .timer-settings)
+         17. Button groups: .settings-btn-group (replaces .global-controls, .timer-controls)
+         18. Section headers: .title-sm (replaces .timer-status)
+         19. Flex groups: .flex-group (replaces .preview-legend, .preview-options) - CONSOLIDATED into .shelf-life-actions
+         20. Step info containers: .current-step-info - CONSOLIDATED into .shelf-life-actions with inline styles
+         21. Progress bars: .progress-bar (replaces .progress-fill) - uses gradient background for all progress indicators
+         22. Panel containers: .incremental-timer (replaces .test-presets) - uses inline styles for light background variants
+         23. Button grids: .settings-group (replaces .preset-buttons) - uses 2-column grid layout
+         24. Method selectors: .settings-group (replaces .method-selector) - uses 2-column grid layout with inline styles
          All variants use the same base styles with class-specific overrides.
       */
 
@@ -526,8 +533,7 @@
       /* setting-item now uses .item-container */
 
       /* Unified medium label class - consolidates setting-label, preview-label */
-      .setting-label,
-      .preview-label {
+      .setting-label {
         font-size: 0.7rem;
         white-space: nowrap;
       }
@@ -682,6 +688,7 @@
 
       /* .repeat-btn consolidated into .settings-btn with inline styles */
       /* .paper-size-buttons consolidated into .dilution-selector with inline styles */
+      /* .custom-paper-size consolidated into .custom-dilution */
 
       /* Panel container for all panel-style sections */
       .incremental-timer {
@@ -693,17 +700,11 @@
       }
 
       /* 2-column grid layouts */
-      .paper-selector,
-      .method-selector {
+      .paper-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-bottom: 10px;
-      }
-
-      .method-selector {
-        margin-top: 8px;
-        margin-bottom: 0;
       }
 
       /* Base toggle button (consolidated for all variants) */
@@ -734,8 +735,7 @@
 
       /* Flex containers for various controls */
       .custom-dilution,
-      .capacity-controls,
-      .custom-paper-size {
+      .capacity-controls {
         display: flex;
         gap: 8px;
         margin-top: 8px;
@@ -796,9 +796,9 @@
 
       .progress-bar {
         height: 100%;
-        background: var(--accent);
+        background: linear-gradient(90deg, var(--border-light), var(--accent));
         width: 0%;
-        transition: width 0.3s ease;
+        transition: width 0.5s ease;
       }
 
       .progress-labels,
@@ -816,11 +816,6 @@
         margin-bottom: 10px;
       }
 
-      .custom-paper-size {
-        margin-top: 8px;
-      }
-
-      .custom-paper-size input,
       .custom-dilution input {
         flex: 1;
         text-align: center;
@@ -864,21 +859,6 @@
       /* F-STOP TEST STRIP GENERATOR STYLES */
       /* preview-controls now consolidated with sound-controls */
 
-      /* Unified small display groups */
-      .preview-legend,
-      .preview-options {
-        display: flex;
-        gap: 8px;
-      }
-
-      .preview-legend {
-        gap: 15px;
-      }
-
-      .preview-options {
-        align-items: center;
-      }
-
       .legend-item {
         display: flex;
         align-items: center;
@@ -892,24 +872,11 @@
         border-radius: 6px;
       }
 
-      /* preview-options now consolidated with preview-legend */
-
-      .preview-label {
-        color: var(--text-secondary);
-      }
-
-      .test-timer-display,
-      .current-step-info {
+      .test-timer-display {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin: 10px 0;
-      }
-
-      .current-step-info {
-        text-align: center;
-        flex: 1;
-        justify-content: center;
       }
 
       /* label-sm now uses .label-sm, value-display uses unified value classes */
@@ -927,35 +894,6 @@
       }
 
       /* test-progress-labels now consolidated with progress-labels */
-
-      .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--border-light), var(--accent));
-        width: 0%;
-        transition: width 0.5s ease;
-      }
-
-      .test-presets {
-        background: var(--panel-light);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-        margin-bottom: 0;
-      }
-
-      .preset-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-
-      /* Method selector styles */
-      .method-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-top: 5px;
-      }
 
       /* Countdown display styles */
       .countdown-active {
@@ -976,20 +914,6 @@
 
       .control input:checked + .slider-switch {
         background-color: var(--accent);
-      }
-
-      /* For the timer tab profiles section */
-      #timer .settings-section {
-        margin-top: 15px;
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 8px;
-      }
-
-      /* Adjust timer grid height when profiles are visible */
-      #timer .timer-grid {
-        height: 280px; /* Reduced slightly to accommodate profiles */
       }
 
       /* ===== FULLSCREEN STYLES ===== */
@@ -1107,7 +1031,7 @@
       }
 
       /* Relay styles remain outside fullscreen concerns */
-      /* relay-controls now consolidated with test-presets - both replaced by test-presets */
+      /* relay-controls now consolidated with .incremental-timer */
 
       .relay-item {
         padding: 8px;
@@ -1428,18 +1352,8 @@
           font-size: 0.5rem;
         }
 
-        .preset-buttons {
-          grid-template-columns: 1fr;
-        }
-
         .paper-selector {
           grid-template-columns: 1fr;
-        }
-
-        /* Method selector mobile */
-        .method-selector {
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
         }
 
         /* Chemical preset mobile adjustments */
@@ -2501,7 +2415,7 @@
             <span>METHOD</span>
             <span class="value-display" id="testMethodValue">Cumulative</span>
           </div>
-          <div class="method-selector">
+          <div class="settings-group" style="margin-top: 5px; margin-bottom: 0">
             <button class="toggle-btn active" data-method="cumulative">
               Cumulative
             </button>
@@ -2610,7 +2524,7 @@
             class="sound-controls"
             style="justify-content: space-between; align-items: center"
           >
-            <div class="preview-legend">
+            <div class="shelf-life-actions" style="gap: 15px">
               <div class="legend-item">
                 <span class="legend-color" style="background: #300"></span>
                 <span class="legend-label">Exposed</span>
@@ -2620,12 +2534,12 @@
                 <span class="legend-label">Masked</span>
               </div>
             </div>
-            <div class="preview-options">
+            <div class="shelf-life-actions" style="align-items: center">
               <label class="switch">
                 <input type="checkbox" id="previewMode" checked />
                 <span class="slider-switch"></span>
               </label>
-              <span class="preview-label">Show Times</span>
+              <span class="setting-label">Show Times</span>
             </div>
           </div>
         </div>
@@ -2636,12 +2550,30 @@
             READY FOR TEST STRIP
           </div>
           <div class="test-timer-display">
-            <div class="current-step-info">
+            <div
+              class="shelf-life-actions"
+              style="
+                flex: 1;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                gap: 0;
+              "
+            >
               <div class="label-sm">Current Step</div>
               <div class="value-display" id="currentStepDisplay">1/6</div>
             </div>
             <div class="timer-display" id="testTimerDisplay">10.00</div>
-            <div class="current-step-info">
+            <div
+              class="shelf-life-actions"
+              style="
+                flex: 1;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                gap: 0;
+              "
+            >
               <div class="label-sm">Time</div>
               <div class="value-display" id="currentTimeDisplay">10.00s</div>
             </div>
@@ -2649,7 +2581,7 @@
 
           <div class="test-progress-container">
             <div class="test-progress-bar" id="testProgressBar">
-              <div class="progress-fill" id="progressFill"></div>
+              <div class="progress-bar" id="progressFill"></div>
             </div>
             <div class="test-progress-labels">
               <span id="progressStart">10.0s</span>
@@ -2711,14 +2643,17 @@
           </div>
 
           <!-- Test Strip Presets -->
-          <div class="test-presets">
+          <div
+            class="incremental-timer"
+            style="background: var(--panel-light); margin-bottom: 0"
+          >
             <div
               class="title-sm"
               style="text-align: center; margin-bottom: 8px"
             >
               QUICK PRESETS
             </div>
-            <div class="preset-buttons">
+            <div class="settings-group">
               <button class="settings-btn" data-preset="standard">
                 Standard: 6×⅓ stop
               </button>
@@ -2833,7 +2768,10 @@
                 />
               </div>
 
-              <div class="test-presets">
+              <div
+                class="incremental-timer"
+                style="background: var(--panel-light); margin-bottom: 0"
+              >
                 <div
                   class="title-sm"
                   style="text-align: center; font-size: 0.75rem"
@@ -2971,7 +2909,10 @@
 
               <!-- NEW: Paper Size Selector -->
               <div class="paper-size-selector">
-                <div class="dilution-selector">
+                <div
+                  class="dilution-selector"
+                  style="grid-template-columns: 1fr 1fr"
+                >
                   <button class="toggle-btn" data-size="0.011">
                     3.5x5" (0.011 m²)
                   </button>
@@ -2994,7 +2935,7 @@
                   </button>
                   <!-- CHANGED -->
                 </div>
-                <div class="custom-paper-size">
+                <div class="custom-dilution">
                   <!-- Chemical tab capacity tracker custom paper size -->
                   <input
                     type="number"
@@ -3340,7 +3281,7 @@
             <div class="collapsible-title">TIMER PROFILES</div>
           </button>
           <div class="collapsible-content">
-            <div class="settings-section" style="margin-top: 15px">
+            <div class="incremental-timer" style="margin-top: 15px">
               <div class="title-md">Timer Profiles</div>
 
               <div class="settings-group">
@@ -3382,7 +3323,10 @@
         <div class="incremental-timer">
           <div class="settings-section">
             <div class="title-md">Relay Control (Manual)</div>
-            <div class="test-presets">
+            <div
+              class="incremental-timer"
+              style="background: var(--panel-light); margin-bottom: 0"
+            >
               <div class="relay-item">
                 <div class="settings-group">
                   <div class="settings-item">
@@ -9047,14 +8991,10 @@
             );
             this.totalTestTimeDisplay.textContent = `${totalTime.toFixed(1)}s`;
 
-            // Update step size display with method-specific info
-            if (this.method === "incremental") {
-              const denom = window.stopDenominator || 3;
-              this.stepSizeDisplay.textContent =
-                this.method === "incremental"
-                  ? `+${(this.stepIncrement / denom).toFixed(1)} stops`
-                  : `${(this.stepIncrement / denom).toFixed(1)} stops`;
-            }
+            // Update step size display
+            const denom = window.stopDenominator || 3;
+            const stepSize = this.stepIncrement / denom;
+            this.stepSizeDisplay.textContent = `${stepSize.toFixed(1)} stops`;
           }
         }
 
