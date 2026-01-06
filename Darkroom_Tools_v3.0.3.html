@@ -4396,6 +4396,20 @@
       const tabButtons = document.querySelectorAll(".tab-button");
       const tabContents = document.querySelectorAll(".tab-content");
 
+      function refreshCollapsibleHeights(container = document) {
+        const sections = container.querySelectorAll(".collapsible");
+        sections.forEach((sec) => {
+          const header = sec.querySelector(".collapsible-header");
+          const content = sec.querySelector(".collapsible-content");
+          if (!header || !content) return;
+
+          const expanded = header.getAttribute("aria-expanded") === "true";
+          content.style.maxHeight = expanded
+            ? content.scrollHeight + "px"
+            : "0px";
+        });
+      }
+
       function switchTab(tabId) {
         tabButtons.forEach((btn) => btn.classList.remove("active"));
         tabContents.forEach((content) => content.classList.remove("active"));
@@ -4406,7 +4420,11 @@
           }
         });
 
-        document.getElementById(tabId).classList.add("active");
+        const activeTab = document.getElementById(tabId);
+        if (activeTab) {
+          activeTab.classList.add("active");
+          refreshCollapsibleHeights(activeTab);
+        }
 
         if (tabId === "chart") {
           updateChart();
@@ -10347,21 +10365,31 @@
               }
               localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
             });
-          });
 
-          // Recalculate max-heights on resize (for fluid content)
-          window.addEventListener("resize", () => {
-            sections.forEach((sec) => {
-              const header = sec.querySelector(".collapsible-header");
-              const content = sec.querySelector(".collapsible-content");
-              if (
-                header &&
-                content &&
-                header.getAttribute("aria-expanded") === "true"
-              ) {
+            // Expand to fit dynamic content changes (new profiles/presets/etc.)
+            const observer = new MutationObserver(() => {
+              if (header.getAttribute("aria-expanded") === "true") {
                 content.style.maxHeight = content.scrollHeight + "px";
               }
             });
+            observer.observe(content, {
+              childList: true,
+              subtree: true,
+              characterData: true,
+            });
+          });
+
+          const activeTab = document.querySelector(".tab-content.active");
+          if (activeTab) {
+            refreshCollapsibleHeights(activeTab);
+          }
+
+          // Recalculate max-heights on resize (for fluid content)
+          window.addEventListener("resize", () => {
+            const currentTab = document.querySelector(".tab-content.active");
+            if (currentTab) {
+              refreshCollapsibleHeights(currentTab);
+            }
           });
         })();
 
