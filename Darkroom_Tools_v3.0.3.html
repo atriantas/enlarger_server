@@ -3692,7 +3692,6 @@
         CAPACITY_TRACKER: "darkroom_timer_capacity_tracker",
         SHELF_LIFE: "darkroom_timer_shelf_life",
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
-        SESSION_VALUES: "darkroom_timer_session_values", // NEW: Persistent user working values
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -3944,12 +3943,6 @@
           }
         }
 
-        // Cleanup method for window unload
-        destroy() {
-          this.stop();
-          this.callback = null;
-        }
-
         isRunning() {
           return this.running;
         }
@@ -4066,100 +4059,45 @@
 
       // ===== RENDER FUNCTIONS =====
 
-      // Cached DOM references for render functions (populated on DOMContentLoaded)
-      const cachedElements = {
-        calculator: {},
-        timers: {},
-        initialized: false,
-      };
-
-      function initCachedElements() {
-        if (cachedElements.initialized) return;
-
-        // Calculator elements
-        cachedElements.calculator = {
-          baseTimeValue: document.getElementById("baseTimeValue"),
-          stopValue: document.getElementById("stopValue"),
-          resultTime: document.getElementById("resultTime"),
-          resultDetails: document.getElementById("resultDetails"),
-          calcTimerDisplay: document.getElementById("calcTimerDisplay"),
-          selectedStopDisplay: document.getElementById("selectedStopDisplay"),
-          previousTotalDisplay: document.getElementById("previousTotalDisplay"),
-          currentTotalDisplay: document.getElementById("currentTotalDisplay"),
-          thisExposureDisplay: document.getElementById("thisExposureDisplay"),
-          timerStatus: document.getElementById("timerStatus"),
-          startExposure: document.getElementById("startExposure"),
-          stopCalcTimer: document.getElementById("stopCalcTimer"),
-          resetCalcTimer: document.getElementById("resetCalcTimer"),
-          repeatExposure: document.getElementById("repeatExposure"),
-        };
-
-        // Timer elements (will be populated per timer)
-        ["Dev", "Stop", "Fix", "Flo"].forEach((timerName) => {
-          cachedElements.timers[timerName] = {
-            display: document.getElementById(`display${timerName}`),
-            button: document.getElementById(`btn${timerName}`),
-            box: document.getElementById(`timer${timerName}`),
-            resetButton: document.querySelector(
-              `button[data-timer="${timerName}"][data-action="reset"]`
-            ),
-            plusButton: document.querySelector(
-              `button[data-timer="${timerName}"][data-action="plus"]`
-            ),
-            minusButton: document.querySelector(
-              `button[data-timer="${timerName}"][data-action="minus"]`
-            ),
-          };
-        });
-
-        cachedElements.initialized = true;
-      }
-
       // Calculator render functions
       function renderCalculatorDisplay() {
         const state = appState.calculator;
-        const els = cachedElements.calculator;
-
-        if (els.baseTimeValue)
-          els.baseTimeValue.textContent = `${state.baseTime.toFixed(1)}s`;
-        if (els.stopValue)
-          els.stopValue.textContent = formatStop(state.currentStop);
-        if (els.resultTime)
-          els.resultTime.textContent = state.currentTotalTime.toFixed(2);
-        if (els.resultDetails)
-          els.resultDetails.textContent = `${formatStop(
-            state.currentStop
-          )} STOPS`;
-        if (els.calcTimerDisplay)
-          els.calcTimerDisplay.textContent = state.currentTime.toFixed(2);
+        document.getElementById(
+          "baseTimeValue"
+        ).textContent = `${state.baseTime.toFixed(1)}s`;
+        document.getElementById("stopValue").textContent = formatStop(
+          appState.calculator.currentStop
+        );
+        document.getElementById("resultTime").textContent =
+          state.currentTotalTime.toFixed(2);
+        document.getElementById("resultDetails").textContent = `${formatStop(
+          state.currentStop
+        )} STOPS`;
+        document.getElementById("calcTimerDisplay").textContent =
+          state.currentTime.toFixed(2);
       }
 
       function renderCalculatorExposureDetails() {
         const state = appState.calculator;
-        const els = cachedElements.calculator;
-
-        if (els.selectedStopDisplay)
-          els.selectedStopDisplay.textContent = formatStop(state.currentStop);
-        if (els.previousTotalDisplay)
-          els.previousTotalDisplay.textContent =
-            state.accumulatedTime.toFixed(2);
-        if (els.currentTotalDisplay)
-          els.currentTotalDisplay.textContent =
-            state.currentTotalTime.toFixed(2);
-        if (els.thisExposureDisplay)
-          els.thisExposureDisplay.textContent =
-            state.thisExposureTime.toFixed(2);
+        document.getElementById("selectedStopDisplay").textContent = formatStop(
+          state.currentStop
+        );
+        document.getElementById("previousTotalDisplay").textContent =
+          state.accumulatedTime.toFixed(2);
+        document.getElementById("currentTotalDisplay").textContent =
+          state.currentTotalTime.toFixed(2);
+        document.getElementById("thisExposureDisplay").textContent =
+          state.thisExposureTime.toFixed(2);
       }
 
       function renderCalculatorTimerStatus() {
         const state = appState.calculator;
-        const els = cachedElements.calculator;
-        const statusElement = els.timerStatus;
-        const startBtn = els.startExposure;
-        const stopBtn = els.stopCalcTimer;
-        const resetBtn = els.resetCalcTimer;
-        const repeatBtn = els.repeatExposure;
-        const displayElement = els.calcTimerDisplay;
+        const statusElement = document.getElementById("timerStatus");
+        const startBtn = document.getElementById("startExposure");
+        const stopBtn = document.getElementById("stopCalcTimer");
+        const resetBtn = document.getElementById("resetCalcTimer");
+        const repeatBtn = document.getElementById("repeatExposure");
+        const displayElement = document.getElementById("calcTimerDisplay");
 
         statusElement.textContent = appState.ui.timerStatus;
 
@@ -4202,28 +4140,18 @@
         const state = appState.timers[timerName];
         if (!state) return;
 
-        // Use cached elements if available, otherwise query DOM
-        const cached = cachedElements.timers[timerName] || {};
-        const display =
-          cached.display || document.getElementById(`display${timerName}`);
-        const button =
-          cached.button || document.getElementById(`btn${timerName}`);
-        const box = cached.box || document.getElementById(`timer${timerName}`);
-        const resetButton =
-          cached.resetButton ||
-          document.querySelector(
-            `button[data-timer="${timerName}"][data-action="reset"]`
-          );
-        const plusButton =
-          cached.plusButton ||
-          document.querySelector(
-            `button[data-timer="${timerName}"][data-action="plus"]`
-          );
-        const minusButton =
-          cached.minusButton ||
-          document.querySelector(
-            `button[data-timer="${timerName}"][data-action="minus"]`
-          );
+        const display = document.getElementById(`display${timerName}`);
+        const button = document.getElementById(`btn${timerName}`);
+        const box = document.getElementById(`timer${timerName}`);
+        const resetButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="reset"]`
+        );
+        const plusButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="plus"]`
+        );
+        const minusButton = document.querySelector(
+          `button[data-timer="${timerName}"][data-action="minus"]`
+        );
 
         // Update display
         if (display) {
@@ -4575,28 +4503,6 @@
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
           ]);
         }
-
-        // NEW: Session values storage - separate from settings
-        static saveSessionValues(values) {
-          try {
-            localStorage.setItem(
-              STORAGE_KEYS.SESSION_VALUES,
-              JSON.stringify(values)
-            );
-          } catch (e) {
-            console.error("Failed to save session values:", e);
-          }
-        }
-
-        static loadSessionValues() {
-          try {
-            const data = localStorage.getItem(STORAGE_KEYS.SESSION_VALUES);
-            return data ? JSON.parse(data) : null;
-          } catch (e) {
-            console.error("Failed to load session values:", e);
-            return null;
-          }
-        }
       }
 
       // Timer Class
@@ -4792,14 +4698,6 @@
         getCurrentTime() {
           return this.state.totalTime;
         }
-
-        // Cleanup method for window unload
-        destroy() {
-          if (this.driftTimer) {
-            this.driftTimer.destroy();
-            this.driftTimer = null;
-          }
-        }
       }
 
       // NEW: Countdown Manager
@@ -4965,7 +4863,6 @@
         cancel() {
           this.isActive = false;
           clearTimeout(this.countdownInterval);
-          this.countdownInterval = null;
 
           // Restore display
           if (this.displayElement) {
@@ -4982,13 +4879,6 @@
           } else {
             this.countdownValue = 5;
           }
-        }
-
-        // Cleanup method for window unload
-        destroy() {
-          this.cancel();
-          this.displayElement = null;
-          this.onCompleteCallback = null;
         }
       }
 
@@ -5273,15 +5163,16 @@
             timerManager.timers.forEach((timer) => {
               const newTime = mapping[timer.name];
               if (typeof newTime === "number" && !isNaN(newTime)) {
-                if (!timer.state.isRunning) {
+                if (!timer.isRunning) {
                   // Reset to new default
                   timer.setTime(newTime);
                 } else {
                   // If running, update total and remaining time without interrupting display logic
-                  timer.state.totalTime = newTime;
-                  timer.state.timeLeft = newTime;
+                  timer.totalTime = newTime;
+                  timer.timeLeft = newTime;
                   timer.warningPlayed = false;
-                  timer.render();
+                  timer.updateDisplay();
+                  timer.updateButtonStates();
                 }
               }
             });
@@ -7266,10 +7157,17 @@
         // NEW: Auto advance setting
         document.getElementById("settingAutoAdvance").checked =
           settingsManager.settings.autoAdvance;
+
+        // Apply auto advance to F-Stop Test generator
+        if (window.fstopTestGenerator) {
+          window.fstopTestGenerator.setAutoAdvance(
+            settingsManager.settings.autoAdvance
+          );
+        }
         document.getElementById("settingAutoAdvanceDelay").value =
           settingsManager.settings.autoAdvanceDelay || 1;
 
-        // Apply auto advance to F-Stop Test generator (consolidated - no duplicate)
+        // Apply auto advance to F-Stop Test generator
         if (window.fstopTestGenerator) {
           window.fstopTestGenerator.setAutoAdvance(
             settingsManager.settings.autoAdvance
@@ -7585,20 +7483,12 @@
         return base * Math.pow(2, stop / denom);
       }
 
-      // Helper function to format denominator as label
-      function denomLabel(denom) {
-        return denom === 2
-          ? "½"
-          : denom === 3
-          ? "⅓"
-          : denom === 4
-          ? "¼"
-          : `${denom}th`;
-      }
-
       // FIXED: Enhanced IncrementalTimer with proper button states
       class IncrementalTimer {
         constructor() {
+          // Initialize state from appState
+          this.syncFromState();
+
           this.driftTimer = null; // Using drift-corrected timer
           this.lastBeepSecond = null;
           this.countdownResolve = null;
@@ -7607,13 +7497,40 @@
           this.render();
         }
 
-        // Getters for direct access to appState (single source of truth)
-        get state() {
-          return appState.calculator;
+        // Sync local properties from central state
+        syncFromState() {
+          const state = appState.calculator;
+          this.baseTime = state.baseTime;
+          this.currentStop = state.currentStop;
+          this.previousTotalTime = 0;
+          this.currentTotalTime = state.currentTotalTime;
+          this.thisExposureTime = state.thisExposureTime;
+          this.accumulatedTime = state.accumulatedTime;
+          this.currentTime = state.currentTime;
+          this.isRunning = state.isRunning;
+          this.isPaused = state.isPaused;
+          this.isCountdown = state.isCountdown;
+          this.lastExposureTime = state.lastExposureTime;
+        }
+
+        // Sync central state from local properties
+        syncToState() {
+          const state = appState.calculator;
+          state.baseTime = this.baseTime;
+          state.currentStop = this.currentStop;
+          state.currentTotalTime = this.currentTotalTime;
+          state.thisExposureTime = this.thisExposureTime;
+          state.accumulatedTime = this.accumulatedTime;
+          state.currentTime = this.currentTime;
+          state.isRunning = this.isRunning;
+          state.isPaused = this.isPaused;
+          state.isCountdown = this.isCountdown;
+          state.lastExposureTime = this.lastExposureTime;
         }
 
         // Unified render method
         render() {
+          this.syncToState();
           renderCalculatorDisplay();
           renderCalculatorExposureDetails();
           renderCalculatorTimerStatus();
@@ -7630,16 +7547,11 @@
 
         // Stop current exposure (resets current exposure time)
         stopCurrentExposure() {
-          if (
-            !this.state.isRunning &&
-            !this.state.isPaused &&
-            !this.state.isCountdown
-          )
-            return;
+          if (!this.isRunning && !this.isPaused && !this.isCountdown) return;
 
-          const wasCountdown = this.state.isCountdown;
+          const wasCountdown = this.isCountdown;
 
-          if (this.state.isCountdown && window.countdownManager?.isActive) {
+          if (this.isCountdown && window.countdownManager?.isActive) {
             window.countdownManager.cancel();
             if (this.countdownResolve) {
               this.countdownResolve("cancelled");
@@ -7650,13 +7562,13 @@
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
-          this.state.isRunning = false;
-          this.state.isPaused = false;
-          this.state.isCountdown = false;
+          this.isRunning = false;
+          this.isPaused = false;
+          this.isCountdown = false;
           this.lastBeepSecond = null;
 
           // Reset current time to current exposure time
-          this.state.currentTime = this.state.thisExposureTime;
+          this.currentTime = this.thisExposureTime;
 
           // Update state and render
           appState.ui.timerStatus = wasCountdown
@@ -7669,18 +7581,18 @@
 
         // Repeat last exposure method
         repeatLast() {
-          if (this.state.lastExposureTime <= 0) return;
+          if (this.lastExposureTime <= 0) return;
 
           // Set current exposure to last exposure time
-          this.state.thisExposureTime = this.state.lastExposureTime;
-          this.state.currentTime = this.state.lastExposureTime;
+          this.thisExposureTime = this.lastExposureTime;
+          this.currentTime = this.lastExposureTime;
 
           // Reset timer state
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
-          this.state.isRunning = false;
-          this.state.isPaused = false;
+          this.isRunning = false;
+          this.isPaused = false;
           this.lastBeepSecond = null;
 
           // Update state and render
@@ -7691,43 +7603,25 @@
         }
 
         updateFromSliders() {
-          this.state.baseTime = parseFloat(baseTimeSlider.value);
-          this.state.currentStop = parseInt(stopSlider.value);
+          this.baseTime = parseFloat(baseTimeSlider.value);
+          this.currentStop = parseInt(stopSlider.value);
           this.updateCalculations();
           this.render();
-
-          // NEW: Save CALC tab session values whenever they change
-          const sessionValues = StorageManager.loadSessionValues() || {};
-          const calcIncSegBtn = document.querySelector(
-            "#calcIncrementSeg .segmented-btn.active"
-          );
-          const denom =
-            parseInt(calcIncSegBtn?.dataset?.denom, 10) ||
-            window.stopDenominator ||
-            3;
-          sessionValues.calcTab = {
-            baseTime: this.state.baseTime,
-            // store stop adjustment as full stops to avoid denom mismatch on restore
-            stopAdjustStops: this.state.currentStop / denom,
-            calcIncrementSeg: denom,
-          };
-          StorageManager.saveSessionValues(sessionValues);
         }
 
         updateCalculations() {
-          this.state.currentTotalTime = calculateTime(
-            this.state.baseTime,
-            this.state.currentStop
+          this.currentTotalTime = calculateTime(
+            this.baseTime,
+            this.currentStop
           );
-          this.state.thisExposureTime =
-            this.state.currentTotalTime - this.state.accumulatedTime;
+          this.thisExposureTime = this.currentTotalTime - this.accumulatedTime;
 
-          if (this.state.thisExposureTime < 0) {
-            this.state.thisExposureTime = 0;
+          if (this.thisExposureTime < 0) {
+            this.thisExposureTime = 0;
           }
 
-          if (!this.state.isRunning && !this.state.isPaused) {
-            this.state.currentTime = this.state.thisExposureTime;
+          if (!this.isRunning && !this.isPaused) {
+            this.currentTime = this.thisExposureTime;
           }
         }
 
@@ -7740,7 +7634,7 @@
         async triggerRelayForTimer() {
           if (window.relayManager && window.relayManager.autoTrigger) {
             // Use the current exposure time
-            const exposureTime = this.state.thisExposureTime;
+            const exposureTime = this.thisExposureTime;
 
             // Send relay trigger with the exposure time
             await window.relayManager.triggerTimerRelay(exposureTime);
@@ -7750,17 +7644,17 @@
         // In the IncrementalTimer.start() method (around line 1500), update to async:
         async start() {
           if (
-            this.state.isRunning ||
-            this.state.isPaused ||
-            this.state.isCountdown ||
-            this.state.thisExposureTime <= 0
+            this.isRunning ||
+            this.isPaused ||
+            this.isCountdown ||
+            this.thisExposureTime <= 0
           )
             return;
 
           // Start countdown
           const display = document.getElementById("calcTimerDisplay");
           const originalText = display.textContent;
-          this.state.isCountdown = true;
+          this.isCountdown = true;
           appState.ui.timerStatus = "COUNTDOWN STARTING...";
           this.render();
 
@@ -7782,7 +7676,7 @@
           });
 
           this.countdownResolve = null;
-          this.state.isCountdown = false;
+          this.isCountdown = false;
 
           // Ensure display is restored even if countdown was cancelled
           display.textContent = originalText;
@@ -7799,7 +7693,7 @@
           if (window.relayManager && window.relayManager.autoTrigger) {
             try {
               await window.relayManager.triggerTimerRelay(
-                this.state.thisExposureTime
+                this.thisExposureTime
               );
             } catch (error) {
               console.error("Failed to trigger relay:", error);
@@ -7807,8 +7701,8 @@
           }
 
           // Now start the actual exposure timer
-          this.state.isRunning = true;
-          this.state.isPaused = false;
+          this.isRunning = true;
+          this.isPaused = false;
           this.lastBeepSecond = null;
 
           this.render();
@@ -7817,23 +7711,21 @@
 
         startInterval() {
           this.driftTimer = new DriftCorrectedTimer(() => {
-            this.state.currentTime -= 0.1;
+            this.currentTime -= 0.1;
 
-            if (this.state.currentTime <= 0) {
-              this.state.currentTime = 0;
+            if (this.currentTime <= 0) {
+              this.currentTime = 0;
               this.complete();
             } else {
               // Update display directly for performance
               document.getElementById("calcTimerDisplay").textContent =
-                this.state.currentTime.toFixed(2);
+                this.currentTime.toFixed(2);
 
-              // State is already updated, no need to sync
+              // Sync state periodically
+              appState.calculator.currentTime = this.currentTime;
 
-              if (
-                this.state.currentTime <= 3 &&
-                appState.settings.calcWarningBeep
-              ) {
-                const currentSecond = Math.ceil(this.state.currentTime);
+              if (this.currentTime <= 3 && appState.settings.calcWarningBeep) {
+                const currentSecond = Math.ceil(this.currentTime);
 
                 if (
                   currentSecond !== this.lastBeepSecond &&
@@ -7860,13 +7752,13 @@
         }
 
         pause() {
-          if (!this.state.isRunning) return;
+          if (!this.isRunning) return;
 
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
-          this.state.isRunning = false;
-          this.state.isPaused = true;
+          this.isRunning = false;
+          this.isPaused = true;
 
           appState.ui.timerStatus = "EXPOSURE PAUSED";
           this.render();
@@ -7875,10 +7767,10 @@
         }
 
         resume() {
-          if (!this.state.isPaused) return;
+          if (!this.isPaused) return;
 
-          this.state.isRunning = true;
-          this.state.isPaused = false;
+          this.isRunning = true;
+          this.isPaused = false;
           this.lastBeepSecond = null;
 
           appState.ui.timerStatus = "EXPOSURE IN PROGRESS";
@@ -7891,14 +7783,14 @@
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
-          this.state.isRunning = false;
-          this.state.isPaused = false;
+          this.isRunning = false;
+          this.isPaused = false;
           this.lastBeepSecond = null;
 
           // Save the exposure time that just completed
-          this.state.lastExposureTime = this.state.thisExposureTime;
+          this.lastExposureTime = this.thisExposureTime;
 
-          this.state.accumulatedTime = this.state.currentTotalTime;
+          this.accumulatedTime = this.currentTotalTime;
 
           if (appState.settings.calcEndBeep) {
             playPreset("calcComplete");
@@ -7906,7 +7798,7 @@
 
           appState.ui.timerStatus = "EXPOSURE COMPLETE";
           this.updateCalculations();
-          this.state.currentTime = this.state.thisExposureTime;
+          this.currentTime = this.thisExposureTime;
 
           this.render();
         }
@@ -7915,37 +7807,28 @@
           if (this.driftTimer) {
             this.driftTimer.stop();
           }
-          this.state.isRunning = false;
-          this.state.isPaused = false;
-          this.state.isCountdown = false;
+          this.isRunning = false;
+          this.isPaused = false;
+          this.isCountdown = false;
           this.lastBeepSecond = null;
 
-          this.state.accumulatedTime = 0;
+          this.accumulatedTime = 0;
           this.updateCalculations();
-          this.state.currentTime = this.state.thisExposureTime;
+          this.currentTime = this.thisExposureTime;
 
           appState.ui.timerStatus = "READY FOR EXPOSURE";
           this.render();
         }
 
         toggle() {
-          if (this.state.isCountdown) return;
-          if (this.state.isRunning) {
+          if (this.isCountdown) return;
+          if (this.isRunning) {
             this.pause();
-          } else if (this.state.isPaused) {
+          } else if (this.isPaused) {
             this.resume();
           } else {
             this.start();
           }
-        }
-
-        // Cleanup method for window unload
-        destroy() {
-          if (this.driftTimer) {
-            this.driftTimer.destroy();
-            this.driftTimer = null;
-          }
-          this.countdownResolve = null;
         }
       }
 
@@ -8875,12 +8758,6 @@
           this.updateDisplay();
           this.updateInstructions();
 
-          // NEW: Save method change to session values
-          const sessionValues = StorageManager.loadSessionValues() || {};
-          if (!sessionValues.testTab) sessionValues.testTab = {};
-          sessionValues.testTab.method = method;
-          StorageManager.saveSessionValues(sessionValues);
-
           // If running, stop and reset
           if (this.isRunning || this.isPaused) {
             this.stopCurrentTest();
@@ -8895,39 +8772,6 @@
 
           this.generateSteps();
           this.updateDisplay();
-
-          // NEW: Save TEST tab session values whenever they change
-          const sessionValues = StorageManager.loadSessionValues() || {};
-
-          // Determine current method (check active button or this.method)
-          const activeMethodBtn = document.querySelector(
-            ".toggle-btn[data-method].active"
-          );
-          const currentMethod =
-            activeMethodBtn?.getAttribute("data-method") ||
-            this.method ||
-            "cumulative";
-
-          // Get current testIncrementSeg (f-stop denominator)
-          const testIncSegBtn = document.querySelector(
-            "#testIncrementSeg .segmented-btn.active"
-          );
-          const currentTestIncrementSeg =
-            parseInt(testIncSegBtn?.dataset?.denom, 10) ||
-            window.stopDenominator ||
-            3;
-
-          const incStops = this.stepIncrement / currentTestIncrementSeg;
-
-          sessionValues.testTab = {
-            baseTime: this.baseTime,
-            // store increment as full stops to avoid denom mismatch on restore
-            incrementStops: incStops,
-            numberOfSteps: this.numSteps,
-            method: currentMethod,
-            testIncrementSeg: currentTestIncrementSeg,
-          };
-          StorageManager.saveSessionValues(sessionValues);
         }
 
         generateSteps() {
@@ -9299,8 +9143,7 @@
         }
 
         startInterval() {
-          // Use drift-corrected timer for accuracy (like IncrementalTimer)
-          this.driftTimer = new DriftCorrectedTimer(() => {
+          this.interval = setInterval(() => {
             this.currentStepTime -= 0.1;
 
             if (this.currentStepTime <= 0) {
@@ -9330,15 +9173,10 @@
               }
             }
           }, 100);
-
-          this.driftTimer.start();
         }
 
         stepComplete() {
-          // Stop the drift-corrected timer
-          if (this.driftTimer) {
-            this.driftTimer.stop();
-          }
+          clearInterval(this.interval);
 
           // Play step complete beep
           if (this.testStepBeep.checked) {
@@ -9364,7 +9202,7 @@
               this.testTimerStatus.textContent = `Auto advancing in ${delaySec}s...`;
 
               // Start next step after configured delay
-              this.autoAdvanceTimeout = setTimeout(() => {
+              setTimeout(() => {
                 if (this.isRunning && !this.isPaused) {
                   this.startStep();
                 }
@@ -9416,16 +9254,7 @@
             this.restoreDisplayAfterCountdown();
           }
 
-          // Clear auto-advance timeout
-          if (this.autoAdvanceTimeout) {
-            clearTimeout(this.autoAdvanceTimeout);
-            this.autoAdvanceTimeout = null;
-          }
-
-          // Stop the drift-corrected timer
-          if (this.driftTimer) {
-            this.driftTimer.stop();
-          }
+          clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = true;
 
@@ -9462,22 +9291,7 @@
             this.restoreDisplayAfterCountdown();
           }
 
-          // Clear auto-advance timeout
-          if (this.autoAdvanceTimeout) {
-            clearTimeout(this.autoAdvanceTimeout);
-            this.autoAdvanceTimeout = null;
-          }
-
-          // Clear countdown cleanup timeout
-          if (this.countdownCleanupTimeout) {
-            clearTimeout(this.countdownCleanupTimeout);
-            this.countdownCleanupTimeout = null;
-          }
-
-          // Stop the drift-corrected timer
-          if (this.driftTimer) {
-            this.driftTimer.stop();
-          }
+          clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = false;
           this.isWaitingForNextStep = false;
@@ -9567,7 +9381,6 @@
           // Clear any existing cleanup reference first
           if (this.countdownCleanupTimeout) {
             clearTimeout(this.countdownCleanupTimeout);
-            this.countdownCleanupTimeout = null;
           }
 
           try {
@@ -9655,16 +9468,7 @@
             this.restoreDisplayAfterCountdown();
           }
 
-          // Clear auto-advance timeout
-          if (this.autoAdvanceTimeout) {
-            clearTimeout(this.autoAdvanceTimeout);
-            this.autoAdvanceTimeout = null;
-          }
-
-          // Stop the drift-corrected timer
-          if (this.driftTimer) {
-            this.driftTimer.stop();
-          }
+          clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = false;
 
@@ -9693,22 +9497,7 @@
             this.restoreDisplayAfterCountdown();
           }
 
-          // Clear auto-advance timeout
-          if (this.autoAdvanceTimeout) {
-            clearTimeout(this.autoAdvanceTimeout);
-            this.autoAdvanceTimeout = null;
-          }
-
-          // Clear countdown cleanup timeout
-          if (this.countdownCleanupTimeout) {
-            clearTimeout(this.countdownCleanupTimeout);
-            this.countdownCleanupTimeout = null;
-          }
-
-          // Stop the drift-corrected timer
-          if (this.driftTimer) {
-            this.driftTimer.stop();
-          }
+          clearInterval(this.interval);
           this.isRunning = false;
           this.isPaused = false;
           this.isWaitingForNextStep = false;
@@ -9796,35 +9585,6 @@
           setTimeout(() => {
             btn.style.backgroundColor = originalColor;
           }, 300);
-        }
-
-        // Cleanup method for window unload
-        destroy() {
-          // Cancel any ongoing countdown
-          if (window.countdownManager && window.countdownManager.isActive) {
-            window.countdownManager.cancel();
-          }
-
-          // Clear interval
-          if (this.driftTimer) {
-            this.driftTimer.destroy();
-            this.driftTimer = null;
-          }
-
-          // Clear any pending auto-advance timeout
-          if (this.autoAdvanceTimeout) {
-            clearTimeout(this.autoAdvanceTimeout);
-            this.autoAdvanceTimeout = null;
-          }
-
-          // Clear countdown cleanup timeout
-          if (this.countdownCleanupTimeout) {
-            clearTimeout(this.countdownCleanupTimeout);
-            this.countdownCleanupTimeout = null;
-          }
-
-          // Clear references
-          this.countdownCleanup = null;
         }
       }
 
@@ -9981,18 +9741,12 @@
 
       // Initialize everything
       document.addEventListener("DOMContentLoaded", () => {
-        // Initialize cached DOM elements first
-        initCachedElements();
-
         // Initialize audio service first (for all sound functionality)
         audioService = new AudioService();
         audioService.init();
 
         // Initialize settings manager first
         settingsManager = new SettingsManager();
-
-        // NEW: Load session values (user's working values from previous session)
-        const sessionValues = StorageManager.loadSessionValues();
 
         // Initialize calculator
         window.incrementalTimer = new IncrementalTimer();
@@ -10022,123 +9776,7 @@
         // Apply saved settings to UI and instances on startup
         loadSettingsToUI();
 
-        // NEW: Restore CALC and TEST tab session values after initialization
-        if (sessionValues) {
-          // Pick a saved denominator (prefer calc, then test, else current)
-          const savedDenom =
-            (sessionValues.calcTab && sessionValues.calcTab.calcIncrementSeg) ||
-            (sessionValues.testTab && sessionValues.testTab.testIncrementSeg) ||
-            window.stopDenominator ||
-            3;
-
-          // Apply denominator first so slider math is consistent
-          applyDenomChange(parseInt(savedDenom, 10), false);
-
-          // Restore CALC tab values
-          if (sessionValues.calcTab) {
-            const calcTab = sessionValues.calcTab;
-            const baseTimeSliderElem =
-              document.getElementById("baseTimeSlider");
-            const stopSliderElem = document.getElementById("stopSlider");
-
-            if (baseTimeSliderElem && calcTab.baseTime) {
-              baseTimeSliderElem.value = calcTab.baseTime;
-              window.incrementalTimer.state.baseTime = calcTab.baseTime;
-            }
-
-            // stopAdjustStops is the stored stop value in full stops; convert to slider steps
-            if (stopSliderElem) {
-              // prefer stopAdjustStops (stored in full stops); fallback to legacy stopAdjust step count
-              const hasStops =
-                calcTab.stopAdjustStops !== undefined &&
-                !Number.isNaN(calcTab.stopAdjustStops);
-              const restoredStops = hasStops
-                ? parseFloat(calcTab.stopAdjustStops)
-                : calcTab.stopAdjust !== undefined
-                ? parseFloat(calcTab.stopAdjust) / savedDenom
-                : null;
-
-              if (restoredStops !== null && !Number.isNaN(restoredStops)) {
-                const stopSteps = Math.round(restoredStops * savedDenom);
-                stopSliderElem.value = stopSteps;
-                window.incrementalTimer.state.currentStop = stopSteps;
-              }
-            }
-
-            window.incrementalTimer.updateCalculations();
-            window.incrementalTimer.render();
-          }
-
-          // Restore TEST tab values
-          if (sessionValues.testTab) {
-            const testTab = sessionValues.testTab;
-            const testBaseSliderElem =
-              document.getElementById("testBaseSlider");
-            const testIncrementSliderElem = document.getElementById(
-              "testIncrementSlider"
-            );
-            const testStepsSliderElem =
-              document.getElementById("testStepsSlider");
-
-            if (testBaseSliderElem && testTab.baseTime) {
-              testBaseSliderElem.value = testTab.baseTime;
-            }
-
-            // incrementStops is the stored increment in full stops; convert to slider steps
-            if (testIncrementSliderElem) {
-              // prefer incrementStops (stored in full stops); fallback to legacy increment step count
-              const hasStops =
-                testTab.incrementStops !== undefined &&
-                !Number.isNaN(testTab.incrementStops);
-              const incStops = hasStops
-                ? parseFloat(testTab.incrementStops)
-                : testTab.increment !== undefined
-                ? parseFloat(testTab.increment) / savedDenom
-                : null;
-
-              if (incStops !== null && !Number.isNaN(incStops)) {
-                const incSteps = Math.round(incStops * savedDenom);
-                const min = parseInt(testIncrementSliderElem.min, 10) || 1;
-                const max = parseInt(testIncrementSliderElem.max, 10) || 99;
-                testIncrementSliderElem.value = Math.max(
-                  min,
-                  Math.min(max, incSteps)
-                );
-              }
-            }
-
-            if (testStepsSliderElem && testTab.numberOfSteps) {
-              testStepsSliderElem.value = testTab.numberOfSteps;
-            }
-
-            // Restore METHOD selection using data-method buttons
-            if (testTab.method) {
-              const methodButtons = document.querySelectorAll(
-                ".toggle-btn[data-method]"
-              );
-              methodButtons.forEach((btn) => {
-                if (btn.getAttribute("data-method") === testTab.method) {
-                  btn.classList.add("active");
-                  // Call setMethod on the test generator to apply the method
-                  if (window.fstopTestGenerator) {
-                    window.fstopTestGenerator.setMethod(testTab.method);
-                  }
-                } else {
-                  btn.classList.remove("active");
-                }
-              });
-            }
-
-            // Trigger update in F-Stop generator if it has the method
-            if (
-              window.fstopTestGenerator &&
-              window.fstopTestGenerator.updateDisplay
-            ) {
-              window.fstopTestGenerator.updateDisplay();
-            }
-          }
-        }
-
+        // Initialize fullscreen manager
         const fullscreenManager = new FullscreenManager();
 
         // Initialize relay manager
@@ -10203,17 +9841,6 @@
             });
           });
         })();
-
-        // Separate handler for Settings tab stop increment to persist changes
-        const settingsStopIncrement = document.getElementById(
-          "settingStopIncrement"
-        );
-        if (settingsStopIncrement) {
-          settingsStopIncrement.addEventListener("change", () => {
-            const newDenom = parseInt(settingsStopIncrement.value, 10) || 3;
-            applyDenomChange(newDenom, true); // true = save to settings
-          });
-        }
 
         // Helper: render/refresh rulers and denominator handling for stops
         function renderRuler(containerId, minStep, maxStep) {
@@ -10298,13 +9925,12 @@
             if (!btn) return;
             const d = parseInt(btn.dataset.denom, 10);
             setActiveSeg(cont, d);
-            applyDenomChange(d, false); // false = don't save to settings (runtime only)
+            applyDenomChange(d);
           });
         }
 
         // applyDenomChange now takes numeric denom and rescales sliders to preserve absolute stop values
-        // saveToSettings: if true, persist the change to settings (for Settings tab changes)
-        function applyDenomChange(d, saveToSettings = false) {
+        function applyDenomChange(d) {
           const newDenom = parseInt(d, 10) || 3;
           const prevDenom =
             window.stopDenominator ||
@@ -10340,30 +9966,21 @@
 
           window.stopDenominator = newDenom;
 
-          // Only persist to settings if explicitly requested (e.g., from Settings tab)
-          if (saveToSettings && settingsManager) {
+          // Persist setting and keep UI in sync
+          if (settingsManager) {
             settingsManager.settings.stopDenominator = newDenom;
             StorageManager.saveSettings(settingsManager.settings);
-            // Update settings dropdown UI only when saving to settings
-            const settingsSel = document.getElementById("settingStopIncrement");
-            if (settingsSel) settingsSel.value = newDenom;
-            // Update assistive live region
-            try {
-              const live = document.getElementById("settingsLiveStatus");
-              if (live)
-                live.textContent = `Default stop increment set to ${denomLabel(
-                  newDenom
-                )}`;
-            } catch (e) {}
-          } else {
-            // NEW: Save denominator changes to session values (for runtime denom changes)
-            const sessionValues = StorageManager.loadSessionValues() || {};
-            sessionValues.calcTab = sessionValues.calcTab || {};
-            sessionValues.calcTab.calcIncrementSeg = newDenom;
-            sessionValues.testTab = sessionValues.testTab || {};
-            sessionValues.testTab.testIncrementSeg = newDenom;
-            StorageManager.saveSessionValues(sessionValues);
           }
+          const settingsSel = document.getElementById("settingStopIncrement");
+          if (settingsSel) settingsSel.value = newDenom;
+          // Update assistive live region
+          try {
+            const live = document.getElementById("settingsLiveStatus");
+            if (live)
+              live.textContent = `Default stop increment set to ${denomLabel(
+                newDenom
+              )}`;
+          } catch (e) {}
 
           // Reflect change in segmented controls (if not already set) - keeps buttons active
           setActiveSeg("calcIncrementSeg", newDenom);
@@ -10703,10 +10320,6 @@
           });
           // Persist cleaned state back to storage
           localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-
-          // Store observers for cleanup on page unload
-          const collapsibleObservers = [];
-
           sections.forEach((sec) => {
             const id = sec.getAttribute("data-id") || "";
             const header = sec.querySelector(".collapsible-header");
@@ -10744,14 +10357,6 @@
               subtree: true,
               characterData: true,
             });
-
-            // Store observer for cleanup
-            collapsibleObservers.push(observer);
-          });
-
-          // Disconnect observers on page unload to prevent memory leaks
-          window.addEventListener("beforeunload", () => {
-            collapsibleObservers.forEach((observer) => observer.disconnect());
           });
 
           const activeTab = document.querySelector(".tab-content.active");
@@ -10770,41 +10375,6 @@
 
         // Initial chart update
         updateChart();
-
-        // Global cleanup on window unload
-        window.addEventListener("beforeunload", () => {
-          // Clean up all timer instances
-          if (timerManager && timerManager.timers) {
-            timerManager.timers.forEach((timer) => {
-              if (timer.destroy) timer.destroy();
-            });
-          }
-
-          // Clean up incremental timer
-          if (window.incrementalTimer && window.incrementalTimer.destroy) {
-            window.incrementalTimer.destroy();
-          }
-
-          // Clean up test strip generator
-          if (window.fstopTestGenerator && window.fstopTestGenerator.destroy) {
-            window.fstopTestGenerator.destroy();
-          }
-
-          // Clean up countdown manager
-          if (window.countdownManager && window.countdownManager.destroy) {
-            window.countdownManager.destroy();
-          }
-
-          // Clear any remaining timeouts from settings binding
-          // (These are already handled by the local 't' variable in bindLiveSettings,
-          // but we add this for extra safety)
-          const settingsInputs = document.querySelectorAll(
-            "#settings input, #settings select"
-          );
-          settingsInputs.forEach((input) => {
-            input.replaceWith(input.cloneNode(true));
-          });
-        });
       });
     </script>
   </body>
