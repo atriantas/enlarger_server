@@ -7701,11 +7701,15 @@
           const calcIncSegBtn = document.querySelector(
             "#calcIncrementSeg .segmented-btn.active"
           );
+          const denom =
+            parseInt(calcIncSegBtn?.dataset?.denom, 10) ||
+            window.stopDenominator ||
+            3;
           sessionValues.calcTab = {
             baseTime: this.state.baseTime,
-            stopAdjust: this.state.currentStop,
-            calcIncrementSeg:
-              calcIncSegBtn?.dataset?.denom || window.stopDenominator || "3",
+            // store stop adjustment as full stops to avoid denom mismatch on restore
+            stopAdjustStops: this.state.currentStop / denom,
+            calcIncrementSeg: denom,
           };
           StorageManager.saveSessionValues(sessionValues);
         }
@@ -8909,11 +8913,16 @@
             "#testIncrementSeg .segmented-btn.active"
           );
           const currentTestIncrementSeg =
-            testIncSegBtn?.dataset?.denom || window.stopDenominator || 3;
+            parseInt(testIncSegBtn?.dataset?.denom, 10) ||
+            window.stopDenominator ||
+            3;
+
+          const incStops = this.stepIncrement / currentTestIncrementSeg;
 
           sessionValues.testTab = {
             baseTime: this.baseTime,
-            increment: this.stepIncrement,
+            // store increment as full stops to avoid denom mismatch on restore
+            incrementStops: incStops,
             numberOfSteps: this.numSteps,
             method: currentMethod,
             testIncrementSeg: currentTestIncrementSeg,
@@ -10015,6 +10024,16 @@
 
         // NEW: Restore CALC and TEST tab session values after initialization
         if (sessionValues) {
+          // Pick a saved denominator (prefer calc, then test, else current)
+          const savedDenom =
+            (sessionValues.calcTab && sessionValues.calcTab.calcIncrementSeg) ||
+            (sessionValues.testTab && sessionValues.testTab.testIncrementSeg) ||
+            window.stopDenominator ||
+            3;
+
+          // Apply denominator first so slider math is consistent
+          applyDenomChange(parseInt(savedDenom, 10), false);
+
           // Restore CALC tab values
           if (sessionValues.calcTab) {
             const calcTab = sessionValues.calcTab;
@@ -10027,16 +10046,23 @@
               window.incrementalTimer.state.baseTime = calcTab.baseTime;
             }
 
-            if (stopSliderElem && calcTab.stopAdjust !== undefined) {
-              stopSliderElem.value = calcTab.stopAdjust;
-              window.incrementalTimer.state.currentStop = parseInt(
-                calcTab.stopAdjust
-              );
-            }
+            // stopAdjustStops is the stored stop value in full stops; convert to slider steps
+            if (stopSliderElem) {
+              // prefer stopAdjustStops (stored in full stops); fallback to legacy stopAdjust step count
+              const hasStops =
+                calcTab.stopAdjustStops !== undefined &&
+                !Number.isNaN(calcTab.stopAdjustStops);
+              const restoredStops = hasStops
+                ? parseFloat(calcTab.stopAdjustStops)
+                : calcTab.stopAdjust !== undefined
+                ? parseFloat(calcTab.stopAdjust) / savedDenom
+                : null;
 
-            // Restore calcIncrementSeg selection
-            if (calcTab.calcIncrementSeg) {
-              applyDenomChange(parseInt(calcTab.calcIncrementSeg), false);
+              if (restoredStops !== null && !Number.isNaN(restoredStops)) {
+                const stopSteps = Math.round(restoredStops * savedDenom);
+                stopSliderElem.value = stopSteps;
+                window.incrementalTimer.state.currentStop = stopSteps;
+              }
             }
 
             window.incrementalTimer.updateCalculations();
@@ -10058,20 +10084,31 @@
               testBaseSliderElem.value = testTab.baseTime;
             }
 
-            if (testIncrementSliderElem && testTab.increment !== undefined) {
-              testIncrementSliderElem.value = testTab.increment;
+            // incrementStops is the stored increment in full stops; convert to slider steps
+            if (testIncrementSliderElem) {
+              // prefer incrementStops (stored in full stops); fallback to legacy increment step count
+              const hasStops =
+                testTab.incrementStops !== undefined &&
+                !Number.isNaN(testTab.incrementStops);
+              const incStops = hasStops
+                ? parseFloat(testTab.incrementStops)
+                : testTab.increment !== undefined
+                ? parseFloat(testTab.increment) / savedDenom
+                : null;
+
+              if (incStops !== null && !Number.isNaN(incStops)) {
+                const incSteps = Math.round(incStops * savedDenom);
+                const min = parseInt(testIncrementSliderElem.min, 10) || 1;
+                const max = parseInt(testIncrementSliderElem.max, 10) || 99;
+                testIncrementSliderElem.value = Math.max(
+                  min,
+                  Math.min(max, incSteps)
+                );
+              }
             }
 
             if (testStepsSliderElem && testTab.numberOfSteps) {
               testStepsSliderElem.value = testTab.numberOfSteps;
-            }
-
-            // Restore testIncrementSeg selection (f-stop denominator for TEST tab)
-            if (testTab.testIncrementSeg) {
-              setActiveSeg(
-                "testIncrementSeg",
-                parseInt(testTab.testIncrementSeg)
-              );
             }
 
             // Restore METHOD selection using data-method buttons
