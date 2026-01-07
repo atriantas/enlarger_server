@@ -3694,6 +3694,16 @@
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
       };
 
+      // Application configuration - constants to eliminate magic numbers
+      const CONFIG = {
+        AUDIO: {
+          BEEP_FREQUENCY_HZ: 600,
+          BEEP_DURATION_SEC: 0.3,
+          BEEP_VOLUME: 0.3,
+          FEEDBACK_TIMEOUT_MS: 3000,
+        },
+      };
+
       // Default settings - UPDATED with countdown settings AND auto advance
       const DEFAULT_SETTINGS = {
         baseTime: 10.0,
@@ -3937,8 +3947,44 @@
           return this.running;
         }
       }
+      // Application State - Single Source of Truth Pattern
+      // =====================================================
+      // STATE MANAGEMENT ARCHITECTURE:
+      //
+      // 1. TRANSIENT UI STATE (appState.ui)
+      //    - activeTab, timerStatus
+      //    - Never persisted to localStorage
+      //    - Reset on page reload
+      //    - Updated during user interactions
+      //
+      // 2. RUNTIME STATE (appState.calculator, appState.timers)
+      //    - Timer values, calculator state, countdown flags
+      //    - Transient (not persisted)
+      //    - Cleared/reset on page reload
+      //    - Source of truth for current timer/calc display
+      //
+      // 3. PERSISTENT UI SELECTIONS (appState.persistent)
+      //    - currentProfile, currentChemicalPreset
+      //    - Persisted via StorageManager.save*()
+      //    - Loaded on page start via SettingsManager/ChemicalManager constructors
+      //    - SINGLE SOURCE OF TRUTH - accessed via helper methods:
+      //      SettingsManager: getCurrentProfile(), setCurrentProfile()
+      //      ChemicalManager: getCurrentPreset(), setCurrentPreset()
+      //
+      // 4. SETTINGS (appState.settings)
+      //    - User preferences and configuration
+      //    - Persisted via StorageManager.saveSettings()
+      //    - Synced from StorageManager on init
+      //    - Single copy kept in this.settings on SettingsManager
+      //
+      // REDUNDANCY PREVENTION:
+      // - NO instance properties for currentProfile/currentPreset
+      // - Use appState.persistent for truth instead
+      // - Helper methods ensure consistency with StorageManager
+      // - All reads go through appState, all writes sync to StorageManager
+      //
       const appState = {
-        // Calculator state
+        // Calculator state (runtime/transient)
         calculator: {
           baseTime: 10.0,
           currentStop: 0,
@@ -3952,7 +3998,7 @@
           lastExposureTime: 10.0,
         },
 
-        // Timer states
+        // Timer states (runtime/transient)
         timers: {
           Dev: {
             timeLeft: 60,
@@ -3980,7 +4026,7 @@
           },
         },
 
-        // Settings state (shared between UI and runtime)
+        // Settings state (persisted + synced from StorageManager)
         settings: {
           colorScheme: "dark",
           calcWarningBeep: true,
@@ -3998,7 +4044,13 @@
           stopDenominator: 3,
         },
 
-        // UI state
+        // Persistent UI selections (loaded from StorageManager)
+        persistent: {
+          currentProfile: null, // Currently loaded timer profile
+          currentChemicalPreset: null, // Currently loaded chemical preset
+        },
+
+        // Transient UI state (not persisted)
         ui: {
           activeTab: "calculator",
           timerStatus: "READY FOR EXPOSURE",
@@ -4161,6 +4213,19 @@
       const tabButtons = document.querySelectorAll(".tab-button");
       const tabContents = document.querySelectorAll(".tab-content");
 
+      // Generic feedback display helper - consolidates showAllProfilesFeedback and showShelfLifeFeedback
+      function showFeedback(elementId, message, type = "info") {
+        const feedbackElement = document.getElementById(elementId);
+        if (feedbackElement) {
+          feedbackElement.textContent = message;
+          feedbackElement.className = `feedback ${type}`;
+          feedbackElement.style.display = "block";
+          setTimeout(() => {
+            feedbackElement.style.display = "none";
+          }, CONFIG.AUDIO.FEEDBACK_TIMEOUT_MS);
+        }
+      }
+
       function refreshCollapsibleHeights(container = document) {
         const sections = container.querySelectorAll(".collapsible");
         sections.forEach((sec) => {
@@ -4283,7 +4348,6 @@
       });
 
       // Legacy audio wrapper for backward compatibility
-      let globalAudioContext = null; // Deprecated
 
       function initAudioContext() {
         // Deprecated - AudioService handles this now
@@ -4295,9 +4359,27 @@
       }
 
       // Legacy playBeep wrapper - redirects to AudioService
-      function playBeep(frequency = 800, duration = 0.1, volume = 0.3) {
+      function playBeep(
+        frequency = CONFIG.AUDIO.BEEP_FREQUENCY_HZ,
+        duration = CONFIG.AUDIO.BEEP_DURATION_SEC,
+        volume = CONFIG.AUDIO.BEEP_VOLUME
+      ) {
         if (audioService) {
           audioService.playBeep(frequency, duration, volume);
+        }
+      }
+
+      // Wrapper for audio preset playback - standardized pattern
+      function playPreset(presetName) {
+        if (audioService) {
+          audioService.playPreset(presetName);
+        }
+      }
+
+      // Wrapper for countdown beep patterns - standardized pattern
+      function playCountdownBeep(secondsRemaining) {
+        if (audioService) {
+          audioService.playCountdownBeep(secondsRemaining);
         }
       }
 
@@ -4516,7 +4598,7 @@
             ) {
               const box = document.getElementById(`timer${this.name}`);
               if (box) box.classList.add("warning");
-              audioService?.playPreset("timerWarning");
+              playPreset("timerWarning");
               this.warningPlayed = true;
             }
 
@@ -4557,7 +4639,7 @@
           this.render();
 
           if (appState.settings.timerEndBeep && this.state.isEnabled) {
-            audioService?.playPreset("timerComplete");
+            playPreset("timerComplete");
           }
 
           // Auto-start next timer
@@ -4659,7 +4741,7 @@
               (pattern === "last5" && this.countdownValue <= 5);
 
             if (shouldBeep) {
-              audioService?.playCountdownBeep(this.countdownValue);
+              playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -4733,8 +4815,8 @@
             }
 
             if (shouldBeep) {
-              // Use AudioService countdown beep with time-based patterns
-              audioService?.playCountdownBeep(this.countdownValue);
+              // Use countdown beep with time-based patterns
+              playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -4753,7 +4835,7 @@
 
           // Final beep
           if (this.beepEnabled) {
-            audioService?.playPreset("countdownComplete");
+            playPreset("countdownComplete");
           }
 
           // Restore display
@@ -4805,8 +4887,11 @@
         constructor() {
           this.settings = StorageManager.loadSettings();
           this.profiles = StorageManager.loadProfiles();
-          this.currentProfile = StorageManager.loadCurrentProfile();
           this.colorScheme = StorageManager.loadColorScheme();
+
+          // Load persistent UI state into appState (single source of truth)
+          appState.persistent.currentProfile =
+            StorageManager.loadCurrentProfile();
 
           // Sync loaded settings to appState
           Object.assign(appState.settings, this.settings);
@@ -4886,6 +4971,17 @@
           }
         }
 
+        // Get currently loaded profile name from appState (single source of truth)
+        getCurrentProfile() {
+          return appState.persistent.currentProfile;
+        }
+
+        // Set currently loaded profile in appState and persist to storage
+        setCurrentProfile(profileName) {
+          appState.persistent.currentProfile = profileName;
+          StorageManager.saveCurrentProfile(profileName);
+        }
+
         // Read current UI settings into this.settings
         readSettingsFromUI() {
           this.settings = {
@@ -4908,7 +5004,6 @@
               .checked,
             defaultPhotoFlo: document.getElementById("settingDefaultPhotoFlo")
               .checked,
-            currentProfile: this.currentProfile,
             colorScheme: this.colorScheme,
             countdownDelay: parseInt(
               document.getElementById("settingCountdownDelay").value
@@ -5338,8 +5433,7 @@
           });
 
           if (result) {
-            this.currentProfile = name.trim();
-            StorageManager.saveCurrentProfile(this.currentProfile);
+            this.setCurrentProfile(name.trim());
           }
           return result;
         }
@@ -5368,8 +5462,7 @@
             });
           }
 
-          this.currentProfile = profile.name;
-          StorageManager.saveCurrentProfile(profile.name);
+          this.setCurrentProfile(profile.name);
           this.updateTimerProfileListUI();
 
           playBeep(600, 0.3, 0.3);
@@ -5391,9 +5484,8 @@
             confirmMessage: `Delete profile "${profileName}"?`,
             successMessage: `Profile "${profileName}" deleted!`,
             onDeleteCallback: () => {
-              if (this.currentProfile === profileName) {
-                this.currentProfile = null;
-                StorageManager.saveCurrentProfile(null);
+              if (this.getCurrentProfile() === profileName) {
+                this.setCurrentProfile(null);
               }
             },
           });
@@ -5409,8 +5501,7 @@
             confirmMessage: "Delete ALL timer profiles? This cannot be undone!",
             successMessage: "All timer profiles deleted!",
             onClearCallback: () => {
-              this.currentProfile = null;
-              StorageManager.saveCurrentProfile(null);
+              this.setCurrentProfile(null);
             },
           });
         }
@@ -5424,7 +5515,7 @@
             StorageManager.clearAll();
             this.settings = { ...DEFAULT_SETTINGS };
             this.profiles = [];
-            this.currentProfile = null;
+            this.setCurrentProfile(null);
             this.colorScheme = "dark";
             this.applyColorScheme();
             this.applySoundSettings();
@@ -5726,15 +5817,8 @@
           }
         }
 
-        showAllProfilesFeedback(message, type) {
-          const feedback = document.getElementById("allProfilesFeedback");
-          feedback.textContent = message;
-          feedback.className = `json-feedback json-${type}`;
-          feedback.style.display = "block";
-
-          setTimeout(() => {
-            feedback.style.display = "none";
-          }, 3000);
+        showAllProfilesFeedback(message, type = "info") {
+          showFeedback("allProfilesFeedback", message, type);
         }
 
         updateTimerProfileListUI() {
@@ -5744,7 +5828,7 @@
           this.renderPresetList({
             listElement: profileList,
             collection: this.profiles,
-            currentItem: this.currentProfile,
+            currentItem: this.getCurrentProfile(),
             renderItemContent: (profile) => {
               let timeStr = "";
               if (profile.times) {
@@ -5795,7 +5879,7 @@
           this.dilutionRatio = "1+9";
           this.customStockParts = 1;
           this.customWaterParts = 9;
-          this.currentPreset = null;
+          // Note: currentPreset is now stored in appState.persistent.currentChemicalPreset
           this.capacityData = StorageManager.loadCapacityTracker();
           this.shelfLifeData = StorageManager.loadShelfLife();
           this.chemicalPresets = StorageManager.loadChemicalPresets();
@@ -5815,6 +5899,16 @@
               this.customChemicalNameContainer.style.display = "none";
             }
           });
+        }
+
+        // Get currently loaded chemical preset name from appState (single source of truth)
+        getCurrentPreset() {
+          return appState.persistent.currentChemicalPreset;
+        }
+
+        // Set currently loaded chemical preset in appState
+        setCurrentPreset(presetName) {
+          appState.persistent.currentChemicalPreset = presetName;
         }
 
         init() {
@@ -6014,7 +6108,7 @@
         }
 
         loadChemicalPreset(preset) {
-          this.currentPreset = preset.name;
+          this.setCurrentPreset(preset.name);
           this.totalVolumeSlider.value = preset.totalVolume;
           this.totalVolume = preset.totalVolume;
 
@@ -6056,8 +6150,8 @@
             confirmMessage: `Delete preset "${presetName}"?`,
             successMessage: `Preset "${presetName}" deleted!`,
             onDeleteCallback: () => {
-              if (this.currentPreset === presetName) {
-                this.currentPreset = null;
+              if (this.getCurrentPreset() === presetName) {
+                this.setCurrentPreset(null);
               }
             },
           });
@@ -6067,7 +6161,7 @@
           settingsManager.renderPresetList({
             listElement: this.chemicalPresetList,
             collection: this.chemicalPresets,
-            currentItem: this.currentPreset,
+            currentItem: this.getCurrentPreset(),
             renderItemContent: (preset) => {
               const ratio = preset.dilutionRatio
                 ? `Ratio: ${preset.dilutionRatio}`
@@ -6108,7 +6202,7 @@
               "Delete ALL chemical presets? This cannot be undone!",
             successMessage: "All chemical presets deleted!",
             onClearCallback: () => {
-              this.currentPreset = null;
+              this.setCurrentPreset(null);
             },
           });
         }
@@ -7232,9 +7326,9 @@
           // Apply settings if available
           if (settingsManager) {
             // Apply saved profile if exists
-            if (settingsManager.currentProfile) {
+            if (appState.persistent.currentProfile) {
               const profile = settingsManager.profiles.find(
-                (p) => p.name === settingsManager.currentProfile
+                (p) => p.name === appState.persistent.currentProfile
               );
               if (profile && profile.times) {
                 this.timers.forEach((timer) => {
@@ -7482,7 +7576,7 @@
             : "EXPOSURE STOPPED";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         // Repeat last exposure method
@@ -7505,7 +7599,7 @@
           appState.ui.timerStatus = "READY TO REPEAT";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         updateFromSliders() {
@@ -7639,7 +7733,7 @@
                   currentSecond > 0
                 ) {
                   this.lastBeepSecond = currentSecond;
-                  audioService?.playPreset("calcWarning");
+                  playPreset("calcWarning");
                   document
                     .getElementById("calcTimerDisplay")
                     .classList.add("warning");
@@ -7669,7 +7763,7 @@
           appState.ui.timerStatus = "EXPOSURE PAUSED";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         resume() {
@@ -7699,7 +7793,7 @@
           this.accumulatedTime = this.currentTotalTime;
 
           if (appState.settings.calcEndBeep) {
-            audioService?.playPreset("calcComplete");
+            playPreset("calcComplete");
           }
 
           appState.ui.timerStatus = "EXPOSURE COMPLETE";
@@ -9700,13 +9794,10 @@
           .getElementById("testCountdownBeep")
           ?.addEventListener("click", () => {
             // Test the different countdown beep patterns
-            audioService?.playCountdownBeep(5); // Early second beep
-            setTimeout(() => audioService?.playCountdownBeep(4), 300);
-            setTimeout(() => audioService?.playCountdownBeep(3), 600); // Last 3 seconds beep
-            setTimeout(
-              () => audioService?.playPreset("countdownComplete"),
-              900
-            ); // Final beep
+            playCountdownBeep(5); // Early second beep
+            setTimeout(() => playCountdownBeep(4), 300);
+            setTimeout(() => playCountdownBeep(3), 600); // Last 3 seconds beep
+            setTimeout(() => playPreset("countdownComplete"), 900); // Final beep
           });
 
         // Settings panel event listeners
