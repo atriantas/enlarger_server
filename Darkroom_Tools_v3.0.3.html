@@ -3692,6 +3692,7 @@
         CAPACITY_TRACKER: "darkroom_timer_capacity_tracker",
         SHELF_LIFE: "darkroom_timer_shelf_life",
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
+        SESSION_VALUES: "darkroom_timer_session_values", // NEW: Persistent user working values
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4573,6 +4574,28 @@
             STORAGE_KEYS.SHELF_LIFE,
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
           ]);
+        }
+
+        // NEW: Session values storage - separate from settings
+        static saveSessionValues(values) {
+          try {
+            localStorage.setItem(
+              STORAGE_KEYS.SESSION_VALUES,
+              JSON.stringify(values)
+            );
+          } catch (e) {
+            console.error("Failed to save session values:", e);
+          }
+        }
+
+        static loadSessionValues() {
+          try {
+            const data = localStorage.getItem(STORAGE_KEYS.SESSION_VALUES);
+            return data ? JSON.parse(data) : null;
+          } catch (e) {
+            console.error("Failed to load session values:", e);
+            return null;
+          }
         }
       }
 
@@ -7672,6 +7695,19 @@
           this.state.currentStop = parseInt(stopSlider.value);
           this.updateCalculations();
           this.render();
+
+          // NEW: Save CALC tab session values whenever they change
+          const sessionValues = StorageManager.loadSessionValues() || {};
+          const calcIncSegBtn = document.querySelector(
+            "#calcIncrementSeg .segmented-btn.active"
+          );
+          sessionValues.calcTab = {
+            baseTime: this.state.baseTime,
+            stopAdjust: this.state.currentStop,
+            calcIncrementSeg:
+              calcIncSegBtn?.dataset?.denom || window.stopDenominator || "3",
+          };
+          StorageManager.saveSessionValues(sessionValues);
         }
 
         updateCalculations() {
@@ -8835,6 +8871,12 @@
           this.updateDisplay();
           this.updateInstructions();
 
+          // NEW: Save method change to session values
+          const sessionValues = StorageManager.loadSessionValues() || {};
+          if (!sessionValues.testTab) sessionValues.testTab = {};
+          sessionValues.testTab.method = method;
+          StorageManager.saveSessionValues(sessionValues);
+
           // If running, stop and reset
           if (this.isRunning || this.isPaused) {
             this.stopCurrentTest();
@@ -8849,6 +8891,34 @@
 
           this.generateSteps();
           this.updateDisplay();
+
+          // NEW: Save TEST tab session values whenever they change
+          const sessionValues = StorageManager.loadSessionValues() || {};
+
+          // Determine current method (check active button or this.method)
+          const activeMethodBtn = document.querySelector(
+            ".toggle-btn[data-method].active"
+          );
+          const currentMethod =
+            activeMethodBtn?.getAttribute("data-method") ||
+            this.method ||
+            "cumulative";
+
+          // Get current testIncrementSeg (f-stop denominator)
+          const testIncSegBtn = document.querySelector(
+            "#testIncrementSeg .segmented-btn.active"
+          );
+          const currentTestIncrementSeg =
+            testIncSegBtn?.dataset?.denom || window.stopDenominator || 3;
+
+          sessionValues.testTab = {
+            baseTime: this.baseTime,
+            increment: this.stepIncrement,
+            numberOfSteps: this.numSteps,
+            method: currentMethod,
+            testIncrementSeg: currentTestIncrementSeg,
+          };
+          StorageManager.saveSessionValues(sessionValues);
         }
 
         generateSteps() {
@@ -9912,6 +9982,9 @@
         // Initialize settings manager first
         settingsManager = new SettingsManager();
 
+        // NEW: Load session values (user's working values from previous session)
+        const sessionValues = StorageManager.loadSessionValues();
+
         // Initialize calculator
         window.incrementalTimer = new IncrementalTimer();
 
@@ -9940,7 +10013,95 @@
         // Apply saved settings to UI and instances on startup
         loadSettingsToUI();
 
-        // Initialize fullscreen manager
+        // NEW: Restore CALC and TEST tab session values after initialization
+        if (sessionValues) {
+          // Restore CALC tab values
+          if (sessionValues.calcTab) {
+            const calcTab = sessionValues.calcTab;
+            const baseTimeSliderElem =
+              document.getElementById("baseTimeSlider");
+            const stopSliderElem = document.getElementById("stopSlider");
+
+            if (baseTimeSliderElem && calcTab.baseTime) {
+              baseTimeSliderElem.value = calcTab.baseTime;
+              window.incrementalTimer.state.baseTime = calcTab.baseTime;
+            }
+
+            if (stopSliderElem && calcTab.stopAdjust !== undefined) {
+              stopSliderElem.value = calcTab.stopAdjust;
+              window.incrementalTimer.state.currentStop = parseInt(
+                calcTab.stopAdjust
+              );
+            }
+
+            // Restore calcIncrementSeg selection
+            if (calcTab.calcIncrementSeg) {
+              applyDenomChange(parseInt(calcTab.calcIncrementSeg), false);
+            }
+
+            window.incrementalTimer.updateCalculations();
+            window.incrementalTimer.render();
+          }
+
+          // Restore TEST tab values
+          if (sessionValues.testTab) {
+            const testTab = sessionValues.testTab;
+            const testBaseSliderElem =
+              document.getElementById("testBaseSlider");
+            const testIncrementSliderElem = document.getElementById(
+              "testIncrementSlider"
+            );
+            const testStepsSliderElem =
+              document.getElementById("testStepsSlider");
+
+            if (testBaseSliderElem && testTab.baseTime) {
+              testBaseSliderElem.value = testTab.baseTime;
+            }
+
+            if (testIncrementSliderElem && testTab.increment !== undefined) {
+              testIncrementSliderElem.value = testTab.increment;
+            }
+
+            if (testStepsSliderElem && testTab.numberOfSteps) {
+              testStepsSliderElem.value = testTab.numberOfSteps;
+            }
+
+            // Restore testIncrementSeg selection (f-stop denominator for TEST tab)
+            if (testTab.testIncrementSeg) {
+              setActiveSeg(
+                "testIncrementSeg",
+                parseInt(testTab.testIncrementSeg)
+              );
+            }
+
+            // Restore METHOD selection using data-method buttons
+            if (testTab.method) {
+              const methodButtons = document.querySelectorAll(
+                ".toggle-btn[data-method]"
+              );
+              methodButtons.forEach((btn) => {
+                if (btn.getAttribute("data-method") === testTab.method) {
+                  btn.classList.add("active");
+                  // Call setMethod on the test generator to apply the method
+                  if (window.fstopTestGenerator) {
+                    window.fstopTestGenerator.setMethod(testTab.method);
+                  }
+                } else {
+                  btn.classList.remove("active");
+                }
+              });
+            }
+
+            // Trigger update in F-Stop generator if it has the method
+            if (
+              window.fstopTestGenerator &&
+              window.fstopTestGenerator.updateDisplay
+            ) {
+              window.fstopTestGenerator.updateDisplay();
+            }
+          }
+        }
+
         const fullscreenManager = new FullscreenManager();
 
         // Initialize relay manager
@@ -10157,6 +10318,14 @@
                   newDenom
                 )}`;
             } catch (e) {}
+          } else {
+            // NEW: Save denominator changes to session values (for runtime denom changes)
+            const sessionValues = StorageManager.loadSessionValues() || {};
+            sessionValues.calcTab = sessionValues.calcTab || {};
+            sessionValues.calcTab.calcIncrementSeg = newDenom;
+            sessionValues.testTab = sessionValues.testTab || {};
+            sessionValues.testTab.testIncrementSeg = newDenom;
+            StorageManager.saveSessionValues(sessionValues);
           }
 
           // Reflect change in segmented controls (if not already set) - keeps buttons active
