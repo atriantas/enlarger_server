@@ -11,16 +11,32 @@
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
          1. List containers: .chemical-preset-list + .shelf-life-list (replaces .profile-list)
-         2. List items: .chemical-preset-item + .shelf-life-item (replaces .profile-item, .list-item)
+         2. List items: .shelf-life-item (replaces .chemical-preset-item, .profile-item, .list-item, .relay-item)
          3. Toggle buttons: .toggle-btn (replaces .paper-btn, .paper-size-btn, 
-            .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle)
-         4. Action buttons: .btn-action consolidates .chemical-preset-btn, .shelf-life-btn (replaces .profile-btn)
-         5. Flexible buttons: .repeat-btn (replaces .btn-flex)
-         6. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
-         7. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
+            .dilution-btn, .method-btn, .color-scheme-btn, .btn-toggle, .paper-size-buttons)
+         4. Action buttons: .btn-action (replaces .chemical-preset-btn, .shelf-life-btn, .profile-btn)
+         5. Action containers: .shelf-life-actions (replaces .chemical-preset-actions)
+         6. Flex containers: .custom-dilution (replaces .custom-paper-size)
+         7. Flexible buttons: .settings-btn (replaces .repeat-btn, .btn-flex, .relay-toggle-btn) - uses inline styles for specific variants
+         8. Settings buttons: .settings-btn consolidates .preset-btn, .capacity-btn, .global-btn
+         9. Panel containers: .incremental-timer (replaces .test-strip-preview-container, 
             .chemical-calculator, .chemical-presets, .capacity-tracker, .shelf-life-tracker, .instructions-panel, .panel-base, .panel-container, .contrast-calculator)
-         8. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
-         9. Value classes: .value-display consolidates .result-value, .chemical-result-value
+         10. Label classes: .label-sm (replaces .info-label, .chemical-label-sm)
+         11. Value classes: .value-display (replaces .result-value, .chemical-result-value)
+         12. 3-column grid selectors: .dilution-selector (replaces .color-scheme-selector)
+         13. Full-width action buttons: .settings-btn (replaces .fullscreen-btn)
+         14. Medium label classes: .setting-label (replaces .sound-label, .preview-label) - CONSOLIDATED
+         15. Select dropdowns: .settings-input (replaces .fstop-select)
+         16. Panel containers: .incremental-timer (replaces .timer-settings)
+         17. Button groups: .settings-btn-group (replaces .global-controls, .timer-controls)
+         18. Section headers: .title-sm (replaces .timer-status)
+         19. Flex groups: .flex-group (replaces .preview-legend, .preview-options) - CONSOLIDATED into .shelf-life-actions
+         20. Step info containers: .current-step-info - CONSOLIDATED into .shelf-life-actions with inline styles
+         21. Progress bars: .progress-bar (replaces .progress-fill) - uses gradient background for all progress indicators
+         22. Progress labels: .progress-labels (replaces .test-progress-labels) - consolidated into single class
+         23. Panel containers: .incremental-timer (replaces .test-presets) - uses inline styles for light background variants
+         24. Button grids: .settings-group (replaces .preset-buttons) - uses 2-column grid layout
+         25. Method selectors: .settings-group (replaces .method-selector) - uses 2-column grid layout with inline styles
          All variants use the same base styles with class-specific overrides.
       */
 
@@ -45,54 +61,44 @@
         --slider-track: linear-gradient(to right, #300, #600, #f00);
       }
 
-      /* Light Scheme - EXACT matches to original */
+      /* Light Scheme - Clean grey tones with blue accent */
       body.light-scheme {
         --bg: #ffffff;
-        --text: rgb(0, 0, 0);
-        --text-secondary: rgb(60, 60, 60);
+        --text: #1a1a1a;
+        --text-secondary: #666666;
 
-        --accent: rgb(38, 133, 228);
-        --accent-dark: rgb(89, 90, 92);
+        --accent: #3a86de;
+        --accent-dark: #2769ac;
 
-        --panel: rgb(243, 243, 243);
-        --panel-light: rgb(255, 255, 255);
+        --panel: #e0e0e0;
+        --panel-light: #f2f2f2;
 
-        --border: rgb(154, 195, 255);
-        --border-light: rgb(184, 192, 209);
+        --border: #a0a0a0;
+        --border-light: #bdbdbd;
 
         --warning: #ff5500;
 
-        --slider-track: linear-gradient(
-          to right,
-          rgb(0, 25, 51),
-          rgb(0, 49, 102),
-          rgb(0, 157, 255)
-        );
+        --slider-track: linear-gradient(to right, #bdbdbd, #757575, #2196f3);
       }
 
-      /* Day Scheme - EXACT matches to original */
+      /* Day Scheme - Dark grey tones with blue accent */
       body.day-scheme {
-        --bg: #000000;
-        --text: rgb(255, 255, 255);
-        --text-secondary: rgb(194, 194, 194);
+        --bg: #121212;
+        --text: #e0e0e0;
+        --text-secondary: #9e9e9e;
 
-        --accent: rgb(255, 207, 118);
-        --accent-dark: rgb(89, 90, 92);
+        --accent: #3a86de;
+        --accent-dark: #2769ac;
 
-        --panel: rgb(24, 24, 24);
-        --panel-light: rgb(107, 107, 107);
+        --panel: #1e1e1e;
+        --panel-light: #2d2d2d;
 
-        --border: rgb(201, 148, 0);
-        --border-light: rgb(162, 116, 24);
+        --border: #424242;
+        --border-light: #616161;
 
         --warning: #ff5500;
 
-        --slider-track: linear-gradient(
-          to right,
-          rgb(51, 32, 0),
-          rgb(102, 61, 0),
-          rgb(255, 157, 0)
-        );
+        --slider-track: linear-gradient(to right, #424242, #757575, #42a5f5);
       }
 
       /* ===== BASE STYLES (IDENTICAL TO ORIGINAL) ===== */
@@ -212,22 +218,15 @@
       }
 
       /* Unified result display containers */
-      .result,
-      .chemical-result-box,
       .info-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         text-align: center;
         background: var(--panel-light);
         border: 1px solid var(--border);
         border-radius: 8px;
         padding: 8px;
-      }
-
-      .timer-status {
-        font-size: 0.8rem;
-        color: var(--text);
-        text-align: center;
-        margin-bottom: 8px;
-        font-weight: bold;
       }
 
       .timer-display {
@@ -241,13 +240,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-      }
-
-      .timer-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
       }
 
       /* ===== BUTTON STYLES (EXACT MATCH) ===== */
@@ -287,7 +279,7 @@
         margin-top: 10px;
       }
 
-      /* info-box and chemical-result-box now consolidated with result */
+      /* info-box is the unified result display container */
 
       /* Unified small label class - consolidates info-label, label-sm, chemical-label-sm, label-sm */
       .label-sm {
@@ -297,18 +289,11 @@
       }
 
       /* Unified value display class - consolidates result-value, chemical-result-value */
-      .value-display,
-      .result-value,
-      .chemical-result-value {
+      .value-display {
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: bold;
         color: var(--text);
         font-size: 0.8rem;
-      }
-
-      .result-value,
-      .chemical-result-value {
-        font-size: 1.2rem;
       }
 
       /* ===== TIMER GRID (EXACT MATCH) ===== */
@@ -475,6 +460,7 @@
         padding: 4px 6px;
         font-size: 0.8rem;
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        flex: auto;
       }
 
       .settings-input:focus {
@@ -497,20 +483,14 @@
         margin-bottom: 10px;
       }
 
-      /* Unified list item - consolidates chemical-preset-item, shelf-life-item */
-      .chemical-preset-item,
+      /* Unified list item - replaces chemical-preset-item, shelf-life-item */
       .shelf-life-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .shelf-life-item {
         padding: 8px;
         border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
       }
 
       .shelf-life-item:last-child {
@@ -546,6 +526,7 @@
 
       .settings-btn-group {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         margin-top: 10px;
       }
@@ -554,28 +535,10 @@
         flex: 1;
       }
 
-      .global-controls {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      /* ===== TIMER SETTINGS (EXACT MATCH) ===== */
-      .timer-settings {
-        display: flex;
-        justify-content: space-between;
-        background: var(--panel);
-        padding: 6px 8px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-      }
-
       /* setting-item now uses .item-container */
 
-      /* Unified medium label class - consolidates setting-label, sound-label, preview-label */
-      .setting-label,
-      .sound-label,
-      .preview-label {
+      /* Unified medium label class - consolidates setting-label, preview-label */
+      .setting-label {
         font-size: 0.7rem;
         white-space: nowrap;
       }
@@ -625,10 +588,10 @@
         transform: translateX(14px);
       }
 
-      /* chemical-result-box now consolidated with result */
+      /* chemical-result-box removed - using info-box instead */
 
       /* chemical-label-sm now uses .label-sm */
-      /* chemical-result-value now uses unified value classes */
+      /* chemical-result-value uses unified value classes */
 
       .test-strip-preview {
         display: flex;
@@ -667,46 +630,6 @@
         margin-top: 2px;
       }
 
-      /* ===== COLOR SCHEME SELECTOR (EXACT MATCH) ===== */
-      .color-scheme-selector {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-
-      /* ===== JSON BUTTONS (EXACT MATCH) ===== */
-      .json-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .json-btn {
-        flex: 1;
-        padding: 8px 12px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
-      }
-
-      /* ===== FULLSCREEN BUTTON (EXACT MATCH) ===== */
-      .fullscreen-btn {
-        padding: 8px 16px;
-        background: var(--border-light);
-        border: 1px solid var(--border-light);
-        color: var(--text);
-        border-radius: 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        text-transform: uppercase;
-        margin-top: 10px;
-        width: 100%;
-      }
-
       /* ===== FOOTER (EXACT MATCH) ===== */
       footer {
         text-align: center;
@@ -733,14 +656,9 @@
       /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
 
       /* Chart styles */
-      .chart-container {
-        overflow-x: auto;
-        margin-bottom: 10px;
-      }
 
       .time-table {
         width: 100%;
-        min-width: 400px;
         border-collapse: collapse;
         font-size: 0.7rem;
       }
@@ -763,62 +681,18 @@
         background: var(--panel);
       }
 
-      .current-stop {
-        background: var(--panel-light) !important;
-        font-weight: bold;
-      }
-
       /* increment-cell can use .label-sm */
 
       /* Unified flex control groups */
-      .sound-controls,
-      .preview-controls {
+      .sound-controls {
         display: flex;
         justify-content: space-around;
         margin-top: 10px;
       }
 
-      .preview-controls {
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .sound-label {
-        color: var(--text-secondary);
-      }
-
-      /* F-stop dropdown styles */
-      .fstop-select {
-        width: 100%;
-        padding: 4px 6px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 0.8rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        text-align: center;
-        cursor: pointer;
-        margin-top: 8px;
-      }
-
-      /* Repeat button styling */
-      .repeat-btn {
-        flex: 1;
-        padding: 8px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
-        font-size: 0.9rem;
-        font-weight: bold;
-        cursor: pointer;
-      }
-
-      .repeat-btn:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
+      /* .repeat-btn consolidated into .settings-btn with inline styles */
+      /* .paper-size-buttons consolidated into .dilution-selector with inline styles */
+      /* .custom-paper-size consolidated into .custom-dilution */
 
       /* Panel container for all panel-style sections */
       .incremental-timer {
@@ -830,18 +704,11 @@
       }
 
       /* 2-column grid layouts */
-      .paper-selector,
-      .method-selector,
-      .paper-size-buttons {
+      .paper-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-bottom: 10px;
-      }
-
-      .method-selector {
-        margin-top: 8px;
-        margin-bottom: 0;
       }
 
       /* Base toggle button (consolidated for all variants) */
@@ -872,8 +739,7 @@
 
       /* Flex containers for various controls */
       .custom-dilution,
-      .capacity-controls,
-      .custom-paper-size {
+      .capacity-controls {
         display: flex;
         gap: 8px;
         margin-top: 8px;
@@ -897,35 +763,14 @@
 
       /* Unified input focus already handled by .settings-input:focus */
 
-      /* Chemical Preset Styles - now using consolidated classes */
-      .chemical-preset-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.75rem;
-      }
-
-      .chemical-preset-item:last-child {
-        border-bottom: none;
-      }
-
-      .chemical-preset-item.active {
-        background: var(--panel-light);
-      }
-
-      /* Unified flex-row class for action buttons */
-      .chemical-preset-actions,
+      /* Unified flex-row class for action buttons - replaces .chemical-preset-actions */
       .shelf-life-actions {
         display: flex;
         gap: 6px;
       }
 
-      /* Base action button (consolidated) */
-      .btn-action,
-      .chemical-preset-btn,
-      .shelf-life-btn {
+      /* Base action button - replaces .chemical-preset-btn, .shelf-life-btn */
+      .btn-action {
         background: var(--border);
         border: 1px solid var(--border-light);
         color: var(--accent);
@@ -935,15 +780,12 @@
         cursor: pointer;
       }
 
-      .btn-action.delete,
-      .shelf-life-btn.delete {
+      .btn-action.delete {
         border-color: var(--accent);
         color: var(--accent);
       }
 
-      .shelf-life-btn {
-        padding: 3px 6px;
-        font-size: 0.65rem;
+      .btn-action {
         min-width: 50px;
       }
 
@@ -958,13 +800,12 @@
 
       .progress-bar {
         height: 100%;
-        background: var(--accent);
+        background: linear-gradient(90deg, var(--border-light), var(--accent));
         width: 0%;
-        transition: width 0.3s ease;
+        transition: width 0.5s ease;
       }
 
-      .progress-labels,
-      .test-progress-labels {
+      .progress-labels {
         display: flex;
         justify-content: space-between;
         font-size: 0.6rem;
@@ -978,11 +819,6 @@
         margin-bottom: 10px;
       }
 
-      .custom-paper-size {
-        margin-top: 8px;
-      }
-
-      .custom-paper-size input,
       .custom-dilution input {
         flex: 1;
         text-align: center;
@@ -990,7 +826,6 @@
 
       /* .shelf-life-list styles consolidated above */
 
-      .chemical-preset-item:last-child,
       .shelf-life-item:last-child {
         border-bottom: none;
       }
@@ -1024,25 +859,8 @@
         gap: 4px;
       }
 
-      /* .shelf-life-btn now uses .btn-action with padding override */
-
       /* F-STOP TEST STRIP GENERATOR STYLES */
       /* preview-controls now consolidated with sound-controls */
-
-      /* Unified small display groups */
-      .preview-legend,
-      .preview-options {
-        display: flex;
-        gap: 8px;
-      }
-
-      .preview-legend {
-        gap: 15px;
-      }
-
-      .preview-options {
-        align-items: center;
-      }
 
       .legend-item {
         display: flex;
@@ -1057,24 +875,11 @@
         border-radius: 6px;
       }
 
-      /* preview-options now consolidated with preview-legend */
-
-      .preview-label {
-        color: var(--text-secondary);
-      }
-
-      .test-timer-display,
-      .current-step-info {
+      .test-timer-display {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin: 10px 0;
-      }
-
-      .current-step-info {
-        text-align: center;
-        flex: 1;
-        justify-content: center;
       }
 
       /* label-sm now uses .label-sm, value-display uses unified value classes */
@@ -1089,37 +894,6 @@
         border-radius: 6px;
         overflow: hidden;
         position: relative;
-      }
-
-      /* test-progress-labels now consolidated with progress-labels */
-
-      .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--border-light), var(--accent));
-        width: 0%;
-        transition: width 0.5s ease;
-      }
-
-      .test-presets {
-        background: var(--panel-light);
-        padding: 10px;
-        border-radius: 6px;
-        margin-top: 10px;
-        margin-bottom: 0;
-      }
-
-      .preset-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-
-      /* Method selector styles */
-      .method-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-top: 5px;
       }
 
       /* Countdown display styles */
@@ -1141,20 +915,6 @@
 
       .control input:checked + .slider-switch {
         background-color: var(--accent);
-      }
-
-      /* For the timer tab profiles section */
-      #timer .settings-section {
-        margin-top: 15px;
-        background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 8px;
-      }
-
-      /* Adjust timer grid height when profiles are visible */
-      #timer .timer-grid {
-        height: 280px; /* Reduced slightly to accommodate profiles */
       }
 
       /* ===== FULLSCREEN STYLES ===== */
@@ -1201,11 +961,6 @@
         scrollbar-width: none; /* Firefox */
       }
 
-      /* Hide scrollbar for tab-content in fullscreen */
-      body.fullscreen-mode .tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
       /* Ensure tab contents are scrollable by default in fullscreen */
       body.fullscreen-mode .tab-content {
         overflow-y: auto;
@@ -1228,436 +983,10 @@
         scrollbar-width: none; /* Firefox */
       }
 
-      body.fullscreen-mode #timer.tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Make the timer grid flexible within fullscreen layout */
-      body.fullscreen-mode #timer .timer-grid {
-        flex: 1;
-        min-height: 0;
-        height: auto;
-        margin-bottom: 8px;
-      }
-
-      /* Timer settings and profiles: keep visible and non-scrolling internally */
-      body.fullscreen-mode #timer .settings-section {
-        flex-shrink: 0;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        padding: 10px;
-        background: var(--panel);
-        border-radius: 6px;
-        max-height: none;
-        overflow-y: visible;
-      }
-
-      /* Tab-specific small adjustments (calc/chart/chemical/test) */
-      body.fullscreen-mode #calc.tab-content.active,
-      body.fullscreen-mode #chart.tab-content.active,
-      body.fullscreen-mode #fstop-test.tab-content.active,
-      body.fullscreen-mode #chemical.tab-content.active,
-      body.fullscreen-mode #settings.tab-content.active {
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none; /* Firefox */
-      }
-
-      body.fullscreen-mode #calc.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #chart.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #fstop-test.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #chemical.tab-content.active::-webkit-scrollbar,
-      body.fullscreen-mode #settings.tab-content.active::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Relay styles remain outside fullscreen concerns */
-      /* relay-controls now consolidated with test-presets - both replaced by test-presets */
-
-      .relay-item,
-      .shelf-life-item {
-        padding: 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .relay-item:last-child,
-      .shelf-life-item:last-child {
-        border-bottom: none;
-      }
-
-      .relay-toggle-btn {
-        min-width: 80px;
-      }
-
-      .relay-toggle-btn.on {
-        background: var(--border-light);
-        border-color: var(--accent);
-      }
-
       /* Settings tab adjustments */
       body.fullscreen-mode #settings.tab-content.active {
         overflow-y: auto;
         overflow-x: hidden;
-      }
-
-      body.fullscreen-mode #timer .timer-settings {
-        flex-shrink: 0;
-        margin-bottom: 8px;
-      }
-
-      body.fullscreen-mode #timer .global-controls {
-        flex-shrink: 0;
-        margin: 8px 0;
-      }
-
-      body.fullscreen-mode #timer .settings-section {
-        display: block !important; /* Force show the profiles section */
-        flex-shrink: 0;
-        max-height: none; /* Remove max height restriction */
-        overflow-y: visible; /* Don't scroll inside, let the whole page scroll */
-        margin-top: 8px;
-        margin-bottom: 8px;
-        padding: 10px;
-        background: var(--panel);
-        border-radius: 6px;
-        position: relative; /* Normal flow positioning */
-        top: auto;
-        bottom: auto;
-      }
-
-      /* Additional styles for fullscreen profiles */
-      body.fullscreen-mode .shelf-life-list {
-        max-height: 150px; /* Limit height and make scrollable */
-        overflow-y: auto;
-      }
-
-      /* Improve profile item visibility in fullscreen */
-      body.fullscreen-mode .shelf-life-item {
-        padding: 6px 8px;
-        font-size: 0.75rem;
-      }
-
-      body.fullscreen-mode .shelf-life-actions {
-        display: flex;
-        gap: 4px;
-      }
-
-      body.fullscreen-mode .shelf-life-btn {
-        min-width: 50px;
-        padding: 3px 6px;
-        font-size: 0.7rem;
-      }
-
-      /* Mobile adjustments for fullscreen with profiles */
-      @media (max-width: 400px) {
-        body.fullscreen-mode #timer .timer-grid {
-          height: auto; /* Maintain flexible height */
-          min-height: 320px; /* ensure space for 2x2 grid */
-          display: grid; /* keep 2-column grid in fullscreen on mobile */
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: 1fr 1fr;
-          gap: 6px;
-        }
-
-        body.fullscreen-mode #timer .settings-section {
-          max-height: none; /* Changed from 30vh */
-          margin-bottom: 20px; /* Add some space at the bottom */
-        }
-      }
-
-      /* Desktop adjustments */
-      @media (min-width: 401px) {
-        .setting-label .short-text {
-          display: none;
-        }
-
-        /* Fullscreen mode adjustments for desktop */
-        body.fullscreen-mode .timer-grid {
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: 1fr 1fr;
-          height: auto; /* Changed from calc(100vh - 120px) */
-        }
-
-        /* Ensure timer tab can scroll and the grid can flex in fullscreen on wider screens */
-        body.fullscreen-mode #timer.tab-content.active {
-          display: flex;
-          flex-direction: column;
-          min-height: 0; /* allow flex children to shrink */
-          overflow-y: auto; /* enable scrolling if content overflows */
-          -webkit-overflow-scrolling: touch;
-        }
-
-        body.fullscreen-mode #timer .timer-grid {
-          flex: 0 0 auto; /* let grid size by content so the parent tab scrolls */
-          min-height: 0; /* allow flex shrink when necessary */
-          overflow: visible; /* no internal scrolling; let the tab handle scrolling */
-        }
-
-        body.fullscreen-mode .title-sm {
-          font-size: 1rem;
-        }
-
-        body.fullscreen-mode .time-display {
-          font-size: 2.5rem;
-        }
-
-        body.fullscreen-mode .timer-btn {
-          padding: 8px;
-          font-size: 0.9rem;
-        }
-
-        body.fullscreen-mode #timer .timer-grid {
-          height: auto; /* Changed from calc(65vh - 120px) */
-        }
-
-        body.fullscreen-mode #timer .settings-section {
-          max-height: none; /* Changed from 30vh */
-        }
-      }
-
-      /* ===== MOBILE STYLES - EXACT MATCH ===== */
-      @media (max-width: 400px) {
-        /* Timer grid */
-        .timer-grid {
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: 1fr 1fr;
-          height: auto;
-          min-height: 400px;
-          margin-bottom: 8px;
-        }
-
-        /* Timer controls */
-        .timer-controls-2 {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          margin-top: 4px;
-        }
-
-        .adjust-row {
-          display: flex;
-          gap: 4px;
-          margin-bottom: 3px;
-        }
-
-        /* Timer buttons */
-        .timer-btn {
-          padding: 6px 4px;
-          font-size: 0.75rem;
-        }
-
-        .time-display {
-          font-size: 1.8rem;
-          margin: 8px 0;
-        }
-
-        .title-sm {
-          font-size: 0.85rem;
-          margin-bottom: 6px;
-        }
-
-        /* Global controls */
-        .global-controls {
-          display: flex;
-          gap: 6px;
-          margin: 12px 0;
-          flex-direction: row;
-        }
-
-        .settings-btn {
-          padding: 10px 12px;
-          font-size: 0.85rem;
-        }
-
-        /* Short text for mobile */
-        .setting-label .full-text {
-          display: none;
-        }
-
-        .setting-label .short-text {
-          display: block;
-        }
-
-        /* Timer Profiles Section */
-        #timer .settings-section {
-          margin-top: 15px;
-          padding: 12px;
-          margin-bottom: 8px;
-        }
-
-        .title-md {
-          font-size: 0.85rem;
-          margin-bottom: 10px;
-        }
-
-        .settings-group {
-          grid-template-columns: 1fr;
-          gap: 8px;
-          margin-bottom: 10px;
-        }
-
-        .shelf-life-list {
-          max-height: 150px;
-        }
-
-        .shelf-life-item {
-          padding: 8px;
-          font-size: 0.75rem;
-        }
-
-        .shelf-life-actions {
-          flex-direction: row;
-          gap: 6px;
-        }
-
-        .shelf-life-btn {
-          min-width: 45px;
-          padding: 4px 8px;
-          font-size: 0.7rem;
-        }
-
-        /* Adjust timer grid height when profiles are visible */
-        #timer .timer-grid {
-          height: auto;
-          min-height: 320px;
-        }
-
-        /* Ensure content doesn't overflow */
-        .container {
-          padding-bottom: 10px;
-        }
-
-        /* Adjust for better scrolling if needed */
-        #timer.tab-content.active {
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Chart container */
-        .chart-container {
-          margin-left: -6px;
-          margin-right: -6px;
-        }
-
-        .time-table {
-          min-width: 300px;
-        }
-
-        /* Calculator info - 2 columns on mobile */
-        .exp-info {
-          grid-template-columns: 1fr 1fr;
-          gap: 4px;
-        }
-
-        /* Settings - 2 columns on mobile */
-        .settings-group {
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
-        }
-
-        .shelf-life-actions {
-          flex-direction: row;
-        }
-
-        .shelf-life-btn {
-          min-width: 40px;
-          font-size: 0.65rem;
-          padding: 2px 4px;
-        }
-
-        /* Global buttons */
-        .global-controls {
-          flex-direction: column;
-        }
-
-        /* Chemical management mobile adjustments */
-        .dilution-selector {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .chemical-results-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .capacity-controls {
-          flex-direction: column;
-        }
-
-        /* Fullscreen mode adjustments for mobile */
-        body.fullscreen-mode {
-          padding: 0;
-        }
-
-        body.fullscreen-mode .container {
-          padding: 0;
-        }
-
-        body.fullscreen-mode .tabs {
-          margin-bottom: 0;
-          border-bottom: none;
-        }
-
-        body.fullscreen-mode .tab-button {
-          padding: 10px 3px;
-          font-size: 0.9rem;
-        }
-
-        body.fullscreen-mode .title-sm {
-          font-size: 0.9rem;
-        }
-
-        body.fullscreen-mode .time-display {
-          font-size: 2rem;
-        }
-
-        /* Test strip mobile adjustments */
-        .test-timer-display {
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .test-progress-labels span {
-          font-size: 0.5rem;
-        }
-
-        .preset-buttons {
-          grid-template-columns: 1fr;
-        }
-
-        .paper-selector {
-          grid-template-columns: 1fr;
-        }
-
-        /* Method selector mobile */
-        .method-selector {
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
-        }
-
-        /* Chemical preset mobile adjustments */
-        .paper-size-buttons {
-          grid-template-columns: 1fr;
-        }
-
-        .chemical-preset-actions {
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .chemical-preset-btn {
-          padding: 1px 4px;
-          font-size: 0.6rem;
-        }
-      }
-
-      /* Adjust info-box height to accommodate both sliders */
-      .info-box {
-        min-height: 50px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
       }
 
       /* Collapsible rows in CALC tab */
@@ -1699,13 +1028,6 @@
       }
       .collapsible .info-box {
         margin-bottom: 6px;
-      }
-
-      @media (max-width: 400px) {
-        .collapsible-header {
-          font-size: 1rem;
-          padding: 10px 6px;
-        }
       }
 
       /* -------------------------------------------------------------
@@ -1755,22 +1077,6 @@
         outline: 2px solid var(--accent);
         box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12);
         z-index: 1;
-      }
-
-      /* Mobile / narrow layout: slightly smaller tappable targets and allow wrapping */
-      @media (max-width: 420px) {
-        .segmented-control {
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-        .segmented-control .segmented-btn {
-          padding: 6px 8px;
-          min-width: 36px;
-          font-size: 0.85rem;
-        }
-        .segmented-control-container {
-          gap: 6px;
-        }
       }
 
       /* Container for segmented controls (centers buttons) */
@@ -1849,6 +1155,102 @@
       .custom-filter-row button:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+      }
+
+      /* Relay styles remain outside fullscreen concerns */
+      /* relay-controls now consolidated with .incremental-timer */
+
+      /* .relay-item consolidated into .shelf-life-item with inline styles */
+
+      /* .relay-toggle-btn consolidated into .settings-btn with inline styles */
+
+      /* Mobile adjustments for fullscreen with profiles */
+      @media (max-width: 400px) {
+        body.fullscreen-mode #timer .timer-grid {
+          height: auto; /* Maintain flexible height */
+          min-height: 320px; /* ensure space for 2x2 grid */
+          display: grid; /* keep 2-column grid in fullscreen on mobile */
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          gap: 6px;
+        }
+      }
+
+      /* Desktop adjustments */
+      @media (min-width: 401px) {
+        /* Fullscreen mode adjustments for desktop */
+        body.fullscreen-mode .timer-grid {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          height: auto; /* Changed from calc(100vh - 120px) */
+        }
+
+        /* Ensure timer tab can scroll and the grid can flex in fullscreen on wider screens */
+        body.fullscreen-mode #timer.tab-content.active {
+          display: flex;
+          flex-direction: column;
+          min-height: 0; /* allow flex children to shrink */
+          overflow-y: auto; /* enable scrolling if content overflows */
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+
+      /* ===== MOBILE STYLES - EXACT MATCH ===== */
+      @media (max-width: 400px) {
+        /* Calculator info - 2 columns on mobile */
+        .exp-info {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        /* Settings - 2 columns on mobile */
+        .settings-group {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        /* Chemical management mobile adjustments */
+        .dilution-selector {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .capacity-controls {
+          flex-direction: column;
+        }
+
+        /* Fullscreen mode adjustments for mobile */
+        body.fullscreen-mode {
+          padding: 0;
+        }
+
+        body.fullscreen-mode .container {
+          padding: 0;
+        }
+
+        body.fullscreen-mode .tabs {
+          margin-bottom: 0;
+          border-bottom: none;
+        }
+
+        /* Test strip mobile adjustments */
+        .test-timer-display {
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .paper-selector {
+          grid-template-columns: 1fr;
+        }
+        .segmented-control {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .segmented-control .segmented-btn {
+          padding: 6px 8px;
+          min-width: 36px;
+          font-size: 0.85rem;
+        }
+        .segmented-control-container {
+          gap: 6px;
+        }
       }
     </style>
   </head>
@@ -1973,27 +1375,31 @@
           </div>
         </div>
 
-        <div class="result">
+        <div class="info-box">
           <div class="label-sm">SELECTED EXPOSURE</div>
-          <div class="result-value" id="resultTime">10.00</div>
+          <div class="value-display" id="resultTime" style="font-size: 1.2rem">
+            10.00
+          </div>
           <div class="label-sm" id="resultDetails">BASE (0.0 stops)</div>
         </div>
 
         <!-- Simplified Incremental Exposure Timer -->
         <div class="incremental-timer">
-          <div class="timer-status" id="timerStatus">READY FOR EXPOSURE</div>
+          <div class="title-sm" id="timerStatus" style="text-align: center">
+            READY FOR EXPOSURE
+          </div>
           <div class="timer-display" id="calcTimerDisplay">10.00</div>
 
           <div class="sound-controls">
             <div>
-              <div class="sound-label">3s Beeps</div>
+              <div class="setting-label">3s Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="calcWarningBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">End Beep</div>
+              <div class="setting-label">End Beep</div>
               <label class="switch">
                 <input type="checkbox" id="calcEndBeep" checked />
                 <span class="slider-switch"></span>
@@ -2001,11 +1407,21 @@
             </div>
           </div>
 
-          <div class="timer-controls">
+          <div class="settings-btn-group">
             <button class="exp-btn" id="startExposure">Start Exposure</button>
             <button class="exp-btn" id="stopCalcTimer" disabled>Stop</button>
             <button class="exp-btn" id="resetCalcTimer">Reset</button>
-            <button class="repeat-btn" id="repeatExposure" disabled>
+            <button
+              class="settings-btn"
+              id="repeatExposure"
+              disabled
+              style="
+                flex: 1;
+                font-size: 0.9rem;
+                font-weight: bold;
+                padding: 8px;
+              "
+            >
               Repeat Last
             </button>
           </div>
@@ -2033,8 +1449,9 @@
 
         <!-- MODIFIED ENLARGER HEIGHT CALCULATOR WITH CONTRAST CONTROL INTEGRATED -->
         <div class="incremental-timer" style="margin-top: 10px">
-          <div class="timer-status">ENLARGER & CONTRAST CALCULATOR</div>
-
+          <div class="title-sm" style="text-align: center">
+            ENLARGER & CONTRAST CALCULATOR
+          </div>
           <!-- Original Settings Section -->
           <div class="info-box">
             <div class="label-sm">Original Time (s)</div>
@@ -2164,7 +1581,16 @@
               >
                 <div class="info-box">
                   <div class="label-sm">Original F-Stop</div>
-                  <select class="fstop-select" id="originalFStop">
+                  <select
+                    class="settings-input"
+                    id="originalFStop"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
                     <option value="5.6" selected>f/5.6</option>
@@ -2177,7 +1603,16 @@
                 </div>
                 <div class="info-box">
                   <div class="label-sm">New F-Stop</div>
-                  <select class="fstop-select" id="newFStop">
+                  <select
+                    class="settings-input"
+                    id="newFStop"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
                     <option value="5.6" selected>f/5.6</option>
@@ -2205,7 +1640,16 @@
                 <!-- Original Paper Size -->
                 <div class="info-box">
                   <div class="label-sm">Original Paper Size</div>
-                  <select class="fstop-select" id="originalPaperSize">
+                  <select
+                    class="settings-input"
+                    id="originalPaperSize"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
                     <option value="0.023">5×7" (0.023 m²)</option>
@@ -2243,7 +1687,16 @@
                 <!-- New Paper Size -->
                 <div class="info-box">
                   <div class="label-sm">New Paper Size</div>
-                  <select class="fstop-select" id="newPaperSize">
+                  <select
+                    class="settings-input"
+                    id="newPaperSize"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
                     <option value="0.023">5×7" (0.023 m²)</option>
@@ -2312,7 +1765,16 @@
                 </div>
                 <div class="info-box">
                   <div class="label-sm">Contrast Filter</div>
-                  <select class="fstop-select" id="contrastFilterSelect">
+                  <select
+                    class="settings-input"
+                    id="contrastFilterSelect"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="2xY">2×Y</option>
                     <option value="Y">Y</option>
                     <option value="none" selected>No filter</option>
@@ -2350,7 +1812,16 @@
               <div class="custom-filter-header">
                 <div>
                   <div class="label-sm">Group</div>
-                  <select class="fstop-select" id="customFilterGroup">
+                  <select
+                    class="settings-input"
+                    id="customFilterGroup"
+                    style="
+                      width: 100%;
+                      text-align: center;
+                      cursor: pointer;
+                      margin-top: 8px;
+                    "
+                  >
                     <option value="0">Group A</option>
                     <option value="1">Group B</option>
                     <option value="2">Group C</option>
@@ -2386,8 +1857,8 @@
 
           <!-- Combined Factors Display -->
           <div
-            class="timer-status"
-            style="font-size: 0.65rem; margin-top: 15px"
+            class="title-sm"
+            style="text-align: center; font-size: 0.65rem; margin-top: 15px"
           >
             Factors & Time
           </div>
@@ -2493,8 +1964,12 @@
           ⓘ Uses BASE TIME from CALC tab
         </div>
 
-        <div class="chart-container">
-          <table class="time-table" id="timeTable">
+        <div style="overflow-x: auto; margin-bottom: 10px">
+          <table
+            class="time-table"
+            id="timeTable"
+            style="margin-left: -6px; margin-right: -6px"
+          >
             <thead>
               <tr>
                 <th>STOP</th>
@@ -2627,7 +2102,7 @@
             <span>METHOD</span>
             <span class="value-display" id="testMethodValue">Cumulative</span>
           </div>
-          <div class="method-selector">
+          <div class="settings-group" style="margin-top: 5px; margin-bottom: 0">
             <button class="toggle-btn active" data-method="cumulative">
               Cumulative
             </button>
@@ -2659,15 +2134,21 @@
           </div>
         </div>
 
-        <div class="result">
+        <div class="info-box">
           <div class="label-sm">TEST STRIP SEQUENCE</div>
-          <div class="result-value" id="testSequenceInfo">6 steps × ⅓ stop</div>
+          <div
+            class="value-display"
+            id="testSequenceInfo"
+            style="font-size: 1.2rem"
+          >
+            6 steps × ⅓ stop
+          </div>
           <div class="label-sm" id="testTimeRange">10.00s to 31.75s</div>
         </div>
 
         <!-- UPDATED: Instructions Panel with Auto Advance Info -->
         <div class="incremental-timer">
-          <div class="timer-status">INSTRUCTIONS</div>
+          <div class="title-sm" style="text-align: center">INSTRUCTIONS</div>
           <div id="methodInstructions">
             <div
               class="cumulative-instructions"
@@ -2720,12 +2201,17 @@
 
         <!-- Visual Test Strip Preview -->
         <div class="incremental-timer">
-          <div class="timer-status">TEST STRIP LAYOUT</div>
+          <div class="title-sm" style="text-align: center">
+            TEST STRIP LAYOUT
+          </div>
           <div class="test-strip-preview" id="testStripPreview">
             <!-- Will be populated by JavaScript -->
           </div>
-          <div class="preview-controls">
-            <div class="preview-legend">
+          <div
+            class="sound-controls"
+            style="justify-content: space-between; align-items: center"
+          >
+            <div class="shelf-life-actions" style="gap: 15px">
               <div class="legend-item">
                 <span class="legend-color" style="background: #300"></span>
                 <span class="legend-label">Exposed</span>
@@ -2735,28 +2221,46 @@
                 <span class="legend-label">Masked</span>
               </div>
             </div>
-            <div class="preview-options">
+            <div class="shelf-life-actions" style="align-items: center">
               <label class="switch">
                 <input type="checkbox" id="previewMode" checked />
                 <span class="slider-switch"></span>
               </label>
-              <span class="preview-label">Show Times</span>
+              <span class="setting-label">Show Times</span>
             </div>
           </div>
         </div>
 
         <!-- Test Strip Timer Controls -->
         <div class="incremental-timer" style="margin-top: 10px">
-          <div class="timer-status" id="testTimerStatus">
+          <div class="title-sm" id="testTimerStatus" style="text-align: center">
             READY FOR TEST STRIP
           </div>
           <div class="test-timer-display">
-            <div class="current-step-info">
+            <div
+              class="shelf-life-actions"
+              style="
+                flex: 1;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                gap: 0;
+              "
+            >
               <div class="label-sm">Current Step</div>
               <div class="value-display" id="currentStepDisplay">1/6</div>
             </div>
             <div class="timer-display" id="testTimerDisplay">10.00</div>
-            <div class="current-step-info">
+            <div
+              class="shelf-life-actions"
+              style="
+                flex: 1;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                gap: 0;
+              "
+            >
               <div class="label-sm">Time</div>
               <div class="value-display" id="currentTimeDisplay">10.00s</div>
             </div>
@@ -2764,9 +2268,9 @@
 
           <div class="test-progress-container">
             <div class="test-progress-bar" id="testProgressBar">
-              <div class="progress-fill" id="progressFill"></div>
+              <div class="progress-bar" id="progressFill"></div>
             </div>
-            <div class="test-progress-labels">
+            <div class="progress-labels">
               <span id="progressStart">10.0s</span>
               <span id="progressMiddle">19.0s</span>
               <span id="progressEnd">31.8s</span>
@@ -2775,21 +2279,21 @@
 
           <div class="sound-controls">
             <div>
-              <div class="sound-label">3s Beeps</div>
+              <div class="setting-label">3s Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="testWarningBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">Step Beeps</div>
+              <div class="setting-label">Step Beeps</div>
               <label class="switch">
                 <input type="checkbox" id="testStepBeep" checked />
                 <span class="slider-switch"></span>
               </label>
             </div>
             <div>
-              <div class="sound-label">End Beep</div>
+              <div class="setting-label">End Beep</div>
               <label class="switch">
                 <input type="checkbox" id="testEndBeep" checked />
                 <span class="slider-switch"></span>
@@ -2797,7 +2301,7 @@
             </div>
           </div>
 
-          <div class="timer-controls">
+          <div class="settings-btn-group">
             <button class="exp-btn" id="startTestStrip">
               Start Test Strip
             </button>
@@ -2826,11 +2330,17 @@
           </div>
 
           <!-- Test Strip Presets -->
-          <div class="test-presets">
-            <div class="timer-status" style="margin-bottom: 8px">
+          <div
+            class="incremental-timer"
+            style="background: var(--panel-light); margin-bottom: 0"
+          >
+            <div
+              class="title-sm"
+              style="text-align: center; margin-bottom: 8px"
+            >
               QUICK PRESETS
             </div>
-            <div class="preset-buttons">
+            <div class="settings-group">
               <button class="settings-btn" data-preset="standard">
                 Standard: 6×⅓ stop
               </button>
@@ -2857,7 +2367,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">CHEMICAL MIX CALCULATOR</div>
+              <div class="title-sm" style="text-align: center">
+                CHEMICAL MIX CALCULATOR
+              </div>
 
               <div class="control">
                 <div class="control-label">
@@ -2878,8 +2390,12 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-bottom: 8px"
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-bottom: 8px;
+                "
               >
                 DILUTION RATIO
               </div>
@@ -2905,8 +2421,13 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 10px; margin-bottom: 5px"
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-top: 10px;
+                  margin-bottom: 5px;
+                "
               >
                 OR CUSTOM RATIO
               </div>
@@ -2934,20 +2455,34 @@
                 />
               </div>
 
-              <div class="test-presets">
-                <div class="timer-status" style="font-size: 0.75rem">
+              <div
+                class="incremental-timer"
+                style="background: var(--panel-light); margin-bottom: 0"
+              >
+                <div
+                  class="title-sm"
+                  style="text-align: center; font-size: 0.75rem"
+                >
                   MIXING INSTRUCTIONS
                 </div>
                 <div class="chemical-results-grid">
-                  <div class="chemical-result-box">
+                  <div class="info-box">
                     <div class="label-sm">STOCK SOLUTION</div>
-                    <div class="chemical-result-value" id="stockVolume">
+                    <div
+                      class="value-display"
+                      id="stockVolume"
+                      style="font-size: 1.2rem"
+                    >
                       100ml
                     </div>
                   </div>
-                  <div class="chemical-result-box">
+                  <div class="info-box">
                     <div class="label-sm">WATER</div>
-                    <div class="chemical-result-value" id="waterVolume">
+                    <div
+                      class="value-display"
+                      id="waterVolume"
+                      style="font-size: 1.2rem"
+                    >
                       900ml
                     </div>
                   </div>
@@ -2970,11 +2505,11 @@
         <!-- Chemical Presets Section - NEW -->
         <section class="collapsible" data-id="chemical-presets">
           <button class="collapsible-header" aria-expanded="false">
-            CHEMICAL PRESETS
+            <div class="collapsible-title">CHEMICAL PRESETS</div>
           </button>
           <div class="collapsible-content">
-            <div class="incremental-timer">
-              <div class="timer-status">CHEMICAL PRESETS</div>
+            <div class="incremental-timer" style="margin-top: 15px">
+              <div class="title-md">Chemical Presets</div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -2995,19 +2530,14 @@
                 </div>
               </div>
 
-              <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 10px"
-              >
-                SAVED PRESETS
-              </div>
+              <div class="title-md">Saved Chemical Presets</div>
               <div class="shelf-life-list" id="chemicalPresetList">
                 <!-- Chemical presets will be listed here -->
               </div>
 
-              <div class="settings-btn-group" style="margin-top: 10px">
+              <div class="settings-btn-group">
                 <button class="settings-btn danger" id="clearChemicalPresets">
-                  Clear All Chemical Presets
+                  Clear All
                 </button>
               </div>
             </div>
@@ -3021,7 +2551,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">DEVELOPER CAPACITY TRACKER</div>
+              <div class="title-sm" style="text-align: center">
+                DEVELOPER CAPACITY TRACKER
+              </div>
 
               <div class="control">
                 <div class="control-label">
@@ -3057,7 +2589,7 @@
 
               <!-- NEW: Paper Size Selector -->
               <div class="paper-size-selector">
-                <div class="paper-size-buttons">
+                <div class="dilution-selector">
                   <button class="toggle-btn" data-size="0.011">
                     3.5x5" (0.011 m²)
                   </button>
@@ -3080,7 +2612,7 @@
                   </button>
                   <!-- CHANGED -->
                 </div>
-                <div class="custom-paper-size">
+                <div class="custom-dilution">
                   <!-- Chemical tab capacity tracker custom paper size -->
                   <input
                     type="number"
@@ -3096,9 +2628,15 @@
                 </div>
               </div>
 
-              <div class="result" style="margin: 10px 0">
+              <div class="info-box" style="margin: 10px 0">
                 <div class="label-sm">MAX PRINTS THIS BATCH</div>
-                <div class="result-value" id="maxPrintsValue">6</div>
+                <div
+                  class="value-display"
+                  id="maxPrintsValue"
+                  style="font-size: 1.2rem"
+                >
+                  6
+                </div>
                 <div class="label-sm" id="printsRemaining">
                   6 prints remaining (0.48 m²)
                 </div>
@@ -3152,7 +2690,9 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer">
-              <div class="timer-status">SHELF LIFE TRACKER</div>
+              <div class="title-sm" style="text-align: center">
+                SHELF LIFE TRACKER
+              </div>
 
               <div class="settings-group" style="margin-top: 10px">
                 <div class="settings-item">
@@ -3215,8 +2755,8 @@
               </div>
 
               <div
-                class="timer-status"
-                style="font-size: 0.75rem; margin-top: 15px"
+                class="title-sm"
+                style="text-align: center; font-size: 0.75rem; margin-top: 15px"
               >
                 ACTIVE CHEMICALS
               </div>
@@ -3245,11 +2785,19 @@
 
       <!-- Timer Tab with Photo Wash Toggle AND Timer Profiles -->
       <div id="timer" class="tab-content">
-        <div class="timer-settings">
+        <div
+          class="incremental-timer"
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0;
+            margin-bottom: 10px;
+            padding: 6px 8px;
+          "
+        >
           <div class="setting-item">
             <div class="setting-label">
-              <span class="full-text">Auto</span>
-              <span class="short-text">Auto</span>
+              <span>Auto</span>
             </div>
             <label class="switch">
               <input type="checkbox" id="autoStart" checked />
@@ -3258,8 +2806,7 @@
           </div>
           <div class="setting-item">
             <div class="setting-label">
-              <span class="full-text">End Beep</span>
-              <span class="short-text">End</span>
+              <span>End Beep</span>
             </div>
             <label class="switch">
               <input type="checkbox" id="endBeep" checked />
@@ -3268,8 +2815,7 @@
           </div>
           <div class="setting-item">
             <div class="setting-label">
-              <span class="full-text">10s Beep</span>
-              <span class="short-text">10s</span>
+              <span>10s Beep</span>
             </div>
             <label class="switch">
               <input type="checkbox" id="warningBeep" checked />
@@ -3278,8 +2824,7 @@
           </div>
           <div class="setting-item">
             <div class="setting-label">
-              <span class="full-text">Photo Wash</span>
-              <span class="short-text">Flo</span>
+              <span>Photo Wash</span>
             </div>
             <label class="switch">
               <input type="checkbox" id="photoFloToggle" checked />
@@ -3398,7 +2943,7 @@
           </div>
         </div>
 
-        <div class="global-controls">
+        <div class="settings-btn-group">
           <button class="settings-btn" id="startAll">Start All</button>
           <button class="settings-btn" id="resetAll">Reset All</button>
         </div>
@@ -3409,7 +2954,7 @@
             <div class="collapsible-title">TIMER PROFILES</div>
           </button>
           <div class="collapsible-content">
-            <div class="settings-section" style="margin-top: 15px">
+            <div class="incremental-timer" style="margin-top: 15px">
               <div class="title-md">Timer Profiles</div>
 
               <div class="settings-group">
@@ -3438,7 +2983,7 @@
 
               <div class="settings-btn-group">
                 <button class="settings-btn danger" id="clearTimerProfiles">
-                  Clear All Timer Profiles
+                  Clear All
                 </button>
               </div>
             </div>
@@ -3451,8 +2996,11 @@
         <div class="incremental-timer">
           <div class="settings-section">
             <div class="title-md">Relay Control (Manual)</div>
-            <div class="test-presets">
-              <div class="relay-item">
+            <div
+              class="incremental-timer"
+              style="background: var(--panel-light); margin-bottom: 0"
+            >
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 1 (GPIO 25)</div>
@@ -3467,7 +3015,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="1"
                       data-gpio="25"
                       id="toggleRelay1"
@@ -3478,7 +3027,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 2 (GPIO 17)</div>
@@ -3493,7 +3042,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="2"
                       data-gpio="17"
                       id="toggleRelay2"
@@ -3504,7 +3054,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 3 (GPIO 27)</div>
@@ -3519,7 +3069,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="3"
                       data-gpio="27"
                       id="toggleRelay3"
@@ -3530,7 +3081,7 @@
                 </div>
               </div>
 
-              <div class="relay-item">
+              <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Relay 4 (GPIO 22)</div>
@@ -3545,7 +3096,8 @@
                   <div class="settings-item">
                     <div class="settings-label">State</div>
                     <button
-                      class="settings-btn relay-toggle-btn"
+                      class="settings-btn"
+                      style="min-width: 80px"
                       data-relay="4"
                       data-gpio="22"
                       id="toggleRelay4"
@@ -3630,7 +3182,15 @@
           <!-- Fullscreen Section -->
           <div class="settings-section">
             <div class="title-md">Display</div>
-            <button class="fullscreen-btn" id="toggleFullscreen">
+            <button
+              class="settings-btn primary"
+              id="toggleFullscreen"
+              style="
+                padding: 8px 16px;
+                text-transform: uppercase;
+                margin-top: 10px;
+              "
+            >
               Toggle Fullscreen
             </button>
             <div
@@ -3644,7 +3204,7 @@
               Press F11 for desktop fullscreen
             </div>
             <div class="title-md">Color Scheme</div>
-            <div class="color-scheme-selector">
+            <div class="dilution-selector">
               <button class="toggle-btn active" data-scheme="dark">
                 Darkroom (Default)
               </button>
@@ -4043,11 +3603,11 @@
           <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
           <div class="settings-section">
             <div class="title-md">Profile & Chemical Presets Sharing</div>
-            <div class="json-buttons">
-              <button class="json-btn" id="exportAllProfiles">
+            <div class="settings-btn-group">
+              <button class="settings-btn" id="exportAllProfiles">
                 Export All Data
               </button>
-              <button class="json-btn" id="importAllProfiles">
+              <button class="settings-btn" id="importAllProfiles">
                 Import All Data
               </button>
             </div>
@@ -4132,6 +3692,16 @@
         CAPACITY_TRACKER: "darkroom_timer_capacity_tracker",
         SHELF_LIFE: "darkroom_timer_shelf_life",
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
+      };
+
+      // Application configuration - constants to eliminate magic numbers
+      const CONFIG = {
+        AUDIO: {
+          BEEP_FREQUENCY_HZ: 600,
+          BEEP_DURATION_SEC: 0.3,
+          BEEP_VOLUME: 0.3,
+          FEEDBACK_TIMEOUT_MS: 3000,
+        },
       };
 
       // Default settings - UPDATED with countdown settings AND auto advance
@@ -4377,8 +3947,44 @@
           return this.running;
         }
       }
+      // Application State - Single Source of Truth Pattern
+      // =====================================================
+      // STATE MANAGEMENT ARCHITECTURE:
+      //
+      // 1. TRANSIENT UI STATE (appState.ui)
+      //    - activeTab, timerStatus
+      //    - Never persisted to localStorage
+      //    - Reset on page reload
+      //    - Updated during user interactions
+      //
+      // 2. RUNTIME STATE (appState.calculator, appState.timers)
+      //    - Timer values, calculator state, countdown flags
+      //    - Transient (not persisted)
+      //    - Cleared/reset on page reload
+      //    - Source of truth for current timer/calc display
+      //
+      // 3. PERSISTENT UI SELECTIONS (appState.persistent)
+      //    - currentProfile, currentChemicalPreset
+      //    - Persisted via StorageManager.save*()
+      //    - Loaded on page start via SettingsManager/ChemicalManager constructors
+      //    - SINGLE SOURCE OF TRUTH - accessed via helper methods:
+      //      SettingsManager: getCurrentProfile(), setCurrentProfile()
+      //      ChemicalManager: getCurrentPreset(), setCurrentPreset()
+      //
+      // 4. SETTINGS (appState.settings)
+      //    - User preferences and configuration
+      //    - Persisted via StorageManager.saveSettings()
+      //    - Synced from StorageManager on init
+      //    - Single copy kept in this.settings on SettingsManager
+      //
+      // REDUNDANCY PREVENTION:
+      // - NO instance properties for currentProfile/currentPreset
+      // - Use appState.persistent for truth instead
+      // - Helper methods ensure consistency with StorageManager
+      // - All reads go through appState, all writes sync to StorageManager
+      //
       const appState = {
-        // Calculator state
+        // Calculator state (runtime/transient)
         calculator: {
           baseTime: 10.0,
           currentStop: 0,
@@ -4392,7 +3998,7 @@
           lastExposureTime: 10.0,
         },
 
-        // Timer states
+        // Timer states (runtime/transient)
         timers: {
           Dev: {
             timeLeft: 60,
@@ -4420,7 +4026,7 @@
           },
         },
 
-        // Settings state (shared between UI and runtime)
+        // Settings state (persisted + synced from StorageManager)
         settings: {
           colorScheme: "dark",
           calcWarningBeep: true,
@@ -4438,7 +4044,13 @@
           stopDenominator: 3,
         },
 
-        // UI state
+        // Persistent UI selections (loaded from StorageManager)
+        persistent: {
+          currentProfile: null, // Currently loaded timer profile
+          currentChemicalPreset: null, // Currently loaded chemical preset
+        },
+
+        // Transient UI state (not persisted)
         ui: {
           activeTab: "calculator",
           timerStatus: "READY FOR EXPOSURE",
@@ -4601,6 +4213,33 @@
       const tabButtons = document.querySelectorAll(".tab-button");
       const tabContents = document.querySelectorAll(".tab-content");
 
+      // Generic feedback display helper - consolidates showAllProfilesFeedback and showShelfLifeFeedback
+      function showFeedback(elementId, message, type = "info") {
+        const feedbackElement = document.getElementById(elementId);
+        if (feedbackElement) {
+          feedbackElement.textContent = message;
+          feedbackElement.className = `feedback ${type}`;
+          feedbackElement.style.display = "block";
+          setTimeout(() => {
+            feedbackElement.style.display = "none";
+          }, CONFIG.AUDIO.FEEDBACK_TIMEOUT_MS);
+        }
+      }
+
+      function refreshCollapsibleHeights(container = document) {
+        const sections = container.querySelectorAll(".collapsible");
+        sections.forEach((sec) => {
+          const header = sec.querySelector(".collapsible-header");
+          const content = sec.querySelector(".collapsible-content");
+          if (!header || !content) return;
+
+          const expanded = header.getAttribute("aria-expanded") === "true";
+          content.style.maxHeight = expanded
+            ? content.scrollHeight + "px"
+            : "0px";
+        });
+      }
+
       function switchTab(tabId) {
         tabButtons.forEach((btn) => btn.classList.remove("active"));
         tabContents.forEach((content) => content.classList.remove("active"));
@@ -4611,7 +4250,11 @@
           }
         });
 
-        document.getElementById(tabId).classList.add("active");
+        const activeTab = document.getElementById(tabId);
+        if (activeTab) {
+          activeTab.classList.add("active");
+          refreshCollapsibleHeights(activeTab);
+        }
 
         if (tabId === "chart") {
           updateChart();
@@ -4705,7 +4348,6 @@
       });
 
       // Legacy audio wrapper for backward compatibility
-      let globalAudioContext = null; // Deprecated
 
       function initAudioContext() {
         // Deprecated - AudioService handles this now
@@ -4717,9 +4359,27 @@
       }
 
       // Legacy playBeep wrapper - redirects to AudioService
-      function playBeep(frequency = 800, duration = 0.1, volume = 0.3) {
+      function playBeep(
+        frequency = CONFIG.AUDIO.BEEP_FREQUENCY_HZ,
+        duration = CONFIG.AUDIO.BEEP_DURATION_SEC,
+        volume = CONFIG.AUDIO.BEEP_VOLUME
+      ) {
         if (audioService) {
           audioService.playBeep(frequency, duration, volume);
+        }
+      }
+
+      // Wrapper for audio preset playback - standardized pattern
+      function playPreset(presetName) {
+        if (audioService) {
+          audioService.playPreset(presetName);
+        }
+      }
+
+      // Wrapper for countdown beep patterns - standardized pattern
+      function playCountdownBeep(secondsRemaining) {
+        if (audioService) {
+          audioService.playCountdownBeep(secondsRemaining);
         }
       }
 
@@ -4938,7 +4598,7 @@
             ) {
               const box = document.getElementById(`timer${this.name}`);
               if (box) box.classList.add("warning");
-              audioService?.playPreset("timerWarning");
+              playPreset("timerWarning");
               this.warningPlayed = true;
             }
 
@@ -4979,7 +4639,7 @@
           this.render();
 
           if (appState.settings.timerEndBeep && this.state.isEnabled) {
-            audioService?.playPreset("timerComplete");
+            playPreset("timerComplete");
           }
 
           // Auto-start next timer
@@ -5081,7 +4741,7 @@
               (pattern === "last5" && this.countdownValue <= 5);
 
             if (shouldBeep) {
-              audioService?.playCountdownBeep(this.countdownValue);
+              playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -5155,8 +4815,8 @@
             }
 
             if (shouldBeep) {
-              // Use AudioService countdown beep with time-based patterns
-              audioService?.playCountdownBeep(this.countdownValue);
+              // Use countdown beep with time-based patterns
+              playCountdownBeep(this.countdownValue);
             }
           }
 
@@ -5175,7 +4835,7 @@
 
           // Final beep
           if (this.beepEnabled) {
-            audioService?.playPreset("countdownComplete");
+            playPreset("countdownComplete");
           }
 
           // Restore display
@@ -5227,8 +4887,11 @@
         constructor() {
           this.settings = StorageManager.loadSettings();
           this.profiles = StorageManager.loadProfiles();
-          this.currentProfile = StorageManager.loadCurrentProfile();
           this.colorScheme = StorageManager.loadColorScheme();
+
+          // Load persistent UI state into appState (single source of truth)
+          appState.persistent.currentProfile =
+            StorageManager.loadCurrentProfile();
 
           // Sync loaded settings to appState
           Object.assign(appState.settings, this.settings);
@@ -5253,6 +4916,8 @@
             window.chemicalManager.shelfLifeData =
               StorageManager.loadShelfLife();
           }
+
+          // Clear button listener is set up via global delegation in DOMContentLoaded
         }
 
         applySoundSettings() {
@@ -5306,6 +4971,17 @@
           }
         }
 
+        // Get currently loaded profile name from appState (single source of truth)
+        getCurrentProfile() {
+          return appState.persistent.currentProfile;
+        }
+
+        // Set currently loaded profile in appState and persist to storage
+        setCurrentProfile(profileName) {
+          appState.persistent.currentProfile = profileName;
+          StorageManager.saveCurrentProfile(profileName);
+        }
+
         // Read current UI settings into this.settings
         readSettingsFromUI() {
           this.settings = {
@@ -5328,7 +5004,6 @@
               .checked,
             defaultPhotoFlo: document.getElementById("settingDefaultPhotoFlo")
               .checked,
-            currentProfile: this.currentProfile,
             colorScheme: this.colorScheme,
             countdownDelay: parseInt(
               document.getElementById("settingCountdownDelay").value
@@ -5584,15 +5259,160 @@
           } catch (e) {}
         }
 
-        saveCurrentProfile(name) {
+        // Generic save preset/profile helper
+        savePreset(config) {
+          const {
+            name,
+            dataObject,
+            collection,
+            storageMethod,
+            updateListMethod,
+            feedbackMethod,
+            feedbackButton,
+            successMessage,
+          } = config;
+
           if (!name || name.trim() === "") {
-            this.showAllProfilesFeedback(
-              "Please enter a profile name",
-              "error"
-            );
+            if (feedbackMethod) {
+              feedbackMethod("Please enter a name", "error");
+            } else {
+              alert("Please enter a name");
+            }
             return false;
           }
 
+          const preset = {
+            name: name.trim(),
+            ...dataObject,
+            date: new Date().toISOString(),
+          };
+
+          const existingIndex = collection.findIndex(
+            (p) => p.name === preset.name
+          );
+          if (existingIndex >= 0) {
+            collection[existingIndex] = preset;
+          } else {
+            collection.push(preset);
+          }
+
+          if (storageMethod(collection)) {
+            if (updateListMethod) updateListMethod();
+
+            // Feedback handling
+            if (feedbackMethod) {
+              feedbackMethod(
+                successMessage || `"${preset.name}" saved!`,
+                "success"
+              );
+            } else if (feedbackButton) {
+              playBeep(800, 0.3, 0.3);
+              const originalText = feedbackButton.textContent;
+              feedbackButton.textContent = "Saved!";
+              feedbackButton.classList.add("active");
+              setTimeout(() => {
+                feedbackButton.textContent = originalText;
+                feedbackButton.classList.remove("active");
+              }, 1000);
+            }
+            return true;
+          }
+          return false;
+        }
+
+        // Generic delete preset/profile helper
+        deletePreset(config) {
+          const {
+            name,
+            collection,
+            storageMethod,
+            updateListMethod,
+            feedbackMethod,
+            confirmMessage,
+            successMessage,
+            onDeleteCallback,
+          } = config;
+
+          if (confirm(confirmMessage || `Delete "${name}"?`)) {
+            const newCollection = collection.filter((p) => p.name !== name);
+            collection.length = 0;
+            collection.push(...newCollection);
+
+            if (onDeleteCallback) onDeleteCallback();
+
+            if (storageMethod(collection)) {
+              if (updateListMethod) updateListMethod();
+              if (feedbackMethod) {
+                feedbackMethod(
+                  successMessage || `"${name}" deleted!`,
+                  "success"
+                );
+              }
+              playBeep(400, 0.3, 0.3);
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // Generic render preset list helper
+        renderPresetList(config) {
+          const { listElement, collection, currentItem, renderItemContent } =
+            config;
+
+          if (!listElement) return;
+
+          listElement.innerHTML = "";
+
+          collection.forEach((item) => {
+            const itemDiv = document.createElement("div");
+            itemDiv.className = `shelf-life-item ${
+              currentItem === item.name ? "active" : ""
+            }`;
+
+            itemDiv.innerHTML = renderItemContent(item);
+            listElement.appendChild(itemDiv);
+          });
+        }
+
+        // Generic clear all presets helper
+        clearAllPresets(config) {
+          const {
+            collection,
+            storageMethod,
+            updateListMethod,
+            feedbackMethod,
+            confirmMessage,
+            successMessage,
+            onClearCallback,
+          } = config;
+
+          if (
+            confirm(
+              confirmMessage || "Delete ALL items? This cannot be undone!"
+            )
+          ) {
+            collection.length = 0;
+
+            if (onClearCallback) onClearCallback();
+
+            if (storageMethod(collection)) {
+              if (updateListMethod) updateListMethod();
+              if (feedbackMethod) {
+                feedbackMethod(
+                  successMessage || "All items deleted!",
+                  "success"
+                );
+              } else {
+                playBeep(600, 0.5, 0.3);
+              }
+              return true;
+            }
+          }
+          return false;
+        }
+
+        saveCurrentProfile(name) {
           // Get current timer times from timer objects
           const currentTimes = {};
           if (timerManager && timerManager.timers) {
@@ -5601,30 +5421,21 @@
             });
           }
 
-          const existingIndex = this.profiles.findIndex((p) => p.name === name);
-          const profile = {
-            name: name.trim(),
-            times: currentTimes,
-            date: new Date().toISOString(),
-          };
+          const result = this.savePreset({
+            name,
+            dataObject: { times: currentTimes },
+            collection: this.profiles,
+            storageMethod: (profiles) => StorageManager.saveProfiles(profiles),
+            updateListMethod: () => this.updateTimerProfileListUI(),
+            feedbackMethod: (msg, type) =>
+              this.showAllProfilesFeedback(msg, type),
+            successMessage: `Profile "${name}" saved!`,
+          });
 
-          if (existingIndex >= 0) {
-            this.profiles[existingIndex] = profile;
-          } else {
-            this.profiles.push(profile);
+          if (result) {
+            this.setCurrentProfile(name.trim());
           }
-
-          if (StorageManager.saveProfiles(this.profiles)) {
-            this.currentProfile = profile.name;
-            StorageManager.saveCurrentProfile(profile.name);
-            this.updateTimerProfileListUI(); // Update both lists
-            this.showAllProfilesFeedback(
-              `Profile "${profile.name}" saved!`,
-              "success"
-            );
-            return true;
-          }
-          return false;
+          return result;
         }
 
         loadProfile(profile) {
@@ -5651,11 +5462,10 @@
             });
           }
 
-          this.currentProfile = profile.name;
-          StorageManager.saveCurrentProfile(profile.name);
+          this.setCurrentProfile(profile.name);
           this.updateTimerProfileListUI();
 
-          // Note: Shelf life data is loaded separately via importAllData
+          playBeep(600, 0.3, 0.3);
           this.showAllProfilesFeedback(
             `Profile "${profile.name}" loaded!`,
             "success"
@@ -5664,39 +5474,36 @@
         }
 
         deleteProfile(profileName) {
-          if (confirm(`Delete profile "${profileName}"?`)) {
-            this.profiles = this.profiles.filter((p) => p.name !== profileName);
-
-            if (this.currentProfile === profileName) {
-              this.currentProfile = null;
-              StorageManager.saveCurrentProfile(null);
-            }
-
-            if (StorageManager.saveProfiles(this.profiles)) {
-              this.updateTimerProfileListUI(); // Update both lists
-              this.showAllProfilesFeedback(
-                `Profile "${profileName}" deleted!`,
-                "success"
-              );
-              return true;
-            }
-          }
-          return false;
+          return this.deletePreset({
+            name: profileName,
+            collection: this.profiles,
+            storageMethod: (profiles) => StorageManager.saveProfiles(profiles),
+            updateListMethod: () => this.updateTimerProfileListUI(),
+            feedbackMethod: (msg, type) =>
+              this.showAllProfilesFeedback(msg, type),
+            confirmMessage: `Delete profile "${profileName}"?`,
+            successMessage: `Profile "${profileName}" deleted!`,
+            onDeleteCallback: () => {
+              if (this.getCurrentProfile() === profileName) {
+                this.setCurrentProfile(null);
+              }
+            },
+          });
         }
 
         clearAllProfiles() {
-          if (confirm("Delete ALL timer profiles? This cannot be undone!")) {
-            this.profiles = [];
-            this.currentProfile = null;
-            StorageManager.saveProfiles([]);
-            StorageManager.saveCurrentProfile(null);
-            this.updateTimerProfileListUI(); // Update timer tab UI
-            this.showAllProfilesFeedback(
-              "All timer profiles deleted!",
-              "success"
-            );
-            return true;
-          }
+          return this.clearAllPresets({
+            collection: this.profiles,
+            storageMethod: () => StorageManager.saveProfiles([]),
+            updateListMethod: () => this.updateTimerProfileListUI(),
+            feedbackMethod: (msg, type) =>
+              this.showAllProfilesFeedback(msg, type),
+            confirmMessage: "Delete ALL timer profiles? This cannot be undone!",
+            successMessage: "All timer profiles deleted!",
+            onClearCallback: () => {
+              this.setCurrentProfile(null);
+            },
+          });
         }
 
         resetAllSettings() {
@@ -5708,7 +5515,7 @@
             StorageManager.clearAll();
             this.settings = { ...DEFAULT_SETTINGS };
             this.profiles = [];
-            this.currentProfile = null;
+            this.setCurrentProfile(null);
             this.colorScheme = "dark";
             this.applyColorScheme();
             this.applySoundSettings();
@@ -6010,50 +5817,40 @@
           }
         }
 
-        showAllProfilesFeedback(message, type) {
-          const feedback = document.getElementById("allProfilesFeedback");
-          feedback.textContent = message;
-          feedback.className = `json-feedback json-${type}`;
-          feedback.style.display = "block";
-
-          setTimeout(() => {
-            feedback.style.display = "none";
-          }, 3000);
+        showAllProfilesFeedback(message, type = "info") {
+          showFeedback("allProfilesFeedback", message, type);
         }
 
         updateTimerProfileListUI() {
           const profileList = document.getElementById("timerProfileList");
           if (!profileList) return;
 
-          profileList.innerHTML = "";
+          this.renderPresetList({
+            listElement: profileList,
+            collection: this.profiles,
+            currentItem: this.getCurrentProfile(),
+            renderItemContent: (profile) => {
+              let timeStr = "";
+              if (profile.times) {
+                const devTime = profile.times.Dev || DEFAULT_TIMER_TIMES.Dev;
+                const stopTime = profile.times.Stop || DEFAULT_TIMER_TIMES.Stop;
+                const fixTime = profile.times.Fix || DEFAULT_TIMER_TIMES.Fix;
 
-          this.profiles.forEach((profile) => {
-            const item = document.createElement("div");
-            item.className = `shelf-life-item ${
-              this.currentProfile === profile.name ? "active" : ""
-            }`;
+                const devMin = Math.floor(devTime / 60);
+                const devSec = devTime % 60;
+                const fixMin = Math.floor(fixTime / 60);
+                const fixSec = fixTime % 60;
 
-            let timeStr = "";
-            if (profile.times) {
-              const devTime = profile.times.Dev || DEFAULT_TIMER_TIMES.Dev;
-              const stopTime = profile.times.Stop || DEFAULT_TIMER_TIMES.Stop;
-              const fixTime = profile.times.Fix || DEFAULT_TIMER_TIMES.Fix;
+                timeStr = `Dev:${devMin}:${devSec
+                  .toString()
+                  .padStart(2, "0")} Stop:${stopTime}s Fix:${fixMin}:${fixSec
+                  .toString()
+                  .padStart(2, "0")}`;
+              } else {
+                timeStr = "No times saved";
+              }
 
-              const devMin = Math.floor(devTime / 60);
-              const devSec = devTime % 60;
-              const fixMin = Math.floor(fixTime / 60);
-              const fixSec = fixTime % 60;
-
-              timeStr = `Dev:${devMin}:${devSec
-                .toString()
-                .padStart(2, "0")} Stop:${stopTime}s Fix:${fixMin}:${fixSec
-                .toString()
-                .padStart(2, "0")}`;
-            } else {
-              timeStr = "No times saved";
-            }
-
-            item.innerHTML = `
+              return `
                         <div>
                             <strong>${profile.name}</strong>
                             <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(
@@ -6062,19 +5859,16 @@
                             <div style="font-size: 0.6rem; color: #600;">${timeStr}</div>
                         </div>
                         <div class="shelf-life-actions">
-                            <button class="shelf-life-btn load-timer-profile" data-name="${
+                            <button class="btn-action load-btn" data-context="profile" data-name="${
                               profile.name
                             }">Load</button>
-                            <button class="shelf-life-btn delete delete-timer-profile" data-name="${
+                            <button class="btn-action delete-btn" data-context="profile" data-name="${
                               profile.name
                             }">Delete</button>
                         </div>
                     `;
-
-            profileList.appendChild(item);
+            },
           });
-
-          // Event handlers now via delegation - no individual listeners needed
         }
       }
 
@@ -6085,6 +5879,7 @@
           this.dilutionRatio = "1+9";
           this.customStockParts = 1;
           this.customWaterParts = 9;
+          // Note: currentPreset is now stored in appState.persistent.currentChemicalPreset
           this.capacityData = StorageManager.loadCapacityTracker();
           this.shelfLifeData = StorageManager.loadShelfLife();
           this.chemicalPresets = StorageManager.loadChemicalPresets();
@@ -6104,6 +5899,16 @@
               this.customChemicalNameContainer.style.display = "none";
             }
           });
+        }
+
+        // Get currently loaded chemical preset name from appState (single source of truth)
+        getCurrentPreset() {
+          return appState.persistent.currentChemicalPreset;
+        }
+
+        // Set currently loaded chemical preset in appState
+        setCurrentPreset(presetName) {
+          appState.persistent.currentChemicalPreset = presetName;
         }
 
         init() {
@@ -6279,49 +6084,31 @@
 
         saveChemicalPreset() {
           const name = this.chemicalPresetNameInput.value.trim();
-          if (!name) {
-            alert("Please enter a preset name");
-            return;
+
+          const result = settingsManager.savePreset({
+            name,
+            dataObject: {
+              totalVolume: this.totalVolume,
+              dilutionRatio: this.dilutionRatio,
+              customStockParts: this.customStockParts,
+              customWaterParts: this.customWaterParts,
+            },
+            collection: this.chemicalPresets,
+            storageMethod: (presets) =>
+              StorageManager.saveChemicalPresets(presets),
+            updateListMethod: () => this.updateChemicalPresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            successMessage: `Preset "${name}" saved!`,
+          });
+
+          if (result) {
+            this.chemicalPresetNameInput.value = "";
           }
-
-          const preset = {
-            name: name,
-            totalVolume: this.totalVolume,
-            dilutionRatio: this.dilutionRatio,
-            customStockParts: this.customStockParts,
-            customWaterParts: this.customWaterParts,
-            date: new Date().toISOString(),
-          };
-
-          // Check if preset already exists
-          const existingIndex = this.chemicalPresets.findIndex(
-            (p) => p.name === name
-          );
-          if (existingIndex >= 0) {
-            this.chemicalPresets[existingIndex] = preset;
-          } else {
-            this.chemicalPresets.push(preset);
-          }
-
-          StorageManager.saveChemicalPresets(this.chemicalPresets);
-          this.updateChemicalPresetList();
-
-          // Clear input and show feedback
-          this.chemicalPresetNameInput.value = "";
-          playBeep(800, 0.3, 0.3);
-
-          const btn = this.saveChemicalPresetBtn;
-          const originalText = btn.textContent;
-          btn.textContent = "Saved!";
-          btn.classList.add("active");
-
-          setTimeout(() => {
-            btn.textContent = originalText;
-            btn.classList.remove("active");
-          }, 1000);
         }
 
         loadChemicalPreset(preset) {
+          this.setCurrentPreset(preset.name);
           this.totalVolumeSlider.value = preset.totalVolume;
           this.totalVolume = preset.totalVolume;
 
@@ -6344,57 +6131,80 @@
           }
 
           this.updateMixCalculator();
+          this.updateChemicalPresetList();
           playBeep(600, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Preset "${preset.name}" loaded!`,
+            "success"
+          );
+          return true;
         }
 
         deleteChemicalPreset(presetName) {
-          if (confirm(`Delete chemical preset "${presetName}"?`)) {
-            this.chemicalPresets = this.chemicalPresets.filter(
-              (p) => p.name !== presetName
-            );
-            StorageManager.saveChemicalPresets(this.chemicalPresets);
-            this.updateChemicalPresetList();
-            playBeep(400, 0.3, 0.3);
-          }
+          return settingsManager.deletePreset({
+            name: presetName,
+            collection: this.chemicalPresets,
+            storageMethod: (presets) =>
+              StorageManager.saveChemicalPresets(presets),
+            updateListMethod: () => this.updateChemicalPresetList(),
+            confirmMessage: `Delete preset "${presetName}"?`,
+            successMessage: `Preset "${presetName}" deleted!`,
+            onDeleteCallback: () => {
+              if (this.getCurrentPreset() === presetName) {
+                this.setCurrentPreset(null);
+              }
+            },
+          });
         }
 
         updateChemicalPresetList() {
-          this.chemicalPresetList.innerHTML = "";
+          settingsManager.renderPresetList({
+            listElement: this.chemicalPresetList,
+            collection: this.chemicalPresets,
+            currentItem: this.getCurrentPreset(),
+            renderItemContent: (preset) => {
+              const ratio = preset.dilutionRatio
+                ? `Ratio: ${preset.dilutionRatio}`
+                : `Custom: ${preset.customStockParts}+${preset.customWaterParts}`;
 
-          this.chemicalPresets.forEach((preset) => {
-            const item = document.createElement("div");
-            item.className = "chemical-preset-item";
-
-            const ratio = preset.dilutionRatio
-              ? `Ratio: ${preset.dilutionRatio}`
-              : `Custom: ${preset.customStockParts}+${preset.customWaterParts}`;
-
-            item.innerHTML = `
+              return `
                         <div>
                             <strong>${preset.name}</strong>
-                            <div style="font-size: 0.65rem; color: var(--text-secondary);">
-                                ${ratio} • ${preset.totalVolume}ml
-                            </div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(
+                              preset.date
+                            ).toLocaleDateString()}</div>
+                            <div style="font-size: 0.6rem; color: #600;">${ratio} • ${
+                preset.totalVolume
+              }ml</div>
                         </div>
-                        <div class="chemical-preset-actions">
-                            <button class="chemical-preset-btn load-chemical-preset" data-name="${preset.name}">Load</button>
-                            <button class="chemical-preset-btn delete-chemical-preset" data-name="${preset.name}">Del</button>
+                        <div class="shelf-life-actions">
+                            <button class="btn-action load-btn" data-context="preset" data-name="${
+                              preset.name
+                            }">Load</button>
+                            <button class="btn-action delete-btn" data-context="preset" data-name="${
+                              preset.name
+                            }">Delete</button>
                         </div>
                     `;
-
-            this.chemicalPresetList.appendChild(item);
+            },
           });
-
-          // Event handlers now via delegation - no individual listeners needed
         }
 
         clearChemicalPresets() {
-          if (confirm("Delete ALL chemical presets?")) {
-            this.chemicalPresets = [];
-            StorageManager.saveChemicalPresets(this.chemicalPresets);
-            this.updateChemicalPresetList();
-            playBeep(600, 0.5, 0.3);
-          }
+          return settingsManager.clearAllPresets({
+            collection: this.chemicalPresets,
+            storageMethod: (presets) =>
+              StorageManager.saveChemicalPresets(presets),
+            updateListMethod: () => this.updateChemicalPresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            confirmMessage:
+              "Delete ALL chemical presets? This cannot be undone!",
+            successMessage: "All chemical presets deleted!",
+            onClearCallback: () => {
+              this.setCurrentPreset(null);
+            },
+          });
         }
 
         // UPDATED: Paper area based capacity calculations
@@ -6652,10 +6462,10 @@
                         <div style="text-align: right;">
                             <div class="shelf-life-days ${statusClass}">${statusText}</div>
                             <div class="shelf-life-actions">
-                                <button class="shelf-life-btn renew-chemical" data-id="${
+                                <button class="btn-action renew-btn" data-context="chemical" data-id="${
                                   chemical.id
                                 }">Renew</button>
-                                <button class="shelf-life-btn delete-chemical" data-id="${
+                                <button class="btn-action delete-btn" data-context="chemical" data-id="${
                                   chemical.id
                                 }">Delete</button>
                             </div>
@@ -7267,13 +7077,15 @@
         }
 
         updateRelayButtons() {
-          document.querySelectorAll(".relay-toggle-btn").forEach((btn) => {
-            const relayNum = parseInt(btn.getAttribute("data-relay"));
-            const state = this.relayStates[relayNum];
+          document
+            .querySelectorAll(".settings-btn[data-relay]")
+            .forEach((btn) => {
+              const relayNum = parseInt(btn.getAttribute("data-relay"));
+              const state = this.relayStates[relayNum];
 
-            btn.textContent = state ? "ON" : "OFF";
-            btn.classList.toggle("on", state);
-          });
+              btn.textContent = state ? "ON" : "OFF";
+              btn.classList.toggle("on", state);
+            });
         }
 
         updateStatus(message, type = "info") {
@@ -7514,9 +7326,9 @@
           // Apply settings if available
           if (settingsManager) {
             // Apply saved profile if exists
-            if (settingsManager.currentProfile) {
+            if (appState.persistent.currentProfile) {
               const profile = settingsManager.profiles.find(
-                (p) => p.name === settingsManager.currentProfile
+                (p) => p.name === appState.persistent.currentProfile
               );
               if (profile && profile.times) {
                 this.timers.forEach((timer) => {
@@ -7764,7 +7576,7 @@
             : "EXPOSURE STOPPED";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         // Repeat last exposure method
@@ -7787,7 +7599,7 @@
           appState.ui.timerStatus = "READY TO REPEAT";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         updateFromSliders() {
@@ -7921,7 +7733,7 @@
                   currentSecond > 0
                 ) {
                   this.lastBeepSecond = currentSecond;
-                  audioService?.playPreset("calcWarning");
+                  playPreset("calcWarning");
                   document
                     .getElementById("calcTimerDisplay")
                     .classList.add("warning");
@@ -7951,7 +7763,7 @@
           appState.ui.timerStatus = "EXPOSURE PAUSED";
           this.render();
 
-          audioService?.playPreset("pause");
+          playPreset("pause");
         }
 
         resume() {
@@ -7981,7 +7793,7 @@
           this.accumulatedTime = this.currentTotalTime;
 
           if (appState.settings.calcEndBeep) {
-            audioService?.playPreset("calcComplete");
+            playPreset("calcComplete");
           }
 
           appState.ui.timerStatus = "EXPOSURE COMPLETE";
@@ -9108,14 +8920,10 @@
             );
             this.totalTestTimeDisplay.textContent = `${totalTime.toFixed(1)}s`;
 
-            // Update step size display with method-specific info
-            if (this.method === "incremental") {
-              const denom = window.stopDenominator || 3;
-              this.stepSizeDisplay.textContent =
-                this.method === "incremental"
-                  ? `+${(this.stepIncrement / denom).toFixed(1)} stops`
-                  : `${(this.stepIncrement / denom).toFixed(1)} stops`;
-            }
+            // Update step size display
+            const denom = window.stopDenominator || 3;
+            const stepSize = this.stepIncrement / denom;
+            this.stepSizeDisplay.textContent = `${stepSize.toFixed(1)} stops`;
           }
         }
 
@@ -9817,7 +9625,8 @@
           const row = document.createElement("tr");
 
           if (stop === currentStop) {
-            row.className = "current-stop";
+            row.style.background = "var(--panel-light)";
+            row.style.fontWeight = "bold";
           }
 
           row.innerHTML = `
@@ -9985,13 +9794,10 @@
           .getElementById("testCountdownBeep")
           ?.addEventListener("click", () => {
             // Test the different countdown beep patterns
-            audioService?.playCountdownBeep(5); // Early second beep
-            setTimeout(() => audioService?.playCountdownBeep(4), 300);
-            setTimeout(() => audioService?.playCountdownBeep(3), 600); // Last 3 seconds beep
-            setTimeout(
-              () => audioService?.playPreset("countdownComplete"),
-              900
-            ); // Final beep
+            playCountdownBeep(5); // Early second beep
+            setTimeout(() => playCountdownBeep(4), 300);
+            setTimeout(() => playCountdownBeep(3), 600); // Last 3 seconds beep
+            setTimeout(() => playPreset("countdownComplete"), 900); // Final beep
           });
 
         // Settings panel event listeners
@@ -10329,9 +10135,7 @@
           }
 
           // Relay toggle buttons
-          const relayToggleBtn = e.target.closest(
-            ".relay-toggle-btn[data-relay]"
-          );
+          const relayToggleBtn = e.target.closest(".settings-btn[data-relay]");
           if (relayToggleBtn && window.relayManager) {
             const relayNum = parseInt(
               relayToggleBtn.getAttribute("data-relay")
@@ -10341,74 +10145,60 @@
             return;
           }
 
-          // Profile load/delete buttons (dynamically created)
-          const loadProfileBtn = e.target.closest(
-            ".load-timer-profile[data-name]"
+          // Load buttons (consolidated - profile, preset, or chemical)
+          const loadBtn = e.target.closest(
+            ".load-btn[data-context][data-name]"
           );
-          if (loadProfileBtn && settingsManager) {
-            const profileName = loadProfileBtn.getAttribute("data-name");
-            const profile = settingsManager.profiles.find(
-              (p) => p.name === profileName
-            );
-            if (profile) {
-              e.preventDefault();
-              settingsManager.loadProfile(profile);
+          if (loadBtn) {
+            const context = loadBtn.getAttribute("data-context");
+            const name = loadBtn.getAttribute("data-name");
+            e.preventDefault();
+
+            if (context === "profile" && settingsManager) {
+              const profile = settingsManager.profiles.find(
+                (p) => p.name === name
+              );
+              if (profile) {
+                settingsManager.loadProfile(profile);
+              }
+            } else if (context === "preset" && window.chemicalManager) {
+              const preset = window.chemicalManager.chemicalPresets.find(
+                (p) => p.name === name
+              );
+              if (preset) {
+                window.chemicalManager.loadChemicalPreset(preset);
+              }
             }
             return;
           }
 
-          const deleteProfileBtn = e.target.closest(
-            ".delete-timer-profile[data-name]"
-          );
-          if (deleteProfileBtn && settingsManager) {
-            const profileName = deleteProfileBtn.getAttribute("data-name");
+          // Delete buttons (consolidated - profile, preset, or chemical)
+          const deleteBtn = e.target.closest(".delete-btn[data-context]");
+          if (deleteBtn) {
+            const context = deleteBtn.getAttribute("data-context");
             e.preventDefault();
-            settingsManager.deleteProfile(profileName);
-            return;
-          }
 
-          // Chemical preset buttons (dynamically created)
-          const loadChemicalBtn = e.target.closest(
-            ".load-chemical-preset[data-name]"
-          );
-          if (loadChemicalBtn && window.chemicalManager) {
-            const presetName = loadChemicalBtn.getAttribute("data-name");
-            const preset = window.chemicalManager.chemicalPresets.find(
-              (p) => p.name === presetName
-            );
-            if (preset) {
-              e.preventDefault();
-              window.chemicalManager.loadChemicalPreset(preset);
+            if (context === "profile" && settingsManager) {
+              const profileName = deleteBtn.getAttribute("data-name");
+              settingsManager.deleteProfile(profileName);
+            } else if (context === "preset" && window.chemicalManager) {
+              const presetName = deleteBtn.getAttribute("data-name");
+              window.chemicalManager.deleteChemicalPreset(presetName);
+            } else if (context === "chemical" && window.chemicalManager) {
+              const id = parseInt(deleteBtn.getAttribute("data-id"));
+              window.chemicalManager.deleteChemical(id);
             }
             return;
           }
 
-          const deleteChemicalBtn = e.target.closest(
-            ".delete-chemical-preset[data-name]"
+          // Renew button (for chemical shelf life)
+          const renewBtn = e.target.closest(
+            ".renew-btn[data-context][data-id]"
           );
-          if (deleteChemicalBtn && window.chemicalManager) {
-            const presetName = deleteChemicalBtn.getAttribute("data-name");
-            e.preventDefault();
-            window.chemicalManager.deleteChemicalPreset(presetName);
-            return;
-          }
-
-          // Shelf life buttons (dynamically created)
-          const renewChemicalBtn = e.target.closest(".renew-chemical[data-id]");
-          if (renewChemicalBtn && window.chemicalManager) {
-            const id = parseInt(renewChemicalBtn.getAttribute("data-id"));
+          if (renewBtn && window.chemicalManager) {
+            const id = parseInt(renewBtn.getAttribute("data-id"));
             e.preventDefault();
             window.chemicalManager.renewChemical(id);
-            return;
-          }
-
-          const deleteChemicalShelfBtn = e.target.closest(
-            ".delete-chemical[data-id]"
-          );
-          if (deleteChemicalShelfBtn && window.chemicalManager) {
-            const id = parseInt(deleteChemicalShelfBtn.getAttribute("data-id"));
-            e.preventDefault();
-            window.chemicalManager.deleteChemical(id);
             return;
           }
 
@@ -10555,21 +10345,31 @@
               }
               localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
             });
-          });
 
-          // Recalculate max-heights on resize (for fluid content)
-          window.addEventListener("resize", () => {
-            sections.forEach((sec) => {
-              const header = sec.querySelector(".collapsible-header");
-              const content = sec.querySelector(".collapsible-content");
-              if (
-                header &&
-                content &&
-                header.getAttribute("aria-expanded") === "true"
-              ) {
+            // Expand to fit dynamic content changes (new profiles/presets/etc.)
+            const observer = new MutationObserver(() => {
+              if (header.getAttribute("aria-expanded") === "true") {
                 content.style.maxHeight = content.scrollHeight + "px";
               }
             });
+            observer.observe(content, {
+              childList: true,
+              subtree: true,
+              characterData: true,
+            });
+          });
+
+          const activeTab = document.querySelector(".tab-content.active");
+          if (activeTab) {
+            refreshCollapsibleHeights(activeTab);
+          }
+
+          // Recalculate max-heights on resize (for fluid content)
+          window.addEventListener("resize", () => {
+            const currentTab = document.querySelector(".tab-content.active");
+            if (currentTab) {
+              refreshCollapsibleHeights(currentTab);
+            }
           });
         })();
 
