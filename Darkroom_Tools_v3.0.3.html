@@ -2334,26 +2334,39 @@
             class="incremental-timer"
             style="background: var(--panel-light); margin-bottom: 0"
           >
-            <div
-              class="title-sm"
-              style="text-align: center; margin-bottom: 8px"
-            >
-              QUICK PRESETS
-            </div>
+            <div class="title-md">Test Strip Profiles</div>
+
             <div class="settings-group">
-              <button class="settings-btn" data-preset="standard">
-                Standard: 6×⅓ stop
-              </button>
-              <button class="settings-btn" data-preset="fine">
-                Fine: 8×¼ stop
-              </button>
-              <button class="settings-btn" data-preset="coarse">
-                Coarse: 5×½ stop
-              </button>
-              <button class="settings-btn" data-preset="full">
-                Full Range: 10×1 stop
+              <div class="settings-item">
+                <div class="settings-label">Profile Name</div>
+                <input
+                  type="text"
+                  class="settings-input"
+                  id="testStripProfileName"
+                  placeholder="Enter profile name"
+                  maxlength="20"
+                />
+              </div>
+              <div class="settings-item">
+                <div class="settings-label"> </div>
+                <button class="settings-btn" id="saveTestStripProfile">
+                  Save Current as Profile
+                </button>
+              </div>
+            </div>
+
+            <div class="title-md">Saved Test Strip Profiles</div>
+            <div class="shelf-life-list" id="testStripProfileList">
+              <!-- Test strip profiles will be listed here -->
+            </div>
+
+            <div class="settings-btn-group">
+              <button class="settings-btn danger" id="clearTestStripProfiles">
+                Clear All
               </button>
             </div>
+
+            <div id="testStripProfileFeedback" class="json-feedback"></div>
           </div>
         </div>
       </div>
@@ -3692,6 +3705,7 @@
         CAPACITY_TRACKER: "darkroom_timer_capacity_tracker",
         SHELF_LIFE: "darkroom_timer_shelf_life",
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
+        TEST_STRIP_PROFILES: "darkroom_timer_test_strip_profiles",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4491,6 +4505,14 @@
           );
         }
 
+        static saveTestStripProfiles(profiles) {
+          return this.saveJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, profiles);
+        }
+
+        static loadTestStripProfiles() {
+          return this.loadJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, []);
+        }
+
         static clearAll() {
           return this.removeKeys([
             STORAGE_KEYS.SETTINGS,
@@ -4501,6 +4523,7 @@
             STORAGE_KEYS.CAPACITY_TRACKER,
             STORAGE_KEYS.SHELF_LIFE,
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
+            STORAGE_KEYS.TEST_STRIP_PROFILES,
           ]);
         }
       }
@@ -8499,6 +8522,163 @@
       }
 
       // F-Stop Test Strip Generator Class with both Cumulative and Incremental methods and countdown AND AUTO ADVANCE
+      // F-Stop Test Strip Generator - Profile Management Functions
+      // These need to be defined before the class for proper scope access
+      function getSelectedFromSeg(containerId) {
+        const cont = document.getElementById(containerId);
+        if (!cont) return null;
+        const btn =
+          cont.querySelector(".segmented-btn.active") ||
+          cont.querySelector('.segmented-btn[aria-pressed="true"]');
+        return btn ? parseInt(btn.dataset.denom, 10) : null;
+      }
+      function setActiveSeg(containerOrId, d) {
+        const cont =
+          typeof containerOrId === "string"
+            ? document.getElementById(containerOrId)
+            : containerOrId;
+        if (!cont) return;
+        Array.from(cont.querySelectorAll(".segmented-btn")).forEach((b) => {
+          const bd = parseInt(b.dataset.denom, 10);
+          const active = bd === d;
+          b.classList.toggle("active", active);
+          b.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+      function initSegControl(containerId) {
+        const cont = document.getElementById(containerId);
+        if (!cont) return;
+        cont.addEventListener("click", (e) => {
+          const btn = e.target.closest(".segmented-btn");
+          if (!btn) return;
+          const d = parseInt(btn.dataset.denom, 10);
+          setActiveSeg(cont, d);
+          applyDenomChange(d);
+        });
+      }
+
+      // applyDenomChange now takes numeric denom and rescales sliders to preserve absolute stop values
+      function applyDenomChange(d) {
+        const newDenom = parseInt(d, 10) || 3;
+        const prevDenom =
+          window.stopDenominator ||
+          (settingsManager && settingsManager.settings.stopDenominator) ||
+          3;
+
+        // If denom changed, rescale relevant sliders so the same absolute stop is preserved
+        if (newDenom !== prevDenom) {
+          // Rescale calculator stop slider (stopSlider values are fractional-step counts)
+          const stopSlider = document.getElementById("stopSlider");
+          if (stopSlider) {
+            const oldVal = parseInt(stopSlider.value, 10) || 0;
+            const stopInStops = oldVal / prevDenom; // current stop in full stops
+            const newVal = Math.round(stopInStops * newDenom);
+            stopSlider.value = newVal;
+            // Trigger input handler to update displays
+            stopSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          // Rescale test increment slider (step increments expressed in fractional-step counts)
+          const testInc = document.getElementById("testIncrementSlider");
+          if (testInc) {
+            const oldInc = parseInt(testInc.value, 10) || 0;
+            const incInStops = oldInc / prevDenom;
+            let newInc = Math.round(incInStops * newDenom);
+            const min = parseInt(testInc.min, 10) || 1;
+            const max = parseInt(testInc.max, 10) || 99;
+            newInc = Math.max(min, Math.min(max, newInc));
+            testInc.value = newInc;
+            testInc.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+
+        window.stopDenominator = newDenom;
+
+        // Persist setting and keep UI in sync
+        if (settingsManager) {
+          settingsManager.settings.stopDenominator = newDenom;
+          StorageManager.saveSettings(settingsManager.settings);
+        }
+        const settingsSel = document.getElementById("settingStopIncrement");
+        if (settingsSel) settingsSel.value = newDenom;
+        // Update assistive live region
+        try {
+          const live = document.getElementById("settingsLiveStatus");
+          if (live)
+            live.textContent = `Default stop increment set to ${denomLabel(
+              newDenom
+            )}`;
+        } catch (e) {}
+
+        // Reflect change in segmented controls (if not already set) - keeps buttons active
+        setActiveSeg("calcIncrementSeg", newDenom);
+        setActiveSeg("testIncrementSeg", newDenom);
+
+        if (window.incrementalTimer) {
+          window.incrementalTimer.updateCalculations();
+          window.incrementalTimer.updateAllDisplays();
+        }
+        if (window.fstopTestGenerator) {
+          window.fstopTestGenerator.generateSteps();
+          window.fstopTestGenerator.updateDisplay();
+        }
+        updateAllRulers();
+        updateChart();
+      }
+
+      // Helper: render/refresh rulers and denominator handling for stops
+      function renderRuler(containerId, minStep, maxStep) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.setAttribute("aria-label", "Stops scale");
+        const total = maxStep - minStep;
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i <= total; i++) {
+          const step = minStep + i;
+          const span = document.createElement("span");
+          span.style.fontSize = "0.7rem";
+          span.style.color = "var(--text-secondary)";
+          span.style.flex = "1";
+          span.style.textAlign = "center";
+          span.textContent = formatStop(step);
+          span.setAttribute("aria-hidden", "true");
+          frag.appendChild(span);
+        }
+        container.innerHTML = "";
+        container.appendChild(frag);
+      }
+
+      function updateAllRulers() {
+        renderRuler("calcStopRuler", -6, 6);
+
+        const testContainer = document.getElementById("testIncrementRuler");
+        if (!testContainer) return;
+        const min = parseInt(
+          document.getElementById("testIncrementSlider").min,
+          10
+        );
+        const max = parseInt(
+          document.getElementById("testIncrementSlider").max,
+          10
+        );
+        const total = max - min;
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i <= total; i++) {
+          const val = min + i;
+          const span = document.createElement("span");
+          span.style.fontSize = "0.7rem";
+          span.style.color = "var(--text-secondary)";
+          span.style.flex = "1";
+          span.style.textAlign = "center";
+          const denom = window.stopDenominator || 3;
+          const stopValue = val / denom;
+          span.textContent = formatStopCompact(stopValue);
+          frag.appendChild(span);
+        }
+        testContainer.innerHTML = "";
+        testContainer.appendChild(frag);
+      }
+
       class FStopTestStripGenerator {
         constructor() {
           this.baseTime = 10.0;
@@ -8536,6 +8716,9 @@
           // Initialize countdown cleanup properties
           this.countdownCleanup = null;
           this.countdownCleanupTimeout = null;
+
+          // Initialize test strip profile list
+          this.updateTestStripProfileList();
         }
 
         init() {
@@ -8630,16 +8813,6 @@
               btn.addEventListener("click", (e) => {
                 const method = e.target.getAttribute("data-method");
                 this.setMethod(method);
-              });
-            });
-
-          // Preset buttons
-          document
-            .querySelectorAll(".settings-btn[data-preset]")
-            .forEach((btn) => {
-              btn.addEventListener("click", (e) => {
-                const preset = e.target.getAttribute("data-preset");
-                this.applyPreset(preset);
               });
             });
 
@@ -9547,44 +9720,213 @@
           }
         }
 
-        applyPreset(preset) {
-          switch (preset) {
-            case "standard":
-              this.testBaseSlider.value = 10;
-              this.testIncrementSlider.value = 1; // ⅓ stop
-              this.testStepsSlider.value = 6;
-              this.setMethod("cumulative");
-              break;
-            case "fine":
-              this.testBaseSlider.value = 10;
-              this.testIncrementSlider.value = 1; // ⅓ stop
-              this.testStepsSlider.value = 8;
-              this.setMethod("incremental");
-              break;
-            case "coarse":
-              this.testBaseSlider.value = 10;
-              this.testIncrementSlider.value = 2; // ⅔ stop
-              this.testStepsSlider.value = 5;
-              this.setMethod("cumulative");
-              break;
-            case "full":
-              this.testBaseSlider.value = 5;
-              this.testIncrementSlider.value = 3; // 1 stop
-              this.testStepsSlider.value = 10;
-              this.setMethod("incremental");
-              break;
+        // Get current test strip settings as an object
+        getCurrentSettings() {
+          return {
+            baseTime: parseFloat(this.testBaseSlider.value),
+            stepIncrement: parseInt(this.testIncrementSlider.value),
+            denominator: window.stopDenominator || 3,
+            numSteps: parseInt(this.testStepsSlider.value),
+            method: this.method,
+            autoAdvance: this.autoAdvance,
+            autoAdvanceDelay: this.autoAdvanceDelay / 1000, // Convert to seconds
+          };
+        }
+
+        // Apply settings from a profile
+        applyProfile(profile) {
+          if (!profile) return;
+
+          // Stop current test if running
+          if (this.isRunning) {
+            this.stopCurrentTest();
           }
 
+          // Apply settings to controls
+          this.testBaseSlider.value = profile.baseTime;
+          this.testIncrementSlider.value = profile.stepIncrement;
+          this.testStepsSlider.value = profile.numSteps;
+
+          // Set denominator
+          window.stopDenominator = profile.denominator;
+          setActiveSeg("testIncrementSeg", profile.denominator);
+
+          // Set method
+          this.setMethod(profile.method);
+
+          // Set auto advance
+          this.setAutoAdvance(profile.autoAdvance);
+          if (profile.autoAdvanceDelay !== undefined) {
+            this.autoAdvanceDelay = profile.autoAdvanceDelay * 1000;
+            if (settingsManager) {
+              settingsManager.settings.autoAdvanceDelay =
+                profile.autoAdvanceDelay;
+              StorageManager.saveSettings(settingsManager.settings);
+            }
+          }
+
+          // Update from controls to refresh everything
           this.updateFromControls();
+          if (typeof updateAllRulers === "function") {
+            updateAllRulers();
+          }
 
           // Visual feedback
-          const btn = document.querySelector(`[data-preset="${preset}"]`);
-          const originalColor = btn.style.backgroundColor;
-          btn.style.backgroundColor = "#f00";
+          playBeep(600, 0.3, 0.3);
+        }
 
-          setTimeout(() => {
-            btn.style.backgroundColor = originalColor;
-          }, 300);
+        // Save current settings as a profile
+        saveProfile(name) {
+          if (!name || name.trim() === "") {
+            showFeedback(
+              "testStripProfileFeedback",
+              "Please enter a profile name",
+              "error"
+            );
+            return false;
+          }
+
+          const profile = {
+            name: name.trim(),
+            ...this.getCurrentSettings(),
+            date: new Date().toISOString(),
+          };
+
+          // Get existing profiles
+          const profiles = StorageManager.loadTestStripProfiles();
+
+          // Check if profile already exists
+          const existingIndex = profiles.findIndex(
+            (p) => p.name === profile.name
+          );
+          if (existingIndex >= 0) {
+            profiles[existingIndex] = profile;
+          } else {
+            profiles.push(profile);
+          }
+
+          // Save to storage
+          if (StorageManager.saveTestStripProfiles(profiles)) {
+            this.updateTestStripProfileList();
+            showFeedback(
+              "testStripProfileFeedback",
+              `Profile "${name}" saved!`,
+              "success"
+            );
+            playBeep(800, 0.3, 0.3);
+            return true;
+          }
+
+          return false;
+        }
+
+        // Load a profile
+        loadProfile(profileName) {
+          const profiles = StorageManager.loadTestStripProfiles();
+          const profile = profiles.find((p) => p.name === profileName);
+
+          if (profile) {
+            this.applyProfile(profile);
+            showFeedback(
+              "testStripProfileFeedback",
+              `Loaded profile "${profileName}"`,
+              "success"
+            );
+            return true;
+          }
+
+          return false;
+        }
+
+        // Delete a profile
+        deleteProfile(profileName) {
+          if (confirm(`Delete test strip profile "${profileName}"?`)) {
+            const profiles = StorageManager.loadTestStripProfiles();
+            const filtered = profiles.filter((p) => p.name !== profileName);
+
+            if (StorageManager.saveTestStripProfiles(filtered)) {
+              this.updateTestStripProfileList();
+              showFeedback(
+                "testStripProfileFeedback",
+                `Profile "${profileName}" deleted`,
+                "success"
+              );
+              playBeep(400, 0.3, 0.3);
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // Clear all profiles
+        clearAllProfiles() {
+          if (
+            confirm("Clear all test strip profiles? This cannot be undone.")
+          ) {
+            if (StorageManager.saveTestStripProfiles([])) {
+              this.updateTestStripProfileList();
+              showFeedback(
+                "testStripProfileFeedback",
+                "All profiles cleared",
+                "success"
+              );
+              playBeep(400, 0.3, 0.3);
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // Update the profile list display
+        updateTestStripProfileList() {
+          const listElement = document.getElementById("testStripProfileList");
+          if (!listElement) return;
+
+          const profiles = StorageManager.loadTestStripProfiles();
+          listElement.innerHTML = "";
+
+          if (profiles.length === 0) {
+            listElement.innerHTML =
+              '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">No profiles saved yet</div>';
+            return;
+          }
+
+          profiles.forEach((profile) => {
+            const itemDiv = document.createElement("div");
+            itemDiv.className = "shelf-life-item";
+
+            const methodLabel =
+              profile.method === "cumulative" ? "Cumulative" : "Incremental";
+            const autoAdvanceLabel = profile.autoAdvance ? "Auto" : "Manual";
+            const denomLabel = `1/${profile.denominator}`;
+
+            itemDiv.innerHTML = `
+              <div>
+                <strong>${profile.name}</strong>
+                <div style="font-size: 0.65rem; color: var(--text-secondary);">
+                  ${profile.baseTime}s • ${
+              profile.stepIncrement
+            }×${denomLabel} • ${profile.numSteps} steps
+                </div>
+                <div style="font-size: 0.6rem; color: #600;">
+                  ${methodLabel} • ${autoAdvanceLabel}
+                </div>
+                <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
+                  ${new Date(profile.date).toLocaleDateString()}
+                </div>
+              </div>
+              <div class="shelf-life-actions">
+                <button class="btn-action load-btn" data-context="teststrip" data-name="${
+                  profile.name
+                }">Load</button>
+                <button class="btn-action delete-btn" data-context="teststrip" data-name="${
+                  profile.name
+                }">Delete</button>
+              </div>
+            `;
+
+            listElement.appendChild(itemDiv);
+          });
         }
       }
 
@@ -9739,7 +10081,6 @@
         }
       }
 
-      // Initialize everything
       document.addEventListener("DOMContentLoaded", () => {
         // Initialize audio service first (for all sound functionality)
         audioService = new AudioService();
@@ -9842,163 +10183,7 @@
           });
         })();
 
-        // Helper: render/refresh rulers and denominator handling for stops
-        function renderRuler(containerId, minStep, maxStep) {
-          const container = document.getElementById(containerId);
-          if (!container) return;
-          container.setAttribute("aria-label", "Stops scale");
-          const total = maxStep - minStep;
-          const frag = document.createDocumentFragment();
-          for (let i = 0; i <= total; i++) {
-            const step = minStep + i;
-            const span = document.createElement("span");
-            span.style.fontSize = "0.7rem";
-            span.style.color = "var(--text-secondary)";
-            span.style.flex = "1";
-            span.style.textAlign = "center";
-            span.textContent = formatStop(step);
-            span.setAttribute("aria-hidden", "true");
-            frag.appendChild(span);
-          }
-          container.innerHTML = "";
-          container.appendChild(frag);
-        }
-
-        function updateAllRulers() {
-          renderRuler("calcStopRuler", -6, 6);
-
-          const testContainer = document.getElementById("testIncrementRuler");
-          if (!testContainer) return;
-          const min = parseInt(
-            document.getElementById("testIncrementSlider").min,
-            10
-          );
-          const max = parseInt(
-            document.getElementById("testIncrementSlider").max,
-            10
-          );
-          const total = max - min;
-          const frag = document.createDocumentFragment();
-          for (let i = 0; i <= total; i++) {
-            const val = min + i;
-            const span = document.createElement("span");
-            span.style.fontSize = "0.7rem";
-            span.style.color = "var(--text-secondary)";
-            span.style.flex = "1";
-            span.style.textAlign = "center";
-            const denom = window.stopDenominator || 3;
-            const stopValue = val / denom;
-            span.textContent = formatStopCompact(stopValue);
-            frag.appendChild(span);
-          }
-          testContainer.innerHTML = "";
-          testContainer.appendChild(frag);
-        }
-
-        // Segmented controls for denominator
-        function getSelectedFromSeg(containerId) {
-          const cont = document.getElementById(containerId);
-          if (!cont) return null;
-          const btn =
-            cont.querySelector(".segmented-btn.active") ||
-            cont.querySelector('.segmented-btn[aria-pressed="true"]');
-          return btn ? parseInt(btn.dataset.denom, 10) : null;
-        }
-        function setActiveSeg(containerOrId, d) {
-          const cont =
-            typeof containerOrId === "string"
-              ? document.getElementById(containerOrId)
-              : containerOrId;
-          if (!cont) return;
-          Array.from(cont.querySelectorAll(".segmented-btn")).forEach((b) => {
-            const bd = parseInt(b.dataset.denom, 10);
-            const active = bd === d;
-            b.classList.toggle("active", active);
-            b.setAttribute("aria-pressed", active ? "true" : "false");
-          });
-        }
-        function initSegControl(containerId) {
-          const cont = document.getElementById(containerId);
-          if (!cont) return;
-          cont.addEventListener("click", (e) => {
-            const btn = e.target.closest(".segmented-btn");
-            if (!btn) return;
-            const d = parseInt(btn.dataset.denom, 10);
-            setActiveSeg(cont, d);
-            applyDenomChange(d);
-          });
-        }
-
-        // applyDenomChange now takes numeric denom and rescales sliders to preserve absolute stop values
-        function applyDenomChange(d) {
-          const newDenom = parseInt(d, 10) || 3;
-          const prevDenom =
-            window.stopDenominator ||
-            (settingsManager && settingsManager.settings.stopDenominator) ||
-            3;
-
-          // If denom changed, rescale relevant sliders so the same absolute stop is preserved
-          if (newDenom !== prevDenom) {
-            // Rescale calculator stop slider (stopSlider values are fractional-step counts)
-            const stopSlider = document.getElementById("stopSlider");
-            if (stopSlider) {
-              const oldVal = parseInt(stopSlider.value, 10) || 0;
-              const stopInStops = oldVal / prevDenom; // current stop in full stops
-              const newVal = Math.round(stopInStops * newDenom);
-              stopSlider.value = newVal;
-              // Trigger input handler to update displays
-              stopSlider.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-
-            // Rescale test increment slider (step increments expressed in fractional-step counts)
-            const testInc = document.getElementById("testIncrementSlider");
-            if (testInc) {
-              const oldInc = parseInt(testInc.value, 10) || 0;
-              const incInStops = oldInc / prevDenom;
-              let newInc = Math.round(incInStops * newDenom);
-              const min = parseInt(testInc.min, 10) || 1;
-              const max = parseInt(testInc.max, 10) || 99;
-              newInc = Math.max(min, Math.min(max, newInc));
-              testInc.value = newInc;
-              testInc.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-          }
-
-          window.stopDenominator = newDenom;
-
-          // Persist setting and keep UI in sync
-          if (settingsManager) {
-            settingsManager.settings.stopDenominator = newDenom;
-            StorageManager.saveSettings(settingsManager.settings);
-          }
-          const settingsSel = document.getElementById("settingStopIncrement");
-          if (settingsSel) settingsSel.value = newDenom;
-          // Update assistive live region
-          try {
-            const live = document.getElementById("settingsLiveStatus");
-            if (live)
-              live.textContent = `Default stop increment set to ${denomLabel(
-                newDenom
-              )}`;
-          } catch (e) {}
-
-          // Reflect change in segmented controls (if not already set) - keeps buttons active
-          setActiveSeg("calcIncrementSeg", newDenom);
-          setActiveSeg("testIncrementSeg", newDenom);
-
-          if (window.incrementalTimer) {
-            window.incrementalTimer.updateCalculations();
-            window.incrementalTimer.updateAllDisplays();
-          }
-          if (window.fstopTestGenerator) {
-            window.fstopTestGenerator.generateSteps();
-            window.fstopTestGenerator.updateDisplay();
-          }
-          updateAllRulers();
-          updateChart();
-        }
-
-        // Initialize denom and controls
+        // Initialize denom and controls (functions moved outside DOMContentLoaded)
         window.stopDenominator =
           window.stopDenominator ||
           (settingsManager && settingsManager.settings.stopDenominator) ||
@@ -10029,6 +10214,29 @@
           .getElementById("clearTimerProfiles")
           ?.addEventListener("click", () => {
             settingsManager.clearAllProfiles();
+          });
+
+        // Test strip profile management in test tab
+        document
+          .getElementById("saveTestStripProfile")
+          ?.addEventListener("click", () => {
+            const profileName = document.getElementById(
+              "testStripProfileName"
+            ).value;
+            if (
+              window.fstopTestGenerator &&
+              window.fstopTestGenerator.saveProfile(profileName)
+            ) {
+              document.getElementById("testStripProfileName").value = "";
+            }
+          });
+
+        document
+          .getElementById("clearTestStripProfiles")
+          ?.addEventListener("click", () => {
+            if (window.fstopTestGenerator) {
+              window.fstopTestGenerator.clearAllProfiles();
+            }
           });
 
         // Combined export/import in settings tab
@@ -10145,7 +10353,7 @@
             return;
           }
 
-          // Load buttons (consolidated - profile, preset, or chemical)
+          // Load buttons (consolidated - profile, preset, chemical, or teststrip)
           const loadBtn = e.target.closest(
             ".load-btn[data-context][data-name]"
           );
@@ -10168,11 +10376,13 @@
               if (preset) {
                 window.chemicalManager.loadChemicalPreset(preset);
               }
+            } else if (context === "teststrip" && window.fstopTestGenerator) {
+              window.fstopTestGenerator.loadProfile(name);
             }
             return;
           }
 
-          // Delete buttons (consolidated - profile, preset, or chemical)
+          // Delete buttons (consolidated - profile, preset, chemical, or teststrip)
           const deleteBtn = e.target.closest(".delete-btn[data-context]");
           if (deleteBtn) {
             const context = deleteBtn.getAttribute("data-context");
@@ -10187,6 +10397,9 @@
             } else if (context === "chemical" && window.chemicalManager) {
               const id = parseInt(deleteBtn.getAttribute("data-id"));
               window.chemicalManager.deleteChemical(id);
+            } else if (context === "teststrip" && window.fstopTestGenerator) {
+              const profileName = deleteBtn.getAttribute("data-name");
+              window.fstopTestGenerator.deleteProfile(profileName);
             }
             return;
           }
