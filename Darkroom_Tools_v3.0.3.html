@@ -2329,45 +2329,50 @@
             </div>
           </div>
 
-          <!-- Test Strip Presets -->
-          <div
-            class="incremental-timer"
-            style="background: var(--panel-light); margin-bottom: 0"
-          >
-            <div class="title-md">Test Strip Profiles</div>
+          <!-- Test Strip Profiles Section -->
+          <section class="collapsible" data-id="test-strip-profiles">
+            <button class="collapsible-header" aria-expanded="false">
+              <div class="collapsible-title">TEST STRIP PROFILES</div>
+            </button>
+            <div class="collapsible-content">
+              <div class="incremental-timer" style="margin-top: 15px">
+                <div class="title-md">Test Strip Profiles</div>
 
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Profile Name</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="testStripProfileName"
-                  placeholder="Enter profile name"
-                  maxlength="20"
-                />
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Profile Name</div>
+                    <input
+                      type="text"
+                      class="settings-input"
+                      id="testStripProfileName"
+                      placeholder="Enter profile name"
+                      maxlength="20"
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label"> </div>
+                    <button class="settings-btn" id="saveTestStripProfile">
+                      Save Current as Profile
+                    </button>
+                  </div>
+                </div>
+
+                <div class="title-md">Saved Test Strip Profiles</div>
+                <div class="shelf-life-list" id="testStripProfileList">
+                  <!-- Test strip profiles will be listed here -->
+                </div>
+
+                <div class="settings-btn-group">
+                  <button
+                    class="settings-btn danger"
+                    id="clearTestStripProfiles"
+                  >
+                    Clear All
+                  </button>
+                </div>
               </div>
-              <div class="settings-item">
-                <div class="settings-label"> </div>
-                <button class="settings-btn" id="saveTestStripProfile">
-                  Save Current as Profile
-                </button>
-              </div>
             </div>
-
-            <div class="title-md">Saved Test Strip Profiles</div>
-            <div class="shelf-life-list" id="testStripProfileList">
-              <!-- Test strip profiles will be listed here -->
-            </div>
-
-            <div class="settings-btn-group">
-              <button class="settings-btn danger" id="clearTestStripProfiles">
-                Clear All
-              </button>
-            </div>
-
-            <div id="testStripProfileFeedback" class="json-feedback"></div>
-          </div>
+          </section>
         </div>
       </div>
 
@@ -3706,6 +3711,7 @@
         SHELF_LIFE: "darkroom_timer_shelf_life",
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
         TEST_STRIP_PROFILES: "darkroom_timer_test_strip_profiles",
+        CURRENT_TEST_STRIP_PROFILE: "darkroom_timer_current_test_strip_profile",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4062,6 +4068,7 @@
         persistent: {
           currentProfile: null, // Currently loaded timer profile
           currentChemicalPreset: null, // Currently loaded chemical preset
+          currentTestStripProfile: null, // Currently loaded test strip profile
         },
 
         // Transient UI state (not persisted)
@@ -4513,6 +4520,17 @@
           return this.loadJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, []);
         }
 
+        static saveCurrentTestStripProfile(profileName) {
+          return this.saveJSON(
+            STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
+            profileName
+          );
+        }
+
+        static loadCurrentTestStripProfile() {
+          return this.loadJSON(STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE, null);
+        }
+
         static clearAll() {
           return this.removeKeys([
             STORAGE_KEYS.SETTINGS,
@@ -4524,6 +4542,7 @@
             STORAGE_KEYS.SHELF_LIFE,
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
             STORAGE_KEYS.TEST_STRIP_PROFILES,
+            STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
           ]);
         }
       }
@@ -8717,6 +8736,10 @@
           this.countdownCleanup = null;
           this.countdownCleanupTimeout = null;
 
+          // Load current test strip profile from storage
+          appState.persistent.currentTestStripProfile =
+            StorageManager.loadCurrentTestStripProfile();
+
           // Initialize test strip profile list
           this.updateTestStripProfileList();
         }
@@ -9720,6 +9743,17 @@
           }
         }
 
+        // Get currently loaded test strip profile name from appState (single source of truth)
+        getCurrentTestStripProfile() {
+          return appState.persistent.currentTestStripProfile;
+        }
+
+        // Set currently loaded test strip profile in appState and persist to storage
+        setCurrentTestStripProfile(profileName) {
+          appState.persistent.currentTestStripProfile = profileName;
+          StorageManager.saveCurrentTestStripProfile(profileName);
+        }
+
         // Get current test strip settings as an object
         getCurrentSettings() {
           return {
@@ -9765,11 +9799,17 @@
             }
           }
 
+          // Set current profile
+          this.setCurrentTestStripProfile(profile.name);
+
           // Update from controls to refresh everything
           this.updateFromControls();
           if (typeof updateAllRulers === "function") {
             updateAllRulers();
           }
+
+          // Update profile list to show active state
+          this.updateTestStripProfileList();
 
           // Visual feedback
           playBeep(600, 0.3, 0.3);
@@ -9778,11 +9818,7 @@
         // Save current settings as a profile
         saveProfile(name) {
           if (!name || name.trim() === "") {
-            showFeedback(
-              "testStripProfileFeedback",
-              "Please enter a profile name",
-              "error"
-            );
+            alert("Please enter a profile name");
             return false;
           }
 
@@ -9808,11 +9844,6 @@
           // Save to storage
           if (StorageManager.saveTestStripProfiles(profiles)) {
             this.updateTestStripProfileList();
-            showFeedback(
-              "testStripProfileFeedback",
-              `Profile "${name}" saved!`,
-              "success"
-            );
             playBeep(800, 0.3, 0.3);
             return true;
           }
@@ -9827,11 +9858,6 @@
 
           if (profile) {
             this.applyProfile(profile);
-            showFeedback(
-              "testStripProfileFeedback",
-              `Loaded profile "${profileName}"`,
-              "success"
-            );
             return true;
           }
 
@@ -9846,11 +9872,6 @@
 
             if (StorageManager.saveTestStripProfiles(filtered)) {
               this.updateTestStripProfileList();
-              showFeedback(
-                "testStripProfileFeedback",
-                `Profile "${profileName}" deleted`,
-                "success"
-              );
               playBeep(400, 0.3, 0.3);
               return true;
             }
@@ -9865,11 +9886,6 @@
           ) {
             if (StorageManager.saveTestStripProfiles([])) {
               this.updateTestStripProfileList();
-              showFeedback(
-                "testStripProfileFeedback",
-                "All profiles cleared",
-                "success"
-              );
               playBeep(400, 0.3, 0.3);
               return true;
             }
@@ -9883,6 +9899,7 @@
           if (!listElement) return;
 
           const profiles = StorageManager.loadTestStripProfiles();
+          const currentProfile = this.getCurrentTestStripProfile();
           listElement.innerHTML = "";
 
           if (profiles.length === 0) {
@@ -9893,7 +9910,9 @@
 
           profiles.forEach((profile) => {
             const itemDiv = document.createElement("div");
-            itemDiv.className = "shelf-life-item";
+            itemDiv.className = `shelf-life-item ${
+              currentProfile === profile.name ? "active" : ""
+            }`;
 
             const methodLabel =
               profile.method === "cumulative" ? "Cumulative" : "Incremental";
@@ -10520,7 +10539,7 @@
           const STORAGE_KEY = "calc_collapsed";
           let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
           const sections = document.querySelectorAll(
-            "#calc .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible"
+            "#calc .collapsible, #fstop-test .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible"
           );
           // Clean up any stored keys that no longer correspond to existing sections
           const existingIds = Array.from(sections)
