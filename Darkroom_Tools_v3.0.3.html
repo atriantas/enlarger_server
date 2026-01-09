@@ -2962,8 +2962,8 @@
         </div>
 
         <div class="settings-btn-group">
-          <button class="settings-btn" id="startAll">Start All</button>
-          <button class="settings-btn" id="resetAll">Reset All</button>
+          <button class="exp-btn" id="startAll">Start All</button>
+          <button class="exp-btn" id="resetAll">Reset All</button>
         </div>
 
         <!-- Timer Profiles Section MOVED from SETTINGS tab -->
@@ -9131,6 +9131,7 @@
             const stepEl = document.createElement("div");
             stepEl.className = "test-step";
             stepEl.dataset.step = step.step;
+            stepEl.style.cursor = "pointer";
 
             // Calculate color intensity based on method
             if (this.method === "cumulative") {
@@ -9180,6 +9181,16 @@
             ) {
               stepEl.classList.add("active");
             }
+
+            // Store the total exposure time for this step
+            // Both methods use totalExposure for consistency
+            const timeValue = step.totalExposure;
+            stepEl.dataset.time = timeValue;
+
+            // Add click handler to apply this time to CALC tab
+            stepEl.addEventListener("click", () => {
+              this.applyStepToCalc(index);
+            });
 
             if (showTimes) {
               if (this.method === "cumulative") {
@@ -9741,6 +9752,29 @@
           } else {
             await this.start();
           }
+        }
+
+        // Apply a test step's time to the CALC tab's base time
+        applyStepToCalc(stepIndex) {
+          if (stepIndex < 0 || stepIndex >= this.steps.length) return;
+
+          const step = this.steps[stepIndex];
+
+          // Get the total exposure time for this step
+          // Both methods use totalExposure for consistency
+          const timeValue = step.totalExposure;
+
+          // Update the CALC tab's base time slider
+          const baseTimeSlider = document.getElementById("baseTimeSlider");
+          if (baseTimeSlider) {
+            baseTimeSlider.value = timeValue.toFixed(1);
+
+            // Trigger the input event to update the IncrementalTimer state
+            baseTimeSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          // Switch to CALC tab
+          switchTab("calc");
         }
 
         // Get currently loaded test strip profile name from appState (single source of truth)
