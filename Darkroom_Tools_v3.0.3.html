@@ -2815,15 +2815,6 @@
         >
           <div class="setting-item">
             <div class="setting-label">
-              <span>Auto</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="autoStart" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
               <span>End Beep</span>
             </div>
             <label class="switch">
@@ -3481,13 +3472,6 @@
 
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Timer Auto Start</div>
-                  <label class="switch">
-                    <input type="checkbox" id="settingAutoStart" checked />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
                   <div class="settings-label">Timer 10s Beep</div>
                   <label class="switch">
                     <input
@@ -3733,7 +3717,6 @@
         floTime: 30,
         calcWarningBeep: true,
         calcEndBeep: true,
-        autoStart: true,
         timerWarningBeep: true,
         timerEndBeep: true,
         defaultPhotoFlo: true,
@@ -4053,7 +4036,6 @@
           calcEndBeep: true,
           timerWarningBeep: true,
           timerEndBeep: true,
-          autoStart: true,
           defaultPhotoFlo: true,
           countdownDelay: 5,
           countdownBeep: true,
@@ -4227,7 +4209,6 @@
         document.getElementById("warningBeep").checked =
           settings.timerWarningBeep;
         document.getElementById("endBeep").checked = settings.timerEndBeep;
-        document.getElementById("autoStart").checked = settings.autoStart;
       }
 
       // Tab management
@@ -4553,6 +4534,7 @@
           this.name = name;
           this.driftTimer = null; // Using drift-corrected timer
           this.warningPlayed = false;
+          this.isPartOfSequence = false; // NEW: Track if timer is part of a sequence
 
           // Initialize state if not exists
           if (!appState.timers[name]) {
@@ -4615,7 +4597,7 @@
           }
         }
 
-        start() {
+        start(isSequence = false) {
           if (
             this.state.isRunning ||
             !this.state.isEnabled ||
@@ -4625,6 +4607,7 @@
 
           this.state.isRunning = true;
           this.warningPlayed = false;
+          this.isPartOfSequence = isSequence; // NEW: Store sequence flag
           this.render();
 
           // Use drift-corrected timer
@@ -4660,6 +4643,7 @@
             this.driftTimer.stop();
           }
           this.state.isRunning = false;
+          this.isPartOfSequence = false; // NEW: Reset sequence flag
           this.render();
         }
 
@@ -4684,10 +4668,26 @@
             playPreset("timerComplete");
           }
 
-          // Auto-start next timer
-          if (appState.settings.autoStart) {
-            this.startNextTimer();
+          // NEW: Only auto-start next timer if this was part of a sequence
+          if (this.isPartOfSequence) {
+            const nextTimer = this.startNextTimer();
+            // If no next timer was started, the sequence is complete
+            if (!nextTimer) {
+              // Reset the start all state
+              if (window.startAllState) {
+                window.startAllState.isRunning = false;
+                window.startAllState.isPaused = false;
+                // Update the button
+                const btn = document.getElementById("startAll");
+                if (btn) {
+                  btn.textContent = "Start All";
+                  btn.disabled = false;
+                }
+              }
+            }
           }
+          // Reset the flag after completion
+          this.isPartOfSequence = false;
         }
 
         toggle() {
@@ -4699,7 +4699,8 @@
             if (this.state.timeLeft <= 0) {
               this.reset();
             }
-            this.start();
+            // NEW: Individual start is NOT part of a sequence
+            this.start(false);
           }
         }
 
@@ -4730,11 +4731,13 @@
             if (nextTimer && nextTimer.state.isEnabled) {
               setTimeout(() => {
                 nextTimer.reset();
-                nextTimer.start();
+                // NEW: Start next timer as part of sequence
+                nextTimer.start(true);
               }, 1000);
-              break;
+              return nextTimer; // Return the next timer that was started
             }
           }
+          return null; // No next timer found
         }
 
         getCurrentTime() {
@@ -4970,9 +4973,6 @@
           if (this.settings.calcEndBeep !== undefined) {
             appState.settings.calcEndBeep = this.settings.calcEndBeep;
           }
-          if (this.settings.autoStart !== undefined) {
-            appState.settings.autoStart = this.settings.autoStart;
-          }
           if (this.settings.timerWarningBeep !== undefined) {
             appState.settings.timerWarningBeep = this.settings.timerWarningBeep;
           }
@@ -5039,7 +5039,6 @@
             calcWarningBeep: document.getElementById("settingCalcWarningBeep")
               .checked,
             calcEndBeep: document.getElementById("settingCalcEndBeep").checked,
-            autoStart: document.getElementById("settingAutoStart").checked,
             timerWarningBeep: document.getElementById("settingTimerWarningBeep")
               .checked,
             timerEndBeep: document.getElementById("settingTimerEndBeep")
@@ -7179,8 +7178,6 @@
           settingsManager.settings.calcWarningBeep;
         document.getElementById("settingCalcEndBeep").checked =
           settingsManager.settings.calcEndBeep;
-        document.getElementById("settingAutoStart").checked =
-          settingsManager.settings.autoStart;
         document.getElementById("settingTimerWarningBeep").checked =
           settingsManager.settings.timerWarningBeep;
         document.getElementById("settingTimerEndBeep").checked =
@@ -7400,7 +7397,35 @@
             });
           }
 
-          // Start All button - UPDATED with countdown
+          // Start All button - NEW: Start/Pause/Resume with countdown integration
+          window.startAllState = {
+            isCountdown: false,
+            isRunning: false,
+            isPaused: false,
+            countdownResolve: null,
+            firstTimer: null,
+            originalDisplayText: null,
+          };
+
+          const updateStartAllButton = () => {
+            const btn = document.getElementById("startAll");
+            if (!btn) return;
+
+            if (window.startAllState.isCountdown) {
+              btn.textContent = "Cancel";
+              btn.disabled = false;
+            } else if (window.startAllState.isRunning) {
+              btn.textContent = "Pause";
+              btn.disabled = false;
+            } else if (window.startAllState.isPaused) {
+              btn.textContent = "Resume";
+              btn.disabled = false;
+            } else {
+              btn.textContent = "Start All";
+              btn.disabled = false;
+            }
+          };
+
           document
             .getElementById("startAll")
             .addEventListener("click", async () => {
@@ -7409,39 +7434,122 @@
               );
               if (!firstEnabledTimer) return;
 
-              // Disable buttons during countdown
-              document.getElementById("startAll").disabled = true;
-              document.getElementById("resetAll").disabled = true;
+              // CANCEL countdown
+              if (window.startAllState.isCountdown) {
+                if (window.startAllState.countdownResolve) {
+                  window.startAllState.countdownResolve("cancelled");
+                  // Also cancel the countdown manager to stop the timer
+                  if (window.countdownManager) {
+                    window.countdownManager.cancel();
+                  }
+                }
+                return;
+              }
 
+              // PAUSE running sequence
+              if (window.startAllState.isRunning) {
+                // Stop all timers in the sequence
+                this.timers.forEach((timer) => {
+                  if (timer.state.isRunning) {
+                    timer.stop();
+                  }
+                });
+                window.startAllState.isRunning = false;
+                window.startAllState.isPaused = true;
+                updateStartAllButton();
+                return;
+              }
+
+              // RESUME paused sequence
+              if (window.startAllState.isPaused) {
+                // Find the first timer that has time left and resume it
+                const timerToResume = this.timers.find(
+                  (t) =>
+                    t.state.isEnabled &&
+                    t.state.timeLeft > 0 &&
+                    !t.state.isRunning
+                );
+                if (timerToResume) {
+                  window.startAllState.isPaused = false;
+                  window.startAllState.isRunning = true;
+                  timerToResume.start(true); // Start as sequence
+                  updateStartAllButton();
+                }
+                return;
+              }
+
+              // START NEW SEQUENCE
               // Start countdown on first timer's display
               const display = document.getElementById(
                 `display${firstEnabledTimer.name}`
               );
-              const originalText = display.textContent;
+              window.startAllState.originalDisplayText = display.textContent;
+              window.startAllState.firstTimer = firstEnabledTimer;
+              window.startAllState.isCountdown = true;
+              window.startAllState.isRunning = false;
+              window.startAllState.isPaused = false;
 
-              await new Promise((resolve) => {
+              // Update button states during countdown
+              updateStartAllButton();
+              document.getElementById("resetAll").disabled = false; // Keep reset enabled
+
+              const countdownResult = await new Promise((resolve) => {
+                window.startAllState.countdownResolve = resolve;
                 window.countdownManager.startCountdown(display, () => {
-                  resolve();
+                  resolve("complete");
                 });
               });
 
-              // Restore display and enable buttons
-              display.textContent = originalText;
-              document.getElementById("startAll").disabled = false;
-              document.getElementById("resetAll").disabled = false;
+              // Restore display
+              display.textContent = window.startAllState.originalDisplayText;
+              window.startAllState.countdownResolve = null;
+              window.startAllState.isCountdown = false;
 
-              // Start the timer
+              if (countdownResult === "cancelled") {
+                updateStartAllButton();
+                return;
+              }
+
+              // Start the timer as part of a sequence
+              window.startAllState.isRunning = true;
               firstEnabledTimer.reset();
-              firstEnabledTimer.start();
+              firstEnabledTimer.start(true);
+              updateStartAllButton();
             });
 
-          // Reset All button
+          // Reset All button - NEW: Stop/Reset functionality
           document.getElementById("resetAll").addEventListener("click", () => {
+            // If countdown is running, cancel it
+            if (
+              window.startAllState.isCountdown &&
+              window.startAllState.countdownResolve
+            ) {
+              window.startAllState.countdownResolve("cancelled");
+              // Also cancel the countdown manager to stop the timer
+              if (window.countdownManager) {
+                window.countdownManager.cancel();
+              }
+              // The click handler will handle cleanup
+              return;
+            }
+
+            // Stop all running timers
             this.timers.forEach((timer) => {
-              if (!timer.state.isRunning && timer.state.isEnabled) {
+              if (timer.state.isRunning) {
+                timer.stop();
+              }
+              // Reset all enabled timers
+              if (timer.state.isEnabled) {
                 timer.reset();
               }
             });
+
+            // Reset start all state
+            window.startAllState.isCountdown = false;
+            window.startAllState.isRunning = false;
+            window.startAllState.isPaused = false;
+            window.startAllState.countdownResolve = null;
+            updateStartAllButton();
           });
 
           // Audio context init is now in centralized delegation
@@ -10217,7 +10325,6 @@
             { id: "safelightAutoOff", evt: "change" },
             { id: "settingCalcWarningBeep", evt: "change" },
             { id: "settingCalcEndBeep", evt: "change" },
-            { id: "settingAutoStart", evt: "change" },
             { id: "settingTimerWarningBeep", evt: "change" },
             { id: "settingTimerEndBeep", evt: "change" },
             { id: "settingDefaultPhotoFlo", evt: "change" },

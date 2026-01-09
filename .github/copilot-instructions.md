@@ -18,7 +18,7 @@ This is a **professional darkroom timer system** consisting of a Raspberry Pi Fl
    - Thread-based timer system with daemon threads for non-blocking operation
    - Graceful shutdown/reboot endpoints with 3-second delay
 
-2. **Web Client** (`Darkroom_Tools_v3.0.3.html`) - ~10,800 line single-file application
+2. **Web Client** (`Darkroom_Tools_v3.0.3.html`) - ~10,754 line single-file application
    - Pure vanilla JavaScript, no frameworks
    - CSS custom properties for theming (dark/light/day schemes)
    - LocalStorage-based state persistence
@@ -83,6 +83,7 @@ The client uses a sophisticated manager class system that must be understood for
    - Implements auto-trigger functionality for timer integration
    - **Critical**: Safelight auto-off feature - automatically turns off safelight when enlarger activates, restores after exposure
    - Uses triple-fallback fetch strategy: CORS → no-cors → Image object for maximum compatibility
+   - **Recent Update**: Enhanced safelight restoration with 0.5s buffer after exposure
 
 2. **Timer** class (lines ~4509-4650) - Individual timer instances
 
@@ -95,12 +96,15 @@ The client uses a sophisticated manager class system that must be understood for
 
    - Manages step-by-step exposure calculations
    - Integrates with countdown and relay triggering
+   - **Recent Update**: Enhanced state synchronization with appState.calculator
 
 4. **FStopTestStripGenerator** (lines ~8502+) - Test strip generation
 
    - Supports cumulative vs incremental methods
    - Auto-advance functionality with configurable delays
    - Base/step time calculations with f-stop precision
+   - **Recent Update**: Click-to-apply functionality - test steps can be clicked to apply their time to CALC tab
+   - **Recent Update**: Enhanced visual feedback with theme-aware coloring
 
 5. **CountdownManager** (lines ~4704+) - Visual countdown before exposure
 
@@ -120,11 +124,22 @@ The client uses a sophisticated manager class system that must be understood for
    - Persists all user settings to LocalStorage
    - Manages color schemes, sound preferences, auto-start options
    - Handles countdown and test strip settings
+   - **Recent Update**: Enhanced live settings application with debouncing
 
 8. **AudioService** (lines ~3781+) - Sound generation
    - Web Audio API for beep patterns
    - Configurable frequency, duration, volume
    - Used by all timer classes for feedback
+
+9. **StorageManager** - Centralized LocalStorage handler
+   - Manages all persistence keys with error handling
+   - Provides save/load methods for all data types
+   - **Critical**: All state changes must flow through this manager
+
+10. **DriftCorrectedTimer** (lines ~3900+) - High-precision timing
+    - Uses Date.now() for millisecond accuracy
+    - Compensates for JavaScript timer drift
+    - Essential for photographic timing precision
 
 ### State Management Architecture
 
@@ -132,15 +147,39 @@ The client uses a sophisticated manager class system that must be understood for
 
 ```javascript
 const appState = {
-  timers: {}, // Timer instances state
+  // Transient UI state (not persisted)
   ui: {
-    // UI state
-    currentTab: "calc",
-    timerStatus: "",
+    activeTab: "calculator",
+    timerStatus: "READY FOR EXPOSURE",
     collapsibleStates: {}, // Track expanded/collapsed sections
   },
-  settings: {}, // From SettingsManager
-  // Additional state managed by managers
+  
+  // Runtime calculator state
+  calculator: {
+    baseTime: 10.0,
+    currentStop: 0,
+    currentTotalTime: 10.0,
+    thisExposureTime: 10.0,
+    accumulatedTime: 0,
+    currentTime: 10.0,
+    isRunning: false,
+    isPaused: false,
+    isCountdown: false,
+    lastExposureTime: 10.0,
+  },
+  
+  // Timer instances state (Dev, Stop, Fix, Flo)
+  timers: {},
+  
+  // Persistent settings (synced with StorageManager)
+  settings: {},
+  
+  // Persistent data (loaded from StorageManager)
+  persistent: {
+    currentProfile: null,
+    currentChemicalPreset: null,
+    currentTestStripProfile: null,
+  }
 };
 ```
 
@@ -154,15 +193,18 @@ const appState = {
 - `darkroom_timer_capacity_tracker` - Developer usage
 - `darkroom_timer_shelf_life` - Chemical expiration tracking
 - `darkroom_timer_custom_filter_banks` - Custom contrast filters
+- `relayStates` - Relay on/off states (managed by RelayManager)
+- `calc_collapsed` - Calculator collapsible sections state
 
 **Default Settings** (lines ~3708-3740):
 
 - Base time: 10.0s, timer defaults: Dev=60s, Stop=30s, Fix=60s, Flo=30s
 - Countdown: 5s delay, enabled, pattern='every-second'
-- Test strip: auto-advance disabled by default
+- Test strip: auto-advance disabled by default (1s delay)
 - Safelight auto-off: enabled by default
 - Stop denominator: 3 (for f-stop fractions)
 - Base time slider limits: 0.4-50s (main), 1-50s (test)
+- **Recent Update**: Enhanced live settings with debouncing (150ms)
 
 ## GPIO & Relay Control
 
@@ -261,6 +303,8 @@ When auto-trigger is enabled and safelight auto-off is active:
    - **ChemicalManager** (lines ~5876+) - Darkroom chemistry tracking and mix calculator
    - **SettingsManager** (lines ~4886+) - Global preferences and LocalStorage persistence
    - **AudioService** (lines ~3781+) - Web Audio API for beep patterns
+   - **StorageManager** - Centralized localStorage handler with error handling
+   - **DriftCorrectedTimer** (lines ~3900+) - High-precision millisecond timing
 
 2. **CSS Consolidation** - Heavy use of CSS variable theming and class reuse:
 
@@ -272,16 +316,27 @@ When auto-trigger is enabled and safelight auto-off is active:
    body.day-scheme { /* overrides */ }
    ```
 
-   Many classes consolidated (e.g., `.shelf-life-item` replaces 15+ similar classes).
+   Many classes consolidated (e.g., `.shelf-life-item` replaces 15+ similar classes, `.settings-btn` replaces 20+ button classes).
 
-3. **State Persistence** - Extensive LocalStorage usage:
+3. **State Management Architecture** - Sophisticated three-tier state system:
 
-   - All timer settings, profiles, presets, chemical trackers
-   - Collapsible section states per data-id attribute
-   - Relay server IP/port configuration
-   - User preferences (sound, auto-trigger, color scheme)
+   ```javascript
+   const appState = {
+     ui: { /* transient, not persisted */ },
+     calculator: { /* runtime calculator state */ },
+     timers: { /* timer instances state */ },
+     settings: { /* persisted preferences */ },
+     persistent: { /* persisted data (profiles, presets) */ }
+   };
+   ```
+
+   All state changes must flow through StorageManager for persistence.
 
 4. **No Build Step** - Entire client is deployable as single HTML file. All CSS and JavaScript inline.
+
+5. **Click-to-Apply Integration** - Recent enhancement allows clicking test strip steps to apply their time to CALC tab, creating seamless workflow between TEST and CALC tabs.
+
+6. **Theme-Aware UI** - Dynamic visual feedback that adapts to dark/light/day schemes with appropriate color palettes for each theme.
 
 ### Relay Integration Pattern
 
@@ -392,9 +447,60 @@ async triggerTimerRelay(durationSeconds) {
 
 3. **Countdown System**: Before any exposure starts, the CountdownManager provides visual/audio preparation. This is critical for user safety and must be preserved.
 
-4. **State Synchronization**: All UI changes must update `appState` and persist to LocalStorage via StorageManager. Never bypass this flow.
+4. **State Synchronization**: All UI changes must update `appState` and persist to LocalStorage via StorageManager. Never bypass this flow. **Recent Update**: Enhanced state management with separate runtime vs persistent state.
 
 5. **Audio Feedback**: All timer operations use AudioService for beeps. Frequency, duration, and volume are configurable via CONFIG constants.
+
+6. **Click-to-Apply Functionality**: Test strip steps can be clicked to apply their total exposure time to the CALC tab's base time slider. This is implemented in `FStopTestStripGenerator.applyStepToCalc()` method.
+
+7. **Theme-Aware Visual Feedback**: Recent updates added dynamic coloring for test strip steps based on current theme (dark/light/day schemes) and exposure intensity.
+
+8. **Live Settings with Debouncing**: Settings changes are applied live with 150ms debouncing to prevent excessive updates while maintaining responsiveness.
+
+9. **Enhanced State Persistence**: The system now distinguishes between transient UI state (not persisted) and persistent settings/data (saved to localStorage). All state changes must flow through StorageManager.
+
+## Recent Updates & Patterns (as of January 2026)
+
+### Latest Enhancements
+
+1. **Click-to-Apply Test Strip Steps**: Test strip steps in the TEST tab are now clickable. Clicking a step applies its total exposure time to the CALC tab's base time slider, creating a seamless workflow between test strip generation and exposure calculation.
+
+2. **Theme-Aware Visual Feedback**: Test strip steps now display dynamic colors based on the current theme:
+   - **Dark scheme**: Red intensity based on exposure
+   - **Light scheme**: Blue tones with gradient
+   - **Day scheme**: Yellow/gold tones with gradient
+
+3. **Enhanced Safelight Restoration**: The safelight auto-off feature now includes a 0.5-second buffer after exposure completion before restoring the safelight, preventing any potential light leaks.
+
+4. **Live Settings with Debouncing**: Settings changes are applied live with 150ms debouncing to prevent excessive UI updates while maintaining responsiveness.
+
+5. **Improved State Management**: Clear separation between:
+   - **Transient UI state** (active tab, timer status, collapsible states) - not persisted
+   - **Runtime calculator state** (current times, running status) - not persisted
+   - **Persistent settings** (user preferences, configurations) - saved to localStorage
+   - **Persistent data** (profiles, presets, chemical data) - saved to localStorage
+
+### File Structure & Versioning
+
+- **Current Production**: `Raspberry_Server_v3.0.3.py` + `Darkroom_Tools_v3.0.3.html`
+- **Legacy Files**: `Raspberry_Server_3.py`, `_5.py`, `_6.py`, `_7.py` - **DO NOT MODIFY**
+- **Line Count**: HTML client is ~10,754 lines, Python server is ~467 lines
+
+### Critical Patterns for AI Agents
+
+1. **Always use StorageManager**: All localStorage operations must go through the StorageManager class for consistent error handling and key management.
+
+2. **Respect the triple-fallback fetch strategy**: When making HTTP requests to the Flask server, always use the CORS → no-cors → Image object fallback pattern.
+
+3. **Preserve safelight auto-off flow**: The sequence is critical: turn off safelight → start enlarger → wait duration → add 0.5s buffer → restore safelight.
+
+4. **Use DriftCorrectedTimer for precision**: Never use setInterval for photographic timing. Always use the DriftCorrectedTimer class which uses Date.now() for millisecond accuracy.
+
+5. **CSS variable theming**: All styling changes should use CSS custom properties in :root and theme classes, not individual component styles.
+
+6. **Event delegation pattern**: Use event delegation for dynamic elements instead of individual event listeners.
+
+7. **State synchronization**: Always update appState before making UI changes, and ensure changes flow through the appropriate manager classes.
 
 ## Development Workflow
 
@@ -508,3 +614,8 @@ Prefer modifying CSS variables over component styles. If adding new components, 
 - [ ] Chemical manager tracks capacity and shelf-life correctly
 - [ ] F-stop calculations match expected values
 - [ ] Shutdown/reboot commands work with 3-second delay
+- [ ] **NEW**: Click-to-apply test strip steps work (click step → applies to CALC tab)
+- [ ] **NEW**: Theme-aware visual feedback on test strip steps (colors adapt to theme)
+- [ ] **NEW**: Live settings with debouncing (150ms delay prevents excessive updates)
+- [ ] **NEW**: Enhanced safelight restoration with 0.5s buffer after exposure
+- [ ] **NEW**: State persistence correctly separates transient vs persistent data
