@@ -127,11 +127,13 @@ The client uses a sophisticated manager class system that must be understood for
    - **Recent Update**: Enhanced live settings application with debouncing
 
 8. **AudioService** (lines ~3781+) - Sound generation
+
    - Web Audio API for beep patterns
    - Configurable frequency, duration, volume
    - Used by all timer classes for feedback
 
 9. **StorageManager** - Centralized LocalStorage handler
+
    - Manages all persistence keys with error handling
    - Provides save/load methods for all data types
    - **Critical**: All state changes must flow through this manager
@@ -153,7 +155,7 @@ const appState = {
     timerStatus: "READY FOR EXPOSURE",
     collapsibleStates: {}, // Track expanded/collapsed sections
   },
-  
+
   // Runtime calculator state
   calculator: {
     baseTime: 10.0,
@@ -167,19 +169,19 @@ const appState = {
     isCountdown: false,
     lastExposureTime: 10.0,
   },
-  
+
   // Timer instances state (Dev, Stop, Fix, Flo)
   timers: {},
-  
+
   // Persistent settings (synced with StorageManager)
   settings: {},
-  
+
   // Persistent data (loaded from StorageManager)
   persistent: {
     currentProfile: null,
     currentChemicalPreset: null,
     currentTestStripProfile: null,
-  }
+  },
 };
 ```
 
@@ -322,11 +324,21 @@ When auto-trigger is enabled and safelight auto-off is active:
 
    ```javascript
    const appState = {
-     ui: { /* transient, not persisted */ },
-     calculator: { /* runtime calculator state */ },
-     timers: { /* timer instances state */ },
-     settings: { /* persisted preferences */ },
-     persistent: { /* persisted data (profiles, presets) */ }
+     ui: {
+       /* transient, not persisted */
+     },
+     calculator: {
+       /* runtime calculator state */
+     },
+     timers: {
+       /* timer instances state */
+     },
+     settings: {
+       /* persisted preferences */
+     },
+     persistent: {
+       /* persisted data (profiles, presets) */
+     },
    };
    ```
 
@@ -466,6 +478,7 @@ async triggerTimerRelay(durationSeconds) {
 1. **Click-to-Apply Test Strip Steps**: Test strip steps in the TEST tab are now clickable. Clicking a step applies its total exposure time to the CALC tab's base time slider, creating a seamless workflow between test strip generation and exposure calculation.
 
 2. **Theme-Aware Visual Feedback**: Test strip steps now display dynamic colors based on the current theme:
+
    - **Dark scheme**: Red intensity based on exposure
    - **Light scheme**: Blue tones with gradient
    - **Day scheme**: Yellow/gold tones with gradient
