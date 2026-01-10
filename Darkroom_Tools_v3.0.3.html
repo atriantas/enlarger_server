@@ -2185,13 +2185,11 @@
             style="
               margin-top: 5px;
               font-size: 0.6rem;
-              color: #600;
+              color: var(--accent);
               text-align: center;
             "
           >
-            <span id="autoAdvanceStatus"
-              >Current: Manual Advance (press 'A' to toggle)</span
-            >
+            <span id="autoAdvanceStatus">Current: Manual Advance</span>
           </div>
         </div>
 
@@ -5890,7 +5888,7 @@
                             <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(
                               profile.date
                             ).toLocaleDateString()}</div>
-                            <div style="font-size: 0.6rem; color: #600;">${timeStr}</div>
+                            <div style="font-size: 0.6rem; color: var(--accent);">${timeStr}</div>
                         </div>
                         <div class="shelf-life-actions">
                             <button class="btn-action load-btn" data-context="profile" data-name="${
@@ -6207,7 +6205,7 @@
                             <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(
                               preset.date
                             ).toLocaleDateString()}</div>
-                            <div style="font-size: 0.6rem; color: #600;">${ratio} • ${
+                            <div style="font-size: 0.6rem; color: var(--accent);">${ratio} • ${
                 preset.totalVolume
               }ml</div>
                         </div>
@@ -6484,12 +6482,12 @@
             item.innerHTML = `
                         <div>
                             <strong>${chemical.name}</strong>
-                            <div style="font-size: 0.6rem; color: #600;">
+                            <div style="font-size: 0.6rem; color: var(--accent);">
                                 Mixed: ${new Date(
                                   chemical.dateMixed
                                 ).toLocaleDateString()}
                             </div>
-                            <div style="font-size: 0.6rem; color: #600;">
+                            <div style="font-size: 0.6rem; color: var(--accent);">
                                 Expires: ${expiryDate.toLocaleDateString()}
                             </div>
                         </div>
@@ -9006,14 +9004,18 @@
             incrementalText.textContent =
               "Auto-advance: OFF - Press Next Step after sliding mask";
             statusText.textContent =
-              'Current: Manual Advance - press "A" to toggle or use Next Step button';
+              "Current: Manual Advance - press Next Step button";
           }
 
           // Update status text color based on theme
           if (document.body.classList.contains("light-scheme")) {
-            statusText.style.color = this.autoAdvance ? "#0066cc" : "#666";
+            statusText.style.color = this.autoAdvance
+              ? "var(--accent)"
+              : "var(--accent)";
           } else if (document.body.classList.contains("day-scheme")) {
-            statusText.style.color = this.autoAdvance ? "#ffcc00" : "#ccc";
+            statusText.style.color = this.autoAdvance
+              ? "var(--accent)"
+              : "var(--accent)";
           } else {
             statusText.style.color = this.autoAdvance ? "#f00" : "#900";
           }
@@ -9301,7 +9303,7 @@
                             <div class="step-stop">+${this.getIncrementLabel(
                               this.stepIncrement
                             )}</div>
-                            <div style="font-size: 0.4rem; color: #600; margin-top: 1px;">
+                            <div style="font-size: 0.4rem; color: var(--accent); margin-top: 1px;">
                                 Total: ${step.totalExposure.toFixed(1)}s
                             </div>
                         `;
@@ -10060,7 +10062,7 @@
               profile.stepIncrement
             }×${denomLabel} • ${profile.numSteps} steps
                 </div>
-                <div style="font-size: 0.6rem; color: #600;">
+                <div style="font-size: 0.6rem; color: var(--accent);">
                   ${methodLabel} • ${autoAdvanceLabel}
                 </div>
                 <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
