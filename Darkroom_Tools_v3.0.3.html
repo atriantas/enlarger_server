@@ -83,7 +83,7 @@
 
       /* Day Scheme - Dark grey tones with blue accent */
       body.day-scheme {
-        --bg: #121212;
+        --bg: #040404;
         --text: #e0e0e0;
         --text-secondary: #9e9e9e;
 
@@ -466,10 +466,6 @@
       .settings-input:focus {
         outline: none;
         border-color: var(--accent);
-      }
-
-      .settings-input.time-input {
-        text-align: center;
       }
 
       /* Unified list container - consolidates chemical-preset-list, shelf-life-list */
@@ -2213,12 +2209,9 @@
           >
             <div class="shelf-life-actions" style="gap: 15px">
               <div class="legend-item">
-                <span class="legend-color" style="background: #300"></span>
-                <span class="legend-label">Exposed</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #000"></span>
-                <span class="legend-label">Masked</span>
+                <span class="legend-label"
+                  >Select your preferred test strip</span
+                >
               </div>
             </div>
             <div class="shelf-life-actions" style="align-items: center">
@@ -9261,26 +9254,16 @@
             }
 
             // Theme adjustments
-            if (document.body.classList.contains("light-scheme")) {
-              const blueIntensity = Math.min(
-                150 +
-                  (step.totalExposure /
-                    this.steps[this.steps.length - 1].totalExposure) *
-                    100,
-                250
-              );
-              stepEl.style.backgroundColor = `rgb(${230 - blueIntensity / 3}, ${
-                230 - blueIntensity / 3
-              }, ${blueIntensity})`;
-            } else if (document.body.classList.contains("day-scheme")) {
-              const yellowIntensity = Math.min(
-                150 +
-                  (step.totalExposure /
-                    this.steps[this.steps.length - 1].totalExposure) *
-                    100,
-                250
-              );
-              stepEl.style.backgroundColor = `rgb(${yellowIntensity}, ${yellowIntensity}, ${100})`;
+            if (
+              document.body.classList.contains("light-scheme") ||
+              document.body.classList.contains("day-scheme")
+            ) {
+              // Create bigger steps: use index-based calculation for more distinct colors
+              const stepIndex = index;
+              const totalSteps = this.steps.length;
+              // Use 50-250 range with bigger jumps between steps
+              const greyIntensity = 50 + stepIndex * (150 / (totalSteps - 1));
+              stepEl.style.backgroundColor = `rgb(${greyIntensity}, ${greyIntensity}, ${greyIntensity})`;
             }
 
             if (
@@ -9883,6 +9866,14 @@
 
           // Switch to CALC tab
           switchTab("calc");
+
+          // Scroll to top using container
+          const container = document.querySelector(".container");
+          if (container) {
+            container.scrollTop = 0;
+          }
+          // Also scroll window as fallback
+          window.scrollTo(0, 0);
         }
 
         // Get currently loaded test strip profile name from appState (single source of truth)
