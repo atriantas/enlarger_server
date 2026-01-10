@@ -2794,45 +2794,6 @@
 
       <!-- Timer Tab with Photo Wash Toggle AND Timer Profiles -->
       <div id="timer" class="tab-content">
-        <div
-          class="incremental-timer"
-          style="
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0;
-            margin-bottom: 10px;
-            padding: 6px 8px;
-          "
-        >
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>End Beep</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="endBeep" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>10s Beep</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="warningBeep" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>Photo Wash</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="photoFloToggle" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-        </div>
-
         <div class="timer-grid">
           <!-- Developer Timer -->
           <div class="timer-box" id="timerDev">
@@ -2946,6 +2907,45 @@
         <div class="settings-btn-group">
           <button class="exp-btn" id="startAll">Start All</button>
           <button class="exp-btn" id="resetAll">Reset All</button>
+        </div>
+
+        <div
+          class="incremental-timer"
+          style="
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 6px 8px;
+          "
+        >
+          <div class="setting-item">
+            <div class="setting-label">
+              <span>Photo Wash</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="photoFloToggle" checked />
+              <span class="slider-switch"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <span>End Beep</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="endBeep" checked />
+              <span class="slider-switch"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <span>10s Beep</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="warningBeep" checked />
+              <span class="slider-switch"></span>
+            </label>
+          </div>
         </div>
 
         <!-- Timer Profiles Section MOVED from SETTINGS tab -->
