@@ -3772,7 +3772,26 @@
       let audioService = null; // Centralized audio service
 
       // ===== AUDIO SERVICE CLASS =====
+      /**
+       * AudioService - Manages Web Audio API for sound feedback
+       *
+       * Provides a centralized audio system for all timer and UI sound effects.
+       * Handles audio context initialization, resume on user interaction, and
+       * provides preset sound patterns for different events.
+       *
+       * @class
+       * @example
+       * const audio = new AudioService();
+       * await audio.playPreset('timerComplete');
+       */
       class AudioService {
+        /**
+         * Creates an AudioService instance
+         * @constructor
+         * @property {AudioContext|null} audioContext - The Web Audio API context
+         * @property {boolean} initialized - Whether audio context is initialized
+         * @property {Object} presets - Collection of sound presets with frequency, duration, volume
+         */
         constructor() {
           this.audioContext = null;
           this.initialized = false;
@@ -3815,6 +3834,11 @@
           };
         }
 
+        /**
+         * Initialize the Web Audio API context
+         * @returns {boolean} Success status
+         * @description Must be called before any audio playback. Requires user interaction.
+         */
         init() {
           if (this.initialized) return true;
 
@@ -3830,7 +3854,12 @@
           }
         }
 
-        // Ensure audio context is running (resume if suspended)
+        /**
+         * Ensure audio context is running (resume if suspended)
+         * @async
+         * @returns {Promise<void>}
+         * @description Automatically initializes if needed and resumes suspended context
+         */
         async ensureRunning() {
           if (!this.audioContext) {
             this.init();
@@ -3845,7 +3874,15 @@
           }
         }
 
-        // Play a beep with specified parameters
+        /**
+         * Play a beep with specified parameters
+         * @async
+         * @param {number} [frequency=800] - Frequency in Hz (20-20000)
+         * @param {number} [duration=0.1] - Duration in seconds
+         * @param {number} [volume=0.3] - Volume level (0.0-1.0)
+         * @returns {Promise<void>}
+         * @description Creates a sine wave oscillator with exponential fade-out
+         */
         async playBeep(frequency = 800, duration = 0.1, volume = 0.3) {
           await this.ensureRunning();
 
@@ -3874,7 +3911,13 @@
           }
         }
 
-        // Play a preset beep
+        /**
+         * Play a preset beep by name
+         * @async
+         * @param {string} presetName - Name of the preset (e.g., 'timerComplete', 'warning')
+         * @returns {Promise<void>}
+         * @description Looks up preset configuration and plays with stored parameters
+         */
         async playPreset(presetName) {
           const preset = this.presets[presetName];
           if (!preset) {
@@ -3884,7 +3927,16 @@
           await this.playBeep(preset.frequency, preset.duration, preset.volume);
         }
 
-        // Countdown beep patterns
+        /**
+         * Play countdown beep pattern based on remaining seconds
+         * @async
+         * @param {number} secondsRemaining - Seconds left in countdown
+         * @returns {Promise<void>}
+         * @description Plays different beep patterns based on urgency:
+         * - 0-3 seconds: urgent high-pitch beep
+         * - 4-5 seconds: mid-pitch beep
+         * - 6+ seconds: standard beep
+         */
         async playCountdownBeep(secondsRemaining) {
           if (secondsRemaining <= 3) {
             await this.playPreset("countdownUrgent");
@@ -3897,7 +3949,32 @@
       }
 
       // ===== DRIFT-CORRECTED TIMER UTILITY =====
+      /**
+       * DriftCorrectedTimer - High-precision timer with drift compensation
+       *
+       * Provides millisecond-accurate timing by compensating for JavaScript's
+       * timer drift. Uses Date.now() instead of setInterval for photographic
+       * timing precision. Essential for accurate exposure timing.
+       *
+       * @class
+       * @example
+       * const timer = new DriftCorrectedTimer(() => {
+       *   console.log('Tick');
+       * }, 1000);
+       * timer.start();
+       */
       class DriftCorrectedTimer {
+        /**
+         * Creates a DriftCorrectedTimer instance
+         * @constructor
+         * @param {Function} callback - Function to execute on each tick
+         * @param {number} interval - Interval in milliseconds between ticks
+         * @property {Function} callback - The callback function to execute
+         * @property {number} interval - The target interval in milliseconds
+         * @property {number|null} expected - The expected timestamp of next tick
+         * @property {number|null} timeout - The setTimeout identifier
+         * @property {boolean} running - Whether the timer is currently running
+         */
         constructor(callback, interval) {
           this.callback = callback;
           this.interval = interval;
@@ -3906,6 +3983,11 @@
           this.running = false;
         }
 
+        /**
+         * Start the timer
+         * @returns {void}
+         * @description Begins the timer loop with drift correction
+         */
         start() {
           if (this.running) return;
 
@@ -3914,6 +3996,12 @@
           this.timeout = setTimeout(() => this.step(), this.interval);
         }
 
+        /**
+         * Execute one timer tick with drift compensation
+         * @private
+         * @returns {void}
+         * @description Calculates drift and schedules next tick with adjusted delay
+         */
         step() {
           if (!this.running) return;
 
@@ -3929,6 +4017,11 @@
           this.timeout = setTimeout(() => this.step(), nextDelay);
         }
 
+        /**
+         * Stop the timer
+         * @returns {void}
+         * @description Halts the timer and clears any pending timeouts
+         */
         stop() {
           this.running = false;
           if (this.timeout) {
@@ -3937,6 +4030,10 @@
           }
         }
 
+        /**
+         * Check if timer is running
+         * @returns {boolean} True if timer is currently running
+         */
         isRunning() {
           return this.running;
         }
@@ -4054,6 +4151,17 @@
       // ===== RENDER FUNCTIONS =====
 
       // Calculator render functions
+      /**
+       * @function renderCalculatorDisplay
+       * @description Renders the calculator display with current state values.
+       * Updates base time, stop value, result time, result details, and timer display.
+       * @returns {void}
+       * @fires appState.calculator - Reads calculator state
+       * @fires Element.textContent - Updates display elements
+       * @fires formatStop - Formats stop value for display
+       * @example
+       * renderCalculatorDisplay(); // Update calculator UI
+       */
       function renderCalculatorDisplay() {
         const state = appState.calculator;
         document.getElementById(
@@ -4071,6 +4179,17 @@
           state.currentTime.toFixed(2);
       }
 
+      /**
+       * @function renderCalculatorExposureDetails
+       * @description Renders detailed exposure information for the calculator.
+       * Updates selected stop display and other exposure-related details.
+       * @returns {void}
+       * @fires appState.calculator - Reads calculator state
+       * @fires Element.textContent - Updates display elements
+       * @fires formatStop - Formats stop value for display
+       * @example
+       * renderCalculatorExposureDetails(); // Update exposure details UI
+       */
       function renderCalculatorExposureDetails() {
         const state = appState.calculator;
         document.getElementById("selectedStopDisplay").textContent = formatStop(
@@ -4084,6 +4203,20 @@
           state.thisExposureTime.toFixed(2);
       }
 
+      /**
+       * @function renderCalculatorTimerStatus
+       * @description Renders the calculator timer status, button states, and display styling.
+       * Updates status text, button text/disabled states, and warning styling based on calculator state
+       * (countdown, running, paused, or ready).
+       * @returns {void}
+       * @fires appState.calculator - Reads calculator state
+       * @fires appState.ui.timerStatus - Reads UI status text
+       * @fires Element.textContent - Updates button and status text
+       * @fires Element.disabled - Updates button disabled states
+       * @fires Element.classList - Adds/removes warning class
+       * @example
+       * renderCalculatorTimerStatus(); // Update timer status UI
+       */
       function renderCalculatorTimerStatus() {
         const state = appState.calculator;
         const statusElement = document.getElementById("timerStatus");
@@ -4129,7 +4262,21 @@
         }
       }
 
-      // Timer render functions
+      /**
+       * @function renderTimer
+       * @description Renders a single timer's display and UI state.
+       * Updates timer display, status text, button states, and styling based on timer state.
+       * @param {string} timerName - Name of the timer to render (Dev, Stop, Fix, Flo)
+       * @returns {void}
+       * @throws {Error} If timer state not found
+       * @fires appState.timers - Reads timer state
+       * @fires Element.textContent - Updates display and status text
+       * @fires Element.disabled - Updates button disabled states
+       * @fires Element.classList - Adds/removes timer state classes
+       * @fires Element.style - Updates styling
+       * @example
+       * renderTimer("Dev"); // Render Dev timer UI
+       */
       function renderTimer(timerName) {
         const state = appState.timers[timerName];
         if (!state) return;
@@ -4185,13 +4332,32 @@
         }
       }
 
+      /**
+       * @function renderAllTimers
+       * @description Renders all timer displays by iterating through appState.timers.
+       * Calls renderTimer() for each timer name to update their UI states.
+       * @returns {void}
+       * @fires appState.timers - Reads all timer states
+       * @fires renderTimer - Renders each individual timer
+       * @example
+       * renderAllTimers(); // Update all timer displays
+       */
       function renderAllTimers() {
         Object.keys(appState.timers).forEach((timerName) =>
           renderTimer(timerName)
         );
       }
 
-      // Settings render functions
+      /**
+       * @function renderSoundSettings
+       * @description Renders sound settings checkboxes from appState.
+       * Updates all sound-related checkbox states based on current settings.
+       * @returns {void}
+       * @fires appState.settings - Reads sound settings
+       * @fires Element.checked - Updates checkbox states
+       * @example
+       * renderSoundSettings(); // Update sound settings UI
+       */
       function renderSoundSettings() {
         const settings = appState.settings;
         document.getElementById("calcWarningBeep").checked =
@@ -4233,6 +4399,24 @@
         });
       }
 
+      /**
+       * @function switchTab
+       * @description Switches the active tab and updates related UI components.
+       * Removes active class from all tabs, adds it to selected tab, and triggers
+       * tab-specific updates (chart, test strip, chemical, timer, relay).
+       * @param {string} tabId - ID of the tab to activate
+       * @returns {void}
+       * @fires Element.classList.remove - Removes active class from all tabs
+       * @fires Element.classList.add - Adds active class to selected tab
+       * @fires refreshCollapsibleHeights - Updates collapsible sections
+       * @fires updateChart - Updates chart tab
+       * @fires fstopTestGenerator.updateDisplay - Updates test strip display
+       * @fires chemicalManager.updateDisplay - Updates chemical display
+       * @fires settingsManager.updateTimerProfileListUI - Updates timer profiles
+       * @fires relayManager.updateRelayButtons - Updates relay controls
+       * @example
+       * switchTab("calc"); // Switch to calculator tab
+       */
       function switchTab(tabId) {
         tabButtons.forEach((btn) => btn.classList.remove("active"));
         tabContents.forEach((content) => content.classList.remove("active"));
@@ -4352,6 +4536,18 @@
       }
 
       // Legacy playBeep wrapper - redirects to AudioService
+      /**
+       * @function playBeep
+       * @description Plays a beep sound using the audio service.
+       * Wrapper for AudioService.playBeep with default parameters from CONFIG.
+       * @param {number} frequency - Frequency in Hz (default: CONFIG.AUDIO.BEEP_FREQUENCY_HZ)
+       * @param {number} duration - Duration in seconds (default: CONFIG.AUDIO.BEEP_DURATION_SEC)
+       * @param {number} volume - Volume 0-1 (default: CONFIG.AUDIO.BEEP_VOLUME)
+       * @returns {void}
+       * @fires audioService.playBeep - Plays the beep sound
+       * @example
+       * playBeep(800, 0.1, 0.5); // Play 800Hz beep for 0.1s at 50% volume
+       */
       function playBeep(
         frequency = CONFIG.AUDIO.BEEP_FREQUENCY_HZ,
         duration = CONFIG.AUDIO.BEEP_DURATION_SEC,
@@ -4362,23 +4558,59 @@
         }
       }
 
-      // Wrapper for audio preset playback - standardized pattern
+      /**
+       * @function playPreset
+       * @description Plays a named audio preset using the audio service.
+       * Wrapper for AudioService.playPreset for standardized sound patterns.
+       * @param {string} presetName - Name of the preset to play
+       * @returns {void}
+       * @fires audioService.playPreset - Plays the preset sound
+       * @example
+       * playPreset("timerComplete"); // Play timer completion sound
+       */
       function playPreset(presetName) {
         if (audioService) {
           audioService.playPreset(presetName);
         }
       }
 
-      // Wrapper for countdown beep patterns - standardized pattern
+      /**
+       * @function playCountdownBeep
+       * @description Plays countdown beep pattern based on seconds remaining.
+       * Wrapper for AudioService.playCountdownBeep for countdown audio feedback.
+       * @param {number} secondsRemaining - Seconds remaining in countdown
+       * @returns {void}
+       * @fires audioService.playCountdownBeep - Plays countdown pattern
+       * @example
+       * playCountdownBeep(3); // Play beep for 3 seconds remaining
+       */
       function playCountdownBeep(secondsRemaining) {
         if (audioService) {
           audioService.playCountdownBeep(secondsRemaining);
         }
       }
 
-      // Storage Manager - UPDATED
+      /**
+       * StorageManager - Centralized localStorage handler with error handling
+       *
+       * Provides a unified interface for all localStorage operations with
+       * consistent error handling and key management. All persistence flows
+       * through this class to ensure data integrity.
+       *
+       * @class
+       * @example
+       * StorageManager.saveSettings({ baseTime: 10.0 });
+       * const settings = StorageManager.loadSettings();
+       */
       class StorageManager {
-        // Generic helpers to avoid duplicated try/catch
+        /**
+         * Save data as JSON string
+         * @static
+         * @param {string} key - Storage key
+         * @param {*} value - Data to save (will be JSON stringified)
+         * @returns {boolean} Success status
+         * @description Handles serialization errors and logs failures
+         */
         static saveJSON(key, value) {
           try {
             localStorage.setItem(key, JSON.stringify(value));
@@ -4389,6 +4621,14 @@
           }
         }
 
+        /**
+         * Load and parse JSON data
+         * @static
+         * @param {string} key - Storage key
+         * @param {*} fallback - Value to return if load fails or key doesn't exist
+         * @returns {*} Parsed data or fallback
+         * @description Handles parsing errors and provides fallback values
+         */
         static loadJSON(key, fallback) {
           try {
             const saved = localStorage.getItem(key);
@@ -4399,6 +4639,13 @@
           }
         }
 
+        /**
+         * Remove multiple storage keys
+         * @static
+         * @param {string[]} keys - Array of keys to remove
+         * @returns {boolean} Success status
+         * @description Clears all specified keys from localStorage
+         */
         static removeKeys(keys) {
           try {
             keys.forEach((k) => localStorage.removeItem(k));
@@ -4409,52 +4656,116 @@
           }
         }
 
+        /**
+         * Save user settings
+         * @static
+         * @param {Object} settings - Settings object
+         * @returns {boolean} Success status
+         */
         static saveSettings(settings) {
           return this.saveJSON(STORAGE_KEYS.SETTINGS, settings);
         }
 
+        /**
+         * Load user settings
+         * @static
+         * @returns {Object} Settings object with defaults
+         */
         static loadSettings() {
           return this.loadJSON(STORAGE_KEYS.SETTINGS, { ...DEFAULT_SETTINGS });
         }
 
+        /**
+         * Save timer profiles
+         * @static
+         * @param {Array} profiles - Array of profile objects
+         * @returns {boolean} Success status
+         */
         static saveProfiles(profiles) {
           return this.saveJSON(STORAGE_KEYS.PROFILES, profiles);
         }
 
+        /**
+         * Load timer profiles
+         * @static
+         * @returns {Array} Array of profile objects
+         */
         static loadProfiles() {
           return this.loadJSON(STORAGE_KEYS.PROFILES, []);
         }
 
+        /**
+         * Save currently loaded profile name
+         * @static
+         * @param {string|null} profileName - Name of current profile or null
+         * @returns {boolean} Success status
+         */
         static saveCurrentProfile(profileName) {
           return this.saveJSON(STORAGE_KEYS.CURRENT_PROFILE, profileName);
         }
 
+        /**
+         * Load currently loaded profile name
+         * @static
+         * @returns {string|null} Profile name or null
+         */
         static loadCurrentProfile() {
           return this.loadJSON(STORAGE_KEYS.CURRENT_PROFILE, null);
         }
 
+        /**
+         * Save color scheme preference
+         * @static
+         * @param {string} scheme - Color scheme name ('dark', 'light', 'day')
+         * @returns {boolean} Success status
+         */
         static saveColorScheme(scheme) {
           return this.saveJSON(STORAGE_KEYS.COLOR_SCHEME, scheme);
         }
 
+        /**
+         * Load color scheme preference
+         * @static
+         * @returns {string} Color scheme name
+         */
         static loadColorScheme() {
           return this.loadJSON(STORAGE_KEYS.COLOR_SCHEME, "dark");
         }
 
-        // Chemical presets storage
+        /**
+         * Save chemical presets
+         * @static
+         * @param {Array} presets - Array of chemical preset objects
+         * @returns {boolean} Success status
+         */
         static saveChemicalPresets(presets) {
           return this.saveJSON(STORAGE_KEYS.CHEMICAL_PRESETS, presets);
         }
 
+        /**
+         * Load chemical presets
+         * @static
+         * @returns {Array} Array of chemical preset objects
+         */
         static loadChemicalPresets() {
           return this.loadJSON(STORAGE_KEYS.CHEMICAL_PRESETS, []);
         }
 
-        // Capacity tracker storage - UPDATED with area calculations
+        /**
+         * Save developer capacity tracker data
+         * @static
+         * @param {Object} data - Capacity data object
+         * @returns {boolean} Success status
+         */
         static saveCapacityTracker(data) {
           return this.saveJSON(STORAGE_KEYS.CAPACITY_TRACKER, data);
         }
 
+        /**
+         * Load developer capacity tracker data
+         * @static
+         * @returns {Object} Capacity data with defaults
+         */
         static loadCapacityTracker() {
           return this.loadJSON(STORAGE_KEYS.CAPACITY_TRACKER, {
             printsDone: 0,
@@ -4464,19 +4775,40 @@
           });
         }
 
-        // Shelf life storage
+        /**
+         * Save shelf life tracking data
+         * @static
+         * @param {Array} chemicals - Array of chemical objects
+         * @returns {boolean} Success status
+         */
         static saveShelfLife(chemicals) {
           return this.saveJSON(STORAGE_KEYS.SHELF_LIFE, chemicals);
         }
 
+        /**
+         * Load shelf life tracking data
+         * @static
+         * @returns {Array} Array of chemical objects
+         */
         static loadShelfLife() {
           return this.loadJSON(STORAGE_KEYS.SHELF_LIFE, []);
         }
 
+        /**
+         * Save custom filter banks
+         * @static
+         * @param {Array} banks - Array of filter bank objects
+         * @returns {boolean} Success status
+         */
         static saveCustomFilterBanks(banks) {
           return this.saveJSON(STORAGE_KEYS.CUSTOM_FILTER_BANKS, banks);
         }
 
+        /**
+         * Load custom filter banks
+         * @static
+         * @returns {Array} Array of filter bank objects with defaults
+         */
         static loadCustomFilterBanks() {
           return this.loadJSON(
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
@@ -4484,14 +4816,31 @@
           );
         }
 
+        /**
+         * Save test strip profiles
+         * @static
+         * @param {Array} profiles - Array of test strip profile objects
+         * @returns {boolean} Success status
+         */
         static saveTestStripProfiles(profiles) {
           return this.saveJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, profiles);
         }
 
+        /**
+         * Load test strip profiles
+         * @static
+         * @returns {Array} Array of test strip profile objects
+         */
         static loadTestStripProfiles() {
           return this.loadJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, []);
         }
 
+        /**
+         * Save currently loaded test strip profile name
+         * @static
+         * @param {string|null} profileName - Profile name or null
+         * @returns {boolean} Success status
+         */
         static saveCurrentTestStripProfile(profileName) {
           return this.saveJSON(
             STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
@@ -4499,10 +4848,21 @@
           );
         }
 
+        /**
+         * Load currently loaded test strip profile name
+         * @static
+         * @returns {string|null} Profile name or null
+         */
         static loadCurrentTestStripProfile() {
           return this.loadJSON(STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE, null);
         }
 
+        /**
+         * Clear all stored data
+         * @static
+         * @returns {boolean} Success status
+         * @description Removes ALL application data from localStorage
+         */
         static clearAll() {
           return this.removeKeys([
             STORAGE_KEYS.SETTINGS,
@@ -4519,8 +4879,29 @@
         }
       }
 
-      // Timer Class
+      /**
+       * Timer - Individual timer instance for darkroom processes
+       *
+       * Manages a single countdown timer with drift-corrected precision.
+       * Supports auto-sequencing between timers and provides visual feedback.
+       * Four instances are typically used: Dev, Stop, Fix, Flo.
+       *
+       * @class
+       * @example
+       * const devTimer = new Timer('Dev');
+       * devTimer.setTime(60);
+       * devTimer.start();
+       */
       class Timer {
+        /**
+         * Creates a Timer instance
+         * @constructor
+         * @param {string} name - Timer identifier ('Dev', 'Stop', 'Fix', or 'Flo')
+         * @property {string} name - Timer identifier
+         * @property {DriftCorrectedTimer|null} driftTimer - High-precision timer instance
+         * @property {boolean} warningPlayed - Whether 10-second warning has played
+         * @property {boolean} isPartOfSequence - Whether timer is part of auto-chain
+         */
         constructor(name) {
           this.name = name;
           this.driftTimer = null; // Using drift-corrected timer
@@ -4541,24 +4922,49 @@
           this.render();
         }
 
+        /**
+         * Get current timer state from appState
+         * @returns {Object} Timer state object
+         */
         get state() {
           return appState.timers[this.name];
         }
 
+        /**
+         * Render timer display
+         * @returns {void}
+         * @description Updates UI elements for this timer
+         */
         render() {
           renderTimer(this.name);
         }
 
+        /**
+         * Update display (deprecated - use render instead)
+         * @deprecated Use render() instead
+         * @returns {void}
+         */
         updateDisplay() {
           // Deprecated - use render() instead
           this.render();
         }
 
+        /**
+         * Update button states (deprecated - use render instead)
+         * @deprecated Use render() instead
+         * @returns {void}
+         */
         updateButtonStates() {
           // Deprecated - use render() instead
           this.render();
         }
 
+        /**
+         * Set timer duration
+         * @param {number} seconds - Duration in seconds (5-600)
+         * @returns {void}
+         * @description Stops timer if running and sets new duration
+         */
         setTime(seconds) {
           // Stop if running
           if (this.state.isRunning) {
@@ -4577,6 +4983,12 @@
           this.render();
         }
 
+        /**
+         * Adjust timer duration
+         * @param {number} seconds - Amount to adjust (+/-)
+         * @returns {void}
+         * @description Adds/subtracts from current duration (5-600s range)
+         */
         adjustTime(seconds) {
           if (this.state.isRunning || !this.state.isEnabled) return;
 
@@ -4588,6 +5000,12 @@
           }
         }
 
+        /**
+         * Start the timer
+         * @param {boolean} [isSequence=false] - Whether this is part of an auto-chain
+         * @returns {void}
+         * @description Begins countdown with drift-corrected timing
+         */
         start(isSequence = false) {
           if (
             this.state.isRunning ||
@@ -4627,6 +5045,11 @@
           this.driftTimer.start();
         }
 
+        /**
+         * Stop the timer
+         * @returns {void}
+         * @description Halts countdown and resets sequence flag
+         */
         stop() {
           if (!this.state.isRunning) return;
 
@@ -4638,6 +5061,11 @@
           this.render();
         }
 
+        /**
+         * Reset timer to initial duration
+         * @returns {void}
+         * @description Stops timer and resets time to total duration
+         */
         reset() {
           if (this.state.isRunning || !this.state.isEnabled) return;
 
@@ -4647,6 +5075,11 @@
           this.render();
         }
 
+        /**
+         * Handle timer completion
+         * @returns {void}
+         * @description Plays completion sound and starts next timer in sequence
+         */
         complete() {
           this.state.isRunning = false;
           if (this.driftTimer) {
@@ -4681,6 +5114,11 @@
           this.isPartOfSequence = false;
         }
 
+        /**
+         * Toggle timer start/stop
+         * @returns {void}
+         * @description Starts if stopped, stops if running
+         */
         toggle() {
           if (!this.state.isEnabled) return;
 
@@ -4695,6 +5133,12 @@
           }
         }
 
+        /**
+         * Enable or disable timer
+         * @param {boolean} enabled - Whether timer should be enabled
+         * @returns {void}
+         * @description Updates enabled state and visual appearance
+         */
         updateEnabledState(enabled) {
           this.state.isEnabled = enabled;
           const box = document.getElementById(`timer${this.name}`);
@@ -4709,6 +5153,11 @@
           this.render();
         }
 
+        /**
+         * Start next timer in sequence
+         * @returns {Timer|null} The next timer that was started, or null
+         * @description Finds and starts the next enabled timer after this one
+         */
         startNextTimer() {
           const timerOrder = ["Dev", "Stop", "Fix", "Flo"];
           const currentIndex = timerOrder.indexOf(this.name);
@@ -4731,13 +5180,44 @@
           return null; // No next timer found
         }
 
+        /**
+         * Get current timer duration
+         * @returns {number} Total duration in seconds
+         */
         getCurrentTime() {
           return this.state.totalTime;
         }
       }
 
-      // NEW: Countdown Manager
+      /**
+       * CountdownManager - Visual and audio countdown before exposure
+       *
+       * Provides a configurable countdown delay with visual feedback and
+       * audible beeps. Supports multiple beep patterns and theme-aware styling.
+       * Used before starting any exposure timer.
+       *
+       * @class
+       * @example
+       * const countdown = new CountdownManager();
+       * await countdown.startCountdown(displayElement, () => {
+       *   // Start exposure after countdown
+       * });
+       */
       class CountdownManager {
+        /**
+         * Creates a CountdownManager instance
+         * @constructor
+         * @property {boolean} isActive - Whether countdown is currently running
+         * @property {number} countdownValue - Current countdown number
+         * @property {number|null} countdownInterval - Interval identifier
+         * @property {Function|null} onCompleteCallback - Callback when countdown completes
+         * @property {HTMLElement|null} displayElement - Element to update display
+         * @property {boolean} beepEnabled - Whether audio feedback is enabled
+         * @property {string} beepPattern - Beep pattern: 'every-second', 'last3', 'last5', 'none'
+         * @property {string} originalDisplay - Original text content of display
+         * @property {string} originalBackground - Original background color
+         * @property {string} originalColor - Original text color
+         */
         constructor() {
           this.isActive = false;
           this.countdownValue = 5;
@@ -4747,6 +5227,14 @@
           this.beepEnabled = true;
         }
 
+        /**
+         * Start the countdown
+         * @async
+         * @param {HTMLElement} displayElement - Element to show countdown
+         * @param {Function} onComplete - Callback to execute when countdown finishes
+         * @returns {Promise<void>}
+         * @description Loads settings, saves original display state, and begins countdown
+         */
         startCountdown(displayElement, onComplete) {
           if (this.isActive) return;
 
@@ -4784,6 +5272,12 @@
           this.updateCountdown();
         }
 
+        /**
+         * Update countdown display and schedule next tick
+         * @private
+         * @returns {void}
+         * @description Updates visual display, plays beeps, and decrements counter
+         */
         updateCountdown() {
           if (this.countdownValue <= 0) {
             this.complete();
@@ -4865,6 +5359,11 @@
           );
         }
 
+        /**
+         * Complete the countdown
+         * @returns {void}
+         * @description Restores display, plays final beep, and executes callback
+         */
         complete() {
           this.isActive = false;
           clearTimeout(this.countdownInterval);
@@ -4896,6 +5395,11 @@
           }
         }
 
+        /**
+         * Cancel the countdown
+         * @returns {void}
+         * @description Stops countdown and restores display without executing callback
+         */
         cancel() {
           this.isActive = false;
           clearTimeout(this.countdownInterval);
@@ -4918,8 +5422,33 @@
         }
       }
 
-      // Settings Manager
+      /**
+       * SettingsManager - Manages user preferences and application configuration
+       *
+       * Handles loading, saving, and applying all user settings including:
+       * - Timer defaults and durations
+       * - Sound preferences
+       * - Color scheme
+       * - Countdown settings
+       * - Test strip auto-advance
+       * - Safelight auto-off
+       * - F-stop denominator
+       * - Base time slider limits
+       *
+       * @class
+       * @example
+       * const settings = new SettingsManager();
+       * settings.saveGlobalSettings();
+       */
       class SettingsManager {
+        /**
+         * Creates a SettingsManager instance
+         * @constructor
+         * @property {Object} settings - Current settings object
+         * @property {Array} profiles - Timer profiles array
+         * @property {string} colorScheme - Current color scheme
+         * @description Loads settings from storage and applies them to UI and appState
+         */
         constructor() {
           this.settings = StorageManager.loadSettings();
           this.profiles = StorageManager.loadProfiles();
@@ -4956,6 +5485,11 @@
           // Clear button listener is set up via global delegation in DOMContentLoaded
         }
 
+        /**
+         * Apply sound settings to appState and UI
+         * @returns {void}
+         * @description Syncs sound preferences from settings to appState and updates UI
+         */
         applySoundSettings() {
           // Apply sound settings from saved settings and sync to appState
           if (this.settings.calcWarningBeep !== undefined) {
@@ -4975,6 +5509,11 @@
           renderSoundSettings();
         }
 
+        /**
+         * Apply color scheme to document body
+         * @returns {void}
+         * @description Updates CSS classes and saves scheme preference
+         */
         applyColorScheme() {
           document.body.classList.remove(
             "dark-scheme",
@@ -4996,6 +5535,11 @@
           StorageManager.saveSettings(this.settings);
         }
 
+        /**
+         * Set and apply color scheme
+         * @param {string} scheme - Color scheme name ('dark', 'light', or 'day')
+         * @returns {void}
+         */
         setColorScheme(scheme) {
           if (["dark", "light", "day"].includes(scheme)) {
             this.colorScheme = scheme;
@@ -5004,18 +5548,30 @@
           }
         }
 
-        // Get currently loaded profile name from appState (single source of truth)
+        /**
+         * Get currently loaded profile name
+         * @returns {string|null} Current profile name or null
+         * @description Uses appState as single source of truth
+         */
         getCurrentProfile() {
           return appState.persistent.currentProfile;
         }
 
-        // Set currently loaded profile in appState and persist to storage
+        /**
+         * Set currently loaded profile name
+         * @param {string|null} profileName - Profile name or null
+         * @description Updates appState and persists to storage
+         */
         setCurrentProfile(profileName) {
           appState.persistent.currentProfile = profileName;
           StorageManager.saveCurrentProfile(profileName);
         }
 
-        // Read current UI settings into this.settings
+        /**
+         * Read current UI values into settings object
+         * @returns {void}
+         * @description Collects all settings from UI controls
+         */
         readSettingsFromUI() {
           this.settings = {
             baseTime: parseFloat(
@@ -5094,7 +5650,11 @@
           };
         }
 
-        // Apply the current this.settings values to the UI and runtime objects
+        /**
+         * Apply settings to runtime and UI
+         * @returns {void}
+         * @description Updates all components with current settings values
+         */
         applySettingsToRuntime() {
           // Apply to UI
           this.applySoundSettings();
@@ -5258,7 +5818,11 @@
           }).call(this);
         }
 
-        // Called when user clicks "Save"
+        /**
+         * Save global settings from UI
+         * @returns {void}
+         * @description Reads UI, saves to storage, and applies to runtime
+         */
         saveGlobalSettings() {
           this.readSettingsFromUI();
           // Sync to appState
@@ -5270,7 +5834,11 @@
           }
         }
 
-        // Apply settings live without showing feedback
+        /**
+         * Apply settings live without feedback
+         * @returns {void}
+         * @description Reads UI, saves to storage, applies to runtime (debounced)
+         */
         applyLiveSettings() {
           this.readSettingsFromUI();
           // Sync to appState
@@ -5904,8 +6472,30 @@
         }
       }
 
-      // UPDATED: Chemical Management Class with all requested features
+      /**
+       * ChemicalManager - Manages chemical calculations and tracking
+       *
+       * Handles chemical mix calculations, capacity tracking, shelf life management,
+       * and chemical presets. Integrates with StorageManager for persistence.
+       *
+       * @class
+       * @example
+       * const chemManager = new ChemicalManager();
+       * chemManager.updateMixCalculator();
+       */
       class ChemicalManager {
+        /**
+         * Creates a ChemicalManager instance
+         * @constructor
+         * @property {number} totalVolume - Total volume in ml
+         * @property {string} dilutionRatio - Current dilution ratio
+         * @property {number} customStockParts - Custom stock parts
+         * @property {number} customWaterParts - Custom water parts
+         * @property {Object} capacityData - Developer capacity tracking data
+         * @property {Array} shelfLifeData - Active chemicals array
+         * @property {Array} chemicalPresets - Saved chemical presets
+         * @property {number} currentPaperSize - Current paper size in m²
+         */
         constructor() {
           this.totalVolume = 1000;
           this.dilutionRatio = "1+9";
@@ -5933,16 +6523,29 @@
           });
         }
 
-        // Get currently loaded chemical preset name from appState (single source of truth)
+        /**
+         * Get currently loaded chemical preset name
+         * @returns {string|null} Current preset name or null
+         * @description Uses appState as single source of truth
+         */
         getCurrentPreset() {
           return appState.persistent.currentChemicalPreset;
         }
 
-        // Set currently loaded chemical preset in appState
+        /**
+         * Set currently loaded chemical preset name
+         * @param {string|null} presetName - Preset name or null
+         * @description Updates appState
+         */
         setCurrentPreset(presetName) {
           appState.persistent.currentChemicalPreset = presetName;
         }
 
+        /**
+         * Initialize ChemicalManager - get DOM elements and set up event listeners
+         * @private
+         * @returns {void}
+         */
         init() {
           // Get elements
           this.totalVolumeSlider = document.getElementById("totalVolumeSlider");
@@ -6078,6 +6681,11 @@
           });
         }
 
+        /**
+         * Update mix calculator calculations
+         * @returns {void}
+         * @description Calculates stock and water volumes based on total volume and dilution ratio
+         */
         updateMixCalculator() {
           this.totalVolume = parseInt(this.totalVolumeSlider.value);
           this.totalVolumeValue.textContent = `${this.totalVolume}ml`;
@@ -6114,6 +6722,10 @@
           this.waterVolumeElement.textContent = `${adjustedWaterVolume}ml`;
         }
 
+        /**
+         * Save current chemical mix as a preset
+         * @returns {boolean} Success status
+         */
         saveChemicalPreset() {
           const name = this.chemicalPresetNameInput.value.trim();
 
@@ -6564,9 +7176,64 @@
         }
       }
 
-      // Relay Manager Class (complete version)
-      // Relay Manager Class - FIXED VERSION
+      /**
+       * @class RelayManager
+       * @classdesc Central hub for managing relay control and server communication.
+       * Handles all HTTP requests to Flask server, manages relay state tracking,
+       * implements auto-trigger functionality for timer integration, and provides
+       * safelight auto-off feature to prevent fogging during exposures.
+       *
+       * @property {string} serverIP - The IP address of the Raspberry Pi server (default: "192.168.1.100")
+       * @property {number} serverPort - The port number of the Flask server (default: 5000)
+       * @property {boolean} autoTrigger - Whether to automatically trigger the enlarger relay when timers start
+       * @property {boolean} safelightAutoOff - Whether to automatically turn off safelight when enlarger activates
+       * @property {boolean} safelightWasOn - Tracks if safelight was on before enlarger started (for restoration)
+       * @property {Object} relayStates - Current state of all 4 relays (1-4)
+       * @property {HTMLElement} relayServerIP - Input element for server IP
+       * @property {HTMLElement} relayServerPort - Input element for server port
+       * @property {HTMLElement} testRelayConnectionBtn - Button to test server connection
+       * @property {HTMLElement} relayStatus - Status display element
+       * @property {HTMLElement} autoTriggerRelay - Checkbox for auto-trigger setting
+       * @property {HTMLElement} testTimerRelayBtn - Button to test timer relay
+       * @property {HTMLElement} testTimerSeconds - Input for test timer duration
+       * @property {HTMLElement} allRelaysOnBtn - Button to turn all relays on
+       * @property {HTMLElement} allRelaysOffBtn - Button to turn all relays off
+       *
+       * @description
+       * Relay Mapping:
+       * - Relay 1 → GPIO 25 (Enlarger Timer) - Primary exposure control
+       * - Relay 2 → GPIO 17 (Safelight) - Auto-controlled during exposure
+       * - Relay 3 → GPIO 27 (Ventilation)
+       * - Relay 4 → GPIO 22 (White Light)
+       *
+       * Safelight Auto-Off Flow:
+       * 1. User starts exposure (CALC, TEST, or TIMER with auto-trigger)
+       * 2. If safelight is on, remember state and turn it OFF
+       * 3. Server starts GPIO 25 timer for specified duration
+       * 4. After duration, safelight is automatically restored
+       *
+       * Triple-Fallback Fetch Strategy:
+       * 1. CORS mode (Chrome/Safari) - preferred
+       * 2. no-cors mode - fallback for restricted environments
+       * 3. Image object - final fallback for GET requests
+       *
+       * @example
+       * // Initialize relay manager
+       * const relayManager = new RelayManager();
+       *
+       * // Trigger exposure with safelight handling
+       * await relayManager.triggerTimerRelay(10.5);
+       *
+       * // Manual relay control
+       * await relayManager.setRelay(1, true); // Turn on enlarger
+       * await relayManager.setRelay(2, false); // Turn off safelight
+       */
       class RelayManager {
+        /**
+         * @constructor
+         * @description Creates a RelayManager instance with default settings and initializes the relay state tracking.
+         * Loads saved settings from localStorage and sets up the initial UI state.
+         */
         constructor() {
           this.serverIP = "192.168.1.100";
           this.serverPort = 5000;
@@ -6584,7 +7251,13 @@
           this.init();
         }
 
-        // In the init() method, load the setting:
+        /**
+         * @method init
+         * @description Initializes the RelayManager by loading saved settings, binding UI elements,
+         * and setting up event listeners. Also synchronizes with SettingsManager for safelight auto-off
+         * and updates the UI display.
+         * @returns {void}
+         */
         init() {
           // Load saved settings
           this.loadSettings();
@@ -6672,7 +7345,18 @@
             });
         }
 
-        // Add to the RelayManager class
+        /**
+         * @method shutdownPi
+         * @description Initiates a graceful shutdown of the Raspberry Pi.
+         * Sends a shutdown command to the server with user confirmation.
+         * Provides visual feedback during the shutdown process.
+         * @returns {Promise<void>} Resolves when shutdown command is sent (or fails)
+         * @throws {Error} If shutdown command fails to send
+         * @fires updateStatus - Updates UI with shutdown progress
+         * @fires playBeep - Audio feedback on success
+         * @example
+         * await relayManager.shutdownPi(); // User will see confirmation dialog
+         */
         async shutdownPi() {
           if (
             !confirm(
@@ -6718,7 +7402,18 @@
           }
         }
 
-        // Add to the RelayManager class
+        /**
+         * @method rebootPi
+         * @description Initiates a reboot of the Raspberry Pi.
+         * Sends a reboot command to the server with user confirmation.
+         * Provides visual feedback during the reboot process.
+         * @returns {Promise<void>} Resolves when reboot command is sent (or fails)
+         * @throws {Error} If reboot command fails to send
+         * @fires updateStatus - Updates UI with reboot progress
+         * @fires playBeep - Audio feedback on success
+         * @example
+         * await relayManager.rebootPi(); // User will see confirmation dialog
+         */
         async rebootPi() {
           if (
             !confirm(
@@ -6764,7 +7459,16 @@
           }
         }
 
-        // In the RelayManager class, add a method to update the status display:
+        /**
+         * @method updateSafelightAutoOffStatus
+         * @description Updates the visual display of safelight auto-off status in the UI.
+         * Changes text content and color based on current setting and active theme.
+         * @returns {void}
+         * @fires document.getElementById - Updates "safelightAutoOffStatus" element
+         * @theme-aware - Adapts colors for dark, light, and day schemes
+         * @example
+         * relayManager.updateSafelightAutoOffStatus(); // Updates UI display
+         */
         updateSafelightAutoOffStatus() {
           const statusElement = document.getElementById(
             "safelightAutoOffStatus"
@@ -6796,7 +7500,17 @@
 
         // initRelayToggleButtons removed - now using event delegation
 
-        // In the saveSettings() method, add safelightAutoOff:
+        /**
+         * @method saveSettings
+         * @description Saves current relay manager settings to localStorage.
+         * Reads values from UI elements and persists server configuration,
+         * auto-trigger preference, and safelight auto-off setting.
+         * @returns {void}
+         * @fires localStorage.setItem - Saves "relaySettings" key
+         * @throws {Error} Logs error if localStorage save fails
+         * @example
+         * relayManager.saveSettings(); // Persists current configuration
+         */
         saveSettings() {
           this.serverIP = this.relayServerIP
             ? this.relayServerIP.value
@@ -6828,7 +7542,17 @@
           }
         }
 
-        // In the loadSettings() method, load safelightAutoOff:
+        /**
+         * @method loadSettings
+         * @description Loads relay manager settings from localStorage.
+         * Restores server configuration, auto-trigger preference, safelight auto-off setting,
+         * and relay states. Uses default values if no saved settings exist.
+         * @returns {void}
+         * @fires localStorage.getItem - Retrieves "relaySettings" and "relayStates" keys
+         * @throws {Error} Logs error if localStorage load or parse fails
+         * @example
+         * relayManager.loadSettings(); // Restores saved configuration
+         */
         loadSettings() {
           try {
             const saved = localStorage.getItem("relaySettings");
@@ -6850,6 +7574,28 @@
           }
         }
 
+        /**
+         * @method sendRequest
+         * @description Sends an HTTP GET request to the Flask server with triple-fallback strategy.
+         * Tries CORS mode first, then no-cors mode, then Image object for maximum compatibility.
+         * @param {string} endpoint - The server endpoint to request (e.g., "ping", "relay", "timer")
+         * @param {Object} [params={}] - Query parameters to include in the request
+         * @returns {Promise<boolean>} Resolves to true if request succeeds, false otherwise
+         * @throws {Error} May throw if CORS request fails with non-200 status
+         * @description Triple-Fallback Strategy:
+         * 1. CORS mode (Chrome/Safari) - preferred, allows reading response
+         * 2. no-cors mode - fallback for restricted environments, can't read response
+         * 3. Image object - final fallback for GET requests, no CORS requirements
+         * @example
+         * // Test connection
+         * const success = await relayManager.sendRequest("ping");
+         *
+         * // Control relay
+         * await relayManager.sendRequest("relay", { gpio: 25, state: "on" });
+         *
+         * // Start timer
+         * await relayManager.sendRequest("timer", { gpio: 25, duration: 10.5 });
+         */
         async sendRequest(endpoint, params = {}) {
           const url = `http://${this.serverIP}:${this.serverPort}/${endpoint}`;
           const queryString = Object.keys(params)
@@ -6912,7 +7658,27 @@
             }
           }
         }
-        // Add this method to the RelayManager class:
+        /**
+         * @method handleSafelightAutoOff
+         * @description Implements the safelight auto-off feature to prevent fogging during exposures.
+         * Automatically turns off safelight when enlarger activates and restores it after exposure.
+         * This is the core method that implements the critical safelight protection flow.
+         * @param {number} relayNum - The relay number being controlled (1-4)
+         * @param {boolean} newState - The intended new state of the relay (true=ON, false=OFF)
+         * @returns {Promise<void>} Resolves when safelight control operations complete
+         * @description Safelight Auto-Off Flow:
+         * 1. If enlarger (relay 1) is turning ON:
+         *    - Check if safelight (relay 2) is currently ON
+         *    - If yes, remember state and turn safelight OFF
+         * 2. If enlarger (relay 1) is turning OFF:
+         *    - Check if safelight was previously turned off by this system
+         *    - If yes, immediately restore safelight to previous state
+         * @fires setRelay - Controls safelight relay (2) when needed
+         * @fires setTimeout - Restores safelight immediately
+         * @example
+         * // Called automatically by setRelay and toggleRelay methods
+         * await relayManager.handleSafelightAutoOff(1, true); // Enlarger turning on
+         */
         async handleSafelightAutoOff(relayNum, newState) {
           // If safelight auto-off is disabled, do nothing
           if (!this.safelightAutoOff) return;
@@ -6939,19 +7705,39 @@
             if (this.safelightWasOn) {
               console.log("Enlarger turned off, restoring safelight");
 
-              // Wait a moment before restoring safelight (optional)
+              // Restore safelight immediately
               setTimeout(async () => {
                 // Only restore if user hasn't manually turned it back on
                 if (!this.relayStates[2]) {
                   await this.setRelay(2, true);
                 }
                 this.safelightWasOn = false;
-              }, 500); // 0.5 second delay
+              }, 0); // Immediate restoration
             }
           }
         }
 
-        // Update the toggleRelay method to call handleSafelightAutoOff:
+        /**
+         * @method toggleRelay
+         * @description Toggles a specific relay between ON and OFF states.
+         * Handles safelight auto-off logic before toggling, sends request to server,
+         * updates local state, and provides audio/visual feedback.
+         * @param {number} relayNum - The relay number to toggle (1-4)
+         * @returns {Promise<void>} Resolves when toggle operation completes
+         * @throws {Error} Logs error if server request fails
+         * @fires handleSafelightAutoOff - Processes safelight protection before toggle
+         * @fires sendRequest - Sends relay control command to server
+         * @fires localStorage.setItem - Updates relay state persistence
+         * @fires updateRelayButtons - Updates UI button states
+         * @fires updateStatus - Updates status display
+         * @fires playBeep - Audio feedback (800Hz for ON, 400Hz for OFF)
+         * @example
+         * // Toggle enlarger relay (relay 1)
+         * await relayManager.toggleRelay(1);
+         *
+         * // Toggle safelight relay (relay 2)
+         * await relayManager.toggleRelay(2);
+         */
         async toggleRelay(relayNum) {
           const newState = !this.relayStates[relayNum];
           const gpioPin = this.getGPIOPin(relayNum);
@@ -6979,7 +7765,29 @@
           }
         }
 
-        // Update the setRelay method to also handle safelight auto-off:
+        /**
+         * @method setRelay
+         * @description Sets a specific relay to a specific state (ON/OFF).
+         * Handles safelight auto-off logic, sends request to server, and updates local state.
+         * Unlike toggleRelay, this method sets an explicit state rather than toggling.
+         * @param {number} relayNum - The relay number to control (1-4)
+         * @param {boolean} state - The desired state (true=ON, false=OFF)
+         * @returns {Promise<void>} Resolves when set operation completes
+         * @throws {Error} Logs error if server request fails
+         * @fires handleSafelightAutoOff - Processes safelight protection before setting
+         * @fires sendRequest - Sends relay control command to server
+         * @fires localStorage.setItem - Updates relay state persistence
+         * @fires updateRelayButtons - Updates UI button states
+         * @example
+         * // Turn on enlarger
+         * await relayManager.setRelay(1, true);
+         *
+         * // Turn off safelight
+         * await relayManager.setRelay(2, false);
+         *
+         * // Turn on ventilation
+         * await relayManager.setRelay(3, true);
+         */
         async setRelay(relayNum, state) {
           const gpioPin = this.getGPIOPin(relayNum);
           const stateStr = state ? "on" : "off";
@@ -7002,6 +7810,17 @@
           }
         }
 
+        /**
+         * @method getGPIOPin
+         * @description Maps relay numbers to their corresponding GPIO pin numbers.
+         * Provides the hardware pin mapping for relay control.
+         * @param {number} relayNum - The relay number (1-4)
+         * @returns {number} The GPIO pin number for the specified relay
+         * @constant {Object} pinMap - Static mapping of relay to GPIO pins
+         * @example
+         * const pin = relayManager.getGPIOPin(1); // Returns 25 (Enlarger)
+         * const pin = relayManager.getGPIOPin(2); // Returns 17 (Safelight)
+         */
         getGPIOPin(relayNum) {
           const pinMap = {
             1: 25, // Enlarger Timer
@@ -7012,7 +7831,38 @@
           return pinMap[relayNum] || 14;
         }
 
-        // Update the triggerTimerRelay method:
+        /**
+         * @method triggerTimerRelay
+         * @description Triggers the enlarger relay with a timed duration.
+         * This is the primary method used by CALC, TEST, and TIMER tabs for exposures.
+         * Implements the complete safelight auto-off flow with immediate restoration.
+         * @param {number} durationSeconds - The exposure duration in seconds
+         * @returns {Promise<void>} Resolves when timer trigger completes
+         * @throws {Error} Logs error if timer request fails
+         * @fires console.log - Logs safelight state changes for debugging
+         * @fires sendRequest - Sends timer command to server (gpio=25, duration=durationSeconds)
+         * @fires updateStatus - Updates UI with timer status
+         * @fires setTimeout - Schedules safelight restoration after exposure
+         * @fires setRelay - Controls safelight (relay 2) before and after exposure
+         * @description Critical Safelight Flow:
+         * 1. Check if auto-trigger is enabled (required for this method)
+         * 2. If safelight auto-off is enabled and safelight is on:
+         *    - Remember safelight was on
+         *    - Turn off safelight (relay 2)
+         * 3. Send timer request to server (gpio=25, duration=durationSeconds)
+         * 4. After duration:
+         *    - Restore safelight if it was on
+         *    - Reset safelightWasOn flag
+         * @example
+         * // From CALC tab with 10.5 second exposure
+         * await relayManager.triggerTimerRelay(10.5);
+         *
+         * // From TEST tab with 2.5 second step
+         * await relayManager.triggerTimerRelay(2.5);
+         *
+         * // From TIMER tab (Dev timer)
+         * await relayManager.triggerTimerRelay(60.0);
+         */
         async triggerTimerRelay(durationSeconds) {
           if (!this.autoTrigger) {
             console.log("Auto-trigger disabled");
@@ -7046,13 +7896,26 @@
                   await this.setRelay(2, true);
                 }
                 this.safelightWasOn = false;
-              }, durationSeconds * 1000 + 500); // Add 0.5s buffer
+              }, durationSeconds * 1000); // Immediate restoration
             }
           } else {
             this.updateStatus("Timer relay failed", "error");
           }
         }
 
+        /**
+         * @method testConnection
+         * @description Tests the connection to the Flask server.
+         * Sends a ping request to verify server is reachable and responsive.
+         * Provides audio and visual feedback based on connection result.
+         * @returns {Promise<void>} Resolves when connection test completes
+         * @fires updateStatus - Updates UI with connection status
+         * @fires sendRequest - Sends "ping" request to server
+         * @fires playBeep - Audio feedback (600Hz for success)
+         * @example
+         * // Test connection before starting exposure
+         * await relayManager.testConnection();
+         */
         async testConnection() {
           this.updateStatus("Testing connection...", "info");
 
@@ -7067,6 +7930,19 @@
           }
         }
 
+        /**
+         * @method testTimerRelay
+         * @description Tests the timer relay functionality with a user-specified duration.
+         * Reads duration from UI input and triggers the enlarger with safelight handling.
+         * Useful for testing exposure timing and safelight auto-off feature.
+         * @returns {Promise<void>} Resolves when test timer completes
+         * @fires parseFloat - Reads duration from testTimerSeconds input element
+         * @fires triggerTimerRelay - Starts exposure with specified duration
+         * @example
+         * // User clicks "Test Timer Relay" button
+         * // Reads value from testTimerSeconds input (default: 5 seconds)
+         * await relayManager.testTimerRelay();
+         */
         async testTimerRelay() {
           const seconds = parseFloat(
             this.testTimerSeconds ? this.testTimerSeconds.value : 5
@@ -7076,6 +7952,19 @@
           }
         }
 
+        /**
+         * @method allRelaysOn
+         * @description Turns ON all relays simultaneously.
+         * Respects safelight auto-off setting: if enabled and enlarger is on,
+         * safelight will not be turned on to prevent fogging.
+         * @returns {Promise<void>} Resolves when all relays are turned on
+         * @fires setRelay - Controls each relay individually
+         * @fires updateStatus - Updates UI with success message
+         * @fires playBeep - Audio feedback (800Hz, 0.5s duration)
+         * @example
+         * // Turn on all relays (respecting safelight auto-off)
+         * await relayManager.allRelaysOn();
+         */
         async allRelaysOn() {
           // If safelight auto-off is enabled and we're turning on enlarger,
           // we should handle safelight appropriately
@@ -7099,6 +7988,18 @@
           playBeep(800, 0.5, 0.3);
         }
 
+        /**
+         * @method allRelaysOff
+         * @description Turns OFF all relays simultaneously.
+         * Resets the safelightWasOn flag to prevent unexpected safelight restoration.
+         * @returns {Promise<void>} Resolves when all relays are turned off
+         * @fires setRelay - Controls each relay individually
+         * @fires updateStatus - Updates UI with success message
+         * @fires playBeep - Audio feedback (400Hz, 0.5s duration)
+         * @example
+         * // Turn off all relays
+         * await relayManager.allRelaysOff();
+         */
         async allRelaysOff() {
           for (let i = 1; i <= 4; i++) {
             await this.setRelay(i, false);
@@ -7108,6 +8009,18 @@
           playBeep(400, 0.5, 0.3);
         }
 
+        /**
+         * @method updateRelayButtons
+         * @description Updates all relay control buttons in the UI to reflect current states.
+         * Changes button text (ON/OFF) and CSS classes based on relayStates.
+         * @returns {void}
+         * @fires document.querySelectorAll - Finds all relay control buttons
+         * @fires Element.textContent - Updates button text
+         * @fires Element.classList.toggle - Updates CSS classes
+         * @example
+         * // Called after any relay state change
+         * relayManager.updateRelayButtons();
+         */
         updateRelayButtons() {
           document
             .querySelectorAll(".settings-btn[data-relay]")
@@ -7120,6 +8033,26 @@
             });
         }
 
+        /**
+         * @method updateStatus
+         * @description Updates the relay status display element with a message and color.
+         * Theme-aware: adapts colors for dark, light, and day schemes.
+         * @param {string} message - The status message to display
+         * @param {string} [type="info"] - Message type: "success", "error", or "info"
+         * @returns {void}
+         * @fires Element.textContent - Updates status text
+         * @fires Element.style.color - Updates text color based on type and theme
+         * @theme-aware - Uses different colors for each theme scheme
+         * @example
+         * // Success message
+         * relayManager.updateStatus("Connected successfully!", "success");
+         *
+         * // Error message
+         * relayManager.updateStatus("Connection failed", "error");
+         *
+         * // Info message
+         * relayManager.updateStatus("Testing connection...", "info");
+         */
         updateStatus(message, type = "info") {
           if (!this.relayStatus) return;
 
@@ -7552,6 +8485,16 @@
       const stopSlider = document.getElementById("stopSlider");
       const chartBaseSlider = document.getElementById("chartBaseSlider");
 
+      /**
+       * @function formatStop
+       * @description Formats a stop value as a human-readable string with fractions.
+       * Supports denominators 2, 3, 4, 6 with Unicode fraction characters.
+       * @param {number} value - Stop value (in fractional steps)
+       * @returns {string} Formatted stop string (e.g., "1⅓", "2½", "-3.0")
+       * @fires window.stopDenominator - Reads current denominator setting
+       * @example
+       * formatStop(4); // Returns "1⅓" if denominator is 3
+       */
       function formatStop(value) {
         const denom = window.stopDenominator || 3;
         const val = value / denom; // actual stops
@@ -7583,7 +8526,16 @@
         return `${sign}${absVal.toFixed(1)}`;
       }
 
-      // Compact stop formatter: returns fraction-only when <1 stop, includes whole number otherwise
+      /**
+       * @function formatStopCompact
+       * @description Formats stop value in compact form for rulers and small displays.
+       * Shows fraction-only when <1 stop, includes whole number otherwise.
+       * @param {number} stopValue - Stop value in full stops
+       * @returns {string} Compact formatted stop string (e.g., "⅓", "1½", "2")
+       * @fires window.stopDenominator - Reads current denominator setting
+       * @example
+       * formatStopCompact(0.33); // Returns "⅓" if denominator is 3
+       */
       function formatStopCompact(stopValue) {
         const denom = window.stopDenominator || 3;
         const whole = Math.floor(stopValue);
@@ -7619,13 +8571,78 @@
         return stopValue.toFixed(1);
       }
 
+      /**
+       * @function calculateTime
+       * @description Calculates exposure time for a given stop value.
+       * Uses the formula: time = base * 2^(stop/denominator)
+       * @param {number} base - Base exposure time in seconds
+       * @param {number} stop - Stop value (in fractional steps)
+       * @returns {number} Calculated exposure time in seconds
+       * @fires window.stopDenominator - Reads current denominator setting
+       * @example
+       * calculateTime(10, 3); // Returns 20.0 if denominator is 3 (1 stop = 2x time)
+       */
       function calculateTime(base, stop) {
         const denom = window.stopDenominator || 3;
         return base * Math.pow(2, stop / denom);
       }
 
-      // FIXED: Enhanced IncrementalTimer with proper button states
+      /**
+       * @class IncrementalTimer
+       * @classdesc Dodge/burn calculator with step-by-step exposure progression.
+       * Manages incremental exposure calculations for darkroom printing, allowing
+       * users to build up exposure through multiple steps with f-stop precision.
+       *
+       * @property {number} baseTime - Base exposure time in seconds
+       * @property {number} currentStop - Current f-stop increment value
+       * @property {number} previousTotalTime - Total time from previous step
+       * @property {number} currentTotalTime - Total time for current step
+       * @property {number} thisExposureTime - Time for this specific step
+       * @property {number} accumulatedTime - Cumulative time across all steps
+       * @property {number} currentTime - Current countdown time
+       * @property {boolean} isRunning - Whether exposure is in progress
+       * @property {boolean} isPaused - Whether exposure is paused
+       * @property {boolean} isCountdown - Whether countdown is active
+       * @property {number} lastExposureTime - Time of last completed exposure
+       * @property {DriftCorrectedTimer|null} driftTimer - High-precision timer instance
+       * @property {number|null} lastBeepSecond - Last second that beep played
+       * @property {Function|null} countdownResolve - Promise resolver for countdown
+       *
+       * @description
+       * The calculator works by accumulating exposure time across multiple steps.
+       * Each step adds time based on f-stop increments (1/3, 1/2, 1 stop, etc.).
+       *
+       * F-Stop Formula: time = baseTime × 2^(stop/denominator)
+       *
+       * Integration Points:
+       * - Uses CountdownManager before starting exposure
+       * - Triggers RelayManager for automatic enlarger control
+       * - Syncs with appState.calculator for persistence
+       * - Updates UI via render functions
+       *
+       * @example
+       * // Initialize calculator
+       * const calc = new IncrementalTimer();
+       *
+       * // Set base time and start
+       * calc.baseTime = 10.0;
+       * calc.currentStop = 1; // 1/3 stop
+       * calc.updateCalculations();
+       * await calc.start(); // Includes countdown and relay trigger
+       *
+       * // After exposure completes
+       * calc.accumulatedTime = calc.currentTotalTime;
+       * calc.updateCalculations(); // Ready for next step
+       */
       class IncrementalTimer {
+        /**
+         * @constructor
+         * @description Creates an IncrementalTimer instance and initializes state.
+         * Syncs with appState.calculator, sets up event listeners, and renders UI.
+         * @property {DriftCorrectedTimer|null} driftTimer - High-precision timer
+         * @property {number|null} lastBeepSecond - Last beep second tracking
+         * @property {Function|null} countdownResolve - Countdown promise resolver
+         */
         constructor() {
           // Initialize state from appState
           this.syncFromState();
@@ -7638,7 +8655,15 @@
           this.render();
         }
 
-        // Sync local properties from central state
+        /**
+         * @method syncFromState
+         * @description Synchronizes local properties from central appState.calculator.
+         * Called during initialization to load persisted runtime state.
+         * @returns {void}
+         * @fires appState.calculator - Reads from central calculator state
+         * @example
+         * this.syncFromState(); // Load state before operations
+         */
         syncFromState() {
           const state = appState.calculator;
           this.baseTime = state.baseTime;
@@ -7654,7 +8679,15 @@
           this.lastExposureTime = state.lastExposureTime;
         }
 
-        // Sync central state from local properties
+        /**
+         * @method syncToState
+         * @description Synchronizes central appState.calculator from local properties.
+         * Called before rendering to ensure UI reflects current state.
+         * @returns {void}
+         * @fires appState.calculator - Writes to central calculator state
+         * @example
+         * this.syncToState(); // Save state before rendering
+         */
         syncToState() {
           const state = appState.calculator;
           state.baseTime = this.baseTime;
@@ -7669,7 +8702,19 @@
           state.lastExposureTime = this.lastExposureTime;
         }
 
-        // Unified render method
+        /**
+         * @method render
+         * @description Unified render method that updates all calculator UI elements.
+         * Syncs state to appState, then calls render functions for display, details, timer status, and chart.
+         * @returns {void}
+         * @fires syncToState - Updates central state before rendering
+         * @fires renderCalculatorDisplay - Updates main display
+         * @fires renderCalculatorExposureDetails - Updates exposure details
+         * @fires renderCalculatorTimerStatus - Updates timer status
+         * @fires updateChart - Updates f-stop chart
+         * @example
+         * this.render(); // Update all UI elements
+         */
         render() {
           this.syncToState();
           renderCalculatorDisplay();
@@ -7678,6 +8723,16 @@
           updateChart();
         }
 
+        /**
+         * @method init
+         * @description Initializes event listeners for calculator sliders.
+         * Binds base time and stop increment sliders to update calculations.
+         * @returns {void}
+         * @fires addEventListener - Listens for slider input events
+         * @fires updateFromSliders - Called when sliders change
+         * @example
+         * this.init(); // Set up slider listeners
+         */
         init() {
           // Sliders still need direct listeners for input events
           baseTimeSlider.addEventListener("input", () =>
@@ -7686,7 +8741,20 @@
           stopSlider.addEventListener("input", () => this.updateFromSliders());
         }
 
-        // Stop current exposure (resets current exposure time)
+        /**
+         * @method stopCurrentExposure
+         * @description Stops the current exposure or cancels countdown.
+         * Resets timer state and updates UI. If countdown is active, cancels it.
+         * If exposure is running, stops it and resets current time.
+         * @returns {void}
+         * @fires countdownManager.cancel - Cancels active countdown
+         * @fires driftTimer.stop - Stops high-precision timer
+         * @fires updateStatus - Updates UI with stop status
+         * @fires playPreset - Audio feedback
+         * @example
+         * // User clicks "Stop" button during countdown or exposure
+         * this.stopCurrentExposure();
+         */
         stopCurrentExposure() {
           if (!this.isRunning && !this.isPaused && !this.isCountdown) return;
 
@@ -7720,7 +8788,19 @@
           playPreset("pause");
         }
 
-        // Repeat last exposure method
+        /**
+         * @method repeatLast
+         * @description Repeats the last completed exposure time.
+         * Sets current exposure time to the last completed exposure time
+         * and prepares the timer for immediate restart.
+         * @returns {void}
+         * @fires driftTimer.stop - Stops any running timer
+         * @fires updateStatus - Updates UI with repeat status
+         * @fires playPreset - Audio feedback
+         * @example
+         * // User clicks "Repeat" button after completing an exposure
+         * this.repeatLast();
+         */
         repeatLast() {
           if (this.lastExposureTime <= 0) return;
 
@@ -7743,6 +8823,18 @@
           playPreset("pause");
         }
 
+        /**
+         * @method updateFromSliders
+         * @description Updates calculator from slider values.
+         * Reads base time and stop increment from UI sliders, recalculates
+         * exposure times, and updates display.
+         * @returns {void}
+         * @fires updateCalculations - Recalculates exposure times
+         * @fires render - Updates UI display
+         * @example
+         * // Called when user moves sliders
+         * this.updateFromSliders();
+         */
         updateFromSliders() {
           this.baseTime = parseFloat(baseTimeSlider.value);
           this.currentStop = parseInt(stopSlider.value);
@@ -7750,6 +8842,17 @@
           this.render();
         }
 
+        /**
+         * @method updateCalculations
+         * @description Recalculates all exposure times based on current parameters.
+         * Uses f-stop formula: time = baseTime × 2^(stop/denominator)
+         * Updates currentTotalTime, thisExposureTime, and currentTime.
+         * @returns {void}
+         * @fires calculateTime - F-stop time calculation function
+         * @example
+         * // After changing base time or stop increment
+         * this.updateCalculations();
+         */
         updateCalculations() {
           this.currentTotalTime = calculateTime(
             this.baseTime,
@@ -7766,12 +8869,28 @@
           }
         }
 
+        /**
+         * @method updateAllDisplays
+         * @deprecated Use render() instead
+         * @description Legacy method that calls render().
+         * @returns {void}
+         * @fires render - Updates all displays
+         */
         updateAllDisplays() {
           // Deprecated - use render() instead
           this.render();
         }
 
-        // Add to IncrementalTimer class (around line 1500)
+        /**
+         * @method triggerRelayForTimer
+         * @description Triggers the enlarger relay for the current exposure time.
+         * Only triggers if auto-trigger is enabled in RelayManager.
+         * @returns {Promise<void>} Resolves when relay trigger completes
+         * @fires relayManager.triggerTimerRelay - Sends timer command to server
+         * @example
+         * // Called automatically during start() method
+         * await this.triggerRelayForTimer();
+         */
         async triggerRelayForTimer() {
           if (window.relayManager && window.relayManager.autoTrigger) {
             // Use the current exposure time
@@ -7782,7 +8901,22 @@
           }
         }
 
-        // In the IncrementalTimer.start() method (around line 1500), update to async:
+        /**
+         * @method start
+         * @description Starts the exposure with countdown and relay trigger.
+         * Performs countdown using CountdownManager, triggers enlarger relay,
+         * and starts the exposure timer with drift correction.
+         * @returns {Promise<void>} Resolves when countdown completes or is cancelled
+         * @throws {Error} Logs error if relay trigger fails
+         * @fires countdownManager.startCountdown - Visual/audio countdown
+         * @fires relayManager.triggerTimerRelay - Triggers enlarger
+         * @fires startInterval - Begins exposure timer
+         * @fires updateStatus - Updates UI status
+         * @fires render - Updates UI display
+         * @example
+         * // User clicks "Start Exposure" button
+         * await this.start();
+         */
         async start() {
           if (
             this.isRunning ||
@@ -7850,6 +8984,19 @@
           this.startInterval();
         }
 
+        /**
+         * @method startInterval
+         * @description Starts the drift-corrected exposure timer.
+         * Creates a DriftCorrectedTimer that decrements currentTime by 0.1s intervals.
+         * Updates display, plays warning beeps, and calls complete() when finished.
+         * @returns {void}
+         * @fires DriftCorrectedTimer - High-precision timer instance
+         * @fires playPreset - Warning beeps at 3 seconds
+         * @fires complete - Called when timer reaches zero
+         * @example
+         * // Called by start() after countdown
+         * this.startInterval();
+         */
         startInterval() {
           this.driftTimer = new DriftCorrectedTimer(() => {
             this.currentTime -= 0.1;
@@ -7892,6 +9039,18 @@
           this.driftTimer.start();
         }
 
+        /**
+         * @method pause
+         * @description Pauses the running exposure timer.
+         * Stops the drift timer and updates state to paused.
+         * @returns {void}
+         * @fires driftTimer.stop - Stops high-precision timer
+         * @fires updateStatus - Updates UI with pause status
+         * @fires playPreset - Audio feedback
+         * @example
+         * // User clicks "Pause" button during exposure
+         * this.pause();
+         */
         pause() {
           if (!this.isRunning) return;
 
@@ -7907,6 +9066,17 @@
           playPreset("pause");
         }
 
+        /**
+         * @method resume
+         * @description Resumes a paused exposure timer.
+         * Restarts the drift timer and continues countdown from paused time.
+         * @returns {void}
+         * @fires startInterval - Restarts timer with remaining time
+         * @fires updateStatus - Updates UI with resume status
+         * @example
+         * // User clicks "Resume" button after pausing
+         * this.resume();
+         */
         resume() {
           if (!this.isPaused) return;
 
@@ -7920,6 +9090,21 @@
           this.startInterval();
         }
 
+        /**
+         * @method complete
+         * @description Called when exposure timer reaches zero.
+         * Stops timer, saves exposure time, updates accumulated time,
+         * plays completion sound, and prepares for next step.
+         * @returns {void}
+         * @fires driftTimer.stop - Stops high-precision timer
+         * @fires updateCalculations - Recalculates for next step
+         * @fires playPreset - Completion beep
+         * @fires updateStatus - Updates UI with complete status
+         * @fires render - Updates display
+         * @example
+         * // Called automatically when timer reaches zero
+         * this.complete();
+         */
         complete() {
           if (this.driftTimer) {
             this.driftTimer.stop();
@@ -7944,6 +9129,20 @@
           this.render();
         }
 
+        /**
+         * @method reset
+         * @description Resets calculator to initial state.
+         * Stops any running timer, clears accumulated time, and resets
+         * to ready state for new exposure sequence.
+         * @returns {void}
+         * @fires driftTimer.stop - Stops any running timer
+         * @fires updateCalculations - Recalculates base exposure
+         * @fires updateStatus - Updates UI with ready status
+         * @fires render - Updates display
+         * @example
+         * // User clicks "Reset" button
+         * this.reset();
+         */
         reset() {
           if (this.driftTimer) {
             this.driftTimer.stop();
@@ -7961,6 +9160,18 @@
           this.render();
         }
 
+        /**
+         * @method toggle
+         * @description Toggles between start, pause, and resume states.
+         * Convenience method that handles state transitions based on current state.
+         * @returns {void}
+         * @fires start - If idle
+         * @fires pause - If running
+         * @fires resume - If paused
+         * @example
+         * // User clicks main exposure button
+         * this.toggle();
+         */
         toggle() {
           if (this.isCountdown) return;
           if (this.isRunning) {
@@ -7973,8 +9184,71 @@
         }
       }
 
-      // ===== MODIFIED EnlargerHeightCalculator CLASS with integrated Contrast Control =====
+      /**
+       * @class EnlargerHeightCalculator
+       * @classdesc Comprehensive darkroom exposure calculator integrating height, aperture, paper size, and contrast.
+       * Calculates new exposure time based on multiple variables using the inverse square law and f-stop formulas.
+       *
+       * @property {IncrementalTimer} incrementalTimer - Reference to main calculator for time synchronization
+       * @property {number} originalTime - Base exposure time in seconds
+       * @property {number} originalHeight - Original enlarger height in cm
+       * @property {number} newHeight - New enlarger height in cm
+       * @property {number} originalFStop - Original lens aperture (f-stop)
+       * @property {number} newFStop - New lens aperture (f-stop)
+       * @property {number} originalPaperSize - Original paper area in m²
+       * @property {number} newPaperSize - New paper area in m²
+       * @property {number} originalPaperSizeCustom - Custom original paper area
+       * @property {number} newPaperSizeCustom - Custom new paper area
+       * @property {string} currentPaper - Selected paper type ('fomaspeed' or 'fomatonemg')
+       * @property {string} currentFilter - Selected contrast filter
+       * @property {number} filterFactor - Contrast filter factor from paper data
+       * @property {number} customBankFactor - Custom filter bank multiplier
+       * @property {string} customBankLabel - Name of custom filter bank
+       * @property {number} heightFactor - Calculated height factor (squared)
+       * @property {number} fstopFactor - Calculated f-stop factor (squared)
+       * @property {number} paperSizeFactor - Calculated paper area ratio
+       * @property {number} combinedFactor - Product of all factors
+       * @property {number} newAdjustedTime - Final calculated exposure time
+       *
+       * @description
+       * **Formula:** New Time = Original Time × Height Factor × F-Stop Factor × Paper Factor × Filter Factor × Custom Factor
+       *
+       * Where:
+       * - Height Factor = (New Height ÷ Original Height)²
+       * - F-Stop Factor = (New F-Stop ÷ Original F-Stop)²
+       * - Paper Factor = New Paper Area ÷ Original Paper Area
+       * - Filter Factor = Selected contrast filter multiplier
+       * - Custom Factor = Custom filter bank multiplier
+       *
+       * **Integration:**
+       * - Syncs with IncrementalTimer for current exposure time
+       * - Updates CALC tab base time when applied
+       * - Integrates with CustomFilterBankManager for contrast control
+       * - Uses paper-specific filter data for accurate calculations
+       *
+       * @example
+       * // Initialize calculator
+       * const calc = new EnlargerHeightCalculator(window.incrementalTimer);
+       *
+       * // Copy current time from calculator
+       * calc.copyCurrentTime();
+       *
+       * // Adjust parameters
+       * calc.newHeight = 45; // Raise enlarger
+       * calc.updateCalculations();
+       * calc.updateDisplay();
+       *
+       * // Apply to CALC tab
+       * calc.applyNewTime();
+       */
       class EnlargerHeightCalculator {
+        /**
+         * @constructor
+         * @description Creates an EnlargerHeightCalculator instance with default values.
+         * Initializes all calculation parameters and sets up UI event listeners.
+         * @param {IncrementalTimer} incrementalTimer - Reference to main calculator
+         * @property {Object} paperTypes - Paper-specific contrast filter data
+         */
         constructor(incrementalTimer) {
           this.incrementalTimer = incrementalTimer;
           this.originalTime = 10.0;
@@ -8033,6 +9307,19 @@
           this.updateDisplay();
         }
 
+        /**
+         * @method init
+         * @description Initializes UI elements and event listeners for the calculator.
+         * Binds all sliders, dropdowns, and buttons to their respective handler functions.
+         * @returns {void}
+         * @fires addEventListener - Binds input/change/click events
+         * @fires updateFromControls - Called by sliders and dropdowns
+         * @fires copyCurrentTime - Called by "Use Current" button
+         * @fires applyNewTime - Called by "Apply" button
+         * @fires selectPaper - Called by paper type buttons
+         * @example
+         * this.init(); // Set up all UI bindings
+         */
         init() {
           // Get existing elements
           this.originalHeightCoarseSlider = document.getElementById(
@@ -8212,7 +9499,17 @@
           this.applyHeightTimeBtn.addEventListener("click", initAudioContext);
         }
 
-        // NEW: Paper selection method
+        /**
+         * @method selectPaper
+         * @description Selects paper type for contrast filter calculations.
+         * Updates button states and recalculates exposure with new paper's filter data.
+         * @param {string} paperType - 'fomaspeed' or 'fomatonemg'
+         * @returns {void}
+         * @fires updateCalculations - Recalculates with new paper
+         * @fires updateDisplay - Updates UI
+         * @example
+         * this.selectPaper('fomaspeed'); // Use FOMASPEED paper filters
+         */
         selectPaper(paperType) {
           this.currentPaper = paperType;
 
@@ -8230,7 +9527,16 @@
           this.updateDisplay();
         }
 
-        // Helper method to update custom paper size displays
+        /**
+         * @method updateCustomPaperSizeDisplays
+         * @description Updates custom paper size input fields and visibility.
+         * Shows/hides custom input fields based on dropdown selection.
+         * @returns {void}
+         * @fires Element.style.display - Shows/hides custom inputs
+         * @fires Element.value - Updates input values
+         * @example
+         * this.updateCustomPaperSizeDisplays(); // Sync custom inputs
+         */
         updateCustomPaperSizeDisplays() {
           // Update custom input fields with current values
           this.originalCustomPaperSizeValue.value =
@@ -8252,6 +9558,17 @@
           }
         }
 
+        /**
+         * @method copyCurrentTime
+         * @description Copies current exposure time from IncrementalTimer to calculator.
+         * Resets fine height adjustments to zero and updates all calculations.
+         * @returns {void}
+         * @fires updateCalculations - Recalculates with new base time
+         * @fires updateDisplay - Updates UI
+         * @fires playBeep - Audio feedback
+         * @example
+         * this.copyCurrentTime(); // Use current calculator time as base
+         */
         copyCurrentTime() {
           this.originalTime = this.incrementalTimer.currentTotalTime;
 
@@ -8268,6 +9585,19 @@
           playBeep(600, 0.3, 0.2);
         }
 
+        /**
+         * @method updateFromControls
+         * @description Reads all control values and updates calculator state.
+         * Processes height sliders (coarse + fine), f-stop dropdowns, and paper size selections.
+         * Handles custom paper size inputs and visibility.
+         * @returns {void}
+         * @fires updateCalculations - Recalculates all factors
+         * @fires updateDisplay - Updates UI
+         * @fires updateCustomPaperSizeDisplays - Syncs custom inputs
+         * @example
+         * // Called when any control changes
+         * this.updateFromControls();
+         */
         updateFromControls() {
           // Get coarse and fine values
           this.originalCoarseHeight = parseInt(
@@ -8322,6 +9652,18 @@
           this.updateCustomPaperSizeDisplays();
         }
 
+        /**
+         * @method updateCalculations
+         * @description Calculates all exposure factors and final adjusted time.
+         * Applies inverse square law for height and f-stop, area ratio for paper size,
+         * and multiplies by filter factors.
+         * @returns {void}
+         * @description Formula: New Time = Original Time × Height² × F-Stop² × Paper Area × Filter × Custom
+         * @fires Math.pow - For squared calculations
+         * @fires paperTypes - Reads filter data from paper database
+         * @example
+         * this.updateCalculations(); // Recalculate all factors
+         */
         updateCalculations() {
           // Height factor: (newHeight ÷ originalHeight)²
           if (this.originalHeight > 0) {
@@ -8369,6 +9711,16 @@
           this.newAdjustedTime = this.originalTime * this.combinedFactor;
         }
 
+        /**
+         * @method updateDisplay
+         * @description Updates all UI elements with current calculation results.
+         * Displays factors, times, and filter data. Updates button text with calculation summary.
+         * @returns {void}
+         * @fires Element.textContent - Updates all display elements
+         * @fires Element.classList - Updates button states
+         * @example
+         * this.updateDisplay(); // Refresh all UI displays
+         */
         updateDisplay() {
           // Update height displays with one decimal
           this.originalHeightValue.textContent = `${this.originalHeight.toFixed(
@@ -8425,6 +9777,18 @@
           }
         }
 
+        /**
+         * @method applyCustomFilterFactor
+         * @description Applies a custom filter factor from a filter bank.
+         * Updates the custom factor and recalculates exposure.
+         * @param {string} label - Name of the custom filter
+         * @param {string|number} value - Filter factor multiplier
+         * @returns {void}
+         * @fires updateCalculations - Recalculates with new factor
+         * @fires updateDisplay - Updates UI
+         * @example
+         * this.applyCustomFilterFactor('Custom Bank 1', '1.5'); // Apply 1.5x factor
+         */
         applyCustomFilterFactor(label, value) {
           const factor = parseFloat(value);
           if (!factor || factor <= 0) return;
@@ -8434,6 +9798,16 @@
           this.updateDisplay();
         }
 
+        /**
+         * @method clearCustomFilterOverride
+         * @description Clears any custom filter factor override.
+         * Resets custom factor to 1.0 and clears label.
+         * @returns {void}
+         * @fires updateCalculations - Recalculates without custom factor
+         * @fires updateDisplay - Updates UI
+         * @example
+         * this.clearCustomFilterOverride(); // Remove custom filter factor
+         */
         clearCustomFilterOverride() {
           this.customBankLabel = "";
           this.customBankFactor = 1.0;
@@ -8441,6 +9815,18 @@
           this.updateDisplay();
         }
 
+        /**
+         * @method applyNewTime
+         * @description Applies calculated time to CALC tab base time slider.
+         * Clamps time to 1-50 seconds range, updates slider, and triggers calculator update.
+         * @returns {void}
+         * @fires baseTimeSlider.value - Updates base time slider
+         * @fires incrementalTimer.updateFromSliders - Syncs calculator
+         * @fires playBeep - Audio feedback
+         * @fires setTimeout - Visual button feedback
+         * @example
+         * this.applyNewTime(); // Apply calculated time to CALC tab
+         */
         applyNewTime() {
           const newBaseTime = this.newAdjustedTime;
           const baseTimeSlider = document.getElementById("baseTimeSlider");
@@ -8462,7 +9848,55 @@
         }
       }
 
+      /**
+       * @class CustomFilterBankManager
+       * @classdesc Manages custom filter banks for contrast control in exposure calculations.
+       * Provides user-defined filter factors that can be applied to the EnlargerHeightCalculator.
+       * Supports 3 groups (A, B, C) with 12 slots each for storing custom contrast factors.
+       *
+       * @property {EnlargerHeightCalculator} calculator - Reference to main calculator
+       * @property {Array} groups - Array of filter bank groups (max 3)
+       * @property {number} currentGroupIndex - Currently selected group (0-2)
+       * @property {HTMLElement} groupSelect - Dropdown for group selection
+       * @property {HTMLElement} groupNameInput - Input for group name
+       * @property {HTMLElement} rowsContainer - Container for filter rows
+       *
+       * @description
+       * **Purpose:** Allows users to store custom contrast factors (e.g., for variable contrast papers,
+       * custom filter sets, or experimental multipliers) and quickly apply them to calculations.
+       *
+       * **Structure:**
+       * - 3 Groups (A, B, C) - Each can have a custom name
+       * - 12 Slots per group - Each slot has a label and value (factor)
+       * - Values persist in localStorage via StorageManager
+       * - Can be exported/imported with all app data
+       *
+       * **Integration:**
+       * - Connects to EnlargerHeightCalculator via applyCustomFilterFactor()
+       * - Updates calculator's customBankFactor and customBankLabel
+       * - Multiplies into combined factor: Custom Factor × Other Factors
+       *
+       * @example
+       * // Initialize manager
+       * const filterManager = new CustomFilterBankManager(heightCalculator);
+       *
+       * // Apply a custom factor
+       * filterManager.calculator.applyCustomFilterFactor('My Filter', 1.5);
+       *
+       * // Save custom bank data
+       * filterManager.save();
+       */
       class CustomFilterBankManager {
+        /**
+         * @constructor
+         * @description Creates a CustomFilterBankManager instance.
+         * Loads saved filter banks from localStorage, initializes UI elements,
+         * and sets up event listeners.
+         * @param {EnlargerHeightCalculator} enlargerCalculator - Reference to main calculator
+         * @property {Function} normalize - Validates and normalizes bank data
+         * @property {Function} bindEvents - Sets up UI event listeners
+         * @property {Function} render - Updates UI display
+         */
         constructor(enlargerCalculator) {
           this.calculator = enlargerCalculator;
           this.groups = this.normalize(StorageManager.loadCustomFilterBanks());
@@ -8478,6 +9912,17 @@
           this.render();
         }
 
+        /**
+         * @method normalize
+         * @description Validates and normalizes filter bank data from localStorage.
+         * Ensures data structure is valid, pads to 3 groups with 12 slots each,
+         * and applies default values where needed.
+         * @param {Array} banks - Raw bank data from storage
+         * @returns {Array} Normalized array of 3 groups with 12 slots each
+         * @fires getDefaultCustomFilterBanks - Gets default structure
+         * @example
+         * const normalized = this.normalize(rawData); // Validate and pad data
+         */
         normalize(banks) {
           const defaults = getDefaultCustomFilterBanks();
           if (!Array.isArray(banks)) return defaults;
@@ -8518,6 +9963,19 @@
           return normalized;
         }
 
+        /**
+         * @method bindEvents
+         * @description Sets up all UI event listeners for the filter bank interface.
+         * Handles group selection, name changes, slot value updates, and "Use" button clicks.
+         * @returns {void}
+         * @fires addEventListener - Binds change/input/click events
+         * @fires renderGroupHeader - Updates group display
+         * @fires renderRows - Updates slot rows
+         * @fires save - Persists changes
+         * @fires calculator.applyCustomFilterFactor - Applies factor to calculator
+         * @example
+         * this.bindEvents(); // Set up all UI interactions
+         */
         bindEvents() {
           if (this.groupSelect) {
             this.groupSelect.addEventListener("change", () => {
@@ -8580,11 +10038,31 @@
           }
         }
 
+        /**
+         * @method render
+         * @description Updates the entire UI display for the filter bank.
+         * Calls renderGroupHeader() and renderRows() to update all visual elements.
+         * @returns {void}
+         * @fires renderGroupHeader - Updates group selector and name
+         * @fires renderRows - Updates slot rows
+         * @example
+         * this.render(); // Refresh entire UI
+         */
         render() {
           this.renderGroupHeader();
           this.renderRows();
         }
 
+        /**
+         * @method renderGroupHeader
+         * @description Updates the group selector dropdown and name input.
+         * Populates options for all 3 groups and sets current group name.
+         * @returns {void}
+         * @fires Element.innerHTML - Updates group selector options
+         * @fires Element.value - Updates name input value
+         * @example
+         * this.renderGroupHeader(); // Update group display
+         */
         renderGroupHeader() {
           if (!this.groupSelect || !this.groupNameInput) return;
           this.groupSelect.innerHTML = this.groups
@@ -8599,6 +10077,15 @@
           this.groupNameInput.value = current.name;
         }
 
+        /**
+         * @method renderRows
+         * @description Renders all 12 filter slots for the current group.
+         * Creates HTML for each slot with name input, value input, and "Use" button.
+         * @returns {void}
+         * @fires Element.innerHTML - Updates rows container
+         * @example
+         * this.renderRows(); // Update slot display
+         */
         renderRows() {
           if (!this.rowsContainer) return;
           const current = this.groups[this.currentGroupIndex];
@@ -8628,10 +10115,31 @@
           this.rowsContainer.innerHTML = rowsHtml;
         }
 
+        /**
+         * @method save
+         * @description Saves current filter bank data to localStorage.
+         * Persists all groups and slots via StorageManager.
+         * @returns {void}
+         * @fires StorageManager.saveCustomFilterBanks - Saves to localStorage
+         * @example
+         * this.save(); // Persist changes
+         */
         save() {
           StorageManager.saveCustomFilterBanks(this.groups);
         }
 
+        /**
+         * @method replaceData
+         * @description Replaces all filter bank data (used during import).
+         * Normalizes new data, resets to first group, and updates UI.
+         * @param {Array} banks - New filter bank data
+         * @returns {void}
+         * @fires normalize - Validates and normalizes data
+         * @fires render - Updates UI
+         * @example
+         * // During data import
+         * this.replaceData(importedBanks);
+         */
         replaceData(banks) {
           this.groups = this.normalize(banks);
           this.currentGroupIndex = 0;
@@ -8745,6 +10253,21 @@
       }
 
       // Helper: render/refresh rulers and denominator handling for stops
+      /**
+       * @function renderRuler
+       * @description Renders a visual ruler showing f-stop values between min and max steps.
+       * Creates a horizontal scale with formatted stop values for visual reference.
+       * @param {string} containerId - ID of the container element to render ruler in
+       * @param {number} minStep - Minimum stop value (can be negative)
+       * @param {number} maxStep - Maximum stop value
+       * @returns {void}
+       * @throws {Error} If container not found
+       * @fires Element.setAttribute - Sets aria-label
+       * @fires Element.innerHTML - Clears and rebuilds ruler
+       * @fires formatStop - Formats stop values for display
+       * @example
+       * renderRuler("calcStopRuler", -6, 6); // Render ruler from -6 to +6 stops
+       */
       function renderRuler(containerId, minStep, maxStep) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -8766,6 +10289,19 @@
         container.appendChild(frag);
       }
 
+      /**
+       * @function updateAllRulers
+       * @description Updates all visual rulers in the UI.
+       * Renders the calculator stop ruler and test increment ruler with current settings.
+       * @returns {void}
+       * @fires renderRuler - Renders calculator ruler
+       * @fires Element.getElementById - Gets test increment ruler
+       * @fires Element.innerHTML - Clears and rebuilds rulers
+       * @fires formatStopCompact - Formats stop values for compact display
+       * @fires window.stopDenominator - Reads current denominator setting
+       * @example
+       * updateAllRulers(); // Update all visual rulers
+       */
       function updateAllRulers() {
         renderRuler("calcStopRuler", -6, 6);
 
@@ -8797,7 +10333,68 @@
         testContainer.appendChild(frag);
       }
 
+      /**
+       * @class FStopTestStripGenerator
+       * @classdesc Generates and manages f-stop test strips with cumulative or incremental methods.
+       * Supports auto-advance mode, countdown integration, relay triggering, and profile management.
+       *
+       * @property {number} baseTime - Base exposure time in seconds
+       * @property {number} stepIncrement - Increment value (1-9)
+       * @property {number} numSteps - Number of test steps (default: 6)
+       * @property {string} method - 'cumulative' or 'incremental'
+       * @property {boolean} autoAdvance - Auto-advance between steps
+       * @property {number} autoAdvanceDelay - Delay between steps in milliseconds
+       * @property {Array} steps - Generated test steps array
+       * @property {number} currentStep - Current step index (0-based)
+       * @property {number} currentStepTime - Time remaining in current step
+       * @property {boolean} isRunning - Test is running
+       * @property {boolean} isPaused - Test is paused
+       * @property {boolean} isWaitingForNextStep - Waiting for user to proceed
+       * @property {DriftCorrectedTimer|null} interval - Timer instance
+       * @property {number|null} lastBeepSecond - Last second that beep played
+       * @property {Object|null} countdownCleanup - Stores display state during countdown
+       *
+       * @description
+       * **Test Strip Methods:**
+       * - **Cumulative**: Each strip is exposed for its total time (10s, 14s, 19s, etc.)
+       * - **Incremental**: Each strip adds time to previous (10s, 4s, 5s, etc.)
+       *
+       * **F-Stop Formula**: time = baseTime × 2^(stop/denominator)
+       *
+       * **Auto-Advance**: Automatically proceeds to next step after configurable delay
+       *
+       * **Integration:**
+       * - Uses CountdownManager before starting
+       * - Triggers RelayManager for each step
+       * - Click-to-apply: Click steps to send time to CALC tab
+       * - Profile management: Save/load test configurations
+       *
+       * @example
+       * // Initialize generator
+       * const testGen = new FStopTestStripGenerator();
+       *
+       * // Generate and display test strip
+       * testGen.generateSteps();
+       * testGen.updateDisplay();
+       *
+       * // Start test
+       * await testGen.start();
+       *
+       * // Apply step to CALC tab
+       * testGen.applyStepToCalc(2); // Apply 3rd step time
+       */
       class FStopTestStripGenerator {
+        /**
+         * @constructor
+         * @description Creates a FStopTestStripGenerator instance.
+         * Initializes all properties, generates steps, updates UI, and loads profiles.
+         * @property {number} baseTime - Base exposure time (default: 10.0s)
+         * @property {number} stepIncrement - Increment in fractional steps (default: 1)
+         * @property {number} numSteps - Number of test steps (default: 6)
+         * @property {string} method - 'cumulative' or 'incremental' (default: 'cumulative')
+         * @property {boolean} autoAdvance - Auto-advance mode (default: false)
+         * @property {number} autoAdvanceDelay - Delay in ms (default: 1000)
+         */
         constructor() {
           this.baseTime = 10.0;
           this.stepIncrement = 1; // 1 = one fractional step (denominator controlled by stopDenominator)
@@ -8843,6 +10440,21 @@
           this.updateTestStripProfileList();
         }
 
+        /**
+         * @method init
+         * @description Initializes UI elements and event listeners for test strip generator.
+         * Binds all sliders, buttons, toggles, and method selectors to their handlers.
+         * @returns {void}
+         * @fires addEventListener - Binds input/change/click events
+         * @fires updateFromControls - Called by sliders
+         * @fires toggle - Called by start/pause button
+         * @fires stopCurrentTest - Called by stop button
+         * @fires reset - Called by reset button
+         * @fires setMethod - Called by method selector
+         * @fires setAutoAdvance - Called by auto-advance toggle
+         * @example
+         * this.init(); // Set up all UI bindings
+         */
         init() {
           // Get elements
           this.testBaseSlider = document.getElementById("testBaseSlider");
@@ -8942,7 +10554,19 @@
           this.startTestStripBtn.addEventListener("click", initAudioContext);
         }
 
-        // NEW: Set auto advance mode
+        /**
+         * @method setAutoAdvance
+         * @description Enables or disables auto-advance mode.
+         * When enabled, automatically proceeds to next step after configured delay.
+         * @param {boolean} enabled - Whether to enable auto-advance
+         * @returns {void}
+         * @fires updateAutoAdvanceDisplay - Updates UI
+         * @fires updateInstructions - Updates help text
+         * @fires nextStep - If currently waiting between steps
+         * @example
+         * this.setAutoAdvance(true); // Enable auto-advance
+         * this.setAutoAdvance(false); // Disable auto-advance
+         */
         setAutoAdvance(enabled) {
           this.autoAdvance = enabled;
           this.updateAutoAdvanceDisplay();
@@ -8960,13 +10584,32 @@
           }
         }
 
+        /**
+         * @method setAutoAdvanceDelay
+         * @description Sets the delay between steps in auto-advance mode.
+         * @param {number} delayMs - Delay in milliseconds
+         * @returns {void}
+         * @fires updateAutoAdvanceDisplay - Updates UI
+         * @fires updateInstructions - Updates help text
+         * @example
+         * this.setAutoAdvanceDelay(2000); // 2 second delay
+         */
         setAutoAdvanceDelay(delayMs) {
           this.autoAdvanceDelay = delayMs;
           this.updateAutoAdvanceDisplay();
           this.updateInstructions();
         }
 
-        // NEW: Update auto advance display
+        /**
+         * @method updateAutoAdvanceDisplay
+         * @description Updates the auto-advance UI display elements.
+         * Shows ON/OFF status, delay time, and updates toggle state.
+         * @returns {void}
+         * @fires Element.textContent - Updates status text
+         * @fires Element.checked - Updates toggle state
+         * @example
+         * this.updateAutoAdvanceDisplay(); // Refresh UI
+         */
         updateAutoAdvanceDisplay() {
           if (this.autoAdvanceValue) {
             this.autoAdvanceValue.textContent = this.autoAdvance ? "ON" : "OFF";
@@ -8982,7 +10625,17 @@
           }
         }
 
-        // NEW: Update instructions with auto advance info
+        /**
+         * @method updateInstructions
+         * @description Updates instruction text based on method and auto-advance mode.
+         * Shows different instructions for cumulative vs incremental methods.
+         * Theme-aware styling for status text.
+         * @returns {void}
+         * @fires Element.textContent - Updates instruction text
+         * @fires Element.style.color - Updates theme-aware colors
+         * @example
+         * this.updateInstructions(); // Refresh instruction display
+         */
         updateInstructions() {
           const cumulativeText = document.getElementById(
             "cumulativeAdvanceText"
@@ -9021,6 +10674,21 @@
           }
         }
 
+        /**
+         * @method setMethod
+         * @description Sets the test strip method (cumulative or incremental).
+         * Updates UI, regenerates steps, and resets if test is running.
+         * @param {string} method - 'cumulative' or 'incremental'
+         * @returns {void}
+         * @fires generateSteps - Regenerates test steps
+         * @fires updateDisplay - Updates UI
+         * @fires updateInstructions - Updates help text
+         * @fires stopCurrentTest - Stops running test
+         * @fires reset - Resets test state
+         * @example
+         * this.setMethod('cumulative'); // Use cumulative method
+         * this.setMethod('incremental'); // Use incremental method
+         */
         setMethod(method) {
           if (this.method === method) return;
 
@@ -9064,6 +10732,17 @@
           }
         }
 
+        /**
+         * @method updateFromControls
+         * @description Reads slider values and updates test strip configuration.
+         * Regenerates steps and updates display.
+         * @returns {void}
+         * @fires generateSteps - Regenerates test steps
+         * @fires updateDisplay - Updates UI
+         * @example
+         * // Called when sliders change
+         * this.updateFromControls();
+         */
         updateFromControls() {
           this.baseTime = parseFloat(this.testBaseSlider.value);
           this.stepIncrement = parseInt(this.testIncrementSlider.value);
@@ -9073,6 +10752,23 @@
           this.updateDisplay();
         }
 
+        /**
+         * @method generateSteps
+         * @description Generates test strip steps based on current parameters.
+         * Supports both cumulative and incremental methods with f-stop precision.
+         * @returns {void}
+         * @fires window.stopDenominator - Reads denominator setting
+         * @fires Math.pow - Calculates f-stop times
+         * @description Step Structure:
+         * - step: Step number (1-based)
+         * - stop: F-stop value
+         * - time: Time for this step (incremental or cumulative)
+         * - cumulativeTime: Total time (cumulative method only)
+         * - incrementalTime: Time for this step (incremental method)
+         * - totalExposure: Total exposure on paper
+         * @example
+         * this.generateSteps(); // Regenerate steps after parameter change
+         */
         generateSteps() {
           this.steps = [];
 
@@ -9153,6 +10849,17 @@
           return `${stopValue.toFixed(1)}`;
         }
 
+        /**
+         * @method updateDisplay
+         * @description Updates all UI elements with current test strip configuration.
+         * Displays control values, sequence info, time ranges, progress labels, and preview.
+         * @returns {void}
+         * @fires updatePreview - Updates visual preview
+         * @fires Element.textContent - Updates all display elements
+         * @fires Element.style.width - Updates progress bar
+         * @example
+         * this.updateDisplay(); // Refresh all UI elements
+         */
         updateDisplay() {
           // Update control values
           this.testBaseValue.textContent = `${this.baseTime.toFixed(1)}s`;
@@ -9226,6 +10933,19 @@
           }
         }
 
+        /**
+         * @method updatePreview
+         * @description Updates the visual test strip preview display.
+         * Creates colored step elements with click-to-apply functionality.
+         * Theme-aware coloring for dark/light/day schemes.
+         * @returns {void}
+         * @fires Element.innerHTML - Creates step elements
+         * @fires Element.style.backgroundColor - Sets theme-aware colors
+         * @fires addEventListener - Click handler for applyStepToCalc
+         * @fires Element.style.width - Updates progress bar
+         * @example
+         * this.updatePreview(); // Refresh visual preview
+         */
         updatePreview() {
           this.testStripPreview.innerHTML = "";
           const showTimes = this.previewMode.checked;
@@ -9330,7 +11050,18 @@
           }
         }
 
-        // In the start() method (around line 2400), update to async:
+        /**
+         * @method start
+         * @description Starts the test strip with countdown and relay triggering.
+         * Performs countdown, triggers relay for first step, and begins timer.
+         * @returns {Promise<void>} Resolves when countdown completes and test starts
+         * @fires countdownManager.startCountdown - Visual/audio countdown
+         * @fires startStep - Begins first step
+         * @fires playBeep - Audio feedback
+         * @fires updateStatus - Updates UI status
+         * @example
+         * await this.start(); // Start test strip
+         */
         async start() {
           if (this.isRunning || this.steps.length === 0) return;
 
@@ -9371,7 +11102,17 @@
           }
         }
 
-        // Add to FStopTestStripGenerator class (around line 2500)
+        /**
+         * @method triggerRelayForStep
+         * @description Triggers the enlarger relay for a specific test step.
+         * Only triggers if auto-trigger is enabled and step time is positive.
+         * @param {number} stepTime - Exposure time for this step in seconds
+         * @returns {Promise<void>} Resolves when relay trigger completes
+         * @throws {Error} Logs error if relay trigger fails
+         * @fires relayManager.triggerTimerRelay - Sends timer command to server
+         * @example
+         * await this.triggerRelayForStep(10.5); // Trigger for 10.5s
+         */
         async triggerRelayForStep(stepTime) {
           if (
             window.relayManager &&
@@ -9386,7 +11127,19 @@
           }
         }
 
-        // REPLACE the entire startStep() method (around line 2600-2800) with:
+        /**
+         * @method startStep
+         * @description Starts a single test strip step with relay triggering.
+         * Updates UI displays, triggers relay, and starts interval timer.
+         * @returns {Promise<void>} Resolves when step starts
+         * @throws {Error} Logs error if relay trigger fails
+         * @fires updatePreview - Updates visual preview
+         * @fires triggerRelayForStep - Triggers enlarger
+         * @fires startInterval - Begins countdown timer
+         * @fires Element.textContent - Updates all displays
+         * @example
+         * await this.startStep(); // Start current step
+         */
         async startStep() {
           if (this.currentStep >= this.steps.length) {
             this.complete();
@@ -9442,6 +11195,18 @@
           this.startInterval();
         }
 
+        /**
+         * @method startInterval
+         * @description Starts the interval timer for the current step.
+         * Decrements time by 0.1s intervals, updates display, plays warning beeps.
+         * @returns {void}
+         * @fires stepComplete - Called when step time reaches zero
+         * @fires playBeep - Warning beeps at 3 seconds
+         * @fires Element.textContent - Updates timer display
+         * @fires Element.classList - Adds/removes warning class
+         * @example
+         * this.startInterval(); // Begin countdown for current step
+         */
         startInterval() {
           this.interval = setInterval(() => {
             this.currentStepTime -= 0.1;
@@ -9475,6 +11240,20 @@
           }, 100);
         }
 
+        /**
+         * @method stepComplete
+         * @description Called when a step's timer reaches zero.
+         * Handles auto-advance or manual advance mode, updates UI, and proceeds to next step.
+         * @returns {void}
+         * @fires updatePreview - Updates visual preview
+         * @fires complete - If last step
+         * @fires startStep - If auto-advance and more steps remain
+         * @fires setTimeout - Delays next step in auto-advance mode
+         * @fires playBeep - Step completion beep
+         * @example
+         * // Called automatically when step timer reaches zero
+         * this.stepComplete();
+         */
         stepComplete() {
           clearInterval(this.interval);
 
@@ -9541,6 +11320,19 @@
           }
         }
 
+        /**
+         * @method pause
+         * @description Pauses the running test strip.
+         * Stops the interval timer and updates UI to show paused state.
+         * @returns {void}
+         * @fires countdownManager.cancel - Cancels active countdown
+         * @fires restoreDisplayAfterCountdown - Restores display
+         * @fires playBeep - Audio feedback
+         * @fires Element.textContent - Updates status
+         * @fires Element.classList - Removes warning class
+         * @example
+         * this.pause(); // Pause current test
+         */
         pause() {
           if (!this.isRunning) return;
 
@@ -9565,6 +11357,16 @@
           playBeep(400, 0.1, 0.2);
         }
 
+        /**
+         * @method resume
+         * @description Resumes a paused test strip.
+         * Restarts the interval timer from the current step time.
+         * @returns {void}
+         * @fires startInterval - Resumes countdown
+         * @fires Element.textContent - Updates status
+         * @example
+         * this.resume(); // Resume paused test
+         */
         resume() {
           if (!this.isPaused) return;
 
@@ -9578,6 +11380,19 @@
           this.startInterval();
         }
 
+        /**
+         * @method stopCurrentTest
+         * @description Stops the current test and resets to initial state.
+         * Can be called at any time to abort the test.
+         * @returns {void}
+         * @fires countdownManager.cancel - Cancels active countdown
+         * @fires restoreDisplayAfterCountdown - Restores display
+         * @fires playBeep - Audio feedback
+         * @fires Element.textContent - Updates all displays
+         * @fires Element.classList - Removes warning class
+         * @example
+         * this.stopCurrentTest(); // Stop and reset test
+         */
         stopCurrentTest() {
           // Allow stopping at any time - no return check
 
@@ -9630,6 +11445,16 @@
           playBeep(600, 0.1, 0.2);
         }
 
+        /**
+         * @method nextStep
+         * @description Proceeds to the next test step.
+         * Handles countdown if auto-advance is off, or proceeds immediately if on.
+         * @returns {void}
+         * @fires startCountdownForNextStep - Countdown before next step
+         * @fires proceedToNextStep - Immediate next step
+         * @example
+         * this.nextStep(); // Proceed to next step
+         */
         nextStep() {
           if (
             this.isPaused ||
@@ -9645,7 +11470,19 @@
           }
         }
 
-        // NEW METHOD: Start countdown for next step
+        /**
+         * @method startCountdownForNextStep
+         * @description Starts countdown before proceeding to next step.
+         * Prevents multiple countdowns, saves display state, and handles completion.
+         * @returns {void}
+         * @fires countdownManager.startCountdown - Visual/audio countdown
+         * @fires restoreDisplayAfterCountdown - Restores display after countdown
+         * @fires proceedToNextStep - Called when countdown completes
+         * @fires console.warn - If countdown already active
+         * @fires console.error - If countdown fails
+         * @example
+         * this.startCountdownForNextStep(); // Countdown before next step
+         */
         startCountdownForNextStep() {
           // Prevent multiple countdowns
           if (window.countdownManager && window.countdownManager.isActive) {
@@ -9701,7 +11538,17 @@
           }
         }
 
-        // NEW: Helper method to restore display
+        /**
+         * @method restoreDisplayAfterCountdown
+         * @description Restores display after countdown completes or is cancelled.
+         * Resets text, colors, and font weights to original or theme defaults.
+         * @returns {void}
+         * @fires Element.textContent - Restores original text
+         * @fires Element.style - Restores original styles
+         * @fires Element.disabled - Re-enables buttons
+         * @example
+         * this.restoreDisplayAfterCountdown(); // Restore after countdown
+         */
         restoreDisplayAfterCountdown() {
           if (this.countdownCleanup) {
             this.testTimerDisplay.textContent = this.countdownCleanup.display;
@@ -9735,7 +11582,19 @@
         }
 
         // NEW METHOD: Actual next step logic (moved from original nextStep)
-        // In the proceedToNextStep() method (around line 2950), update it to be async:
+        /**
+         * @method proceedToNextStep
+         * @description Advances to the next test step or completes the test.
+         * Cleans up countdown display, increments step counter, and starts next step.
+         * If all steps complete, calls complete() to finish the test.
+         * @returns {Promise<void>} Resolves when step transition is complete
+         * @throws {Error} If called when no test is active
+         * @fires Element.textContent - Updates step counter display
+         * @fires Element.style - Restores display styles
+         * @fires Element.disabled - Updates button states
+         * @example
+         * await this.proceedToNextStep(); // Move to next step or finish
+         */
         async proceedToNextStep() {
           // Clean up any remaining countdown display properties
           this.restoreDisplayAfterCountdown();
@@ -9757,6 +11616,21 @@
           }
         }
 
+        /**
+         * @method complete
+         * @description Marks the test strip as complete and updates UI accordingly.
+         * Cancels any active countdown, restores display, stops the timer, and shows completion status.
+         * Plays completion beep if enabled, updates button states, and highlights all steps.
+         * @returns {void}
+         * @fires countdownManager.cancel - Cancels active countdown
+         * @fires Element.textContent - Shows "TEST STRIP COMPLETE" message
+         * @fires Element.disabled - Updates all button states
+         * @fires Element.textContent - Updates start button text
+         * @fires AudioService.playBeep - Plays completion sound if enabled
+         * @fires this.updatePreview - Updates step preview display
+         * @example
+         * this.complete(); // Mark test as complete
+         */
         complete() {
           // Cancel any ongoing countdown
           if (window.countdownManager && window.countdownManager.isActive) {
@@ -9786,6 +11660,20 @@
           this.updatePreview();
         }
 
+        /**
+         * @method reset
+         * @description Resets the test strip to initial state.
+         * Cancels any active countdown, clears intervals, resets all state variables,
+         * and restores UI to ready state with default styling and step display.
+         * @returns {void}
+         * @fires countdownManager.cancel - Cancels active countdown
+         * @fires Element.textContent - Resets displays to initial values
+         * @fires Element.classList - Removes warning class
+         * @fires Element.disabled - Resets all button states
+         * @fires this.updatePreview - Updates step preview display
+         * @example
+         * this.reset(); // Reset test strip to initial state
+         */
         reset() {
           // Cancel any ongoing countdown
           if (window.countdownManager && window.countdownManager.isActive) {
@@ -9833,7 +11721,22 @@
           this.updatePreview();
         }
 
-        // Update the toggle() method (around line 3100):
+        /**
+         * @method toggle
+         * @description Toggles the test strip state (start/pause/resume/next).
+         * Acts as a universal control button that changes behavior based on current state:
+         * - Running → Pause
+         * - Paused → Resume
+         * - Waiting for next → Next step
+         * - Stopped → Start
+         * @returns {Promise<void>} Resolves when toggle action completes
+         * @fires this.pause - When running
+         * @fires this.resume - When paused
+         * @fires this.nextStep - When waiting for next step
+         * @fires this.start - When stopped
+         * @example
+         * await this.toggle(); // Toggle current state
+         */
         async toggle() {
           if (this.isRunning) {
             this.pause();
@@ -9847,7 +11750,21 @@
           }
         }
 
-        // Apply a test step's time to the CALC tab's base time
+        /**
+         * @method applyStepToCalc
+         * @description Applies a test step's total exposure time to the CALC tab's base time.
+         * Updates the base time slider, triggers state update, switches to CALC tab, and scrolls to top.
+         * @param {number} stepIndex - Index of the step to apply (0-based)
+         * @returns {void}
+         * @throws {Error} If stepIndex is out of bounds
+         * @fires Element.value - Updates base time slider value
+         * @fires Event.input - Triggers slider input event to update calculator state
+         * @fires switchTab - Switches to CALC tab
+         * @fires Element.scrollTop - Scrolls container to top
+         * @fires window.scrollTo - Scrolls window to top as fallback
+         * @example
+         * this.applyStepToCalc(2); // Apply third step's total exposure to CALC tab
+         */
         applyStepToCalc(stepIndex) {
           if (stepIndex < 0 || stepIndex >= this.steps.length) return;
 
@@ -9878,18 +11795,55 @@
           window.scrollTo(0, 0);
         }
 
-        // Get currently loaded test strip profile name from appState (single source of truth)
+        /**
+         * @method getCurrentTestStripProfile
+         * @description Gets the currently loaded test strip profile name from appState.
+         * Returns the single source of truth for the active profile.
+         * @returns {string|null} The profile name or null if no profile loaded
+         * @fires appState.persistent.currentTestStripProfile - Reads current profile
+         * @example
+         * const profile = this.getCurrentTestStripProfile(); // Get active profile name
+         */
         getCurrentTestStripProfile() {
           return appState.persistent.currentTestStripProfile;
         }
 
-        // Set currently loaded test strip profile in appState and persist to storage
+        /**
+         * @method setCurrentTestStripProfile
+         * @description Sets the current test strip profile in appState and persists to storage.
+         * Updates the single source of truth and saves to localStorage.
+         * @param {string} profileName - The name of the profile to set as current
+         * @returns {void}
+         * @fires appState.persistent.currentTestStripProfile - Updates current profile
+         * @fires StorageManager.saveCurrentTestStripProfile - Persists to storage
+         * @example
+         * this.setCurrentTestStripProfile("My Test Profile"); // Set and save profile
+         */
         setCurrentTestStripProfile(profileName) {
           appState.persistent.currentTestStripProfile = profileName;
           StorageManager.saveCurrentTestStripProfile(profileName);
         }
 
-        // Get current test strip settings as an object
+        /**
+         * @method getCurrentSettings
+         * @description Gets current test strip settings as a configuration object.
+         * Collects base time, step increment, denominator, and number of steps.
+         * @returns {Object} Settings object with baseTime, stepIncrement, denominator, numSteps
+         * @fires Element.value - Reads slider values
+         * @fires window.stopDenominator - Reads global denominator setting
+         * @example
+         * const settings = this.getCurrentSettings(); // Get current configuration
+         */
+        /**
+         * @method getCurrentSettings
+         * @description Gets current test strip settings as a configuration object.
+         * Collects base time, step increment, denominator, number of steps, method, and auto-advance settings.
+         * @returns {Object} Settings object with baseTime, stepIncrement, denominator, numSteps, method, autoAdvance, autoAdvanceDelay
+         * @fires Element.value - Reads slider values
+         * @fires window.stopDenominator - Reads global denominator setting
+         * @example
+         * const settings = this.getCurrentSettings(); // Get current configuration
+         */
         getCurrentSettings() {
           return {
             baseTime: parseFloat(this.testBaseSlider.value),
@@ -9902,7 +11856,29 @@
           };
         }
 
-        // Apply settings from a profile
+        /**
+         * @method applyProfile
+         * @description Applies settings from a profile to the test strip controls.
+         * Stops any running test, updates all controls, sets denominator, method, auto-advance,
+         * and refreshes the UI with visual feedback.
+         * @param {Object} profile - The profile object to apply
+         * @returns {void}
+         * @throws {Error} If profile is invalid
+         * @fires this.stopCurrentTest - Stops running test
+         * @fires Element.value - Updates slider values
+         * @fires window.stopDenominator - Updates global denominator
+         * @fires setActiveSeg - Updates segment control
+         * @fires this.setMethod - Sets test method
+         * @fires this.setAutoAdvance - Sets auto-advance mode
+         * @fires StorageManager.saveSettings - Persists auto-advance delay
+         * @fires this.setCurrentTestStripProfile - Sets current profile name
+         * @fires this.updateFromControls - Refreshes all displays
+         * @fires updateAllRulers - Updates visual rulers
+         * @fires this.updateTestStripProfileList - Updates profile list UI
+         * @fires AudioService.playBeep - Plays confirmation sound
+         * @example
+         * this.applyProfile(myProfile); // Apply profile settings
+         */
         applyProfile(profile) {
           if (!profile) return;
 
@@ -9950,7 +11926,22 @@
           playBeep(600, 0.3, 0.3);
         }
 
-        // Save current settings as a profile
+        /**
+         * @method saveProfile
+         * @description Saves current settings as a named profile.
+         * Creates a profile object with current settings and timestamp, saves to storage,
+         * and updates the profile list UI with visual feedback.
+         * @param {string} name - The name for the new profile
+         * @returns {boolean} True if saved successfully, false otherwise
+         * @throws {Error} If storage operation fails
+         * @fires this.getCurrentSettings - Collects current settings
+         * @fires StorageManager.loadTestStripProfiles - Loads existing profiles
+         * @fires StorageManager.saveTestStripProfiles - Saves updated profiles
+         * @fires this.updateTestStripProfileList - Updates UI
+         * @fires AudioService.playBeep - Plays confirmation sound
+         * @example
+         * const success = this.saveProfile("My Profile"); // Save current settings
+         */
         saveProfile(name) {
           if (!name || name.trim() === "") {
             alert("Please enter a profile name");
@@ -9986,7 +11977,17 @@
           return false;
         }
 
-        // Load a profile
+        /**
+         * @method loadProfile
+         * @description Loads a profile by name and applies it to the test strip controls.
+         * Searches through saved profiles and applies the matching one.
+         * @param {string} profileName - The name of the profile to load
+         * @returns {boolean} True if profile found and applied, false otherwise
+         * @fires StorageManager.loadTestStripProfiles - Loads all profiles
+         * @fires this.applyProfile - Applies the profile settings
+         * @example
+         * const success = this.loadProfile("My Profile"); // Load and apply profile
+         */
         loadProfile(profileName) {
           const profiles = StorageManager.loadTestStripProfiles();
           const profile = profiles.find((p) => p.name === profileName);
@@ -9999,7 +12000,20 @@
           return false;
         }
 
-        // Delete a profile
+        /**
+         * @method deleteProfile
+         * @description Deletes a profile by name after user confirmation.
+         * Prompts user for confirmation, removes profile from storage, and updates UI.
+         * @param {string} profileName - The name of the profile to delete
+         * @returns {boolean} True if deleted successfully, false otherwise or cancelled
+         * @fires confirm - User confirmation dialog
+         * @fires StorageManager.loadTestStripProfiles - Loads all profiles
+         * @fires StorageManager.saveTestStripProfiles - Saves filtered profiles
+         * @fires this.updateTestStripProfileList - Updates UI
+         * @fires AudioService.playBeep - Plays deletion sound
+         * @example
+         * const success = this.deleteProfile("Old Profile"); // Delete profile
+         */
         deleteProfile(profileName) {
           if (confirm(`Delete test strip profile "${profileName}"?`)) {
             const profiles = StorageManager.loadTestStripProfiles();
@@ -10014,7 +12028,18 @@
           return false;
         }
 
-        // Clear all profiles
+        /**
+         * @method clearAllProfiles
+         * @description Clears all test strip profiles after user confirmation.
+         * Prompts user for confirmation, clears storage, and updates UI.
+         * @returns {boolean} True if cleared successfully, false otherwise or cancelled
+         * @fires confirm - User confirmation dialog
+         * @fires StorageManager.saveTestStripProfiles - Clears all profiles
+         * @fires this.updateTestStripProfileList - Updates UI
+         * @fires AudioService.playBeep - Plays confirmation sound
+         * @example
+         * const success = this.clearAllProfiles(); // Clear all profiles
+         */
         clearAllProfiles() {
           if (
             confirm("Clear all test strip profiles? This cannot be undone.")
@@ -10028,7 +12053,20 @@
           return false;
         }
 
-        // Update the profile list display
+        /**
+         * @method updateTestStripProfileList
+         * @description Updates the profile list display in the UI.
+         * Loads all profiles from storage, creates list items with load/delete buttons,
+         * and highlights the currently active profile.
+         * @returns {void}
+         * @fires StorageManager.loadTestStripProfiles - Loads all profiles
+         * @fires this.getCurrentTestStripProfile - Gets active profile name
+         * @fires this.loadProfile - Called when profile is clicked
+         * @fires this.deleteProfile - Called when delete button is clicked
+         * @fires Element.innerHTML - Clears and rebuilds list
+         * @example
+         * this.updateTestStripProfileList(); // Refresh profile list UI
+         */
         updateTestStripProfileList() {
           const listElement = document.getElementById("testStripProfileList");
           if (!listElement) return;
@@ -10084,6 +12122,24 @@
         }
       }
 
+      /**
+       * @function updateChart
+       * @description Updates the f-stop calculation table with current base time and stop settings.
+       * Generates a table showing total time, increment from base, and step increments for stops -6 to +6.
+       * Highlights the currently selected stop row.
+       * @returns {void}
+       * @fires chartBaseSlider.value - Reads chart base time (if available)
+       * @fires Element.getElementById - Gets base time slider and table body
+       * @fires window.incrementalTimer - Reads calculator base time
+       * @fires settingsManager.settings - Reads settings base time
+       * @fires calculateTime - Calculates time for each stop
+       * @fires formatStop - Formats stop values
+       * @fires Element.innerHTML - Clears and rebuilds table
+       * @fires Element.appendChild - Adds rows to table
+       * @fires Element.style - Applies highlighting to current stop row
+       * @example
+       * updateChart(); // Update f-stop calculation table
+       */
       function updateChart() {
         const baseTime = (function () {
           // Prefer chart slider if present, otherwise fall back to the main base time slider
@@ -10141,13 +12197,40 @@
       }
 
       // Fullscreen Manager
+      /**
+       * @class FullscreenManager
+       * @description Manages fullscreen mode for the application.
+       * Handles entering, exiting, and toggling fullscreen state across different browsers.
+       * Monitors fullscreen change events and updates UI accordingly.
+       * @property {boolean} isFullscreen - Current fullscreen state
+       * @property {HTMLElement|null} toggleBtn - Fullscreen toggle button element
+       * @example
+       * const fullscreenManager = new FullscreenManager();
+       */
       class FullscreenManager {
+        /**
+         * @constructor
+         * @description Creates a new FullscreenManager instance.
+         * Initializes state, finds toggle button, and sets up event listeners.
+         * @fires this.init - Initializes event listeners
+         */
         constructor() {
           this.isFullscreen = false;
           this.toggleBtn = document.getElementById("toggleFullscreen");
           this.init();
         }
 
+        /**
+         * @method init
+         * @description Initializes event listeners for fullscreen management.
+         * Sets up click handler for toggle button and fullscreen change listeners
+         * for all browser prefixes (standard, WebKit, Mozilla, Microsoft).
+         * @returns {void}
+         * @fires Element.addEventListener - Adds click listener to toggle button
+         * @fires document.addEventListener - Adds fullscreen change listeners
+         * @example
+         * this.init(); // Initialize event listeners
+         */
         init() {
           if (this.toggleBtn) {
             this.toggleBtn.addEventListener("click", () => this.toggle());
@@ -10167,6 +12250,16 @@
           );
         }
 
+        /**
+         * @method toggle
+         * @description Toggles fullscreen mode on or off.
+         * Calls enter() if not fullscreen, exit() if fullscreen.
+         * @returns {void}
+         * @fires this.enter - When entering fullscreen
+         * @fires this.exit - When exiting fullscreen
+         * @example
+         * this.toggle(); // Toggle fullscreen state
+         */
         toggle() {
           if (!this.isFullscreen) {
             this.enter();
@@ -10175,6 +12268,21 @@
           }
         }
 
+        /**
+         * @method enter
+         * @description Enters fullscreen mode using browser-specific APIs.
+         * Attempts standard requestFullscreen first, then falls back to prefixed versions,
+         * and finally uses CSS class fallback if APIs are unavailable.
+         * @returns {void}
+         * @fires Element.requestFullscreen - Standard fullscreen API
+         * @fires Element.webkitRequestFullscreen - WebKit prefix
+         * @fires Element.mozRequestFullScreen - Mozilla prefix
+         * @fires Element.msRequestFullscreen - Microsoft prefix
+         * @fires Element.classList.add - Adds fullscreen-mode class
+         * @fires this.updateButton - Updates button text
+         * @example
+         * this.enter(); // Enter fullscreen mode
+         */
         enter() {
           const element = document.documentElement;
 
@@ -10193,6 +12301,21 @@
           }
         }
 
+        /**
+         * @method exit
+         * @description Exits fullscreen mode using browser-specific APIs.
+         * Attempts standard exitFullscreen first, then falls back to prefixed versions,
+         * and finally uses CSS class fallback if APIs are unavailable.
+         * @returns {void}
+         * @fires document.exitFullscreen - Standard fullscreen API
+         * @fires document.webkitExitFullscreen - WebKit prefix
+         * @fires document.mozCancelFullScreen - Mozilla prefix
+         * @fires document.msExitFullscreen - Microsoft prefix
+         * @fires Element.classList.remove - Removes fullscreen-mode class
+         * @fires this.updateButton - Updates button text
+         * @example
+         * this.exit(); // Exit fullscreen mode
+         */
         exit() {
           if (document.exitFullscreen) {
             document.exitFullscreen();
@@ -10209,6 +12332,19 @@
           }
         }
 
+        /**
+         * @method handleFullscreenChange
+         * @description Handles fullscreen change events from the browser.
+         * Updates internal state, applies/removes fullscreen CSS class,
+         * and updates the toggle button text.
+         * @returns {void}
+         * @fires document.fullscreenElement - Checks current fullscreen element
+         * @fires Element.classList.add - Adds fullscreen-mode class
+         * @fires Element.classList.remove - Removes fullscreen-mode class
+         * @fires this.updateButton - Updates button text
+         * @example
+         * this.handleFullscreenChange(); // Handle fullscreen state change
+         */
         handleFullscreenChange() {
           this.isFullscreen = !!(
             document.fullscreenElement ||
@@ -10226,6 +12362,15 @@
           this.updateButton();
         }
 
+        /**
+         * @method updateButton
+         * @description Updates the toggle button text based on fullscreen state.
+         * Shows "Exit Fullscreen" when in fullscreen mode, "Enter Fullscreen" otherwise.
+         * @returns {void}
+         * @fires Element.textContent - Updates button text
+         * @example
+         * this.updateButton(); // Update button display
+         */
         updateButton() {
           if (this.toggleBtn) {
             this.toggleBtn.textContent = this.isFullscreen

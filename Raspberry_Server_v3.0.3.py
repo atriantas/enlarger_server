@@ -35,7 +35,21 @@ active_timers = {}
 app = Flask(__name__)
 
 def setup_gpio():
-    """Initialize GPIO pins"""
+    """
+    Initialize GPIO pins for relay control.
+    
+    Sets up all configured GPIO pins as outputs and initializes them to HIGH (OFF state)
+    for active-low relay modules. Logs each pin initialization.
+    
+    Returns:
+        None
+        
+    Raises:
+        Exception: If GPIO setup fails
+        
+    Example:
+        setup_gpio()  # Initialize all relay pins
+    """
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
     
@@ -48,7 +62,18 @@ def setup_gpio():
     logger.info("GPIO setup complete")
 
 def cleanup_gpio():
-    """Cleanup GPIO on exit"""
+    """
+    Cleanup GPIO on exit.
+    
+    Turns off all relays and performs GPIO cleanup to ensure safe shutdown.
+    Called automatically on program exit via atexit.register().
+    
+    Returns:
+        None
+        
+    Example:
+        cleanup_gpio()  # Safe shutdown of GPIO
+    """
     logger.info("Cleaning up GPIO...")
     
     # Turn off all relays
@@ -59,7 +84,23 @@ def cleanup_gpio():
     logger.info("GPIO cleanup complete")
 
 def set_relay_state(pin, state):
-    """Set relay state (True=ON, False=OFF)"""
+    """
+    Set relay state (True=ON, False=OFF).
+    
+    Handles active-low relay logic: GPIO.LOW = ON, GPIO.HIGH = OFF.
+    Updates RELAY_PINS state dictionary and logs the action.
+    
+    Args:
+        pin (int): GPIO pin number to control
+        state (bool): True to turn relay ON, False to turn relay OFF
+        
+    Returns:
+        bool: True if successful, False if error occurred
+        
+    Example:
+        set_relay_state(25, True)  # Turn on enlarger relay
+        set_relay_state(17, False) # Turn off safelight relay
+    """
     try:
         # Most relays are active-low: HIGH=OFF, LOW=ON
         gpio_state = GPIO.LOW if state else GPIO.HIGH
@@ -72,7 +113,23 @@ def set_relay_state(pin, state):
         return False
 
 def timer_thread(pin, duration):
-    """Thread function for timed relay activation"""
+    """
+    Thread function for timed relay activation.
+    
+    Runs as a daemon thread to provide non-blocking timer functionality.
+    Turns relay ON, waits for specified duration, then turns relay OFF.
+    Automatically cleans up thread reference on completion.
+    
+    Args:
+        pin (int): GPIO pin number to control
+        duration (float): Duration in seconds to keep relay ON
+        
+    Returns:
+        None
+        
+    Example:
+        timer_thread(25, 5.5)  # Turn on GPIO 25 for 5.5 seconds
+    """
     thread_id = f"timer_{pin}_{datetime.now().timestamp()}"
     active_timers[thread_id] = {"pin": pin, "running": True}
     
@@ -98,7 +155,22 @@ def timer_thread(pin, duration):
             del active_timers[thread_id]
 
 def start_timer(pin, duration):
-    """Start a timer thread for relay activation"""
+    """
+    Start a timer thread for relay activation.
+    
+    Cancels any existing timer for the pin, then starts a new daemon thread
+    for timed relay control. Non-blocking operation.
+    
+    Args:
+        pin (int): GPIO pin number to control
+        duration (float): Duration in seconds for relay activation
+        
+    Returns:
+        bool: Always returns True
+        
+    Example:
+        start_timer(25, 10.5)  # Start 10.5s timer on enlarger
+    """
     # Cancel any existing timer for this pin
     stop_timer(pin)
     
@@ -113,7 +185,21 @@ def start_timer(pin, duration):
     return True
 
 def stop_timer(pin):
-    """Stop any active timer for the given pin"""
+    """
+    Stop any active timer for the given pin.
+    
+    Searches for active timers on the specified pin and stops them immediately.
+    Turns off the relay and removes timer from active_timers dictionary.
+    
+    Args:
+        pin (int): GPIO pin number to stop timer for
+        
+    Returns:
+        bool: True if any timer was stopped, False if no timer found
+        
+    Example:
+        stop_timer(25)  # Stop any timer on enlarger
+    """
     threads_to_stop = []
     
     for thread_id, timer_info in list(active_timers.items()):
@@ -133,7 +219,21 @@ def stop_timer(pin):
 # ===== CORS MIDDLEWARE =====
 @app.after_request
 def after_request(response):
-    """Add CORS headers to all responses"""
+    """
+    Add CORS headers to all responses.
+    
+    Enables cross-origin requests from any domain for browser compatibility.
+    Configured to allow all standard HTTP methods and headers.
+    
+    Args:
+        response (Response): Flask response object
+        
+    Returns:
+        Response: Modified response with CORS headers
+        
+    Example:
+        Automatically applied to all Flask routes
+    """
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
@@ -143,7 +243,18 @@ def after_request(response):
 
 @app.route('/')
 def index():
-    """Root endpoint - server info or serve HTML"""
+    """
+    Root endpoint - serves HTML interface or returns server info.
+    
+    If Darkroom_Tools_v3.0.3.html exists in the same directory, serves it.
+    Otherwise returns JSON with server status and available endpoints.
+    
+    Returns:
+        Response: HTML file or JSON server info
+        
+    Example:
+        GET /  # Serves HTML or returns server info
+    """
     # Check if HTML file exists in same directory
     html_file = 'Darkroom_Tools_v3.0.3.html'
     if os.path.exists(html_file):
@@ -172,7 +283,17 @@ def index():
 
 @app.route('/ping')
 def ping():
-    """Simple ping endpoint for connection testing"""
+    """
+    Simple ping endpoint for connection testing.
+    
+    Returns a simple status response to verify server connectivity.
+    
+    Returns:
+        JSON: Status object with timestamp
+        
+    Example:
+        GET /ping  # Returns {"status": "ok", ...}
+    """
     return jsonify({
         "status": "ok", 
         "message": "Server is running",
@@ -181,7 +302,20 @@ def ping():
 
 @app.route('/relay', methods=['GET', 'OPTIONS'])
 def control_relay():
-    """Control relay state (ON/OFF)"""
+    """
+    Control relay state (ON/OFF).
+    
+    Query parameters:
+        gpio (int): GPIO pin number (default: 25)
+        state (str): 'on' or 'off' (default: 'off')
+    
+    Returns:
+        JSON: Success response with relay info or error
+        
+    Example:
+        GET /relay?gpio=25&state=on  # Turn on enlarger
+        GET /relay?gpio=17&state=off # Turn off safelight
+    """
     if request.method == 'OPTIONS':
         return make_response('', 200)
     
@@ -221,7 +355,19 @@ def control_relay():
 
 @app.route('/timer', methods=['GET', 'OPTIONS'])
 def timer_endpoint():
-    """Trigger timer relay with duration parameter"""
+    """
+    Trigger timer relay with duration parameter.
+    
+    Query parameters:
+        gpio (int): GPIO pin number (default: 25)
+        duration (float): Duration in seconds (default: 1.0, max: 3600)
+    
+    Returns:
+        JSON: Success response with timer info or error
+        
+    Example:
+        GET /timer?gpio=25&duration=5.5  # 5.5 second exposure
+    """
     if request.method == 'OPTIONS':
         return make_response('', 200)
     
@@ -261,7 +407,15 @@ def timer_endpoint():
 
 @app.route('/status', methods=['GET'])
 def get_status():
-    """Get current status of all relays"""
+    """
+    Get current status of all relays.
+    
+    Returns:
+        JSON: Status of all relays and active timer count
+        
+    Example:
+        GET /status  # Get all relay states
+    """
     states = {}
     for pin in RELAY_PINS:
         states[pin] = {
@@ -278,7 +432,19 @@ def get_status():
 
 @app.route('/all', methods=['GET', 'OPTIONS'])
 def control_all():
-    """Control all relays at once"""
+    """
+    Control all relays at once.
+    
+    Query parameters:
+        state (str): 'on' or 'off' (default: 'off')
+    
+    Returns:
+        JSON: Success response with all relay states
+        
+    Example:
+        GET /all?state=on   # Turn on all relays
+        GET /all?state=off  # Turn off all relays
+    """
     if request.method == 'OPTIONS':
         return make_response('', 200)
     
@@ -329,7 +495,18 @@ def favicon():
 
 @app.route('/shutdown', methods=['GET', 'OPTIONS'])
 def shutdown_pi():
-    """Gracefully shutdown the Raspberry Pi"""
+    """
+    Gracefully shutdown the Raspberry Pi.
+    
+    Returns response immediately, then schedules shutdown in 3 seconds
+    to allow the HTTP response to be sent.
+    
+    Returns:
+        JSON: Success message with 3-second delay warning
+        
+    Example:
+        GET /shutdown  # Initiate system shutdown
+    """
     if request.method == 'OPTIONS':
         return make_response('', 200)
     
@@ -359,7 +536,18 @@ def shutdown_pi():
 
 @app.route('/reboot', methods=['GET', 'OPTIONS'])
 def reboot_pi():
-    """Reboot the Raspberry Pi"""
+    """
+    Reboot the Raspberry Pi.
+    
+    Returns response immediately, then schedules reboot in 3 seconds
+    to allow the HTTP response to be sent.
+    
+    Returns:
+        JSON: Success message with 3-second delay warning
+        
+    Example:
+        GET /reboot  # Initiate system reboot
+    """
     if request.method == 'OPTIONS':
         return make_response('', 200)
     
@@ -387,6 +575,19 @@ def reboot_pi():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    """
+    Main entry point for the Darkroom Timer Relay Server.
+    
+    Initializes GPIO, sets up logging, displays network info, and starts Flask server.
+    Handles graceful shutdown on Ctrl+C and ensures GPIO cleanup.
+    
+    Command line arguments:
+        sys.argv[1] (optional): Port number (default: 5000)
+    
+    Example:
+        python Raspberry_Server_v3.0.3.py      # Start on port 5000
+        python Raspberry_Server_v3.0.3.py 8080 # Start on port 8080
+    """
     try:
         # Setup GPIO
         setup_gpio()
