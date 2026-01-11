@@ -8044,6 +8044,14 @@
           // Switch to CALC tab
           switchTab("calc");
 
+          // Scroll to top using container
+          const container = document.querySelector(".container");
+          if (container) {
+            container.scrollTop = 0;
+          }
+          // Also scroll window as fallback
+          window.scrollTo(0, 0);
+
           // Show feedback
           playBeep(800, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
