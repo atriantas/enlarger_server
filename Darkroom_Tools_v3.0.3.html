@@ -1266,6 +1266,7 @@
 
       <div class="tabs">
         <button class="tab-button active" data-tab="calc">CALC</button>
+        <button class="tab-button" data-tab="split">SPLIT</button>
         <button class="tab-button" data-tab="fstop-test">TEST</button>
         <button class="tab-button" data-tab="timer">TIMER</button>
         <button class="tab-button" data-tab="relay">CONTROL</button>
@@ -1276,6 +1277,51 @@
 
       <!-- Calculator Tab with Incremental Exposure Timer -->
       <div id="calc" class="tab-content active">
+        <!-- Split-Grade Times Display (hidden by default) -->
+        <div
+          id="splitGradeDisplay"
+          class="incremental-timer"
+          style="display: none"
+        >
+          <div class="title-md">Split-Grade Times</div>
+          <div class="info-box" style="margin-bottom: 8px">
+            <div class="label-sm">NEUTRAL TIME</div>
+            <div class="value-display" id="splitNeutralDisplay">--</div>
+            <div class="label-sm" style="margin-top: 4px">
+              BASE TIMES (Burn Split)
+            </div>
+            <div class="value-display" id="splitTimeDisplayCalc">--</div>
+            <div class="label-sm" style="margin-top: 4px">TOTAL EXPOSURE</div>
+            <div class="value-display" id="splitTotalDisplay">--</div>
+          </div>
+          <div class="settings-group">
+            <button
+              class="settings-btn"
+              id="applyHighlights"
+              style="background: var(--border-light)"
+            >
+              <span style="font-size: 0.7rem">HIGHLIGHTS</span><br />
+              <span id="highlightsTime" style="font-size: 0.9rem">--</span>
+            </button>
+            <button
+              class="settings-btn"
+              id="applyShadows"
+              style="background: var(--border-light)"
+            >
+              <span style="font-size: 0.7rem">SHADOWS</span><br />
+              <span id="shadowsTime" style="font-size: 0.9rem">--</span>
+            </button>
+          </div>
+          <div class="settings-btn-group">
+            <button class="settings-btn danger" id="clearSplitData">
+              Clear Split Data
+            </button>
+          </div>
+          <div class="label-sm" style="margin-top: 8px; text-align: center">
+            Click to apply time to BASE TIME • Use STOP ADJUST for dodge/burn
+          </div>
+        </div>
+
         <div class="control">
           <div class="control-label">
             <span>BASE TIME</span>
@@ -1941,6 +1987,178 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- SPLIT Tab - Split-Grade Calculator -->
+      <div id="split" class="tab-content">
+        <div class="incremental-timer">
+          <div class="title-md">The Ilford Way - Split-Grade</div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>NEUTRAL TIME (Test Strip Result)</span>
+              <span class="value-display" id="neutralTimeValue">10.0s</span>
+            </div>
+            <input
+              type="range"
+              class="slider"
+              id="neutralTimeSlider"
+              min="0.4"
+              max="50"
+              step="0.1"
+              value="10.0"
+            />
+          </div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>PAPER BRAND</span>
+            </div>
+            <select class="settings-input" id="splitPaperBrand">
+              <option value="Ilford">Ilford Multigrade</option>
+              <option value="Kodak">Kodak Polycontrast</option>
+              <option value="FOMA">FOMA</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>PRESET COMBINATIONS</span>
+            </div>
+            <div class="settings-group">
+              <button class="settings-btn" id="presetPortrait">
+                Portrait<br /><small>00→5, 50%</small>
+              </button>
+              <button class="settings-btn" id="presetLandscape">
+                Landscape<br /><small>0→4, 40%</small>
+              </button>
+            </div>
+            <div class="settings-group" style="margin-top: 8px">
+              <button class="settings-btn" id="presetHighContrast">
+                High Contrast<br /><small>0→5, 70%</small>
+              </button>
+              <button class="settings-btn" id="presetCustom">Custom</button>
+            </div>
+          </div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>SOFT FILTER (Highlights)</span>
+            </div>
+            <div class="segmented-control-container">
+              <div class="segmented-control" id="splitSoftFilter">
+                <button class="segmented-btn" data-filter="00">00</button>
+                <button class="segmented-btn" data-filter="0">0</button>
+                <button class="segmented-btn" data-filter="1">1</button>
+                <button class="segmented-btn" data-filter="2">2</button>
+                <button class="segmented-btn" data-filter="3">3</button>
+                <button class="segmented-btn" data-filter="4">4</button>
+                <button class="segmented-btn" data-filter="5">5</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>HARD FILTER (Shadows)</span>
+            </div>
+            <div class="segmented-control-container">
+              <div class="segmented-control" id="splitHardFilter">
+                <button class="segmented-btn" data-filter="00">00</button>
+                <button class="segmented-btn" data-filter="0">0</button>
+                <button class="segmented-btn" data-filter="1">1</button>
+                <button class="segmented-btn" data-filter="2">2</button>
+                <button class="segmented-btn" data-filter="3">3</button>
+                <button class="segmented-btn" data-filter="4">4</button>
+                <button class="segmented-btn" data-filter="5">5</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control">
+            <div class="control-label">
+              <span>SHADOW BURN PERCENTAGE</span>
+              <span class="value-display" id="burnPercentValue">50%</span>
+            </div>
+            <input
+              type="range"
+              class="slider"
+              id="burnPercentSlider"
+              min="0"
+              max="100"
+              step="5"
+              value="50"
+            />
+          </div>
+
+          <div class="info-box">
+            <div class="label-sm">BASE TIMES (Before Filters)</div>
+            <div class="value-display" id="splitTimeDisplay">-- s</div>
+            <div class="label-sm" style="margin-top: 6px">
+              HIGHLIGHTS (Soft + Factor)
+            </div>
+            <div class="value-display" id="softResult">-- s</div>
+            <div class="label-sm" style="margin-top: 6px">
+              SHADOWS (Hard + Factor)
+            </div>
+            <div class="value-display" id="hardResult">-- s</div>
+            <div class="label-sm" style="margin-top: 6px; font-weight: bold">
+              TOTAL EXPOSURE
+            </div>
+            <div class="value-display" id="totalResult" style="font-size: 1rem">
+              -- s
+            </div>
+          </div>
+
+          <div class="settings-btn-group">
+            <button class="settings-btn primary" id="sendToCalc">
+              Send to CALC
+            </button>
+            <button class="settings-btn" id="resetSplit">Reset</button>
+          </div>
+        </div>
+
+        <!-- Split-Grade Presets -->
+        <section class="collapsible" data-id="split-presets">
+          <button class="collapsible-header" aria-expanded="false">
+            <div class="collapsible-title">SPLIT-GRADE PRESETS</div>
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer" style="margin-top: 15px">
+              <div class="title-md">Split-Grade Presets</div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Preset Name</div>
+                  <input
+                    type="text"
+                    class="settings-input"
+                    id="splitPresetName"
+                    placeholder="Enter preset name"
+                    maxlength="20"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label"> </div>
+                  <button class="settings-btn" id="saveSplitPreset">
+                    Save Current as Preset
+                  </button>
+                </div>
+              </div>
+
+              <div class="title-md">Saved Presets</div>
+              <div class="shelf-life-list" id="splitPresetList">
+                <!-- Split presets will be listed here -->
+              </div>
+
+              <div class="settings-btn-group">
+                <button class="settings-btn danger" id="clearSplitPresets">
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Chart Tab with Incremental Time Column -->
@@ -3644,7 +3862,7 @@
       </div>
 
       <footer>
-        <div>DARKROOM TIMER v2.9.1</div>
+        <div>DARKROOM TIMER v3.0.0</div>
         <div>
           Height & Aperture & Paper Size & Contrast Calculator: New Time =
           Original Time × (New Height ÷ Original Height)² × (New F-Stop ÷
@@ -3687,6 +3905,8 @@
         CUSTOM_FILTER_BANKS: "darkroom_timer_custom_filter_banks",
         TEST_STRIP_PROFILES: "darkroom_timer_test_strip_profiles",
         CURRENT_TEST_STRIP_PROFILE: "darkroom_timer_current_test_strip_profile",
+        SPLIT_GRADE_PRESETS: "darkroom_timer_split_grade_presets",
+        CURRENT_SPLIT_PRESET: "darkroom_timer_current_split_preset",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4087,6 +4307,22 @@
           isCountdown: false,
           currentTime: 10.0,
           lastExposureTime: 10.0,
+          // Split-grade data (stored when sent from SPLIT tab)
+          splitGrade: {
+            enabled: false,
+            neutralTime: null,
+            highlightsBase: null,
+            shadowsBase: null,
+            softTime: null,
+            hardTime: null,
+            totalTime: null,
+            softFilter: null,
+            hardFilter: null,
+            paperBrand: null,
+            burnPercent: null,
+            softFactor: null,
+            hardFactor: null,
+          },
         },
 
         // Timer states (runtime/transient)
@@ -4858,6 +5094,44 @@
         }
 
         /**
+         * Save split-grade presets
+         * @static
+         * @param {Array} presets - Array of split-grade preset objects
+         * @returns {boolean} Success status
+         */
+        static saveSplitPresets(presets) {
+          return this.saveJSON(STORAGE_KEYS.SPLIT_GRADE_PRESETS, presets);
+        }
+
+        /**
+         * Load split-grade presets
+         * @static
+         * @returns {Array} Array of split-grade preset objects
+         */
+        static loadSplitPresets() {
+          return this.loadJSON(STORAGE_KEYS.SPLIT_GRADE_PRESETS, []);
+        }
+
+        /**
+         * Save currently loaded split-grade preset name
+         * @static
+         * @param {string|null} presetName - Preset name or null
+         * @returns {boolean} Success status
+         */
+        static saveCurrentSplitPreset(presetName) {
+          return this.saveJSON(STORAGE_KEYS.CURRENT_SPLIT_PRESET, presetName);
+        }
+
+        /**
+         * Load currently loaded split-grade preset name
+         * @static
+         * @returns {string|null} Preset name or null
+         */
+        static loadCurrentSplitPreset() {
+          return this.loadJSON(STORAGE_KEYS.CURRENT_SPLIT_PRESET, null);
+        }
+
+        /**
          * Clear all stored data
          * @static
          * @returns {boolean} Success status
@@ -4875,6 +5149,8 @@
             STORAGE_KEYS.CUSTOM_FILTER_BANKS,
             STORAGE_KEYS.TEST_STRIP_PROFILES,
             STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
+            STORAGE_KEYS.SPLIT_GRADE_PRESETS,
+            STORAGE_KEYS.CURRENT_SPLIT_PRESET,
           ]);
         }
       }
@@ -6144,7 +6420,7 @@
 
           const exportData = {
             app: "Darkroom Timer",
-            version: "2.9.1",
+            version: "3.0.0",
             exportDate: new Date().toISOString(),
             settings: settingsToExport,
             timerProfiles: this.profiles,
@@ -6154,6 +6430,9 @@
             capacityTracker: StorageManager.loadCapacityTracker(),
             shelfLifeData: StorageManager.loadShelfLife(),
             customFilterBanks: StorageManager.loadCustomFilterBanks(),
+            splitGradePresets: window.splitGradeCalculator
+              ? window.splitGradeCalculator.splitPresets
+              : [],
           };
 
           const jsonStr = JSON.stringify(exportData, null, 2);
@@ -6378,6 +6657,55 @@
                 window.customFilterBankManager.replaceData(banks);
               }
               importedCount++;
+            }
+
+            // Import split-grade presets
+            if (
+              data.splitGradePresets &&
+              Array.isArray(data.splitGradePresets)
+            ) {
+              const validPresets = data.splitGradePresets.filter((preset) => {
+                return (
+                  preset &&
+                  typeof preset.name === "string" &&
+                  preset.name.trim() !== "" &&
+                  typeof preset.neutralTime === "number" &&
+                  typeof preset.softFilter === "string" &&
+                  typeof preset.hardFilter === "string" &&
+                  typeof preset.burnPercent === "number"
+                );
+              });
+
+              if (validPresets.length > 0) {
+                // Merge or overwrite based on strategy
+                validPresets.forEach((newPreset) => {
+                  const existingIndex =
+                    window.splitGradeCalculator.splitPresets.findIndex(
+                      (p) => p.name === newPreset.name
+                    );
+
+                  if (existingIndex >= 0) {
+                    if (mergeStrategy === "overwrite") {
+                      window.splitGradeCalculator.splitPresets[existingIndex] =
+                        {
+                          ...newPreset,
+                          date: newPreset.date || new Date().toISOString(),
+                        };
+                    }
+                  } else {
+                    window.splitGradeCalculator.splitPresets.push({
+                      ...newPreset,
+                      date: newPreset.date || new Date().toISOString(),
+                    });
+                  }
+                });
+
+                StorageManager.saveSplitPresets(
+                  window.splitGradeCalculator.splitPresets
+                );
+                window.splitGradeCalculator.updatePresetList();
+                importedCount += validPresets.length;
+              }
             }
 
             // Refresh the chemical tab if it's currently active
@@ -7173,6 +7501,579 @@
           this.updateCapacityDisplay();
           this.updateChemicalPresetList();
           this.updateShelfLifeList();
+        }
+      }
+
+      /**
+       * @class SplitGradeCalculator
+       * @classdesc Split-grade printing calculator with filter factor compensation.
+       * Calculates highlight and shadow exposure times based on base time,
+       * paper brand, and filter selections.
+       *
+       * @property {number} baseTime - Base exposure time in seconds
+       * @property {string} paperBrand - Paper brand ('Ilford', 'Kodak', 'FOMA')
+       * @property {string} softFilter - Soft filter number (e.g., '0', '4', '5')
+       * @property {string} hardFilter - Hard filter number
+       * @property {Object} splitPresets - Saved split-grade configurations
+       * @property {string} currentSplitPreset - Currently loaded preset name
+       */
+      class SplitGradeCalculator {
+        /**
+         * Creates a SplitGradeCalculator instance
+         * @constructor
+         */
+        constructor() {
+          this.neutralTime = 10.0; // Test strip result
+          this.paperBrand = "Ilford";
+          this.softFilter = "00";
+          this.hardFilter = "5";
+          this.burnPercent = 50; // Shadow burn percentage
+          this.splitPresets = StorageManager.loadSplitPresets();
+          this.currentSplitPreset = StorageManager.loadCurrentSplitPreset();
+
+          // Initialize UI
+          this.initializeUI();
+        }
+
+        /**
+         * Filter factor database
+         * @static
+         * @type {Object}
+         */
+        static FILTER_FACTORS = {
+          Ilford: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.2, 5: 1.5 },
+          Kodak: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.1, 4: 1.3, 5: 1.6 },
+          FOMA: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.15, 5: 1.4 },
+        };
+
+        /**
+         * Preset combinations
+         * @static
+         * @type {Object}
+         */
+        static PRESETS = {
+          portrait: { soft: "00", hard: "5", burn: 50, name: "Portrait" },
+          landscape: { soft: "0", hard: "4", burn: 40, name: "Landscape" },
+          highContrast: {
+            soft: "0",
+            hard: "5",
+            burn: 70,
+            name: "High Contrast",
+          },
+        };
+
+        /**
+         * Initialize UI event listeners
+         */
+        initializeUI() {
+          // Neutral time slider (replaces base time)
+          const neutralSlider = document.getElementById("neutralTimeSlider");
+          if (neutralSlider) {
+            neutralSlider.addEventListener("input", (e) => {
+              this.neutralTime = parseFloat(e.target.value);
+              document.getElementById(
+                "neutralTimeValue"
+              ).textContent = `${this.neutralTime.toFixed(1)}s`;
+              this.calculate();
+            });
+          }
+
+          // Paper brand selector
+          const paperSelect = document.getElementById("splitPaperBrand");
+          if (paperSelect) {
+            paperSelect.addEventListener("change", (e) => {
+              this.paperBrand = e.target.value;
+              this.calculate();
+            });
+          }
+
+          // Burn percentage slider
+          const burnSlider = document.getElementById("burnPercentSlider");
+          if (burnSlider) {
+            burnSlider.addEventListener("input", (e) => {
+              this.burnPercent = parseInt(e.target.value);
+              document.getElementById(
+                "burnPercentValue"
+              ).textContent = `${this.burnPercent}%`;
+              this.calculate();
+            });
+          }
+
+          // Filter segmented controls
+          this.initializeFilterControl("splitSoftFilter", "soft");
+          this.initializeFilterControl("splitHardFilter", "hard");
+
+          // Preset buttons
+          const presetPortrait = document.getElementById("presetPortrait");
+          if (presetPortrait) {
+            presetPortrait.addEventListener("click", () =>
+              this.applyPreset("portrait")
+            );
+          }
+
+          const presetLandscape = document.getElementById("presetLandscape");
+          if (presetLandscape) {
+            presetLandscape.addEventListener("click", () =>
+              this.applyPreset("landscape")
+            );
+          }
+
+          const presetHighContrast =
+            document.getElementById("presetHighContrast");
+          if (presetHighContrast) {
+            presetHighContrast.addEventListener("click", () =>
+              this.applyPreset("highContrast")
+            );
+          }
+
+          const presetCustom = document.getElementById("presetCustom");
+          if (presetCustom) {
+            presetCustom.addEventListener("click", () => {
+              // Just calculate with current settings
+              this.calculate();
+              playBeep(600, 0.2, 0.3);
+            });
+          }
+
+          // Action buttons
+          const sendBtn = document.getElementById("sendToCalc");
+          if (sendBtn) {
+            sendBtn.addEventListener("click", () => this.sendToCalc());
+          }
+
+          const resetBtn = document.getElementById("resetSplit");
+          if (resetBtn) {
+            resetBtn.addEventListener("click", () => this.reset());
+          }
+
+          // Preset save/load buttons
+          const savePresetBtn = document.getElementById("saveSplitPreset");
+          if (savePresetBtn) {
+            savePresetBtn.addEventListener("click", () => this.savePreset());
+          }
+
+          const clearPresetsBtn = document.getElementById("clearSplitPresets");
+          if (clearPresetsBtn) {
+            clearPresetsBtn.addEventListener("click", () =>
+              this.clearAllPresets()
+            );
+          }
+
+          // Initial calculation
+          this.calculate();
+          this.updatePresetList();
+        }
+
+        /**
+         * Initialize filter segmented control
+         */
+        initializeFilterControl(containerId, type) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+
+          container.addEventListener("click", (e) => {
+            const btn = e.target.closest(".segmented-btn");
+            if (!btn) return;
+
+            // Remove active from all
+            container
+              .querySelectorAll(".segmented-btn")
+              .forEach((b) => b.classList.remove("active"));
+
+            // Add active to clicked
+            btn.classList.add("active");
+
+            // Update state
+            const filter = btn.dataset.filter;
+            if (type === "soft") {
+              this.softFilter = filter;
+            } else {
+              this.hardFilter = filter;
+            }
+
+            this.calculate();
+          });
+
+          // Set initial active state
+          const defaultFilter =
+            type === "soft" ? this.softFilter : this.hardFilter;
+          const defaultBtn = container.querySelector(
+            `[data-filter="${defaultFilter}"]`
+          );
+          if (defaultBtn) {
+            defaultBtn.classList.add("active");
+          }
+        }
+
+        /**
+         * Calculate split-grade times using user's burn method
+         * Formula:
+         * Highlights = Neutral Time × (100% - burn%) / 100
+         * Shadows = Neutral Time × burn% / 100
+         * Then apply filter factors to each
+         */
+        calculate() {
+          const softFactor =
+            SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
+              this.softFilter
+            ] || 1.0;
+          const hardFactor =
+            SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
+              this.hardFilter
+            ] || 1.0;
+
+          // Calculate base times based on burn percentage
+          const highlightsBase =
+            (this.neutralTime * (100 - this.burnPercent)) / 100;
+          const shadowsBase = this.neutralTime * (this.burnPercent / 100);
+
+          // Apply filter factors
+          const softTime = highlightsBase * softFactor;
+          const hardTime = shadowsBase * hardFactor;
+
+          // Total exposure
+          const totalTime = softTime + hardTime;
+
+          // Update display
+          const splitDisplay = document.getElementById("splitTimeDisplay");
+          const softResult = document.getElementById("softResult");
+          const hardResult = document.getElementById("hardResult");
+          const totalResult = document.getElementById("totalResult");
+
+          if (splitDisplay)
+            splitDisplay.textContent = `${highlightsBase.toFixed(
+              2
+            )}s / ${shadowsBase.toFixed(2)}s`;
+          if (softResult) softResult.textContent = `${softTime.toFixed(2)} s`;
+          if (hardResult) hardResult.textContent = `${hardTime.toFixed(2)} s`;
+          if (totalResult)
+            totalResult.textContent = `${totalTime.toFixed(2)} s`;
+
+          return {
+            highlightsBase,
+            shadowsBase,
+            softTime,
+            hardTime,
+            totalTime,
+            softFactor,
+            hardFactor,
+            burnPercent: this.burnPercent,
+          };
+        }
+
+        /**
+         * Send calculated times to CALC tab
+         */
+        sendToCalc() {
+          const result = this.calculate();
+
+          // Store in appState
+          appState.calculator.splitGrade = {
+            enabled: true,
+            neutralTime: this.neutralTime,
+            highlightsBase: result.highlightsBase,
+            shadowsBase: result.shadowsBase,
+            softTime: result.softTime,
+            hardTime: result.hardTime,
+            totalTime: result.totalTime,
+            softFilter: this.softFilter,
+            hardFilter: this.hardFilter,
+            paperBrand: this.paperBrand,
+            burnPercent: this.burnPercent,
+            softFactor: result.softFactor,
+            hardFactor: result.hardFactor,
+          };
+
+          // Update CALC tab display
+          const display = document.getElementById("splitGradeDisplay");
+          const neutralDisplay = document.getElementById("splitNeutralDisplay");
+          const splitTimeDisplay = document.getElementById(
+            "splitTimeDisplayCalc"
+          );
+          const totalDisplay = document.getElementById("splitTotalDisplay");
+          const highlightsSpan = document.getElementById("highlightsTime");
+          const shadowsSpan = document.getElementById("shadowsTime");
+
+          if (display) display.style.display = "block";
+          if (neutralDisplay)
+            neutralDisplay.textContent = `${this.neutralTime.toFixed(2)}s`;
+          if (splitTimeDisplay)
+            splitTimeDisplay.textContent = `${result.highlightsBase.toFixed(
+              2
+            )}s / ${result.shadowsBase.toFixed(2)}s`;
+          if (totalDisplay)
+            totalDisplay.textContent = `${result.totalTime.toFixed(2)}s`;
+          if (highlightsSpan)
+            highlightsSpan.textContent = `${result.softTime.toFixed(2)}s (F${
+              this.softFilter
+            })`;
+          if (shadowsSpan)
+            shadowsSpan.textContent = `${result.hardTime.toFixed(2)}s (F${
+              this.hardFilter
+            })`;
+
+          // Switch to CALC tab
+          switchTab("calc");
+
+          // Show feedback
+          playBeep(800, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Split-grade sent: ${result.softTime.toFixed(
+              2
+            )}s + ${result.hardTime.toFixed(2)}s = ${result.totalTime.toFixed(
+              2
+            )}s total`,
+            "success"
+          );
+        }
+
+        /**
+         * Apply preset combination
+         */
+        applyPreset(presetName) {
+          const preset = SplitGradeCalculator.PRESETS[presetName];
+          if (!preset) return;
+
+          this.softFilter = preset.soft;
+          this.hardFilter = preset.hard;
+          this.burnPercent = preset.burn;
+
+          // Update UI
+          document.getElementById("burnPercentSlider").value = preset.burn;
+          document.getElementById(
+            "burnPercentValue"
+          ).textContent = `${preset.burn}%`;
+
+          // Update filter controls
+          document
+            .querySelectorAll("#splitSoftFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll("#splitHardFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelector(`#splitSoftFilter [data-filter="${preset.soft}"]`)
+            ?.classList.add("active");
+          document
+            .querySelector(`#splitHardFilter [data-filter="${preset.hard}"]`)
+            ?.classList.add("active");
+
+          this.calculate();
+          playBeep(800, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Applied ${preset.name} preset`,
+            "success"
+          );
+        }
+
+        /**
+         * Reset calculator
+         */
+        reset() {
+          this.neutralTime = 10.0;
+          this.paperBrand = "Ilford";
+          this.softFilter = "00";
+          this.hardFilter = "5";
+          this.burnPercent = 50;
+
+          // Update UI
+          document.getElementById("neutralTimeSlider").value = 10.0;
+          document.getElementById("neutralTimeValue").textContent = "10.0s";
+          document.getElementById("splitPaperBrand").value = "Ilford";
+          document.getElementById("burnPercentSlider").value = 50;
+          document.getElementById("burnPercentValue").textContent = "50%";
+
+          // Reset filter controls
+          document
+            .querySelectorAll("#splitSoftFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll("#splitHardFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelector('#splitSoftFilter [data-filter="00"]')
+            ?.classList.add("active");
+          document
+            .querySelector('#splitHardFilter [data-filter="5"]')
+            ?.classList.add("active");
+
+          this.calculate();
+        }
+
+        /**
+         * Save current configuration as preset
+         */
+        savePreset() {
+          const nameInput = document.getElementById("splitPresetName");
+          const name = nameInput.value.trim();
+
+          if (!name) {
+            settingsManager.showAllProfilesFeedback(
+              "Please enter a preset name",
+              "error"
+            );
+            return;
+          }
+
+          const preset = {
+            name: name,
+            neutralTime: this.neutralTime,
+            paperBrand: this.paperBrand,
+            softFilter: this.softFilter,
+            hardFilter: this.hardFilter,
+            burnPercent: this.burnPercent,
+            date: new Date().toISOString(),
+          };
+
+          // Check for existing
+          const existingIndex = this.splitPresets.findIndex(
+            (p) => p.name === name
+          );
+          if (existingIndex >= 0) {
+            this.splitPresets[existingIndex] = preset;
+          } else {
+            this.splitPresets.push(preset);
+          }
+
+          // Save
+          if (StorageManager.saveSplitPresets(this.splitPresets)) {
+            nameInput.value = "";
+            this.currentSplitPreset = name;
+            StorageManager.saveCurrentSplitPreset(name);
+            this.updatePresetList();
+            playBeep(800, 0.3, 0.3);
+            settingsManager.showAllProfilesFeedback(
+              `Split preset "${name}" saved!`,
+              "success"
+            );
+          }
+        }
+
+        /**
+         * Load a preset
+         */
+        loadPreset(preset) {
+          this.neutralTime = preset.neutralTime || 10.0;
+          this.paperBrand = preset.paperBrand || "Ilford";
+          this.softFilter = preset.softFilter || "00";
+          this.hardFilter = preset.hardFilter || "5";
+          this.burnPercent = preset.burnPercent || 50;
+
+          // Update UI
+          document.getElementById("neutralTimeSlider").value = this.neutralTime;
+          document.getElementById(
+            "neutralTimeValue"
+          ).textContent = `${this.neutralTime.toFixed(1)}s`;
+          document.getElementById("splitPaperBrand").value = this.paperBrand;
+          document.getElementById("burnPercentSlider").value = this.burnPercent;
+          document.getElementById(
+            "burnPercentValue"
+          ).textContent = `${this.burnPercent}%`;
+
+          // Update filter controls
+          document
+            .querySelectorAll("#splitSoftFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll("#splitHardFilter .segmented-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelector(
+              `#splitSoftFilter [data-filter="${this.softFilter}"]`
+            )
+            ?.classList.add("active");
+          document
+            .querySelector(
+              `#splitHardFilter [data-filter="${this.hardFilter}"]`
+            )
+            ?.classList.add("active");
+
+          this.currentSplitPreset = preset.name;
+          StorageManager.saveCurrentSplitPreset(preset.name);
+          this.updatePresetList();
+          this.calculate();
+
+          playBeep(600, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Split preset "${preset.name}" loaded!`,
+            "success"
+          );
+        }
+
+        /**
+         * Delete a preset
+         */
+        deletePreset(name) {
+          if (!confirm(`Delete split preset "${name}"?`)) return;
+
+          this.splitPresets = this.splitPresets.filter((p) => p.name !== name);
+          StorageManager.saveSplitPresets(this.splitPresets);
+
+          if (this.currentSplitPreset === name) {
+            this.currentSplitPreset = null;
+            StorageManager.saveCurrentSplitPreset(null);
+          }
+
+          this.updatePresetList();
+          playBeep(400, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Split preset "${name}" deleted!`,
+            "success"
+          );
+        }
+
+        /**
+         * Clear all presets
+         */
+        clearAllPresets() {
+          if (!confirm("Delete ALL split presets? This cannot be undone!"))
+            return;
+
+          this.splitPresets = [];
+          this.currentSplitPreset = null;
+          StorageManager.saveSplitPresets([]);
+          StorageManager.saveCurrentSplitPreset(null);
+          this.updatePresetList();
+
+          playBeep(400, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            "All split presets deleted!",
+            "success"
+          );
+        }
+
+        /**
+         * Update preset list UI
+         */
+        updatePresetList() {
+          const listElement = document.getElementById("splitPresetList");
+          if (!listElement) return;
+
+          listElement.innerHTML = "";
+
+          this.splitPresets.forEach((preset) => {
+            const itemDiv = document.createElement("div");
+            itemDiv.className = `shelf-life-item ${
+              this.currentSplitPreset === preset.name ? "active" : ""
+            }`;
+
+            const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${preset.burnPercent}%`;
+            const dateStr = new Date(preset.date).toLocaleDateString();
+
+            itemDiv.innerHTML = `
+              <div>
+                <strong>${preset.name}</strong>
+                <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
+                <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand} • ${filterInfo}</div>
+              </div>
+              <div class="shelf-life-actions">
+                <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
+                <button class="btn-action delete-btn" data-context="split" data-name="${preset.name}">Delete</button>
+              </div>
+            `;
+
+            listElement.appendChild(itemDiv);
+          });
         }
       }
 
@@ -12407,8 +13308,14 @@
         // Initialize chemical manager (UPDATED)
         window.chemicalManager = new ChemicalManager();
 
+        // Initialize split-grade calculator
+        window.splitGradeCalculator = new SplitGradeCalculator();
+
         // Initialize countdown manager
         window.countdownManager = new CountdownManager();
+
+        // Initialize split-grade calculator
+        window.splitGradeCalculator = new SplitGradeCalculator();
 
         // Initialize timers
         timerManager.init();
@@ -12537,6 +13444,80 @@
             }
           });
 
+        // Split-grade CALC tab handlers
+        document
+          .getElementById("applyHighlights")
+          ?.addEventListener("click", () => {
+            if (
+              appState.calculator.splitGrade.enabled &&
+              appState.calculator.splitGrade.softTime !== null
+            ) {
+              const time = appState.calculator.splitGrade.softTime;
+              const baseSlider = document.getElementById("baseTimeSlider");
+              if (baseSlider) {
+                baseSlider.value = time;
+                baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+                playBeep(800, 0.3, 0.3);
+                settingsManager.showAllProfilesFeedback(
+                  `Applied Highlights (F${
+                    appState.calculator.splitGrade.softFilter
+                  }): ${time.toFixed(2)}s`,
+                  "success"
+                );
+              }
+            }
+          });
+
+        document
+          .getElementById("applyShadows")
+          ?.addEventListener("click", () => {
+            if (
+              appState.calculator.splitGrade.enabled &&
+              appState.calculator.splitGrade.hardTime !== null
+            ) {
+              const time = appState.calculator.splitGrade.hardTime;
+              const baseSlider = document.getElementById("baseTimeSlider");
+              if (baseSlider) {
+                baseSlider.value = time;
+                baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+                playBeep(800, 0.3, 0.3);
+                settingsManager.showAllProfilesFeedback(
+                  `Applied Shadows (F${
+                    appState.calculator.splitGrade.hardFilter
+                  }): ${time.toFixed(2)}s`,
+                  "success"
+                );
+              }
+            }
+          });
+
+        document
+          .getElementById("clearSplitData")
+          ?.addEventListener("click", () => {
+            appState.calculator.splitGrade = {
+              enabled: false,
+              neutralTime: null,
+              highlightsBase: null,
+              shadowsBase: null,
+              softTime: null,
+              hardTime: null,
+              totalTime: null,
+              softFilter: null,
+              hardFilter: null,
+              paperBrand: null,
+              burnPercent: null,
+              softFactor: null,
+              hardFactor: null,
+            };
+            const display = document.getElementById("splitGradeDisplay");
+            if (display) display.style.display = "none";
+            playBeep(400, 0.3, 0.3);
+            settingsManager.showAllProfilesFeedback(
+              "Split-grade data cleared",
+              "success"
+            );
+          });
+
         // Combined export/import in settings tab
         document
           .getElementById("exportAllProfiles")
@@ -12651,7 +13632,7 @@
             return;
           }
 
-          // Load buttons (consolidated - profile, preset, chemical, or teststrip)
+          // Load buttons (consolidated - profile, preset, chemical, teststrip, or split)
           const loadBtn = e.target.closest(
             ".load-btn[data-context][data-name]"
           );
@@ -12676,11 +13657,18 @@
               }
             } else if (context === "teststrip" && window.fstopTestGenerator) {
               window.fstopTestGenerator.loadProfile(name);
+            } else if (context === "split" && window.splitGradeCalculator) {
+              const preset = window.splitGradeCalculator.splitPresets.find(
+                (p) => p.name === name
+              );
+              if (preset) {
+                window.splitGradeCalculator.loadPreset(preset);
+              }
             }
             return;
           }
 
-          // Delete buttons (consolidated - profile, preset, chemical, or teststrip)
+          // Delete buttons (consolidated - profile, preset, chemical, teststrip, or split)
           const deleteBtn = e.target.closest(".delete-btn[data-context]");
           if (deleteBtn) {
             const context = deleteBtn.getAttribute("data-context");
@@ -12698,6 +13686,9 @@
             } else if (context === "teststrip" && window.fstopTestGenerator) {
               const profileName = deleteBtn.getAttribute("data-name");
               window.fstopTestGenerator.deleteProfile(profileName);
+            } else if (context === "split" && window.splitGradeCalculator) {
+              const presetName = deleteBtn.getAttribute("data-name");
+              window.splitGradeCalculator.deletePreset(presetName);
             }
             return;
           }
