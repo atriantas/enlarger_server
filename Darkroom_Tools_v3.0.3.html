@@ -2018,26 +2018,159 @@
               <option value="Ilford">Ilford Multigrade</option>
               <option value="Kodak">Kodak Polycontrast</option>
               <option value="FOMA">FOMA</option>
+              <option value="Custom">Custom Factors</option>
             </select>
           </div>
 
-          <div class="control">
+          <!-- FOMA Paper Type Selection (hidden by default) -->
+          <div class="control" id="fomaPaperSelection" style="display: none">
             <div class="control-label">
-              <span>PRESET COMBINATIONS</span>
+              <span>FOMA PAPER TYPE</span>
             </div>
-            <div class="settings-group">
-              <button class="settings-btn" id="presetPortrait">
-                Portrait<br /><small>00→5, 50%</small>
+            <div class="paper-selector" style="margin-top: 5px">
+              <button
+                class="toggle-btn active"
+                data-foma-paper="fomaspeed"
+                id="btnFomaSpeed"
+              >
+                FOMASPEED<br />Variant III
               </button>
-              <button class="settings-btn" id="presetLandscape">
-                Landscape<br /><small>0→4, 40%</small>
+              <button
+                class="toggle-btn"
+                data-foma-paper="fomatonemg"
+                id="btnFomaToneMG"
+              >
+                FOMATONE MG<br />Classic
               </button>
             </div>
-            <div class="settings-group" style="margin-top: 8px">
-              <button class="settings-btn" id="presetHighContrast">
-                High Contrast<br /><small>0→5, 70%</small>
-              </button>
-              <button class="settings-btn" id="presetCustom">Custom</button>
+          </div>
+
+          <!-- Custom Filter Factors (hidden by default) -->
+          <div
+            class="control"
+            id="customFactorsSelection"
+            style="display: none"
+          >
+            <div class="control-label">
+              <span>CUSTOM FILTER FACTORS</span>
+            </div>
+            <div class="incremental-timer" style="margin-top: 8px">
+              <div
+                style="
+                  font-size: 0.65rem;
+                  color: var(--text-secondary);
+                  margin-bottom: 8px;
+                "
+              >
+                Enter filter factors for each grade (e.g., 1.0 = no change, 1.5
+                = 50% more time)
+              </div>
+              <div
+                class="settings-group"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"
+              >
+                <div class="settings-item">
+                  <div class="settings-label">Grade 00</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor00"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 0</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor0"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 1</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor1"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 2</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor2"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 3</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor3"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 4</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor4"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Grade 5</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="customFactor5"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    value="1.0"
+                    placeholder="1.0"
+                  />
+                </div>
+              </div>
+              <div
+                style="
+                  font-size: 0.65rem;
+                  color: var(--text-secondary);
+                  margin-top: 5px;
+                "
+              >
+                These values apply to both SOFT (Highlights) and HARD (Shadows)
+                filter selections
+              </div>
             </div>
           </div>
 
@@ -4319,9 +4452,11 @@
             softFilter: null,
             hardFilter: null,
             paperBrand: null,
+            fomaPaperType: null,
             burnPercent: null,
             softFactor: null,
             hardFactor: null,
+            customFactors: null,
           },
         },
 
@@ -6664,17 +6799,32 @@
               data.splitGradePresets &&
               Array.isArray(data.splitGradePresets)
             ) {
-              const validPresets = data.splitGradePresets.filter((preset) => {
-                return (
-                  preset &&
-                  typeof preset.name === "string" &&
-                  preset.name.trim() !== "" &&
-                  typeof preset.neutralTime === "number" &&
-                  typeof preset.softFilter === "string" &&
-                  typeof preset.hardFilter === "string" &&
-                  typeof preset.burnPercent === "number"
-                );
-              });
+              const validPresets = data.splitGradePresets
+                .filter((preset) => {
+                  return (
+                    preset &&
+                    typeof preset.name === "string" &&
+                    preset.name.trim() !== "" &&
+                    typeof preset.neutralTime === "number" &&
+                    typeof preset.softFilter === "string" &&
+                    typeof preset.hardFilter === "string" &&
+                    typeof preset.burnPercent === "number"
+                  );
+                })
+                .map((preset) => ({
+                  // Ensure all new properties have defaults for backward compatibility
+                  ...preset,
+                  fomaPaperType: preset.fomaPaperType || "fomaspeed",
+                  customFactors: preset.customFactors || {
+                    "00": preset.customSoftFactor || 1.0,
+                    0: preset.customSoftFactor || 1.0,
+                    1: preset.customSoftFactor || 1.0,
+                    2: preset.customSoftFactor || 1.0,
+                    3: preset.customSoftFactor || 1.0,
+                    4: preset.customSoftFactor || 1.0,
+                    5: preset.customHardFactor || 1.0,
+                  },
+                }));
 
               if (validPresets.length > 0) {
                 // Merge or overwrite based on strategy
@@ -7511,9 +7661,11 @@
        * paper brand, and filter selections.
        *
        * @property {number} baseTime - Base exposure time in seconds
-       * @property {string} paperBrand - Paper brand ('Ilford', 'Kodak', 'FOMA')
+       * @property {string} paperBrand - Paper brand ('Ilford', 'Kodak', 'FOMA', 'Custom')
+       * @property {string} fomaPaperType - FOMA paper type ('fomaspeed' or 'fomatonemg')
        * @property {string} softFilter - Soft filter number (e.g., '0', '4', '5')
        * @property {string} hardFilter - Hard filter number
+       * @property {Object} customFactors - Custom filter factors for all 7 grades (when brand = 'Custom')
        * @property {Object} splitPresets - Saved split-grade configurations
        * @property {string} currentSplitPreset - Currently loaded preset name
        */
@@ -7525,9 +7677,23 @@
         constructor() {
           this.neutralTime = 10.0; // Test strip result
           this.paperBrand = "Ilford";
+          this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50; // Shadow burn percentage
+
+          // Custom filter factors (when paperBrand = "Custom")
+          // Object with all 7 grades: 00, 0, 1, 2, 3, 4, 5
+          this.customFactors = {
+            "00": 1.0,
+            0: 1.0,
+            1: 1.0,
+            2: 1.0,
+            3: 1.0,
+            4: 1.0,
+            5: 1.0,
+          };
+
           this.splitPresets = StorageManager.loadSplitPresets();
           this.currentSplitPreset = StorageManager.loadCurrentSplitPreset();
 
@@ -7539,27 +7705,38 @@
          * Filter factor database
          * @static
          * @type {Object}
+         * @description
+         * Predefined filter factors for standard paper brands.
+         * - Ilford: Standard Multigrade filter factors
+         * - Kodak: Polycontrast filter factors
+         * - FOMA: Base factors (overridden by paper-specific when FOMA selected)
+         * - FOMASPEED/FOMATONE: Paper-specific FOMA factors
+         * - Custom: Not stored here, uses instance.customFactors object with all 7 grades
          */
         static FILTER_FACTORS = {
           Ilford: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.2, 5: 1.5 },
           Kodak: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.1, 4: 1.3, 5: 1.6 },
           FOMA: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.15, 5: 1.4 },
-        };
-
-        /**
-         * Preset combinations
-         * @static
-         * @type {Object}
-         */
-        static PRESETS = {
-          portrait: { soft: "00", hard: "5", burn: 50, name: "Portrait" },
-          landscape: { soft: "0", hard: "4", burn: 40, name: "Landscape" },
-          highContrast: {
-            soft: "0",
-            hard: "5",
-            burn: 70,
-            name: "High Contrast",
+          // FOMA paper-specific factors (will override base FOMA when selected)
+          FOMASPEED: {
+            "00": 1.0,
+            0: 1.0,
+            1: 1.0,
+            2: 1.0,
+            3: 1.0,
+            4: 1.15,
+            5: 1.4,
           },
+          FOMATONE: {
+            "00": 1.0,
+            0: 1.0,
+            1: 1.0,
+            2: 1.0,
+            3: 1.0,
+            4: 1.2,
+            5: 1.5,
+          },
+          // Custom factors are stored in instance properties, not here
         };
 
         /**
@@ -7583,9 +7760,44 @@
           if (paperSelect) {
             paperSelect.addEventListener("change", (e) => {
               this.paperBrand = e.target.value;
+              this.updateBrandVisibility();
               this.calculate();
             });
           }
+
+          // FOMA paper type selection
+          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
+          const fomaToneBtn = document.getElementById("btnFomaToneMG");
+
+          if (fomaSpeedBtn) {
+            fomaSpeedBtn.addEventListener("click", () => {
+              this.fomaPaperType = "fomaspeed";
+              fomaSpeedBtn.classList.add("active");
+              fomaToneBtn.classList.remove("active");
+              this.calculate();
+            });
+          }
+
+          if (fomaToneBtn) {
+            fomaToneBtn.addEventListener("click", () => {
+              this.fomaPaperType = "fomatonemg";
+              fomaToneBtn.classList.add("active");
+              fomaSpeedBtn.classList.remove("active");
+              this.calculate();
+            });
+          }
+
+          // Custom filter factor inputs (7 grades)
+          const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
+          gradeKeys.forEach((grade) => {
+            const input = document.getElementById(`customFactor${grade}`);
+            if (input) {
+              input.addEventListener("input", (e) => {
+                this.customFactors[grade] = parseFloat(e.target.value) || 1.0;
+                this.calculate();
+              });
+            }
+          });
 
           // Burn percentage slider
           const burnSlider = document.getElementById("burnPercentSlider");
@@ -7602,38 +7814,6 @@
           // Filter segmented controls
           this.initializeFilterControl("splitSoftFilter", "soft");
           this.initializeFilterControl("splitHardFilter", "hard");
-
-          // Preset buttons
-          const presetPortrait = document.getElementById("presetPortrait");
-          if (presetPortrait) {
-            presetPortrait.addEventListener("click", () =>
-              this.applyPreset("portrait")
-            );
-          }
-
-          const presetLandscape = document.getElementById("presetLandscape");
-          if (presetLandscape) {
-            presetLandscape.addEventListener("click", () =>
-              this.applyPreset("landscape")
-            );
-          }
-
-          const presetHighContrast =
-            document.getElementById("presetHighContrast");
-          if (presetHighContrast) {
-            presetHighContrast.addEventListener("click", () =>
-              this.applyPreset("highContrast")
-            );
-          }
-
-          const presetCustom = document.getElementById("presetCustom");
-          if (presetCustom) {
-            presetCustom.addEventListener("click", () => {
-              // Just calculate with current settings
-              this.calculate();
-              playBeep(600, 0.2, 0.3);
-            });
-          }
 
           // Action buttons
           const sendBtn = document.getElementById("sendToCalc");
@@ -7706,21 +7886,68 @@
         }
 
         /**
+         * Update visibility of brand-specific sections
+         */
+        updateBrandVisibility() {
+          const fomaSection = document.getElementById("fomaPaperSelection");
+          const customSection = document.getElementById(
+            "customFactorsSelection"
+          );
+
+          if (this.paperBrand === "FOMA") {
+            fomaSection.style.display = "block";
+            customSection.style.display = "none";
+          } else if (this.paperBrand === "Custom") {
+            fomaSection.style.display = "none";
+            customSection.style.display = "block";
+          } else {
+            fomaSection.style.display = "none";
+            customSection.style.display = "none";
+          }
+        }
+
+        /**
          * Calculate split-grade times using user's burn method
+         *
          * Formula:
          * Highlights = Neutral Time × (100% - burn%) / 100
          * Shadows = Neutral Time × burn% / 100
          * Then apply filter factors to each
+         *
+         * Filter factor selection:
+         * - Ilford/Kodak: Use predefined factors from FILTER_FACTORS
+         * - FOMA: Use paper-specific factors (FOMASPEED or FOMATONE)
+         * - Custom: Use customFactors object with all 7 grades (00, 0, 1, 2, 3, 4, 5)
+         *   The selected softFilter and hardFilter keys are used to look up values
          */
         calculate() {
-          const softFactor =
-            SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
-              this.softFilter
-            ] || 1.0;
-          const hardFactor =
-            SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
-              this.hardFilter
-            ] || 1.0;
+          let softFactor, hardFactor;
+
+          if (this.paperBrand === "Custom") {
+            // Use custom factors from the object (all 7 grades)
+            softFactor = this.customFactors[this.softFilter] || 1.0;
+            hardFactor = this.customFactors[this.hardFilter] || 1.0;
+          } else if (this.paperBrand === "FOMA") {
+            // Use paper-specific FOMA factors
+            const fomaKey =
+              this.fomaPaperType === "fomaspeed" ? "FOMASPEED" : "FOMATONE";
+            softFactor =
+              SplitGradeCalculator.FILTER_FACTORS[fomaKey][this.softFilter] ||
+              1.0;
+            hardFactor =
+              SplitGradeCalculator.FILTER_FACTORS[fomaKey][this.hardFilter] ||
+              1.0;
+          } else {
+            // Use standard brand factors
+            softFactor =
+              SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
+                this.softFilter
+              ] || 1.0;
+            hardFactor =
+              SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
+                this.hardFilter
+              ] || 1.0;
+          }
 
           // Calculate base times based on burn percentage
           const highlightsBase =
@@ -7779,9 +8006,11 @@
             softFilter: this.softFilter,
             hardFilter: this.hardFilter,
             paperBrand: this.paperBrand,
+            fomaPaperType: this.fomaPaperType,
             burnPercent: this.burnPercent,
             softFactor: result.softFactor,
             hardFactor: result.hardFactor,
+            customFactors: { ...this.customFactors },
           };
 
           // Update CALC tab display
@@ -7828,53 +8057,26 @@
         }
 
         /**
-         * Apply preset combination
-         */
-        applyPreset(presetName) {
-          const preset = SplitGradeCalculator.PRESETS[presetName];
-          if (!preset) return;
-
-          this.softFilter = preset.soft;
-          this.hardFilter = preset.hard;
-          this.burnPercent = preset.burn;
-
-          // Update UI
-          document.getElementById("burnPercentSlider").value = preset.burn;
-          document.getElementById(
-            "burnPercentValue"
-          ).textContent = `${preset.burn}%`;
-
-          // Update filter controls
-          document
-            .querySelectorAll("#splitSoftFilter .segmented-btn")
-            .forEach((b) => b.classList.remove("active"));
-          document
-            .querySelectorAll("#splitHardFilter .segmented-btn")
-            .forEach((b) => b.classList.remove("active"));
-          document
-            .querySelector(`#splitSoftFilter [data-filter="${preset.soft}"]`)
-            ?.classList.add("active");
-          document
-            .querySelector(`#splitHardFilter [data-filter="${preset.hard}"]`)
-            ?.classList.add("active");
-
-          this.calculate();
-          playBeep(800, 0.3, 0.3);
-          settingsManager.showAllProfilesFeedback(
-            `Applied ${preset.name} preset`,
-            "success"
-          );
-        }
-
-        /**
          * Reset calculator
          */
         reset() {
           this.neutralTime = 10.0;
           this.paperBrand = "Ilford";
+          this.fomaPaperType = "fomaspeed";
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50;
+
+          // Reset custom factors to all 1.0
+          this.customFactors = {
+            "00": 1.0,
+            0: 1.0,
+            1: 1.0,
+            2: 1.0,
+            3: 1.0,
+            4: 1.0,
+            5: 1.0,
+          };
 
           // Update UI
           document.getElementById("neutralTimeSlider").value = 10.0;
@@ -7882,6 +8084,19 @@
           document.getElementById("splitPaperBrand").value = "Ilford";
           document.getElementById("burnPercentSlider").value = 50;
           document.getElementById("burnPercentValue").textContent = "50%";
+
+          // Reset custom inputs (all 7 grades)
+          const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
+          gradeKeys.forEach((grade) => {
+            const input = document.getElementById(`customFactor${grade}`);
+            if (input) input.value = "1.0";
+          });
+
+          // Reset FOMA paper buttons
+          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
+          const fomaToneBtn = document.getElementById("btnFomaToneMG");
+          if (fomaSpeedBtn) fomaSpeedBtn.classList.add("active");
+          if (fomaToneBtn) fomaToneBtn.classList.remove("active");
 
           // Reset filter controls
           document
@@ -7897,6 +8112,8 @@
             .querySelector('#splitHardFilter [data-filter="5"]')
             ?.classList.add("active");
 
+          // Hide brand-specific sections
+          this.updateBrandVisibility();
           this.calculate();
         }
 
@@ -7919,9 +8136,11 @@
             name: name,
             neutralTime: this.neutralTime,
             paperBrand: this.paperBrand,
+            fomaPaperType: this.fomaPaperType,
             softFilter: this.softFilter,
             hardFilter: this.hardFilter,
             burnPercent: this.burnPercent,
+            customFactors: { ...this.customFactors }, // Clone the object
             date: new Date().toISOString(),
           };
 
@@ -7955,9 +8174,41 @@
         loadPreset(preset) {
           this.neutralTime = preset.neutralTime || 10.0;
           this.paperBrand = preset.paperBrand || "Ilford";
+          this.fomaPaperType = preset.fomaPaperType || "fomaspeed";
           this.softFilter = preset.softFilter || "00";
           this.hardFilter = preset.hardFilter || "5";
           this.burnPercent = preset.burnPercent || 50;
+
+          // Load custom factors with defaults for backward compatibility
+          if (preset.customFactors) {
+            this.customFactors = { ...preset.customFactors };
+            // Ensure all grades exist
+            const defaultFactors = {
+              "00": 1.0,
+              0: 1.0,
+              1: 1.0,
+              2: 1.0,
+              3: 1.0,
+              4: 1.0,
+              5: 1.0,
+            };
+            for (const grade in defaultFactors) {
+              if (!(grade in this.customFactors)) {
+                this.customFactors[grade] = defaultFactors[grade];
+              }
+            }
+          } else {
+            // Legacy preset with old format
+            this.customFactors = {
+              "00": preset.customSoftFactor || 1.0,
+              0: preset.customSoftFactor || 1.0,
+              1: preset.customSoftFactor || 1.0,
+              2: preset.customSoftFactor || 1.0,
+              3: preset.customSoftFactor || 1.0,
+              4: preset.customSoftFactor || 1.0,
+              5: preset.customHardFactor || 1.0,
+            };
+          }
 
           // Update UI
           document.getElementById("neutralTimeSlider").value = this.neutralTime;
@@ -7969,6 +8220,24 @@
           document.getElementById(
             "burnPercentValue"
           ).textContent = `${this.burnPercent}%`;
+
+          // Update custom factor inputs (all 7 grades)
+          const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
+          gradeKeys.forEach((grade) => {
+            const input = document.getElementById(`customFactor${grade}`);
+            if (input) input.value = this.customFactors[grade];
+          });
+
+          // Update FOMA paper buttons
+          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
+          const fomaToneBtn = document.getElementById("btnFomaToneMG");
+          if (this.fomaPaperType === "fomaspeed") {
+            if (fomaSpeedBtn) fomaSpeedBtn.classList.add("active");
+            if (fomaToneBtn) fomaToneBtn.classList.remove("active");
+          } else {
+            if (fomaSpeedBtn) fomaSpeedBtn.classList.remove("active");
+            if (fomaToneBtn) fomaToneBtn.classList.add("active");
+          }
 
           // Update filter controls
           document
@@ -7987,6 +8256,9 @@
               `#splitHardFilter [data-filter="${this.hardFilter}"]`
             )
             ?.classList.add("active");
+
+          // Update visibility of brand-specific sections
+          this.updateBrandVisibility();
 
           this.currentSplitPreset = preset.name;
           StorageManager.saveCurrentSplitPreset(preset.name);
@@ -8060,11 +8332,24 @@
             const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${preset.burnPercent}%`;
             const dateStr = new Date(preset.date).toLocaleDateString();
 
+            // Build additional info string
+            let additionalInfo = "";
+            if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
+              const paperName =
+                preset.fomaPaperType === "fomaspeed" ? "FOMASPEED" : "FOMATONE";
+              additionalInfo = ` • ${paperName}`;
+            } else if (preset.paperBrand === "Custom" && preset.customFactors) {
+              // Show the specific factors for the selected filters
+              const softVal = preset.customFactors[preset.softFilter] || 1.0;
+              const hardVal = preset.customFactors[preset.hardFilter] || 1.0;
+              additionalInfo = ` • F${preset.softFilter}:${softVal}× F${preset.hardFilter}:${hardVal}×`;
+            }
+
             itemDiv.innerHTML = `
               <div>
                 <strong>${preset.name}</strong>
                 <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
-                <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand} • ${filterInfo}</div>
+                <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand}${additionalInfo} • ${filterInfo}</div>
               </div>
               <div class="shelf-life-actions">
                 <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
@@ -13505,9 +13790,11 @@
               softFilter: null,
               hardFilter: null,
               paperBrand: null,
+              fomaPaperType: null,
               burnPercent: null,
               softFactor: null,
               hardFactor: null,
+              customFactors: null,
             };
             const display = document.getElementById("splitGradeDisplay");
             if (display) display.style.display = "none";
@@ -13804,12 +14091,12 @@
           }
         });
 
-        // Initialize collapsible rows in the CALC, CHEMICAL and TIMER tabs
+        // Initialize collapsible rows in the CALC, SPLIT, CHEMICAL, TIMER, and SETTINGS tabs
         (function initCalcCollapsibles() {
           const STORAGE_KEY = "calc_collapsed";
           let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
           const sections = document.querySelectorAll(
-            "#calc .collapsible, #fstop-test .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible"
+            "#calc .collapsible, #split .collapsible, #fstop-test .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible"
           );
           // Clean up any stored keys that no longer correspond to existing sections
           const existingIds = Array.from(sections)
