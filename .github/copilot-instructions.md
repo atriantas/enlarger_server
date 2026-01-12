@@ -6,8 +6,8 @@
 
 ### Essential Files (ONLY modify these)
 
-- `Raspberry_Server_v3.0.3.py` - Flask server with GPIO control (~467 lines)
-- `Darkroom_Tools_v3.0.3.html` - Single-file client application (~10,754 lines)
+- `Raspberry_Server_v3.0.3.py` - Flask server with GPIO control (~669 lines)
+- `Darkroom_Tools_v3.0.3.html` - Single-file client application (~14,593 lines)
 
 ### Critical Architecture Pattern
 
@@ -20,6 +20,9 @@
 - [ ] Always use `StorageManager` for localStorage operations
 - [ ] Preserve safelight auto-off flow with immediate restoration
 - [ ] Respect triple-fallback HTTP strategy (CORS → no-cors → Image)
+- [ ] Use 150ms debouncing for live settings changes
+- [ ] Click-to-apply test strip steps to CALC tab
+- [ ] Theme-aware visual feedback for all UI elements
 
 ## 🏗️ Big Picture Architecture
 
@@ -98,81 +101,102 @@ const appState = {
 
 **10 Critical Managers** - Understand these before any modifications:
 
-### 1. RelayManager (lines ~6537-7100)
+### 1. RelayManager (lines ~8512-9320)
 
 **Central hub for server communication**
 
-- `sendRequest(endpoint, params)` - Triple-fallback HTTP
-- `triggerTimerRelay(duration)` - Safelight-aware exposure
+- `sendRequest(endpoint, params)` - Triple-fallback HTTP (CORS → no-cors → Image)
+- `triggerTimerRelay(duration)` - Safelight-aware exposure with 0.5s buffer
 - `setRelay(relayNum, state)` - Individual relay control
-- **Critical**: Safelight auto-off with immediate restoration
+- `handleSafelightAutoOff(relayNum, newState)` - Critical safelight protection
+- **Critical**: Safelight auto-off with immediate restoration after exposure
+- **Triple-fallback strategy**: Tries CORS mode, then no-cors, then Image object for maximum compatibility
 
-### 2. Timer (lines ~4509-4650)
+### 2. Timer (lines ~5380-5520)
 
 **Individual timer instances** (Dev, Stop, Fix, Flo)
 
 - Uses `DriftCorrectedTimer` for precision
+- State managed via appState.timers object
 - Auto-chain via `autoStart` setting
 - Warning beep at 10 seconds
+- Default times from DEFAULT_TIMER_TIMES
 
-### 3. IncrementalTimer (lines ~7487+)
+### 3. IncrementalTimer (lines ~9925-10100)
 
 **Dodge/burn calculator with step progression**
 
 - Step-by-step exposure calculations
 - Integrates with countdown and relay triggering
+- Base time slider (0.4-50s), stop increment selector
+- Auto-trigger calls `window.relayManager.triggerTimerRelay(appState.calculator.thisExposureTime)`
 
-### 4. FStopTestStripGenerator (lines ~8502+)
+### 4. FStopTestStripGenerator (lines ~11834-13670)
 
 **F-stop test strip generation**
 
 - Cumulative vs incremental methods
-- **Click-to-apply**: Click step → applies to CALC tab
-- Theme-aware visual feedback
+- **Click-to-apply**: Click step → applies time to CALC tab's base time
+- **Theme-aware**: Dynamic colors based on current theme and exposure intensity
+- Auto-advance with configurable delays (150ms debouncing)
+- Transfer destination: 'calc' or 'split' tab
+- Profile management with save/load/delete
 
-### 5. CountdownManager (lines ~4704+)
+### 5. CountdownManager (lines ~5691-5900)
 
 **Visual countdown before exposure**
 
-- Configurable delay (default 5s)
+- Configurable delay (default 5 seconds)
 - Patterns: every-second, last3, last5, none
+- Theme-aware visual feedback (colors adapt to dark/light/day)
+- Audio beeps based on pattern
+- Cancelable at any time
 
-### 6. ChemicalManager (lines ~5876+)
+### 6. ChemicalManager (lines ~7051-7800)
 
 **Darkroom chemistry tracking**
 
 - Mix calculator with presets
 - Developer capacity tracking (paper-area based)
 - Shelf-life tracking with expiration alerts
+- Storage keys: CHEMICAL_PRESETS, CAPACITY_TRACKER, SHELF_LIFE
 
-### 7. SettingsManager (lines ~4886+)
+### 7. SettingsManager (lines ~5928-6500)
 
 **Global preferences persistence**
 
 - Live settings with 150ms debouncing
-- Persists to LocalStorage
+- Persists to LocalStorage via StorageManager
+- Applies settings to runtime immediately
+- Handles color scheme, sound, countdown, test strip settings
+- **Debouncing**: 150ms delay prevents excessive UI updates
 
-### 8. AudioService (lines ~3781+)
+### 8. AudioService (lines ~4190-4360)
 
 **Web Audio API for beep patterns**
 
 - Configurable frequency, duration, volume
-- Used by all timer classes
+- Presets: warning, complete, countdown, relay, chemical, etc.
+- Must be initialized with user interaction
+- Used by all timer classes for feedback
 
-### 9. StorageManager
+### 9. StorageManager (lines ~5027-5280)
 
 **Centralized LocalStorage handler**
 
 - Manages all persistence keys with error handling
 - **Critical**: All state changes must flow through this manager
+- Keys: settings, profiles, current_profile, color_scheme, chemical_presets, capacity_tracker, shelf_life, custom_filter_banks, test_strip_profiles, current_test_strip_profile, split_grade_presets, current_split_preset, test_transfer_destination
+- JSON serialization with error handling
 
-### 10. DriftCorrectedTimer (lines ~3900+)
+### 10. DriftCorrectedTimer (lines ~4369-4450)
 
 **High-precision timing**
 
 - Uses `Date.now()` for millisecond accuracy
 - Compensates for JavaScript timer drift
 - **Never use setInterval** - always use this for photographic timing
+- Callback-based with interval correction
 
 ## 📋 Tab-Specific Architecture
 
@@ -766,7 +790,7 @@ Prefer modifying CSS variables over component styles. If adding new components, 
 
 ### Adding New Storage Keys
 
-1. Add key to `STORAGE_KEYS` object (lines ~3686-3695)
+1. Add key to `STORAGE_KEYS` object (lines ~4077-4089)
 2. Add corresponding save/load methods to `StorageManager` class
 3. Update `clearAllData()` method to include new key
 4. Use in manager classes for persistence
@@ -870,7 +894,7 @@ Prefer modifying CSS variables over component styles. If adding new components, 
 
 ### Adding New Storage Keys
 
-1. Add key to `STORAGE_KEYS` object (lines ~3686-3695)
+1. Add key to `STORAGE_KEYS` object (lines ~4077-4089)
 2. Add corresponding save/load methods to `StorageManager` class
 3. Update `clearAllData()` method to include new key
 4. Use in manager classes for persistence
@@ -915,7 +939,27 @@ Prefer modifying CSS variables over component styles. If adding new components, 
 - **Hardware verification**: Use multimeter or LED to verify GPIO states
 - **State verification**: Check LocalStorage and `appState` in console
 
-## 🔧 Troubleshooting
+## � Recent Updates (January 2026)
+
+### Latest Enhancements
+
+1. **Click-to-Apply Test Strip Steps**: Test strip steps are clickable → applies time to CALC tab
+2. **Theme-Aware Visual Feedback**: Test strip colors adapt to dark/light/day schemes
+3. **Enhanced Safelight Restoration**: 0.5s buffer after exposure before restoring safelight
+4. **Live Settings with Debouncing**: 150ms delay prevents excessive UI updates
+5. **Improved State Management**: Clear separation between transient UI state and persistent settings
+
+### Critical Patterns for AI Agents
+
+1. **Always use StorageManager** for localStorage operations
+2. **Respect triple-fallback fetch strategy** for HTTP requests
+3. **Preserve safelight auto-off flow** (off → enlarger → duration → 0.5s buffer → restore)
+4. **Use DriftCorrectedTimer** for precision (never setInterval)
+5. **CSS variable theming** - modify :root and theme classes, not individual components
+6. **Event delegation** for dynamic elements
+7. **State synchronization** - update appState before UI changes, flow through managers
+
+## �🔧 Troubleshooting
 
 ### Common Issues
 

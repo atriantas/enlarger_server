@@ -3586,21 +3586,11 @@
               style="
                 padding: 8px 16px;
                 text-transform: uppercase;
-                margin-top: 10px;
+                margin-bottom: 1rem;
               "
             >
               Toggle Fullscreen
             </button>
-            <div
-              style="
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-                text-align: center;
-                margin-top: 5px;
-              "
-            >
-              Press F11 for desktop fullscreen
-            </div>
             <div class="title-md">Color Scheme</div>
             <div class="dilution-selector">
               <button class="toggle-btn active" data-scheme="dark">
@@ -12116,7 +12106,7 @@
           if (this.autoAdvance) {
             cumulativeText.textContent = `Auto-advance: ON - Next step starts in ${delaySec}s`;
             incrementalText.textContent = `Auto-advance: ON - Slide mask, next step in ${delaySec}s`;
-            statusText.textContent = `Current: Auto Advance (${delaySec}s delay) - press 'A' to toggle`;
+            statusText.textContent = `Current: Auto Advance (${delaySec}s delay)`;
           } else {
             cumulativeText.textContent =
               "Auto-advance: OFF - Press Next Step between exposures";
