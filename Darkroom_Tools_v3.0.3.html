@@ -3346,6 +3346,35 @@
           </div>
         </div>
 
+        <!-- Factorial Development Tool -->
+        <div class="incremental-timer">
+          <div class="title-sm">FACTORIAL DEVELOPMENT</div>
+          
+          <div class="info-box">
+            <div class="label-sm">CURRENT MULTIPLIER</div>
+            <div id="factorialMultiplier" class="value-display">Not Set</div>
+            <div class="label-sm" id="factorialStatus">Set Dev time and start first print</div>
+          </div>
+
+          <div class="settings-btn-group">
+            <button class="exp-btn" id="markBaseline">MARK BASELINE</button>
+          </div>
+
+          <div class="settings-btn-group">
+            <button class="exp-btn" id="blackPoint">BLACK POINT</button>
+          </div>
+
+          <div class="settings-btn-group">
+            <button class="settings-btn" id="resetMultiplier">Reset Multiplier</button>
+          </div>
+
+          <div class="label-sm" style="margin-top: 8px; text-align: center; line-height: 1.4;">
+            <strong>Workflow:</strong><br>
+            1. Set Dev time → Start → Mark Baseline when black appears<br>
+            2. Next prints → Black Point when black appears → Auto-adjusts timer
+          </div>
+        </div>
+
         <!-- Timer Profiles Section MOVED from SETTINGS tab -->
         <section class="collapsible" data-id="timer-profiles">
           <button class="collapsible-header" aria-expanded="false">
@@ -13978,6 +14007,338 @@
         }
       }
 
+      /**
+       * @class RealTimeAutoFactorial
+       * @classdesc Intelligent factorial development with automatic multiplier calculation
+       * 
+       * PHASE 1 - Calibration (First Print):
+       * - User sets Dev timer to target time (e.g., 60s)
+       * - User starts development
+       * - When black appears, user presses "Mark Baseline"
+       * - Tool calculates: multiplier = targetTime / elapsedTime
+       * - Stores multiplier for future use
+       * - Development continues normally
+       * 
+       * PHASE 2 - Production (Subsequent Prints):
+       * - User starts Dev timer (shows current target)
+       * - When black appears, user presses "Black Point"
+       * - Tool calculates: newTarget = elapsedTime × multiplier
+       * - Stores new target for NEXT print
+       * - Current development continues to completion
+       * - After completion, Dev timer shows new target
+       * 
+       * Key Features:
+       * - Automatic multiplier calculation
+       * - Real-time elapsed time tracking
+       * - Non-intrusive (doesn't stop current development)
+       * - Visual feedback at each step
+       * - Works seamlessly with existing Dev timer
+       */
+      class RealTimeAutoFactorial {
+        constructor(timerManager) {
+          this.timerManager = timerManager;
+          
+          // State
+          this.multiplier = null;           // Calculated multiplier (e.g., 3.0)
+          this.isCalibrated = false;        // Has Mark Baseline been pressed?
+          this.pendingNewTime = null;       // New time for next print
+          
+          // For tracking
+          this.devTimer = null;
+          this.targetTime = null;           // Current Dev timer setting
+          this.elapsedTime = 0;             // Current elapsed time
+          this.trackingInterval = null;
+          
+          // UI refs
+          this.multiplierDisplay = null;
+          this.statusDisplay = null;
+        }
+
+        /**
+         * Initialize and bind to Dev timer
+         */
+        init() {
+          // Get UI elements
+          this.multiplierDisplay = document.getElementById('factorialMultiplier');
+          this.statusDisplay = document.getElementById('factorialStatus');
+          
+          // Find Dev timer
+          this.devTimer = this.timerManager.timers.find(t => t.name === 'Dev');
+          
+          if (!this.devTimer) {
+            console.error('Dev timer not found!');
+            return;
+          }
+
+          // Bind events
+          this.bindEvents();
+          
+          // Start tracking
+          this.startTracking();
+          
+          // Initial UI update
+          this.updateMultiplierDisplay();
+          
+          console.log('RealTimeAutoFactorial initialized');
+        }
+
+        /**
+         * Bind button events
+         */
+        bindEvents() {
+          // Mark Baseline button (Phase 1)
+          const markBtn = document.getElementById('markBaseline');
+          if (markBtn) {
+            markBtn.addEventListener('click', () => this.markBaseline());
+          }
+
+          // Black Point button (Phase 2)
+          const blackBtn = document.getElementById('blackPoint');
+          if (blackBtn) {
+            blackBtn.addEventListener('click', () => this.blackPoint());
+          }
+
+          // Reset multiplier
+          const resetBtn = document.getElementById('resetMultiplier');
+          if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetMultiplier());
+          }
+        }
+
+        /**
+         * Track Dev timer state continuously
+         */
+        startTracking() {
+          if (this.trackingInterval) {
+            clearInterval(this.trackingInterval);
+          }
+
+          this.trackingInterval = setInterval(() => {
+            if (!this.devTimer) return;
+
+            const state = this.devTimer.state;
+            
+            // Update target time from current Dev setting
+            this.targetTime = state.totalTime;
+            
+            // Calculate elapsed time if running
+            if (state.isRunning) {
+              this.elapsedTime = state.totalTime - state.timeLeft;
+            } else if (state.timeLeft === 0 && state.totalTime > 0) {
+              // Timer just completed
+              this.elapsedTime = state.totalTime;
+              
+              // Apply pending new time if exists
+              if (this.pendingNewTime !== null) {
+                this.devTimer.setTime(this.pendingNewTime);
+                this.pendingNewTime = null;
+                this.updateStatus(`✓ Dev timer updated to ${this.devTimer.state.totalTime}s for next print`, 'success');
+              }
+            } else if (state.timeLeft === state.totalTime) {
+              // Timer reset
+              this.elapsedTime = 0;
+            }
+
+            this.updateStatusDisplay();
+          }, 100);
+        }
+
+        /**
+         * MARK BASELINE - Phase 1: Calculate multiplier
+         */
+        markBaseline() {
+          if (!this.devTimer) return;
+
+          const state = this.devTimer.state;
+          
+          // Validation
+          if (!state.isRunning && this.elapsedTime === 0) {
+            this.updateStatus('❌ Start Dev timer first!', 'error');
+            return;
+          }
+
+          if (this.isCalibrated) {
+            this.updateStatus('⚠ Already calibrated! Use Black Point for new prints', 'warning');
+            return;
+          }
+
+          // Get the target time (what Dev timer was set to)
+          const target = this.targetTime;
+          
+          // Get elapsed time (when black appeared)
+          const elapsed = this.elapsedTime;
+          
+          if (elapsed === 0) {
+            this.updateStatus('❌ Wait for black to appear!', 'error');
+            return;
+          }
+
+          // Calculate multiplier: target / elapsed
+          this.multiplier = target / elapsed;
+          this.isCalibrated = true;
+
+          // Update UI
+          this.updateMultiplierDisplay();
+          this.updateStatus(`✓ Multiplier set: ${this.multiplier.toFixed(2)} (${target}s / ${elapsed}s)`, 'success');
+          
+          // Update button states
+          this.updateButtonStates();
+        }
+
+        /**
+         * BLACK POINT - Phase 2: Adjust timer based on multiplier
+         */
+        blackPoint() {
+          if (!this.devTimer) return;
+
+          const state = this.devTimer.state;
+          
+          // Validation
+          if (!this.isCalibrated) {
+            this.updateStatus('❌ Mark Baseline first to set multiplier!', 'error');
+            return;
+          }
+
+          if (!state.isRunning && this.elapsedTime === 0) {
+            this.updateStatus('❌ Start Dev timer for this print!', 'error');
+            return;
+          }
+
+          // Get elapsed time (when black appeared for this print)
+          const elapsed = this.elapsedTime;
+          
+          if (elapsed === 0) {
+            this.updateStatus('❌ Wait for black to appear!', 'error');
+            return;
+          }
+
+          // Calculate new target time: elapsed × multiplier
+          const newTarget = elapsed * this.multiplier;
+          
+          // Store as pending - will be applied when current timer completes
+          this.pendingNewTime = newTarget;
+          
+          // Update UI
+          this.updateStatus(`✓ Next Dev time: ${newTarget.toFixed(1)}s (${elapsed}s × ${this.multiplier.toFixed(2)})`, 'success');
+          
+          // Flash the Dev display to show it's been noted
+          const devDisplay = document.getElementById('displayDev');
+          if (devDisplay) {
+            devDisplay.style.color = 'var(--accent)';
+            devDisplay.style.fontWeight = 'bold';
+            setTimeout(() => {
+              devDisplay.style.color = '';
+              devDisplay.style.fontWeight = '';
+            }, 1500);
+          }
+        }
+
+        /**
+         * Reset multiplier (start over)
+         */
+        resetMultiplier() {
+          this.multiplier = null;
+          this.isCalibrated = false;
+          this.elapsedTime = 0;
+          this.pendingNewTime = null;
+          
+          this.updateMultiplierDisplay();
+          this.updateStatus('Multiplier reset. Set Dev time and start first print.', 'info');
+          this.updateButtonStates();
+        }
+
+        /**
+         * Update multiplier display
+         */
+        updateMultiplierDisplay() {
+          if (!this.multiplierDisplay) return;
+          
+          if (this.multiplier) {
+            this.multiplierDisplay.textContent = this.multiplier.toFixed(2);
+            this.multiplierDisplay.style.color = 'var(--accent)';
+            this.multiplierDisplay.style.fontWeight = 'bold';
+          } else {
+            this.multiplierDisplay.textContent = 'Not Set';
+            this.multiplierDisplay.style.color = '';
+            this.multiplierDisplay.style.fontWeight = '';
+          }
+        }
+
+        /**
+         * Update status text based on current state
+         */
+        updateStatusDisplay() {
+          if (!this.statusDisplay) return;
+
+          if (!this.isCalibrated) {
+            if (this.targetTime && this.elapsedTime === 0) {
+              this.statusDisplay.textContent = 'Dev timer ready - Start and watch for black';
+            } else if (this.elapsedTime > 0) {
+              this.statusDisplay.textContent = 'Black appeared? Press MARK BASELINE';
+            } else {
+              this.statusDisplay.textContent = 'Set Dev time and start first print';
+            }
+          } else {
+            if (this.pendingNewTime !== null) {
+              this.statusDisplay.textContent = `Next: ${this.pendingNewTime.toFixed(0)}s - Continue current development`;
+            } else if (this.elapsedTime > 0) {
+              this.statusDisplay.textContent = 'Black appeared? Press BLACK POINT';
+            } else {
+              this.statusDisplay.textContent = 'Multiplier set - Start next print';
+            }
+          }
+        }
+
+        /**
+         * Update button states
+         */
+        updateButtonStates() {
+          const markBtn = document.getElementById('markBaseline');
+          const blackBtn = document.getElementById('blackPoint');
+          
+          if (markBtn && blackBtn) {
+            if (this.isCalibrated) {
+              markBtn.disabled = true;
+              markBtn.style.opacity = '0.5';
+              blackBtn.disabled = false;
+              blackBtn.style.opacity = '1';
+            } else {
+              markBtn.disabled = false;
+              markBtn.style.opacity = '1';
+              blackBtn.disabled = true;
+              blackBtn.style.opacity = '0.5';
+            }
+          }
+        }
+
+        /**
+         * Update status message with color coding
+         */
+        updateStatus(message, type = 'info') {
+          if (!this.statusDisplay) return;
+          
+          this.statusDisplay.textContent = message;
+          
+          const colors = {
+            info: 'var(--text-secondary)',
+            success: 'var(--accent)',
+            error: 'var(--warning)',
+            warning: '#ffaa00'
+          };
+          
+          this.statusDisplay.style.color = colors[type] || colors.info;
+        }
+
+        /**
+         * Clean up
+         */
+        destroy() {
+          if (this.trackingInterval) {
+            clearInterval(this.trackingInterval);
+          }
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         // Initialize audio service first (for all sound functionality)
         audioService = new AudioService();
@@ -14025,6 +14386,10 @@
 
         // Initialize relay manager
         window.relayManager = new RelayManager();
+
+        // Initialize Real-Time Auto Factorial Development manager
+        window.realTimeAutoFactorial = new RealTimeAutoFactorial(timerManager);
+        window.realTimeAutoFactorial.init();
 
         // Color scheme selector
         document.querySelectorAll(".toggle-btn[data-scheme]").forEach((btn) => {
