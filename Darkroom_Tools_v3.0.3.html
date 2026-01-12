@@ -1779,14 +1779,25 @@
           <!-- CONTRAST CONTROL INTEGRATED -->
           <section class="collapsible" data-id="contrast-filter">
             <button class="collapsible-header" aria-expanded="false">
-              Foma Contrast Filter Adjustment
+              Contrast Filter Adjustment
             </button>
             <div class="collapsible-content">
+              <div class="control">
+                <div class="control-label">
+                  <span>PAPER BRAND</span>
+                </div>
+                <select class="settings-input" id="contrastBrandSelect">
+                  <option value="FOMA">FOMA</option>
+                  <option value="Ilford">Ilford Multigrade</option>
+                  <option value="Kodak">Kodak Polycontrast</option>
+                </select>
+              </div>
+
               <div
                 class="exp-info"
                 style="grid-template-columns: 1fr 1fr; margin-top: 8px"
               >
-                <div class="info-box">
+                <div class="info-box" id="paperTypeBox">
                   <div class="label-sm">Paper Type</div>
                   <div class="paper-selector" style="margin-top: 5px">
                     <button
@@ -1817,19 +1828,13 @@
                       margin-top: 8px;
                     "
                   >
-                    <option value="2xY">2×Y</option>
-                    <option value="Y">Y</option>
-                    <option value="none" selected>No filter</option>
-                    <option value="M1">M1</option>
-                    <option value="2xM1">2×M1</option>
-                    <option value="M2">M2</option>
-                    <option value="2xM2">2×M2</option>
+                    <option value="none">No filter</option>
                   </select>
                   <div
                     class="exp-info"
                     style="grid-template-columns: 1fr 1fr; margin-top: 5px"
                   >
-                    <div class="info-box" style="padding: 3px">
+                    <div class="info-box" style="padding: 3px" id="isoRBox">
                       <div class="label-sm">ISO R</div>
                       <div class="value-display" id="isoValue">105</div>
                     </div>
@@ -10545,6 +10550,7 @@
           this.newPaperSizeCustom = 0.052; // Changed from 0.080
 
           // NEW: Contrast control variables
+          this.currentBrand = "FOMA"; // FOMA, Ilford, Kodak
           this.currentPaper = "fomaspeed";
           this.currentFilter = "none";
           this.filterFactor = 1.0;
@@ -10575,6 +10581,40 @@
                 "2xM1": { iso: 75, factor: 1.8 },
                 M2: { iso: 65, factor: 2.0 },
                 "2xM2": { iso: 55, factor: 3.0 },
+              },
+            },
+            // NEW: Ilford Multigrade (12 grades: 00, 0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
+            ilford: {
+              name: "Ilford Multigrade",
+              filters: {
+                "00": { iso: 130, factor: 1.0 },
+                0: { iso: 120, factor: 1.0 },
+                1: { iso: 110, factor: 1.0 },
+                1.5: { iso: 105, factor: 1.0 },
+                2: { iso: 100, factor: 1.0 },
+                2.5: { iso: 95, factor: 1.0 },
+                3: { iso: 90, factor: 1.0 },
+                3.5: { iso: 85, factor: 1.1 },
+                4: { iso: 80, factor: 1.2 },
+                4.5: { iso: 75, factor: 1.35 },
+                5: { iso: 70, factor: 1.5 },
+              },
+            },
+            // NEW: Kodak Polycontrast (12 grades: 00, 0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
+            kodak: {
+              name: "Kodak Polycontrast",
+              filters: {
+                "00": { iso: 125, factor: 1.0 },
+                0: { iso: 115, factor: 1.0 },
+                1: { iso: 105, factor: 1.0 },
+                1.5: { iso: 100, factor: 1.0 },
+                2: { iso: 95, factor: 1.0 },
+                2.5: { iso: 90, factor: 1.05 },
+                3: { iso: 85, factor: 1.1 },
+                3.5: { iso: 80, factor: 1.2 },
+                4: { iso: 75, factor: 1.3 },
+                4.5: { iso: 70, factor: 1.45 },
+                5: { iso: 65, factor: 1.6 },
               },
             },
           };
@@ -10767,6 +10807,20 @@
           });
 
           // NEW: Add event listeners for contrast controls
+          this.contrastBrandSelect = document.getElementById(
+            "contrastBrandSelect"
+          );
+          this.paperTypeBox = document.getElementById("paperTypeBox");
+          this.isoRBox = document.getElementById("isoRBox");
+
+          this.contrastBrandSelect.addEventListener("change", (e) => {
+            this.currentBrand = e.target.value;
+            this.updateBrandUI();
+            this.updateFilterOptions();
+            this.updateCalculations();
+            this.updateDisplay();
+          });
+
           this.btnFomaspeed.addEventListener("click", () =>
             this.selectPaper("fomaspeed")
           );
@@ -10780,6 +10834,9 @@
           });
 
           this.applyHeightTimeBtn.addEventListener("click", initAudioContext);
+
+          // Initialize filter options on startup
+          this.updateFilterOptions();
         }
 
         /**
@@ -10794,6 +10851,9 @@
          * this.selectPaper('fomaspeed'); // Use FOMASPEED paper filters
          */
         selectPaper(paperType) {
+          // Only allow paper selection for FOMA brand
+          if (this.currentBrand !== "FOMA") return;
+
           this.currentPaper = paperType;
 
           // Update button states
@@ -10808,6 +10868,88 @@
           // Update calculations
           this.updateCalculations();
           this.updateDisplay();
+        }
+
+        /**
+         * @method updateBrandUI
+         * @description Updates UI visibility based on selected brand.
+         * Shows/hides FOMA paper type buttons and ISO R display.
+         * @returns {void}
+         * @fires Element.style.display - Shows/hides UI elements
+         */
+        updateBrandUI() {
+          // Show/hide FOMA paper type buttons
+          if (this.currentBrand === "FOMA") {
+            this.paperTypeBox.style.display = "block";
+            this.isoRBox.style.display = "block";
+          } else {
+            this.paperTypeBox.style.display = "none";
+            this.isoRBox.style.display = "none";
+          }
+        }
+
+        /**
+         * @method updateFilterOptions
+         * @description Dynamically populates filter dropdown based on selected brand.
+         * Updates filter options and sets default selection.
+         * @returns {void}
+         * @fires Element.innerHTML - Updates filter select options
+         */
+        updateFilterOptions() {
+          const filterSelect = this.contrastFilterSelect;
+          filterSelect.innerHTML = "";
+
+          let options = [];
+          if (this.currentBrand === "FOMA") {
+            options = [
+              { value: "2xY", text: "2×Y" },
+              { value: "Y", text: "Y" },
+              { value: "none", text: "No filter" },
+              { value: "M1", text: "M1" },
+              { value: "2xM1", text: "2×M1" },
+              { value: "M2", text: "M2" },
+              { value: "2xM2", text: "2×M2" },
+            ];
+          } else if (this.currentBrand === "Ilford") {
+            options = [
+              { value: "00", text: "Grade 00" },
+              { value: "0", text: "Grade 0" },
+              { value: "1", text: "Grade 1" },
+              { value: "1.5", text: "Grade 1.5" },
+              { value: "2", text: "Grade 2" },
+              { value: "2.5", text: "Grade 2.5" },
+              { value: "3", text: "Grade 3" },
+              { value: "3.5", text: "Grade 3.5" },
+              { value: "4", text: "Grade 4" },
+              { value: "4.5", text: "Grade 4.5" },
+              { value: "5", text: "Grade 5" },
+            ];
+          } else if (this.currentBrand === "Kodak") {
+            options = [
+              { value: "00", text: "Grade 00" },
+              { value: "0", text: "Grade 0" },
+              { value: "1", text: "Grade 1" },
+              { value: "1.5", text: "Grade 1.5" },
+              { value: "2", text: "Grade 2" },
+              { value: "2.5", text: "Grade 2.5" },
+              { value: "3", text: "Grade 3" },
+              { value: "3.5", text: "Grade 3.5" },
+              { value: "4", text: "Grade 4" },
+              { value: "4.5", text: "Grade 4.5" },
+              { value: "5", text: "Grade 5" },
+            ];
+          }
+
+          options.forEach((opt) => {
+            const option = document.createElement("option");
+            option.value = opt.value;
+            option.textContent = opt.text;
+            filterSelect.appendChild(option);
+          });
+
+          // Set default selection
+          filterSelect.value = options[0].value;
+          this.currentFilter = filterSelect.value;
         }
 
         /**
@@ -10976,10 +11118,20 @@
           }
 
           // Filter factor comes from contrast control selection
-          const paper = this.paperTypes[this.currentPaper];
-          const filter = paper?.filters?.[this.currentFilter];
-          if (filter) {
-            this.filterFactor = filter.factor;
+          let filterData;
+          if (this.currentBrand === "FOMA") {
+            // Use FOMA paper-specific data
+            const paper = this.paperTypes[this.currentPaper];
+            filterData = paper?.filters?.[this.currentFilter];
+          } else {
+            // Use brand-specific data (Ilford or Kodak)
+            const brandKey = this.currentBrand.toLowerCase();
+            filterData =
+              this.paperTypes[brandKey]?.filters?.[this.currentFilter];
+          }
+
+          if (filterData) {
+            this.filterFactor = filterData.factor;
           } else {
             this.filterFactor = 1.0;
           }
@@ -11030,11 +11182,24 @@
             this.newAdjustedTime.toFixed(2);
 
           // Update contrast control displays from selected paper/filter only
-          const paper = this.paperTypes[this.currentPaper];
-          const filter = paper?.filters?.[this.currentFilter];
-          if (filter) {
-            this.isoValueElement.textContent = filter.iso;
-            this.filterFactorValueElement.textContent = `${filter.factor.toFixed(
+          let filterData;
+          if (this.currentBrand === "FOMA") {
+            // Use FOMA paper-specific data
+            const paper = this.paperTypes[this.currentPaper];
+            filterData = paper?.filters?.[this.currentFilter];
+          } else {
+            // Use brand-specific data (Ilford or Kodak)
+            const brandKey = this.currentBrand.toLowerCase();
+            filterData =
+              this.paperTypes[brandKey]?.filters?.[this.currentFilter];
+          }
+
+          if (filterData) {
+            // Only show ISO R for FOMA
+            if (this.currentBrand === "FOMA") {
+              this.isoValueElement.textContent = filterData.iso;
+            }
+            this.filterFactorValueElement.textContent = `${filterData.factor.toFixed(
               1
             )}×`;
           }
