@@ -2571,6 +2571,48 @@
               <span class="setting-label">Show Times</span>
             </div>
           </div>
+
+          <!-- Transfer Destination Selection -->
+          <div style="margin-top: 10px; text-align: center">
+            <div
+              style="
+                font-size: 0.65rem;
+                color: var(--text-secondary);
+                margin-bottom: 5px;
+              "
+            >
+              Click test steps to apply time to:
+            </div>
+            <div class="segmented-control-container">
+              <div
+                class="segmented-control"
+                id="transferDestinationSeg"
+                role="tablist"
+                aria-label="Transfer destination"
+              >
+                <button
+                  type="button"
+                  class="segmented-btn"
+                  id="transferToCalc"
+                  data-destination="calc"
+                  aria-pressed="false"
+                  style="min-width: 80px; font-size: 0.75rem"
+                >
+                  → CALC
+                </button>
+                <button
+                  type="button"
+                  class="segmented-btn"
+                  id="transferToSplit"
+                  data-destination="split"
+                  aria-pressed="false"
+                  style="min-width: 80px; font-size: 0.75rem"
+                >
+                  → SPLIT
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Test Strip Timer Controls -->
@@ -4040,6 +4082,7 @@
         CURRENT_TEST_STRIP_PROFILE: "darkroom_timer_current_test_strip_profile",
         SPLIT_GRADE_PRESETS: "darkroom_timer_split_grade_presets",
         CURRENT_SPLIT_PRESET: "darkroom_timer_current_split_preset",
+        TEST_TRANSFER_DESTINATION: "darkroom_timer_test_transfer_destination",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4081,6 +4124,8 @@
         // Test base time slider limits
         testBaseTimeMin: 1,
         testBaseTimeMax: 50,
+        // Test strip transfer destination
+        testTransferDestination: "calc", // 'calc' or 'split'
       };
 
       // Default timer times (seconds)
@@ -4503,6 +4548,7 @@
           autoAdvanceDelay: 1,
           safelightAutoOff: true,
           stopDenominator: 3,
+          testTransferDestination: "calc",
         },
 
         // Persistent UI selections (loaded from StorageManager)
@@ -5267,6 +5313,28 @@
         }
 
         /**
+         * Save test strip transfer destination preference
+         * @static
+         * @param {string} destination - 'calc' or 'split'
+         * @returns {boolean} Success status
+         */
+        static saveTestTransferDestination(destination) {
+          return this.saveJSON(
+            STORAGE_KEYS.TEST_TRANSFER_DESTINATION,
+            destination
+          );
+        }
+
+        /**
+         * Load test strip transfer destination preference
+         * @static
+         * @returns {string} 'calc' or 'split' (defaults to 'calc')
+         */
+        static loadTestTransferDestination() {
+          return this.loadJSON(STORAGE_KEYS.TEST_TRANSFER_DESTINATION, "calc");
+        }
+
+        /**
          * Clear all stored data
          * @static
          * @returns {boolean} Success status
@@ -5286,6 +5354,7 @@
             STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
             STORAGE_KEYS.SPLIT_GRADE_PRESETS,
             STORAGE_KEYS.CURRENT_SPLIT_PRESET,
+            STORAGE_KEYS.TEST_TRANSFER_DESTINATION,
           ]);
         }
       }
@@ -5880,6 +5949,10 @@
             window.fstopTestGenerator.setAutoAdvance(
               this.settings.autoAdvance || false
             );
+            // Apply transfer destination setting
+            window.fstopTestGenerator.setTransferDestination(
+              this.settings.testTransferDestination || "calc"
+            );
           }
 
           // Ensure chemical manager is available
@@ -6031,6 +6104,15 @@
             testBaseTimeMax: parseFloat(
               document.getElementById("testBaseTimeMax")?.value || 50
             ),
+            // Test strip transfer destination (from segmented control in TEST tab)
+            testTransferDestination: (function () {
+              // Check if fstopTestGenerator exists and has a transfer destination
+              if (window.fstopTestGenerator) {
+                return window.fstopTestGenerator.transferDestination || "calc";
+              }
+              // Fallback to storage or default
+              return StorageManager.loadTestTransferDestination();
+            })(),
             // F-stop denominator setting (2, 3, or 4) - Settings select takes precedence, then segmented controls, then legacy selects
             stopDenominator: (function () {
               const settingsSel = document.getElementById(
@@ -9463,6 +9545,13 @@
           }
         })();
 
+        // NEW: Transfer destination setting for test strips
+        if (window.fstopTestGenerator) {
+          const destination =
+            settingsManager.settings.testTransferDestination || "calc";
+          window.fstopTestGenerator.setTransferDestination(destination);
+        }
+
         // NEW: Safelight auto-off setting
         document.getElementById("safelightAutoOff").checked =
           settingsManager.settings.safelightAutoOff !== false; // Default to true
@@ -11598,14 +11687,18 @@
           this.method = "cumulative"; // 'cumulative' or 'incremental'
           this.autoAdvance = false; // NEW: Auto advance mode
           this.autoAdvanceDelay = 1000; // Delay between steps in ms
+          this.transferDestination = "calc"; // NEW: 'calc' or 'split'
 
           if (settingsManager) {
             this.autoAdvance = settingsManager.settings.autoAdvance || false;
             this.autoAdvanceDelay =
               (settingsManager.settings.autoAdvanceDelay || 1) * 1000; // Convert to ms
+            this.transferDestination =
+              settingsManager.settings.testTransferDestination || "calc";
           } else {
             this.autoAdvance = false;
             this.autoAdvanceDelay = 1000; // Default 1 second
+            this.transferDestination = "calc";
           }
 
           this.currentStep = 0;
@@ -11746,6 +11839,20 @@
 
           // Audio context initialization
           this.startTestStripBtn.addEventListener("click", initAudioContext);
+
+          // NEW: Transfer destination selection event listener (container-based)
+          const transferSeg = document.getElementById("transferDestinationSeg");
+          if (transferSeg) {
+            transferSeg.addEventListener("click", (e) => {
+              const btn = e.target.closest(".segmented-btn");
+              if (btn && btn.dataset.destination) {
+                this.setTransferDestination(btn.dataset.destination);
+              }
+            });
+          }
+
+          // Initialize UI with current destination
+          this.updateTransferDestinationUI();
         }
 
         /**
@@ -12194,9 +12301,9 @@
             const timeValue = step.totalExposure;
             stepEl.dataset.time = timeValue;
 
-            // Add click handler to apply this time to CALC tab
+            // Add click handler to apply this time to selected destination
             stepEl.addEventListener("click", () => {
-              this.applyStepToCalc(index);
+              this.applyStepToDestination(index);
             });
 
             if (showTimes) {
@@ -12987,6 +13094,148 @@
           }
           // Also scroll window as fallback
           window.scrollTo(0, 0);
+
+          // Audio feedback
+          if (typeof playBeep === "function") {
+            playBeep(800, 0.1, 0.3);
+          }
+        }
+
+        /**
+         * @method applyStepToSplit
+         * @description Applies a test step's total exposure time to the SPLIT tab's neutral time.
+         * Updates the neutral time slider, triggers state update, switches to SPLIT tab, and scrolls to top.
+         * @param {number} stepIndex - Index of the step to apply (0-based)
+         * @returns {void}
+         * @throws {Error} If stepIndex is out of bounds
+         * @fires Element.value - Updates neutral time slider value
+         * @fires Event.input - Triggers slider input event to update split calculator state
+         * @fires switchTab - Switches to SPLIT tab
+         * @fires Element.scrollTop - Scrolls container to top
+         * @fires window.scrollTo - Scrolls window to top as fallback
+         * @example
+         * this.applyStepToSplit(2); // Apply third step's total exposure to SPLIT tab
+         */
+        applyStepToSplit(stepIndex) {
+          if (stepIndex < 0 || stepIndex >= this.steps.length) return;
+
+          const step = this.steps[stepIndex];
+
+          // Get the total exposure time for this step
+          const timeValue = step.totalExposure;
+
+          // Update the SPLIT tab's neutral time slider
+          const neutralTimeSlider =
+            document.getElementById("neutralTimeSlider");
+          if (neutralTimeSlider) {
+            neutralTimeSlider.value = timeValue.toFixed(1);
+
+            // Trigger the input event to update the SplitGradeCalculator state
+            neutralTimeSlider.dispatchEvent(
+              new Event("input", { bubbles: true })
+            );
+          }
+
+          // Switch to SPLIT tab
+          switchTab("split");
+
+          // Scroll to top using container
+          const container = document.querySelector(".container");
+          if (container) {
+            container.scrollTop = 0;
+          }
+          // Also scroll window as fallback
+          window.scrollTo(0, 0);
+
+          // Audio feedback
+          if (typeof playBeep === "function") {
+            playBeep(800, 0.1, 0.3);
+          }
+        }
+
+        /**
+         * @method applyStepToDestination
+         * @description Applies a test step's total exposure time to the selected destination.
+         * Uses the current transferDestination setting to determine whether to apply to CALC or SPLIT tab.
+         * @param {number} stepIndex - Index of the step to apply (0-based)
+         * @returns {void}
+         * @fires this.applyStepToCalc - If destination is 'calc'
+         * @fires this.applyStepToSplit - If destination is 'split'
+         * @example
+         * this.applyStepToDestination(2); // Apply to current destination
+         */
+        applyStepToDestination(stepIndex) {
+          if (this.transferDestination === "split") {
+            this.applyStepToSplit(stepIndex);
+          } else {
+            this.applyStepToCalc(stepIndex);
+          }
+        }
+
+        /**
+         * @method setTransferDestination
+         * @description Sets the transfer destination and persists to storage.
+         * Updates the UI to reflect the selected destination.
+         * @param {string} destination - 'calc' or 'split'
+         * @returns {void}
+         * @fires StorageManager.saveTestTransferDestination - Persist setting
+         * @fires appState.settings.testTransferDestination - Update appState
+         * @fires updateTransferDestinationUI - Update visual feedback
+         * @example
+         * this.setTransferDestination('split'); // Set to SPLIT tab
+         */
+        setTransferDestination(destination) {
+          if (destination !== "calc" && destination !== "split") return;
+
+          this.transferDestination = destination;
+
+          // Update appState
+          if (appState && appState.settings) {
+            appState.settings.testTransferDestination = destination;
+          }
+
+          // Persist to storage
+          StorageManager.saveTestTransferDestination(destination);
+
+          // Update UI
+          this.updateTransferDestinationUI();
+
+          // Audio feedback
+          if (typeof playBeep === "function") {
+            playBeep(600, 0.1, 0.2);
+          }
+
+          // Visual feedback via settings manager if available
+          if (settingsManager && settingsManager.showAllProfilesFeedback) {
+            const label = destination === "calc" ? "CALC" : "SPLIT";
+            settingsManager.showAllProfilesFeedback(
+              `Transfer destination: ${label}`,
+              "info"
+            );
+          }
+        }
+
+        /**
+         * @method updateTransferDestinationUI
+         * @description Updates the visual feedback for transfer destination selection.
+         * Highlights the active button and updates aria-pressed attributes.
+         * @returns {void}
+         * @fires Element.classList - Updates button states
+         * @fires Element.setAttribute - Updates aria-pressed
+         * @example
+         * this.updateTransferDestinationUI(); // Refresh visual feedback
+         */
+        updateTransferDestinationUI() {
+          const transferSeg = document.getElementById("transferDestinationSeg");
+          if (!transferSeg) return;
+
+          const buttons = transferSeg.querySelectorAll(".segmented-btn");
+          buttons.forEach((btn) => {
+            const isActive =
+              btn.dataset.destination === this.transferDestination;
+            btn.classList.toggle("active", isActive);
+            btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+          });
         }
 
         /**
