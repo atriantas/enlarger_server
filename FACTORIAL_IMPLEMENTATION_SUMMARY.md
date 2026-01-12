@@ -5,6 +5,7 @@
 ### **What Was Added**
 
 #### 1. **HTML UI Section** (Lines 3378-3420)
+
 - New "⚡ FACTORIAL DEVELOPMENT" panel in TIMER tab
 - Two main action buttons:
   - 📍 **MARK BASELINE** - For first print calibration
@@ -18,13 +19,16 @@
 - Reset and Apply buttons
 
 #### 2. **CSS Animations** (Lines 653-668)
+
 - `@keyframes factorial-pulse` for visual feedback
 - Transition effects for displays
 - Button hover states
 - Disabled button styling
 
 #### 3. **JavaScript Class** (Lines 14090-14450)
+
 **RealTimeAutoFactorial Class** with full functionality:
+
 - Automatic multiplier calculation
 - Real-time elapsed time tracking
 - Phase 1 & Phase 2 workflow support
@@ -32,6 +36,7 @@
 - Error handling and validation
 
 #### 4. **Initialization** (Lines 14512-14513)
+
 - Integrated into existing DOMContentLoaded
 - Automatically binds to Dev timer
 - Starts tracking immediately
@@ -65,18 +70,21 @@
 ### **Scenario: Testing paper development times**
 
 **Print 1 (Calibration):**
+
 - Set Dev: **60s**
 - Black appears at: **20s**
 - Press: **MARK BASELINE**
 - Result: Multiplier = **3.00** ✓
 
 **Print 2:**
+
 - Start Dev: **60s** (shows 60s)
 - Black appears at: **30s**
 - Press: **BLACK POINT**
 - Result: Dev updated to **90s** ✓
 
 **Print 3:**
+
 - Start Dev: **90s** (shows 90s)
 - Black appears at: **45s**
 - Press: **BLACK POINT**
@@ -95,7 +103,7 @@
 ✅ **Audio**: Plays beeps through existing AudioService  
 ✅ **Safelight**: Works with safelight auto-off (if enabled)  
 ✅ **Relay**: Can trigger enlarger via RelayManager  
-✅ **Display**: Updates Dev timer display automatically  
+✅ **Display**: Updates Dev timer display automatically
 
 ### **State Management:**
 
@@ -109,12 +117,14 @@
 ## 🎨 Visual Feedback
 
 ### **Status Messages:**
+
 - **Info** (gray): "Set Dev time and start first print"
 - **Success** (red): "Multiplier set: 3.00"
 - **Error** (orange): "❌ Start Dev timer first!"
 - **Warning** (yellow): "⚠ Already calibrated!"
 
 ### **Display Updates:**
+
 - Multiplier display: Pulsing animation when set
 - New time display: Pulsing animation when calculated
 - Dev display: Flashes red when updated
@@ -145,14 +155,17 @@
 ## 🔍 Troubleshooting
 
 ### **Buttons Not Working?**
+
 - Check Dev timer is running (for MARK BASELINE)
 - Check multiplier is set (for BLACK POINT)
 
 ### **Wrong Times?**
+
 - Make sure you press button at the **same visual point** each time
 - The multiplier is based on your first print timing
 
 ### **Want to Start Over?**
+
 - Press **Reset Multiplier** button
 - Set new Dev time and begin again
 
@@ -175,6 +188,6 @@ The tool is now fully integrated into your TIMER tab. Open the file in a browser
 ✅ **Simple**: Only 2 buttons to press  
 ✅ **Accurate**: Uses exact elapsed times  
 ✅ **Integrated**: Works with existing infrastructure  
-✅ **Flexible**: Adapts to any paper/negative combination  
+✅ **Flexible**: Adapts to any paper/negative combination
 
 This is **exactly** what you described - a tool that learns from your first print and automatically adjusts future development times based on real darkroom observations!
