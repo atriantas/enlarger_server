@@ -2649,30 +2649,6 @@
             </div>
           </div>
 
-          <div class="sound-controls">
-            <div>
-              <div class="setting-label">3s Beeps</div>
-              <label class="switch">
-                <input type="checkbox" id="testWarningBeep" checked />
-                <span class="slider-switch"></span>
-              </label>
-            </div>
-            <div>
-              <div class="setting-label">Step Beeps</div>
-              <label class="switch">
-                <input type="checkbox" id="testStepBeep" checked />
-                <span class="slider-switch"></span>
-              </label>
-            </div>
-            <div>
-              <div class="setting-label">End Beep</div>
-              <label class="switch">
-                <input type="checkbox" id="testEndBeep" checked />
-                <span class="slider-switch"></span>
-              </label>
-            </div>
-          </div>
-
           <div class="settings-btn-group">
             <button class="exp-btn" id="startTestStrip">
               Start Test Strip
@@ -11921,7 +11897,7 @@
           this.stopTestTimerBtn = document.getElementById("stopTestTimer");
           this.resetTestTimerBtn = document.getElementById("resetTestTimer");
 
-          // Sound controls
+          // Sound controls (removed from TEST tab)
           this.testWarningBeep = document.getElementById("testWarningBeep");
           this.testStepBeep = document.getElementById("testStepBeep");
           this.testEndBeep = document.getElementById("testEndBeep");
@@ -12528,8 +12504,8 @@
           this.stopTestTimerBtn.disabled = false;
           this.resetTestTimerBtn.disabled = true;
 
-          // Play start beep
-          if (this.testStepBeep.checked) {
+          // Play start beep (if sound controls exist)
+          if (this.testStepBeep && this.testStepBeep.checked) {
             playBeep(600, 0.1, 0.3);
           }
         }
@@ -12650,8 +12626,12 @@
               this.testTimerDisplay.textContent =
                 this.currentStepTime.toFixed(2);
 
-              // 3-second warning beep
-              if (this.currentStepTime <= 3 && this.testWarningBeep.checked) {
+              // 3-second warning beep (if sound controls exist)
+              if (
+                this.currentStepTime <= 3 &&
+                this.testWarningBeep &&
+                this.testWarningBeep.checked
+              ) {
                 const currentSecond = Math.ceil(this.currentStepTime);
 
                 if (
@@ -12689,8 +12669,8 @@
         stepComplete() {
           clearInterval(this.interval);
 
-          // Play step complete beep
-          if (this.testStepBeep.checked) {
+          // Play step complete beep (if sound controls exist)
+          if (this.testStepBeep && this.testStepBeep.checked) {
             playBeep(800, 0.1, 0.3);
           }
 
@@ -13078,7 +13058,8 @@
           this.isRunning = false;
           this.isPaused = false;
 
-          if (this.testEndBeep.checked) {
+          // Play end beep (if sound controls exist)
+          if (this.testEndBeep && this.testEndBeep.checked) {
             playBeep(800, 0.1, 0.3);
           }
 
