@@ -1432,23 +1432,6 @@
           </div>
           <div class="timer-display" id="calcTimerDisplay">10.00</div>
 
-          <div class="sound-controls">
-            <div>
-              <div class="setting-label">3s Beeps</div>
-              <label class="switch">
-                <input type="checkbox" id="calcWarningBeep" checked />
-                <span class="slider-switch"></span>
-              </label>
-            </div>
-            <div>
-              <div class="setting-label">End Beep</div>
-              <label class="switch">
-                <input type="checkbox" id="calcEndBeep" checked />
-                <span class="slider-switch"></span>
-              </label>
-            </div>
-          </div>
-
           <div class="settings-btn-group">
             <button class="exp-btn" id="startExposure">Start Exposure</button>
             <button class="exp-btn" id="stopCalcTimer" disabled>Stop</button>
@@ -3307,80 +3290,49 @@
           <button class="exp-btn" id="resetAll">Reset All</button>
         </div>
 
-        <div
-          class="incremental-timer"
-          style="
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            padding: 6px 8px;
-          "
-        >
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>Photo Wash</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="photoFloToggle" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>End Beep</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="endBeep" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-label">
-              <span>10s Beep</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="warningBeep" checked />
-              <span class="slider-switch"></span>
-            </label>
-          </div>
-        </div>
-
         <!-- Factorial Development Tool -->
-        <div class="incremental-timer">
-          <div class="title-sm">FACTORIAL DEVELOPMENT</div>
+        <section class="collapsible" data-id="factorial-development">
+          <button class="collapsible-header" aria-expanded="false">
+            <div class="collapsible-title">FACTORIAL DEVELOPMENT</div>
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer" style="margin-top: 15px">
+              <div class="info-box">
+                <div class="label-sm">CURRENT MULTIPLIER</div>
+                <div id="factorialMultiplier" class="value-display">
+                  Not Set
+                </div>
+                <div class="label-sm" id="factorialStatus">
+                  Set Dev time and start first print
+                </div>
+              </div>
 
-          <div class="info-box">
-            <div class="label-sm">CURRENT MULTIPLIER</div>
-            <div id="factorialMultiplier" class="value-display">Not Set</div>
-            <div class="label-sm" id="factorialStatus">
-              Set Dev time and start first print
+              <div class="settings-btn-group">
+                <button class="exp-btn" id="markBaseline">MARK BASELINE</button>
+              </div>
+
+              <div class="settings-btn-group">
+                <button class="exp-btn" id="blackPoint">BLACK POINT</button>
+              </div>
+
+              <div class="settings-btn-group">
+                <button class="settings-btn" id="resetMultiplier">
+                  Reset Multiplier
+                </button>
+              </div>
+
+              <div
+                class="label-sm"
+                style="margin-top: 8px; text-align: center; line-height: 1.4"
+              >
+                <strong>Workflow:</strong><br />
+                1. Set Dev time → Start → Mark Baseline when black appears<br />
+                2. Next prints → Black Point when black appears → Auto-adjusts
+                timer
+              </div>
             </div>
           </div>
-
-          <div class="settings-btn-group">
-            <button class="exp-btn" id="markBaseline">MARK BASELINE</button>
-          </div>
-
-          <div class="settings-btn-group">
-            <button class="exp-btn" id="blackPoint">BLACK POINT</button>
-          </div>
-
-          <div class="settings-btn-group">
-            <button class="settings-btn" id="resetMultiplier">
-              Reset Multiplier
-            </button>
-          </div>
-
-          <div
-            class="label-sm"
-            style="margin-top: 8px; text-align: center; line-height: 1.4"
-          >
-            <strong>Workflow:</strong><br />
-            1. Set Dev time → Start → Mark Baseline when black appears<br />
-            2. Next prints → Black Point when black appears → Auto-adjusts timer
-          </div>
-        </div>
+        </section>
 
         <!-- Timer Profiles Section MOVED from SETTINGS tab -->
         <section class="collapsible" data-id="timer-profiles">
@@ -3907,17 +3859,6 @@
                     <span class="slider-switch"></span>
                   </label>
                 </div>
-                <div class="settings-item">
-                  <div class="settings-label">Default Photo Wash</div>
-                  <label class="switch">
-                    <input
-                      type="checkbox"
-                      id="settingDefaultPhotoFlo"
-                      checked
-                    />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
               </div>
             </div>
           </section>
@@ -4137,7 +4078,6 @@
         calcEndBeep: true,
         timerWarningBeep: true,
         timerEndBeep: true,
-        defaultPhotoFlo: true,
         currentProfile: null,
         colorScheme: "dark",
         // Countdown settings
@@ -4571,7 +4511,6 @@
           calcEndBeep: true,
           timerWarningBeep: true,
           timerEndBeep: true,
-          defaultPhotoFlo: true,
           countdownDelay: 5,
           countdownBeep: true,
           countdownPattern: "every-second",
@@ -4744,8 +4683,9 @@
 
         // Update display
         if (display) {
-          const minutes = Math.floor(state.timeLeft / 60);
-          const seconds = state.timeLeft % 60;
+          const roundedTime = Math.round(state.timeLeft);
+          const minutes = Math.floor(roundedTime / 60);
+          const seconds = roundedTime % 60;
           display.textContent = `${minutes
             .toString()
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -4808,12 +4748,12 @@
        */
       function renderSoundSettings() {
         const settings = appState.settings;
-        document.getElementById("calcWarningBeep").checked =
-          settings.calcWarningBeep;
-        document.getElementById("calcEndBeep").checked = settings.calcEndBeep;
-        document.getElementById("warningBeep").checked =
-          settings.timerWarningBeep;
-        document.getElementById("endBeep").checked = settings.timerEndBeep;
+        // Only update elements that exist (CALC tab switches removed)
+        const calcWarningEl = document.getElementById("calcWarningBeep");
+        const calcEndEl = document.getElementById("calcEndBeep");
+
+        if (calcWarningEl) calcWarningEl.checked = settings.calcWarningBeep;
+        if (calcEndEl) calcEndEl.checked = settings.calcEndBeep;
       }
 
       // Tab management
@@ -5485,9 +5425,12 @@
             this.state.isRunning = false;
           }
 
+          // Round to whole seconds
+          const roundedSeconds = Math.round(seconds);
+
           // Set new time in state
-          this.state.totalTime = seconds;
-          this.state.timeLeft = seconds;
+          this.state.totalTime = roundedSeconds;
+          this.state.timeLeft = roundedSeconds;
           this.warningPlayed = false;
 
           // Update display
@@ -5503,7 +5446,7 @@
         adjustTime(seconds) {
           if (this.state.isRunning || !this.state.isEnabled) return;
 
-          const newTime = this.state.totalTime + seconds;
+          const newTime = Math.round(this.state.totalTime + seconds);
           if (newTime >= 5 && newTime <= 600) {
             this.state.totalTime = newTime;
             this.state.timeLeft = newTime;
@@ -6105,8 +6048,6 @@
               .checked,
             timerEndBeep: document.getElementById("settingTimerEndBeep")
               .checked,
-            defaultPhotoFlo: document.getElementById("settingDefaultPhotoFlo")
-              .checked,
             colorScheme: this.colorScheme,
             countdownDelay: parseInt(
               document.getElementById("settingCountdownDelay").value
@@ -6182,18 +6123,6 @@
         applySettingsToRuntime() {
           // Apply to UI
           this.applySoundSettings();
-
-          // Apply Photo Wash
-          const photoFloToggle = document.getElementById("photoFloToggle");
-          if (photoFloToggle) {
-            photoFloToggle.checked = this.settings.defaultPhotoFlo;
-          }
-          if (timerManager && timerManager.timers) {
-            const floTimer = timerManager.timers.find((t) => t.name === "Flo");
-            if (floTimer) {
-              floTimer.updateEnabledState(this.settings.defaultPhotoFlo);
-            }
-          }
 
           // Apply auto advance to F-Stop Test generator
           if (window.fstopTestGenerator) {
@@ -6279,13 +6208,14 @@
             timerManager.timers.forEach((timer) => {
               const newTime = mapping[timer.name];
               if (typeof newTime === "number" && !isNaN(newTime)) {
+                const roundedTime = Math.round(newTime);
                 if (!timer.isRunning) {
                   // Reset to new default
-                  timer.setTime(newTime);
+                  timer.setTime(roundedTime);
                 } else {
                   // If running, update total and remaining time without interrupting display logic
-                  timer.totalTime = newTime;
-                  timer.timeLeft = newTime;
+                  timer.totalTime = roundedTime;
+                  timer.timeLeft = roundedTime;
                   timer.warningPlayed = false;
                   timer.updateDisplay();
                   timer.updateButtonStates();
@@ -6545,9 +6475,20 @@
             });
           }
 
+          // Get factorial development state if available
+          const factorialState = window.realTimeAutoFactorial
+            ? window.realTimeAutoFactorial.getFactorialState()
+            : null;
+
+          // Build profile data with optional factorial state
+          const profileData = { times: currentTimes };
+          if (factorialState && factorialState.multiplier) {
+            profileData.factorial = factorialState;
+          }
+
           const result = this.savePreset({
             name,
-            dataObject: { times: currentTimes },
+            dataObject: profileData,
             collection: this.profiles,
             storageMethod: (profiles) => StorageManager.saveProfiles(profiles),
             updateListMethod: () => this.updateTimerProfileListUI(),
@@ -6584,6 +6525,15 @@
                 timer.setTime(profile.times[timer.name]);
               }
             });
+          }
+
+          // Restore factorial development state if available, otherwise reset it
+          if (window.realTimeAutoFactorial) {
+            if (profile.factorial) {
+              window.realTimeAutoFactorial.setFactorialState(profile.factorial);
+            } else {
+              window.realTimeAutoFactorial.resetMultiplier();
+            }
           }
 
           this.setCurrentProfile(profile.name);
@@ -7041,6 +6991,14 @@
                 timeStr = "No times saved";
               }
 
+              // Add factorial indicator if profile has factorial data
+              const factorialIndicator =
+                profile.factorial && profile.factorial.multiplier
+                  ? `<div style="font-size: 0.6rem; color: var(--warning); margin-top: 2px;">⚙ Factorial: ${profile.factorial.multiplier.toFixed(
+                      2
+                    )}×</div>`
+                  : "";
+
               return `
                         <div>
                             <strong>${profile.name}</strong>
@@ -7048,6 +7006,7 @@
                               profile.date
                             ).toLocaleDateString()}</div>
                             <div style="font-size: 0.6rem; color: var(--accent);">${timeStr}</div>
+                            ${factorialIndicator}
                         </div>
                         <div class="shelf-life-actions">
                             <button class="btn-action load-btn" data-context="profile" data-name="${
@@ -9413,8 +9372,6 @@
           settingsManager.settings.timerWarningBeep;
         document.getElementById("settingTimerEndBeep").checked =
           settingsManager.settings.timerEndBeep;
-        document.getElementById("settingDefaultPhotoFlo").checked =
-          settingsManager.settings.defaultPhotoFlo;
 
         // Countdown settings
         document.getElementById("settingCountdownDelay").value =
@@ -9562,11 +9519,12 @@
             timerManager.timers.forEach((timer) => {
               const newTime = mapping[timer.name];
               if (typeof newTime === "number" && !isNaN(newTime)) {
+                const roundedTime = Math.round(newTime);
                 if (!timer.isRunning) {
-                  timer.setTime(newTime);
+                  timer.setTime(roundedTime);
                 } else {
-                  timer.totalTime = newTime;
-                  timer.timeLeft = newTime;
+                  timer.totalTime = roundedTime;
+                  timer.timeLeft = roundedTime;
                   timer.warningPlayed = false;
                   timer.updateDisplay();
                   timer.updateButtonStates();
@@ -9615,24 +9573,6 @@
                 });
               }
             }
-
-            // Apply Photo Wash toggle
-            const photoFloToggle = document.getElementById("photoFloToggle");
-            photoFloToggle.checked = settingsManager.settings.defaultPhotoFlo;
-            const floTimer = this.timers.find((t) => t.name === "Flo");
-            if (floTimer) {
-              floTimer.updateEnabledState(
-                settingsManager.settings.defaultPhotoFlo
-              );
-            }
-
-            // Add change listener
-            photoFloToggle.addEventListener("change", () => {
-              const floTimer = this.timers.find((t) => t.name === "Flo");
-              if (floTimer) {
-                floTimer.updateEnabledState(photoFloToggle.checked);
-              }
-            });
           }
 
           // Start All button - NEW: Start/Pause/Resume with countdown integration
@@ -14370,6 +14310,37 @@
         }
 
         /**
+         * Get current factorial state for profile saving
+         * @returns {Object} Factorial state with multiplier and calibration status
+         */
+        getFactorialState() {
+          return {
+            multiplier: this.multiplier,
+            isCalibrated: this.isCalibrated,
+            pendingNewTime: this.pendingNewTime,
+          };
+        }
+
+        /**
+         * Set factorial state from loaded profile
+         * @param {Object} state - Factorial state from profile
+         */
+        setFactorialState(state) {
+          if (state && typeof state === "object") {
+            this.multiplier = state.multiplier || null;
+            this.isCalibrated = state.isCalibrated || false;
+            this.pendingNewTime = state.pendingNewTime || null;
+
+            // Update UI
+            this.updateMultiplierDisplay();
+            this.updateStatusDisplay();
+            this.updateButtonStates();
+
+            console.log("Factorial state restored from profile:", state);
+          }
+        }
+
+        /**
          * Clean up
          */
         destroy() {
@@ -14474,7 +14445,6 @@
             { id: "settingCalcEndBeep", evt: "change" },
             { id: "settingTimerWarningBeep", evt: "change" },
             { id: "settingTimerEndBeep", evt: "change" },
-            { id: "settingDefaultPhotoFlo", evt: "change" },
             { id: "settingStopIncrement", evt: "change" },
           ];
           toBind.forEach(({ id, evt }) => {
