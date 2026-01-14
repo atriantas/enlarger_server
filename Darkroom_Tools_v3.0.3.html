@@ -3159,10 +3159,10 @@
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Dev" data-action="minus">
-                  -5s
+                  -1s
                 </button>
                 <button class="timer-btn" data-timer="Dev" data-action="plus">
-                  +5s
+                  +1s
                 </button>
               </div>
               <div class="adjust-row">
@@ -3186,10 +3186,10 @@
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Stop" data-action="minus">
-                  -5s
+                  -1s
                 </button>
                 <button class="timer-btn" data-timer="Stop" data-action="plus">
-                  +5s
+                  +1s
                 </button>
               </div>
               <div class="adjust-row">
@@ -3213,10 +3213,10 @@
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Fix" data-action="minus">
-                  -5s
+                  -1s
                 </button>
                 <button class="timer-btn" data-timer="Fix" data-action="plus">
-                  +5s
+                  +1s
                 </button>
               </div>
               <div class="adjust-row">
@@ -3240,10 +3240,10 @@
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Flo" data-action="minus">
-                  -5s
+                  -1s
                 </button>
                 <button class="timer-btn" data-timer="Flo" data-action="plus">
-                  +5s
+                  +1s
                 </button>
               </div>
               <div class="adjust-row">
@@ -5418,6 +5418,7 @@
          * @param {number} seconds - Amount to adjust (+/-)
          * @returns {void}
          * @description Adds/subtracts from current duration (5-600s range)
+         * Supports hold-to-adjust for continuous increments
          */
         adjustTime(seconds) {
           if (this.state.isRunning || !this.state.isEnabled) return;
@@ -14635,7 +14636,7 @@
             return;
           }
 
-          // Timer action buttons (reset, plus, minus)
+          // Timer action buttons (reset only - plus/minus handled by hold events)
           const timerActionBtn = e.target.closest(
             "button[data-timer][data-action]"
           );
@@ -14648,8 +14649,7 @@
             if (timer) {
               e.preventDefault();
               if (action === "reset") timer.reset();
-              else if (action === "plus") timer.adjustTime(5);
-              else if (action === "minus") timer.adjustTime(-5);
+              // plus/minus actions are handled by hold-to-adjust events
             }
             return;
           }
@@ -14796,6 +14796,103 @@
             settingsManager.setColorScheme(scheme);
             return;
           }
+        });
+
+        // Hold-to-adjust functionality for timer +/- buttons
+        const holdIntervals = new Map(); // Store interval IDs for each button
+
+        function startHoldAdjustment(button, timer, adjustment) {
+          // Initial adjustment
+          timer.adjustTime(adjustment);
+
+          // Start continuous adjustment after 500ms delay
+          const intervalId = setInterval(() => {
+            timer.adjustTime(adjustment);
+          }, 200); // Adjust every 200ms while holding
+
+          holdIntervals.set(button, intervalId);
+        }
+
+        function stopHoldAdjustment(button) {
+          const intervalId = holdIntervals.get(button);
+          if (intervalId) {
+            clearInterval(intervalId);
+            holdIntervals.delete(button);
+          }
+        }
+
+        // Mouse events for desktop
+        document.addEventListener("mousedown", (e) => {
+          const adjustBtn = e.target.closest(
+            "button[data-timer][data-action='plus'], button[data-timer][data-action='minus']"
+          );
+          if (adjustBtn) {
+            const timerName = adjustBtn.getAttribute("data-timer");
+            const action = adjustBtn.getAttribute("data-action");
+            const timer = timerManager?.timers.find(
+              (t) => t.name === timerName
+            );
+
+            if (timer && !timer.state.isRunning) {
+              const adjustment = action === "plus" ? 1 : -1;
+              startHoldAdjustment(adjustBtn, timer, adjustment);
+            }
+          }
+        });
+
+        document.addEventListener("mouseup", (e) => {
+          const adjustBtn = e.target.closest(
+            "button[data-timer][data-action='plus'], button[data-timer][data-action='minus']"
+          );
+          if (adjustBtn) {
+            stopHoldAdjustment(adjustBtn);
+          }
+        });
+
+        document.addEventListener("mouseleave", (e) => {
+          // Stop all holds if mouse leaves any button
+          holdIntervals.forEach((intervalId, button) => {
+            clearInterval(intervalId);
+          });
+          holdIntervals.clear();
+        });
+
+        // Touch events for mobile
+        document.addEventListener("touchstart", (e) => {
+          const adjustBtn = e.target.closest(
+            "button[data-timer][data-action='plus'], button[data-timer][data-action='minus']"
+          );
+          if (adjustBtn) {
+            e.preventDefault();
+            const timerName = adjustBtn.getAttribute("data-timer");
+            const action = adjustBtn.getAttribute("data-action");
+            const timer = timerManager?.timers.find(
+              (t) => t.name === timerName
+            );
+
+            if (timer && !timer.state.isRunning) {
+              const adjustment = action === "plus" ? 1 : -1;
+              startHoldAdjustment(adjustBtn, timer, adjustment);
+            }
+          }
+        });
+
+        document.addEventListener("touchend", (e) => {
+          const adjustBtn = e.target.closest(
+            "button[data-timer][data-action='plus'], button[data-timer][data-action='minus']"
+          );
+          if (adjustBtn) {
+            e.preventDefault();
+            stopHoldAdjustment(adjustBtn);
+          }
+        });
+
+        document.addEventListener("touchcancel", (e) => {
+          // Stop all holds on touch cancel
+          holdIntervals.forEach((intervalId, button) => {
+            clearInterval(intervalId);
+          });
+          holdIntervals.clear();
         });
 
         // Event delegation for segmented controls (f-stop denominator)
