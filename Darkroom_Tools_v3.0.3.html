@@ -1273,6 +1273,7 @@
         <button class="tab-button" data-tab="chemical">CHEMICAL</button>
         <button class="tab-button" data-tab="chart">CHART</button>
         <button class="tab-button" data-tab="settings">SETTINGS</button>
+        <button class="tab-button" data-tab="logs">LOGS</button>
       </div>
 
       <!-- Calculator Tab with Incremental Exposure Timer -->
@@ -1432,6 +1433,20 @@
           </div>
           <div class="timer-display" id="calcTimerDisplay">10.00</div>
 
+          <!-- Notes Input for Current Exposure -->
+          <div class="control">
+            <div class="control-label">
+              <span>Notes for this exposure</span>
+            </div>
+            <input
+              type="text"
+              id="calcNotesInput"
+              class="settings-input"
+              placeholder="e.g., Added 1 stop - perfect"
+              style="width: 100%"
+            />
+          </div>
+
           <div class="settings-btn-group">
             <button class="exp-btn" id="startExposure">Start Exposure</button>
             <button class="exp-btn" id="stopCalcTimer" disabled>Stop</button>
@@ -1470,6 +1485,24 @@
               <div class="value-display" id="thisExposureDisplay">10.00</div>
             </div>
           </div>
+        </div>
+
+        <!-- NEW: Transfer to TIMER Tab Button -->
+        <div class="settings-btn-group" style="margin-top: 10px">
+          <button
+            class="settings-btn primary"
+            id="transferToTimer"
+            style="
+              background: var(--accent);
+              color: var(--bg);
+              font-weight: bold;
+              padding: 10px;
+              font-size: 0.9rem;
+              width: 100%;
+            "
+          >
+            Transfer to TIMER Tab →
+          </button>
         </div>
 
         <!-- MODIFIED ENLARGER HEIGHT CALCULATOR WITH CONTRAST CONTROL INTEGRATED -->
@@ -2655,6 +2688,20 @@
             </button>
             <button class="exp-btn" id="stopTestTimer" disabled>Stop</button>
             <button class="exp-btn" id="resetTestTimer">Reset</button>
+          </div>
+
+          <!-- Notes Input for Test Strip -->
+          <div class="control">
+            <div class="control-label">
+              <span>Notes for this test strip</span>
+            </div>
+            <input
+              type="text"
+              id="testNotesInput"
+              class="settings-input"
+              placeholder="e.g., Portrait - find base exposure"
+              style="width: 100%"
+            />
           </div>
 
           <!-- Test Strip Information -->
@@ -3984,6 +4031,59 @@
         </div>
       </div>
 
+      <!-- NEW: LOGS Tab for Exposure Session Logging -->
+      <div id="logs" class="tab-content">
+        <div class="incremental-timer">
+          <div class="title-md">EXPOSURE SESSION LOGS</div>
+          <div class="label-sm" style="margin-bottom: 8px">
+            Automatically tracks your printing sessions. Temporary sessions (max
+            6) are auto-saved. Save permanently to keep sessions forever.
+          </div>
+
+          <!-- Session Statistics -->
+          <div class="info-box" style="margin-bottom: 10px">
+            <div class="label-sm">SESSION STATISTICS</div>
+            <div class="value-display" id="logStats">Loading...</div>
+          </div>
+
+          <!-- Temporary Sessions (Auto-saved) -->
+          <div class="title-sm" style="margin-top: 10px">
+            TEMPORARY SESSIONS (Auto-saved)
+          </div>
+          <div class="shelf-life-list" id="tempSessionsList">
+            <div
+              class="shelf-life-item"
+              style="justify-content: center; color: var(--text-secondary)"
+            >
+              No temporary sessions yet
+            </div>
+          </div>
+
+          <!-- Permanent Sessions (User-saved) -->
+          <div class="title-sm" style="margin-top: 10px">
+            PERMANENT SESSIONS
+          </div>
+          <div class="shelf-life-list" id="permanentSessionsList">
+            <div
+              class="shelf-life-item"
+              style="justify-content: center; color: var(--text-secondary)"
+            >
+              No permanent sessions saved
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="settings-btn-group">
+            <button class="settings-btn" id="exportCSV">Export CSV</button>
+            <button class="settings-btn" id="exportJSON">Export JSON</button>
+            <button class="settings-btn" id="importJSON">Import JSON</button>
+            <button class="settings-btn danger" id="clearAllLogs">
+              Clear All Logs
+            </button>
+          </div>
+        </div>
+      </div>
+
       <footer>
         <div>DARKROOM TIMER v3.0.0</div>
         <div>
@@ -4031,6 +4131,9 @@
         SPLIT_GRADE_PRESETS: "darkroom_timer_split_grade_presets",
         CURRENT_SPLIT_PRESET: "darkroom_timer_current_split_preset",
         TEST_TRANSFER_DESTINATION: "darkroom_timer_test_transfer_destination",
+        // Logging tool storage keys
+        TEMP_SESSIONS: "darkroom_timer_temp_sessions",
+        PERMANENT_SESSIONS: "darkroom_timer_permanent_sessions",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -4432,6 +4535,7 @@
           isCountdown: false,
           currentTime: 10.0,
           lastExposureTime: 10.0,
+          displayedExposureTime: null,
           // Split-grade data (stored when sent from SPLIT tab)
           splitGrade: {
             enabled: false,
@@ -4508,6 +4612,16 @@
         ui: {
           activeTab: "calculator",
           timerStatus: "READY FOR EXPOSURE",
+        },
+
+        // Logging tool state (runtime/transient)
+        logging: {
+          activeSession: null, // Current session ID
+          tempSessions: [], // Temporary sessions (max 6)
+          permanentSessions: [], // Permanent sessions
+          currentStepNotes: "", // Notes for current step
+          sessionNotes: "", // Notes for entire session
+          autoSessionActive: false, // Flag for test strip auto-session
         },
       };
 
@@ -4883,6 +4997,28 @@
             }
             if (settingsManager) {
               settingsManager.applyLiveSettings();
+            }
+          });
+        }
+
+        // Transfer to TIMER tab button
+        const transferBtn = document.getElementById("transferToTimer");
+        if (transferBtn) {
+          transferBtn.addEventListener("click", () => {
+            switchTab("timer");
+
+            // Scroll to top using container (same as SPLIT tab's "Send to CALC" button)
+            const container = document.querySelector(".container");
+            if (container) {
+              container.scrollTop = 0;
+            }
+            // Also scroll window as fallback
+            window.scrollTo(0, 0);
+
+            // Provide visual feedback
+            const statusEl = document.getElementById("settingsLiveStatus");
+            if (statusEl) {
+              statusEl.textContent = "Transferred to TIMER tab";
             }
           });
         }
@@ -5444,6 +5580,17 @@
             this.state.timeLeft <= 0
           )
             return;
+
+          // Log timer start and end current session
+          if (window.exposureLogManager && !isSequence) {
+            const timerData = {
+              dev: appState.timers.Dev.timeLeft,
+              stop: appState.timers.Stop.timeLeft,
+              fix: appState.timers.Fix.timeLeft,
+              flo: appState.timers.Flo.timeLeft,
+            };
+            window.exposureLogManager.addTimerPhaseAndEnd(timerData);
+          }
 
           this.state.isRunning = true;
           this.warningPlayed = false;
@@ -7000,6 +7147,728 @@
       }
 
       /**
+       * ExposureLogManager - Manages automatic session logging for all exposure workflows
+       *
+       * Automatically tracks sessions from TEST, SPLIT, CALC, and TIMER tabs.
+       * Sessions start on first exposure and end when TIMER starts.
+       * Temporary sessions auto-save (max 6). Permanent sessions require user action.
+       *
+       * @class
+       * @example
+       * exposureLogManager.startSession('calc', 'manual');
+       * exposureLogManager.addCalcStep({ baseTime: 10.0, stop: 1.5, finalTime: 28.28 });
+       * exposureLogManager.endSession();
+       */
+      class ExposureLogManager {
+        constructor() {
+          this.loadSessions();
+        }
+
+        // ===== SESSION MANAGEMENT =====
+
+        /**
+         * Start a new session
+         * @param {string} source - 'test', 'split', 'calc', 'manual'
+         * @param {string} type - 'test-strip', 'split-grade', 'exposure', 'manual'
+         */
+        startSession(source, type) {
+          // If session already active, don't start new one
+          if (appState.logging.activeSession) return;
+
+          const sessionId = `temp-${Date.now()}`;
+          appState.logging.activeSession = sessionId;
+          appState.logging.autoSessionActive =
+            source === "test" || source === "split";
+
+          const session = {
+            id: sessionId,
+            name: this.generateSessionName(source, type),
+            created: new Date().toISOString(),
+            source: source,
+            type: type,
+            phases: {
+              test: null,
+              split: null,
+              calc: null,
+              timer: null,
+            },
+            notes: "",
+            isTemporary: true,
+          };
+
+          // Add to temp sessions
+          appState.logging.tempSessions.unshift(session);
+          this.saveSessions();
+          this.updateUI();
+        }
+
+        /**
+         * Add TEST phase to current session
+         * @param {Object} data - Test strip data
+         */
+        addTestPhase(data) {
+          if (!appState.logging.activeSession) {
+            this.startSession("test", "test-strip");
+          }
+
+          const session = this.getActiveSession();
+          if (session) {
+            session.phases.test = {
+              baseTime: data.baseTime,
+              method: data.method,
+              steps: data.steps,
+              selectedStep: data.selectedStep,
+              selectedStop: data.selectedStop,
+              transferDestination: data.transferDestination,
+              notes: data.notes || "",
+            };
+
+            // Update session name based on selected step
+            if (data.selectedStep) {
+              session.name = `Test Strip: ${data.selectedStep}s`;
+            }
+
+            // Add notes to session if provided
+            if (data.notes) {
+              session.notes = data.notes;
+            }
+
+            this.saveSessions();
+            this.updateUI();
+          }
+        }
+
+        /**
+         * Add SPLIT phase to current session
+         * @param {Object} data - Split-grade data
+         */
+        addSplitPhase(data) {
+          if (!appState.logging.activeSession) {
+            this.startSession("split", "split-grade");
+          }
+
+          const session = this.getActiveSession();
+          if (session) {
+            session.phases.split = {
+              neutralTime: data.neutralTime,
+              paperBrand: data.paperBrand,
+              softFilter: data.softFilter,
+              hardFilter: data.hardFilter,
+              filterBrand: data.filterBrand,
+              highlightsBase: data.highlightsBase,
+              shadowsBase: data.shadowsBase,
+              softTime: data.softTime,
+              hardTime: data.hardTime,
+              totalTime: data.totalTime,
+              burnPercent: data.burnPercent,
+            };
+
+            // Update session name
+            session.name = `Split: ${data.softFilter}/${data.hardFilter}`;
+
+            this.saveSessions();
+            this.updateUI();
+          }
+        }
+
+        /**
+         * Add CALC phase to current session
+         * @param {Object} data - Calculator exposure data
+         */
+        addCalcPhase(data) {
+          if (!appState.logging.activeSession) {
+            this.startSession("calc", "exposure");
+          }
+
+          const session = this.getActiveSession();
+          if (session) {
+            if (!session.phases.calc) {
+              session.phases.calc = [];
+            }
+
+            session.phases.calc.push({
+              baseTime: data.baseTime,
+              stopAdjustment: data.stopAdjustment,
+              finalTime: data.finalTime,
+              filterContext: data.filterContext,
+              timestamp: new Date().toISOString(),
+              notes: data.notes || "",
+            });
+
+            // Update session name based on first CALC exposure
+            if (session.phases.calc.length === 1) {
+              session.name = `Exposure: ${data.finalTime}s`;
+            }
+
+            this.saveSessions();
+            this.updateUI();
+          }
+        }
+
+        /**
+         * Add TIMER phase and end session
+         * @param {Object} data - Timer data
+         */
+        addTimerPhaseAndEnd(data) {
+          const session = this.getActiveSession();
+          if (session) {
+            session.phases.timer = {
+              dev: data.dev,
+              stop: data.stop,
+              fix: data.fix,
+              flo: data.flo,
+            };
+
+            // End the session
+            this.endSession();
+          }
+        }
+
+        /**
+         * End current session
+         */
+        endSession() {
+          const session = this.getActiveSession();
+          if (!session) return;
+
+          session.ended = new Date().toISOString();
+          appState.logging.activeSession = null;
+          appState.logging.autoSessionActive = false;
+          appState.logging.currentStepNotes = "";
+          appState.logging.sessionNotes = "";
+
+          // Enforce max 6 temporary sessions
+          if (appState.logging.tempSessions.length > 6) {
+            appState.logging.tempSessions = appState.logging.tempSessions.slice(
+              0,
+              6
+            );
+          }
+
+          this.saveSessions();
+          this.updateUI();
+
+          // Show notification
+          this.showNotification(
+            `Session "${session.name}" saved to temporary list`
+          );
+
+          // Automatically start a new session
+          setTimeout(() => {
+            this.startSession("manual", "session");
+            this.showNotification("New session started automatically");
+          }, 500);
+        }
+
+        /**
+         * Save temporary session to permanent
+         * @param {string} sessionId - Session ID to save
+         * @param {string} notes - Optional session notes
+         * @param {string} name - Optional custom name
+         */
+        saveToPermanent(sessionId, notes = "", name = "") {
+          const tempIndex = appState.logging.tempSessions.findIndex(
+            (s) => s.id === sessionId
+          );
+          if (tempIndex === -1) return;
+
+          const session = appState.logging.tempSessions[tempIndex];
+
+          // Create permanent copy
+          const permanentSession = {
+            ...session,
+            id: `perm-${Date.now()}`,
+            isTemporary: false,
+            savedAt: new Date().toISOString(),
+            notes: notes || session.notes,
+          };
+
+          if (name) {
+            permanentSession.name = name;
+          }
+
+          appState.logging.permanentSessions.unshift(permanentSession);
+
+          // Remove from temp
+          appState.logging.tempSessions.splice(tempIndex, 1);
+
+          this.saveSessions();
+          this.updateUI();
+
+          this.showNotification(`Session saved permanently`);
+        }
+
+        /**
+         * Delete a session
+         * @param {string} sessionId - Session ID to delete
+         * @param {boolean} isPermanent - Whether it's a permanent session
+         */
+        deleteSession(sessionId, isPermanent) {
+          if (isPermanent) {
+            const index = appState.logging.permanentSessions.findIndex(
+              (s) => s.id === sessionId
+            );
+            if (index !== -1) {
+              appState.logging.permanentSessions.splice(index, 1);
+            }
+          } else {
+            const index = appState.logging.tempSessions.findIndex(
+              (s) => s.id === sessionId
+            );
+            if (index !== -1) {
+              appState.logging.tempSessions.splice(index, 1);
+            }
+          }
+
+          this.saveSessions();
+          this.updateUI();
+        }
+
+        /**
+         * Clear all sessions
+         */
+        clearAll() {
+          if (!confirm("Delete ALL sessions? This cannot be undone.")) return;
+
+          appState.logging.tempSessions = [];
+          appState.logging.permanentSessions = [];
+          appState.logging.activeSession = null;
+
+          this.saveSessions();
+          this.updateUI();
+
+          this.showNotification("All sessions cleared");
+        }
+
+        // ===== EXPORT/IMPORT =====
+
+        /**
+         * Export sessions as CSV
+         */
+        exportCSV() {
+          const allSessions = [
+            ...appState.logging.permanentSessions,
+            ...appState.logging.tempSessions,
+          ];
+
+          if (allSessions.length === 0) {
+            alert("No sessions to export");
+            return;
+          }
+
+          let csv =
+            "Session,Date,Phase,Source,BaseTime,Stop,FinalTime,SoftFilter,HardFilter,FilterBrand,PaperBrand,Notes\n";
+
+          allSessions.forEach((session) => {
+            const sessionName = session.name.replace(/,/g, ";");
+            const sessionDate = new Date(session.created).toLocaleDateString();
+
+            // TEST phase
+            if (session.phases.test) {
+              csv += `${sessionName},${sessionDate},TEST,${session.source},${session.phases.test.baseTime},N/A,N/A,N/A,N/A,N/A,N/A,"${session.phases.test.transferDestination}"\n`;
+            }
+
+            // SPLIT phase
+            if (session.phases.split) {
+              csv += `${sessionName},${sessionDate},SPLIT,${session.source},${session.phases.split.neutralTime},N/A,${session.phases.split.totalTime},${session.phases.split.softFilter},${session.phases.split.hardFilter},${session.phases.split.filterBrand},${session.phases.split.paperBrand},N/A\n`;
+            }
+
+            // CALC phases
+            if (session.phases.calc && session.phases.calc.length > 0) {
+              session.phases.calc.forEach((calc) => {
+                const filterContext = calc.filterContext || "N/A";
+                csv += `${sessionName},${sessionDate},CALC,${session.source},${
+                  calc.baseTime
+                },${calc.stopAdjustment},${
+                  calc.finalTime
+                },${filterContext},N/A,N/A,N/A,"${calc.notes.replace(
+                  /,/g,
+                  ";"
+                )}"\n`;
+              });
+            }
+
+            // TIMER phase
+            if (session.phases.timer) {
+              csv += `${sessionName},${sessionDate},TIMER,${session.source},N/A,N/A,N/A,N/A,N/A,N/A,N/A,"Dev:${session.phases.timer.dev},Stop:${session.phases.timer.stop},Fix:${session.phases.timer.fix},Flo:${session.phases.timer.flo}"\n`;
+            }
+          });
+
+          // Download
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `darkroom_sessions_${Date.now()}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          this.showNotification("CSV exported successfully");
+        }
+
+        /**
+         * Export sessions as JSON
+         */
+        exportJSON() {
+          const data = {
+            exported: new Date().toISOString(),
+            permanentSessions: appState.logging.permanentSessions,
+            tempSessions: appState.logging.tempSessions,
+          };
+
+          const json = JSON.stringify(data, null, 2);
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `darkroom_sessions_backup_${Date.now()}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          this.showNotification("JSON exported successfully");
+        }
+
+        /**
+         * Import sessions from JSON
+         */
+        importJSON() {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = ".json,application/json";
+
+          input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              try {
+                const data = JSON.parse(event.target.result);
+
+                if (data.permanentSessions) {
+                  appState.logging.permanentSessions = [
+                    ...data.permanentSessions,
+                    ...appState.logging.permanentSessions,
+                  ];
+                }
+
+                if (data.tempSessions) {
+                  appState.logging.tempSessions = [
+                    ...data.tempSessions,
+                    ...appState.logging.tempSessions,
+                  ];
+                }
+
+                // Enforce max temp sessions
+                if (appState.logging.tempSessions.length > 6) {
+                  appState.logging.tempSessions =
+                    appState.logging.tempSessions.slice(0, 6);
+                }
+
+                this.saveSessions();
+                this.updateUI();
+
+                this.showNotification("Sessions imported successfully");
+              } catch (error) {
+                alert("Invalid JSON file");
+              }
+            };
+            reader.readAsText(file);
+          };
+
+          input.click();
+        }
+
+        // ===== HELPER METHODS =====
+
+        /**
+         * Get active session
+         */
+        getActiveSession() {
+          return appState.logging.tempSessions.find(
+            (s) => s.id === appState.logging.activeSession
+          );
+        }
+
+        /**
+         * Generate session name
+         */
+        generateSessionName(source, type) {
+          const timestamp = new Date().toLocaleTimeString();
+          const sourceNames = {
+            test: "Test Strip",
+            split: "Split Grade",
+            calc: "Exposure",
+            manual: "Session",
+          };
+          return `${sourceNames[source] || "Session"} - ${timestamp}`;
+        }
+
+        /**
+         * Load sessions from storage
+         */
+        loadSessions() {
+          const temp = StorageManager.loadJSON(STORAGE_KEYS.TEMP_SESSIONS, []);
+          const perm = StorageManager.loadJSON(
+            STORAGE_KEYS.PERMANENT_SESSIONS,
+            []
+          );
+
+          appState.logging.tempSessions = temp;
+          appState.logging.permanentSessions = perm;
+        }
+
+        /**
+         * Save sessions to storage
+         */
+        saveSessions() {
+          StorageManager.saveJSON(
+            STORAGE_KEYS.TEMP_SESSIONS,
+            appState.logging.tempSessions
+          );
+          StorageManager.saveJSON(
+            STORAGE_KEYS.PERMANENT_SESSIONS,
+            appState.logging.permanentSessions
+          );
+        }
+
+        /**
+         * Update UI
+         */
+        updateUI() {
+          this.renderTempSessions();
+          this.renderPermanentSessions();
+          this.renderStats();
+        }
+
+        /**
+         * Render temporary sessions list
+         */
+        renderTempSessions() {
+          const list = document.getElementById("tempSessionsList");
+          if (!list) return;
+
+          if (appState.logging.tempSessions.length === 0) {
+            list.innerHTML =
+              '<div class="shelf-life-item" style="justify-content: center; color: var(--text-secondary);">No temporary sessions yet</div>';
+            return;
+          }
+
+          list.innerHTML = appState.logging.tempSessions
+            .map((session) => {
+              const date = new Date(session.created).toLocaleString();
+              const calcTotal = this.calculateCalcTotal(session);
+              const isActive = session.id === appState.logging.activeSession;
+
+              return `
+              <div class="shelf-life-item ${
+                isActive ? "active" : ""
+              }" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                  <div>
+                    <strong>${session.name}</strong>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                  </div>
+                  <div class="shelf-life-actions">
+                    <button class="btn-action" onclick="exposureLogManager.viewSession('${
+                      session.id
+                    }', false)">View</button>
+                    <button class="btn-action" onclick="exposureLogManager.saveToPermanentPrompt('${
+                      session.id
+                    }')">Save</button>
+                    <button class="btn-action delete" onclick="exposureLogManager.deleteSession('${
+                      session.id
+                    }', false)">Delete</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            })
+            .join("");
+        }
+
+        /**
+         * Render permanent sessions list
+         */
+        renderPermanentSessions() {
+          const list = document.getElementById("permanentSessionsList");
+          if (!list) return;
+
+          if (appState.logging.permanentSessions.length === 0) {
+            list.innerHTML =
+              '<div class="shelf-life-item" style="justify-content: center; color: var(--text-secondary);">No permanent sessions saved</div>';
+            return;
+          }
+
+          list.innerHTML = appState.logging.permanentSessions
+            .map((session) => {
+              const date = new Date(session.created).toLocaleString();
+              const savedDate = new Date(session.savedAt).toLocaleString();
+              const calcTotal = this.calculateCalcTotal(session);
+
+              return `
+              <div class="shelf-life-item" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                  <div>
+                    <strong>${session.name}</strong>
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                    ${
+                      session.notes
+                        ? `<div style="font-size: 0.65rem; color: var(--text); margin-top: 2px;">${session.notes}</div>`
+                        : ""
+                    }
+                    <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 2px;">Saved: ${savedDate}</div>
+                  </div>
+                  <div class="shelf-life-actions">
+                    <button class="btn-action" onclick="exposureLogManager.viewSession('${
+                      session.id
+                    }', true)">View</button>
+                    <button class="btn-action delete" onclick="exposureLogManager.deleteSession('${
+                      session.id
+                    }', true)">Delete</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            })
+            .join("");
+        }
+
+        /**
+         * Calculate CALC total (only CALC exposures)
+         */
+        calculateCalcTotal(session) {
+          if (!session.phases.calc || session.phases.calc.length === 0)
+            return 0;
+          return session.phases.calc
+            .reduce((sum, calc) => sum + calc.finalTime, 0)
+            .toFixed(2);
+        }
+
+        /**
+         * Render statistics
+         */
+        renderStats() {
+          const stats = document.getElementById("logStats");
+          if (!stats) return;
+
+          const tempCount = appState.logging.tempSessions.length;
+          const permCount = appState.logging.permanentSessions.length;
+          const totalExposures = appState.logging.permanentSessions.reduce(
+            (sum, s) => {
+              return sum + (s.phases.calc ? s.phases.calc.length : 0);
+            },
+            0
+          );
+
+          stats.textContent = `${tempCount} Temp | ${permCount} Perm | ${totalExposures} Total Exposures`;
+        }
+
+        /**
+         * View session details
+         */
+        viewSession(sessionId, isPermanent) {
+          const sessions = isPermanent
+            ? appState.logging.permanentSessions
+            : appState.logging.tempSessions;
+          const session = sessions.find((s) => s.id === sessionId);
+          if (!session) return;
+
+          let details = `Session: ${session.name}\n`;
+          details += `Created: ${new Date(session.created).toLocaleString()}\n`;
+          details += `Source: ${session.source}\n\n`;
+
+          if (session.phases.test) {
+            details += `TEST PHASE:\n`;
+            details += `  Base Time: ${session.phases.test.baseTime}s\n`;
+            details += `  Method: ${session.phases.test.method}\n`;
+            details += `  Selected: ${session.phases.test.selectedStep}s (${session.phases.test.selectedStop} stops)\n`;
+            details += `  Transfer: ${session.phases.test.transferDestination}\n\n`;
+          }
+
+          if (session.phases.split) {
+            details += `SPLIT PHASE:\n`;
+            details += `  Neutral: ${session.phases.split.neutralTime}s\n`;
+            details += `  Paper: ${session.phases.split.paperBrand}\n`;
+            details += `  Soft Filter: ${session.phases.split.softFilter} (${session.phases.split.filterBrand})\n`;
+            details += `  Hard Filter: ${session.phases.split.hardFilter} (${session.phases.split.filterBrand})\n`;
+            details += `  Highlights: ${session.phases.split.softTime}s\n`;
+            details += `  Shadows: ${session.phases.split.hardTime}s\n`;
+            details += `  Total: ${session.phases.split.totalTime}s\n\n`;
+          }
+
+          if (session.phases.calc && session.phases.calc.length > 0) {
+            details += `CALC PHASE:\n`;
+            session.phases.calc.forEach((calc, i) => {
+              // Format the stop adjustment for display
+              const stopDisplay = formatStop(calc.stopAdjustment);
+              details += `  Exposure ${i + 1}: ${
+                calc.baseTime
+              }s + ${stopDisplay} = ${calc.finalTime}s`;
+              if (calc.filterContext) details += ` [${calc.filterContext}]`;
+              if (calc.notes) details += ` - ${calc.notes}`;
+              details += `\n`;
+            });
+            details += `  CALC Total: ${this.calculateCalcTotal(session)}s\n\n`;
+          }
+
+          if (session.phases.timer) {
+            details += `TIMER PHASE:\n`;
+            details += `  Dev: ${session.phases.timer.dev}s\n`;
+            details += `  Stop: ${session.phases.timer.stop}s\n`;
+            details += `  Fix: ${session.phases.timer.fix}s\n`;
+            details += `  Flo: ${session.phases.timer.flo}s\n\n`;
+          }
+
+          if (session.notes) {
+            details += `NOTES: ${session.notes}\n`;
+          }
+
+          if (session.ended) {
+            details += `\nEnded: ${new Date(session.ended).toLocaleString()}`;
+          }
+
+          alert(details);
+        }
+
+        /**
+         * Save to permanent with prompt
+         */
+        saveToPermanentPrompt(sessionId) {
+          const session = appState.logging.tempSessions.find(
+            (s) => s.id === sessionId
+          );
+          if (!session) return;
+
+          const notes = prompt(
+            "Enter session notes (optional):",
+            session.notes || ""
+          );
+          if (notes === null) return;
+
+          const name = prompt("Enter custom name (optional):", session.name);
+          if (name === null) return;
+
+          this.saveToPermanent(sessionId, notes, name);
+        }
+
+        /**
+         * Show notification
+         */
+        showNotification(message) {
+          const status = document.getElementById("settingsLiveStatus");
+          if (status) {
+            status.textContent = message;
+            setTimeout(() => {
+              status.textContent = "";
+            }, 3000);
+          }
+        }
+      }
+
+      /**
        * ChemicalManager - Manages chemical calculations and tracking
        *
        * Handles chemical mix calculations, capacity tracking, shelf life management,
@@ -8089,6 +8958,23 @@
             shadowsSpan.textContent = `${result.hardTime.toFixed(2)}s (F${
               this.hardFilter
             })`;
+
+          // Log split-grade session
+          if (window.exposureLogManager) {
+            window.exposureLogManager.addSplitPhase({
+              neutralTime: this.neutralTime,
+              paperBrand: this.paperBrand,
+              softFilter: this.softFilter,
+              hardFilter: this.hardFilter,
+              filterBrand: this.paperBrand,
+              highlightsBase: result.highlightsBase,
+              shadowsBase: result.shadowsBase,
+              softTime: result.softTime,
+              hardTime: result.hardTime,
+              totalTime: result.totalTime,
+              burnPercent: this.burnPercent,
+            });
+          }
 
           // Switch to CALC tab
           switchTab("calc");
@@ -9625,6 +10511,17 @@
                     !t.state.isRunning
                 );
                 if (timerToResume) {
+                  // Log timer start and end current session
+                  if (window.exposureLogManager) {
+                    const timerData = {
+                      dev: appState.timers.Dev.timeLeft,
+                      stop: appState.timers.Stop.timeLeft,
+                      fix: appState.timers.Fix.timeLeft,
+                      flo: appState.timers.Flo.timeLeft,
+                    };
+                    window.exposureLogManager.addTimerPhaseAndEnd(timerData);
+                  }
+
                   window.startAllState.isPaused = false;
                   window.startAllState.isRunning = true;
                   timerToResume.start(true); // Start as sequence
@@ -9663,6 +10560,17 @@
               if (countdownResult === "cancelled") {
                 updateStartAllButton();
                 return;
+              }
+
+              // Log timer start and end current session
+              if (window.exposureLogManager) {
+                const timerData = {
+                  dev: appState.timers.Dev.timeLeft,
+                  stop: appState.timers.Stop.timeLeft,
+                  fix: appState.timers.Fix.timeLeft,
+                  flo: appState.timers.Flo.timeLeft,
+                };
+                window.exposureLogManager.addTimerPhaseAndEnd(timerData);
               }
 
               // Start the timer as part of a sequence
@@ -9908,6 +10816,7 @@
           this.isPaused = state.isPaused;
           this.isCountdown = state.isCountdown;
           this.lastExposureTime = state.lastExposureTime;
+          this.displayedExposureTime = state.displayedExposureTime;
         }
 
         /**
@@ -9931,6 +10840,7 @@
           state.isPaused = this.isPaused;
           state.isCountdown = this.isCountdown;
           state.lastExposureTime = this.lastExposureTime;
+          state.displayedExposureTime = this.displayedExposureTime;
         }
 
         /**
@@ -10211,6 +11121,9 @@
           this.isPaused = false;
           this.lastBeepSecond = null;
 
+          // Capture the displayed exposure time for logging
+          this.displayedExposureTime = this.thisExposureTime;
+
           this.render();
           this.startInterval();
         }
@@ -10357,6 +11270,32 @@
           this.updateCalculations();
           this.currentTime = this.thisExposureTime;
 
+          // Log this CALC exposure
+          if (window.exposureLogManager) {
+            const filterContext = appState.calculator.splitGrade.enabled
+              ? `F${appState.calculator.splitGrade.softFilter}/F${appState.calculator.splitGrade.hardFilter}`
+              : null;
+
+            // Get notes from input field
+            const notesInput = document.getElementById("calcNotesInput");
+            const notes = notesInput ? notesInput.value : "";
+
+            // Use the displayed exposure time that was captured at start
+            const exposureTime =
+              this.displayedExposureTime || this.thisExposureTime;
+
+            window.exposureLogManager.addCalcPhase({
+              baseTime: appState.calculator.baseTime,
+              stopAdjustment: appState.calculator.currentStop,
+              finalTime: exposureTime,
+              filterContext: filterContext,
+              notes: notes,
+            });
+
+            // Clear notes input
+            if (notesInput) notesInput.value = "";
+          }
+
           this.render();
         }
 
@@ -10382,6 +11321,7 @@
           this.isPaused = false;
           this.isCountdown = false;
           this.lastBeepSecond = null;
+          this.displayedExposureTime = null;
 
           this.accumulatedTime = 0;
           this.updateCalculations();
@@ -13072,6 +14012,28 @@
           // Highlight all steps as complete
           this.currentStep = this.steps.length;
           this.updatePreview();
+
+          // Log test strip session
+          if (window.exposureLogManager && this.steps.length > 0) {
+            const selectedStep = this.steps[this.currentStep - 1];
+
+            // Get notes from input field
+            const notesInput = document.getElementById("testNotesInput");
+            const notes = notesInput ? notesInput.value : "";
+
+            window.exposureLogManager.addTestPhase({
+              baseTime: this.baseTime,
+              method: this.method,
+              steps: this.steps.map((s) => s.time),
+              selectedStep: selectedStep ? selectedStep.time : null,
+              selectedStop: selectedStep ? selectedStep.stop : null,
+              transferDestination: appState.settings.testTransferDestination,
+              notes: notes,
+            });
+
+            // Clear notes input
+            if (notesInput) notesInput.value = "";
+          }
         }
 
         /**
@@ -15026,6 +15988,36 @@
             }
           });
         })();
+
+        // Initialize exposure log manager
+        window.exposureLogManager = new ExposureLogManager();
+
+        // LOGS tab event listeners
+        document.getElementById("exportCSV")?.addEventListener("click", () => {
+          if (window.exposureLogManager) {
+            window.exposureLogManager.exportCSV();
+          }
+        });
+
+        document.getElementById("exportJSON")?.addEventListener("click", () => {
+          if (window.exposureLogManager) {
+            window.exposureLogManager.exportJSON();
+          }
+        });
+
+        document.getElementById("importJSON")?.addEventListener("click", () => {
+          if (window.exposureLogManager) {
+            window.exposureLogManager.importJSON();
+          }
+        });
+
+        document
+          .getElementById("clearAllLogs")
+          ?.addEventListener("click", () => {
+            if (window.exposureLogManager) {
+              window.exposureLogManager.clearAll();
+            }
+          });
 
         // Initial chart update
         updateChart();
