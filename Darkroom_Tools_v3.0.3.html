@@ -146,36 +146,122 @@
         margin-bottom: 3px;
       }
 
-      /* ===== TABS (EXACT MATCH) ===== */
-      .tabs {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
+      /* ===== COLLAPSIBLE TAB NAVIGATION ===== */
+      .tab-nav-container {
+        position: relative;
         margin-bottom: 8px;
         border-bottom: 1px solid var(--border);
-        gap: 2px;
+        padding-bottom: 6px;
+      }
+
+      .menu-button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--panel-light);
+        color: var(--text);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: none;
+      }
+
+      .menu-button:hover {
+        background: var(--panel-light);
+        border-color: var(--border-light);
+      }
+
+      .menu-button:focus {
+        outline: none;
+      }
+
+      .menu-icon {
+        font-size: 1.1rem;
+        margin-right: 8px;
+      }
+
+      .menu-label {
+        flex: 1;
+        text-align: left;
+      }
+
+      .active-tab-name {
+        color: var(--accent);
+        font-weight: bold;
+        margin-left: auto;
+        padding-left: 8px;
+      }
+
+      .tab-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-top: 4px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.25s ease;
+        z-index: 100;
+        pointer-events: none; /* Prevent clicks when closed */
+      }
+
+      .tab-dropdown.open {
+        max-height: 400px;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto; /* Allow clicks when open */
+      }
+
+      .tab-dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 10px 12px;
+        background: transparent;
+        color: var(--text);
+        border: none;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-align: left;
+        cursor: pointer;
+        transition: none;
+      }
+
+      .tab-dropdown-item:last-child {
+        border-bottom: none;
+      }
+
+      .tab-dropdown-item:hover {
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .tab-dropdown-item.active {
+        background: var(--border-light);
+        color: var(--accent);
+        border-left: 3px solid var(--accent);
+      }
+
+      .tab-dropdown-item:focus {
+        outline: none;
+      }
+
+      /* ===== OLD TAB STYLES (DEPRECATED - kept for reference) ===== */
+      .tabs {
+        display: none; /* Hidden - replaced by collapsible navigation */
       }
 
       .tab-button {
-        flex: 0 0 auto;
-        min-width: 70px;
-        padding: 6px 8px;
-        background: var(--panel-light);
-        color: var(--text);
-        border: none;
-        border-radius: 12px 12px 0px 0px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-      }
-
-      .tab-button.active {
-        color: var(--bg);
-        border-bottom: 2px solid var(--title);
-        background: var(--text-secondary);
-        border-radius: 12px 12px 0px 0px;
+        display: none; /* Hidden - replaced by dropdown items */
       }
 
       .tab-content {
@@ -469,7 +555,7 @@
       }
 
       .settings-input::placeholder {
-        color: var(--accent);
+        color: var(--text);
         opacity: 0.7;
       }
 
@@ -933,15 +1019,34 @@
         overflow: hidden; /* container shouldn't scroll; tab content should */
       }
 
-      /* Tabs should stay at top in fullscreen */
-      body.fullscreen-mode .tabs {
+      /* Collapsible navigation should stay at top in fullscreen */
+      body.fullscreen-mode .tab-nav-container {
         border-bottom: 1px solid var(--border);
         margin-bottom: 0;
         flex-shrink: 0;
+        padding-bottom: 8px;
       }
 
-      body.fullscreen-mode .tab-button {
-        padding: 12px 3px;
+      body.fullscreen-mode .menu-button {
+        padding: 12px 16px;
+        font-size: 1rem;
+      }
+
+      body.fullscreen-mode .tab-dropdown {
+        max-height: 50vh; /* Limit height in fullscreen */
+        pointer-events: none; /* Prevent clicks when closed */
+        box-shadow: none; /* Remove shadow in fullscreen */
+      }
+
+      body.fullscreen-mode .tab-dropdown.open {
+        max-height: 50vh; /* Limit height in fullscreen */
+        pointer-events: auto; /* Allow clicks when open */
+        box-shadow: none; /* Remove shadow in fullscreen */
+      }
+
+      body.fullscreen-mode .tab-dropdown-item {
+        padding: 12px 16px;
+        font-size: 1rem;
       }
 
       /* Hide header and footer in fullscreen */
@@ -1135,7 +1240,7 @@
       }
 
       .custom-filter-row input[type="text"]::placeholder {
-        color: var(--accent);
+        color: var(--text);
         opacity: 0.7;
       }
 
@@ -1150,7 +1255,7 @@
       }
 
       .custom-filter-row input[type="number"]::placeholder {
-        color: var(--accent);
+        color: var(--text);
         opacity: 0.7;
       }
 
@@ -1236,9 +1341,51 @@
           padding: 0;
         }
 
-        body.fullscreen-mode .tabs {
+        body.fullscreen-mode .tab-nav-container {
           margin-bottom: 0;
           border-bottom: none;
+        }
+
+        body.fullscreen-mode .menu-button {
+          padding: 14px 16px;
+          font-size: 1.1rem;
+        }
+
+        body.fullscreen-mode .tab-dropdown {
+          max-height: 70vh; /* More height on mobile fullscreen */
+          pointer-events: none; /* Prevent clicks when closed */
+          box-shadow: none; /* Remove shadow in fullscreen */
+        }
+
+        body.fullscreen-mode .tab-dropdown.open {
+          max-height: 70vh; /* More height on mobile fullscreen */
+          pointer-events: auto; /* Allow clicks when open */
+          box-shadow: none; /* Remove shadow in fullscreen */
+        }
+
+        body.fullscreen-mode .tab-dropdown-item {
+          padding: 14px 16px;
+          font-size: 1.1rem;
+        }
+
+        /* Collapsible navigation mobile adjustments */
+        .menu-button {
+          padding: 10px 12px;
+          font-size: 1rem;
+        }
+
+        .menu-icon {
+          font-size: 1.2rem;
+        }
+
+        .tab-dropdown {
+          max-height: 60vh; /* Limit height on mobile */
+          overflow-y: auto; /* Allow scrolling if many tabs */
+        }
+
+        .tab-dropdown-item {
+          padding: 12px 12px;
+          font-size: 1rem;
         }
 
         /* Test strip mobile adjustments */
@@ -1279,16 +1426,61 @@
         aria-atomic="true"
       ></div>
 
-      <div class="tabs">
-        <button class="tab-button" data-tab="fstop-test">TEST</button>
-        <button class="tab-button" data-tab="split">SPLIT</button>
-        <button class="tab-button active" data-tab="calc">CALC</button>
-        <button class="tab-button" data-tab="timer">TIMER</button>
-        <button class="tab-button" data-tab="relay">CONTROL</button>
-        <button class="tab-button" data-tab="chemical">CHEMICAL</button>
-        <button class="tab-button" data-tab="chart">CHART</button>
-        <button class="tab-button" data-tab="logs">LOGS</button>
-        <button class="tab-button" data-tab="settings">SETTINGS</button>
+      <!-- Collapsible Tab Navigation -->
+      <div class="tab-nav-container">
+        <button
+          class="menu-button"
+          id="menuButton"
+          aria-expanded="false"
+          aria-controls="tabDropdown"
+        >
+          <span class="menu-icon">☰</span>
+          <span class="menu-label">Menu</span>
+          <span class="active-tab-name" id="activeTabName">CALC</span>
+        </button>
+
+        <div
+          class="tab-dropdown"
+          id="tabDropdown"
+          role="menu"
+          aria-hidden="true"
+        >
+          <button
+            class="tab-dropdown-item"
+            data-tab="fstop-test"
+            role="menuitem"
+          >
+            TEST
+          </button>
+          <button class="tab-dropdown-item" data-tab="split" role="menuitem">
+            SPLIT
+          </button>
+          <button
+            class="tab-dropdown-item active"
+            data-tab="calc"
+            role="menuitem"
+          >
+            CALC
+          </button>
+          <button class="tab-dropdown-item" data-tab="timer" role="menuitem">
+            TIMER
+          </button>
+          <button class="tab-dropdown-item" data-tab="relay" role="menuitem">
+            CONTROL
+          </button>
+          <button class="tab-dropdown-item" data-tab="chemical" role="menuitem">
+            CHEMICAL
+          </button>
+          <button class="tab-dropdown-item" data-tab="chart" role="menuitem">
+            CHART
+          </button>
+          <button class="tab-dropdown-item" data-tab="logs" role="menuitem">
+            LOGS
+          </button>
+          <button class="tab-dropdown-item" data-tab="settings" role="menuitem">
+            SETTINGS
+          </button>
+        </div>
       </div>
 
       <!-- Calculator Tab with Incremental Exposure Timer -->
@@ -4854,9 +5046,12 @@
         if (calcEndEl) calcEndEl.checked = settings.calcEndBeep;
       }
 
-      // Tab management
-      const tabButtons = document.querySelectorAll(".tab-button");
+      // Tab management - Updated for collapsible navigation
+      const tabDropdownItems = document.querySelectorAll(".tab-dropdown-item");
       const tabContents = document.querySelectorAll(".tab-content");
+      const menuButton = document.getElementById("menuButton");
+      const tabDropdown = document.getElementById("tabDropdown");
+      const activeTabName = document.getElementById("activeTabName");
 
       // Generic feedback display helper - consolidates showAllProfilesFeedback and showShelfLifeFeedback
       function showFeedback(elementId, message, type = "info") {
@@ -4888,12 +5083,13 @@
       /**
        * @function switchTab
        * @description Switches the active tab and updates related UI components.
-       * Removes active class from all tabs, adds it to selected tab, and triggers
+       * Removes active class from all dropdown items, adds it to selected item, and triggers
        * tab-specific updates (chart, test strip, chemical, timer, relay).
+       * Also updates the active tab name display and closes the dropdown.
        * @param {string} tabId - ID of the tab to activate
        * @returns {void}
-       * @fires Element.classList.remove - Removes active class from all tabs
-       * @fires Element.classList.add - Adds active class to selected tab
+       * @fires Element.classList.remove - Removes active class from all dropdown items
+       * @fires Element.classList.add - Adds active class to selected dropdown item
        * @fires refreshCollapsibleHeights - Updates collapsible sections
        * @fires updateChart - Updates chart tab
        * @fires fstopTestGenerator.updateDisplay - Updates test strip display
@@ -4904,12 +5100,17 @@
        * switchTab("calc"); // Switch to calculator tab
        */
       function switchTab(tabId) {
-        tabButtons.forEach((btn) => btn.classList.remove("active"));
+        // Update dropdown items
+        tabDropdownItems.forEach((item) => item.classList.remove("active"));
         tabContents.forEach((content) => content.classList.remove("active"));
 
-        tabButtons.forEach((btn) => {
-          if (btn.getAttribute("data-tab") === tabId) {
-            btn.classList.add("active");
+        tabDropdownItems.forEach((item) => {
+          if (item.getAttribute("data-tab") === tabId) {
+            item.classList.add("active");
+            // Update the active tab name display
+            if (activeTabName) {
+              activeTabName.textContent = item.textContent;
+            }
           }
         });
 
@@ -4919,6 +5120,10 @@
           refreshCollapsibleHeights(activeTab);
         }
 
+        // Close the dropdown after selection
+        closeMenu();
+
+        // Update tab-specific content
         if (tabId === "chart") {
           updateChart();
         } else if (tabId === "fstop-test") {
@@ -4943,12 +5148,118 @@
         }
       }
 
-      // Event delegation for tabs - handles both existing and future tab buttons
+      /**
+       * @function openMenu
+       * @description Opens the tab dropdown menu.
+       * @returns {void}
+       * @fires Element.classList.add - Adds 'open' class to dropdown
+       * @fires Element.setAttribute - Updates aria attributes
+       * @fires Element.focus - Focuses on menu button
+       */
+      function openMenu() {
+        if (tabDropdown && menuButton) {
+          tabDropdown.classList.add("open");
+          menuButton.setAttribute("aria-expanded", "true");
+          tabDropdown.setAttribute("aria-hidden", "false");
+          // Focus first dropdown item for keyboard navigation
+          const firstItem = tabDropdown.querySelector(".tab-dropdown-item");
+          if (firstItem) {
+            setTimeout(() => firstItem.focus(), 100);
+          }
+        }
+      }
+
+      /**
+       * @function closeMenu
+       * @description Closes the tab dropdown menu.
+       * @returns {void}
+       * @fires Element.classList.remove - Removes 'open' class from dropdown
+       * @fires Element.setAttribute - Updates aria attributes
+       */
+      function closeMenu() {
+        if (tabDropdown && menuButton) {
+          tabDropdown.classList.remove("open");
+          menuButton.setAttribute("aria-expanded", "false");
+          tabDropdown.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      /**
+       * @function toggleMenu
+       * @description Toggles the tab dropdown menu open/closed state.
+       * @returns {void}
+       * @fires openMenu - If menu is closed
+       * @fires closeMenu - If menu is open
+       */
+      function toggleMenu() {
+        if (tabDropdown && tabDropdown.classList.contains("open")) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      }
+
+      // Event delegation for dropdown items - handles both existing and future tab buttons
       document.addEventListener("click", (e) => {
-        const tabBtn = e.target.closest(".tab-button[data-tab]");
-        if (tabBtn) {
+        const dropdownItem = e.target.closest(".tab-dropdown-item[data-tab]");
+        if (dropdownItem) {
           e.preventDefault();
-          switchTab(tabBtn.getAttribute("data-tab"));
+          switchTab(dropdownItem.getAttribute("data-tab"));
+        }
+      });
+
+      // Menu button click handler
+      if (menuButton) {
+        menuButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          toggleMenu();
+        });
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        if (tabDropdown && menuButton) {
+          if (
+            !tabDropdown.contains(e.target) &&
+            !menuButton.contains(e.target)
+          ) {
+            closeMenu();
+          }
+        }
+      });
+
+      // Keyboard navigation for dropdown
+      document.addEventListener("keydown", (e) => {
+        if (tabDropdown && tabDropdown.classList.contains("open")) {
+          const items = Array.from(
+            tabDropdown.querySelectorAll(".tab-dropdown-item")
+          );
+          const currentIndex = items.findIndex(
+            (item) => item === document.activeElement
+          );
+
+          if (e.key === "Escape") {
+            closeMenu();
+            menuButton.focus();
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const nextIndex = (currentIndex + 1) % items.length;
+            items[nextIndex].focus();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            const prevIndex = (currentIndex - 1 + items.length) % items.length;
+            items[prevIndex].focus();
+          } else if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (
+              document.activeElement.classList.contains("tab-dropdown-item")
+            ) {
+              const tabId = document.activeElement.getAttribute("data-tab");
+              if (tabId) {
+                switchTab(tabId);
+              }
+            }
+          }
         }
       });
 
