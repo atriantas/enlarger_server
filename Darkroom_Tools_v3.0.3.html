@@ -468,6 +468,11 @@
         border-color: var(--accent);
       }
 
+      .settings-input::placeholder {
+        color: var(--accent);
+        opacity: 0.7;
+      }
+
       /* Unified list container - consolidates chemical-preset-list, shelf-life-list */
       .shelf-life-list {
         background: var(--panel-light);
@@ -1129,6 +1134,11 @@
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
+      .custom-filter-row input[type="text"]::placeholder {
+        color: var(--accent);
+        opacity: 0.7;
+      }
+
       .custom-filter-row input[type="number"] {
         width: 100%;
         padding: 6px;
@@ -1137,6 +1147,11 @@
         background: var(--panel);
         color: var(--text);
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      .custom-filter-row input[type="number"]::placeholder {
+        color: var(--accent);
+        opacity: 0.7;
       }
 
       .custom-filter-row button {
@@ -1265,15 +1280,15 @@
       ></div>
 
       <div class="tabs">
-        <button class="tab-button active" data-tab="calc">CALC</button>
-        <button class="tab-button" data-tab="split">SPLIT</button>
         <button class="tab-button" data-tab="fstop-test">TEST</button>
+        <button class="tab-button" data-tab="split">SPLIT</button>
+        <button class="tab-button active" data-tab="calc">CALC</button>
         <button class="tab-button" data-tab="timer">TIMER</button>
         <button class="tab-button" data-tab="relay">CONTROL</button>
         <button class="tab-button" data-tab="chemical">CHEMICAL</button>
         <button class="tab-button" data-tab="chart">CHART</button>
-        <button class="tab-button" data-tab="settings">SETTINGS</button>
         <button class="tab-button" data-tab="logs">LOGS</button>
+        <button class="tab-button" data-tab="settings">SETTINGS</button>
       </div>
 
       <!-- Calculator Tab with Incremental Exposure Timer -->
@@ -2577,13 +2592,6 @@
             class="sound-controls"
             style="justify-content: space-between; align-items: center"
           >
-            <div class="shelf-life-actions" style="gap: 15px">
-              <div class="legend-item">
-                <span class="legend-label"
-                  >Select your preferred test strip</span
-                >
-              </div>
-            </div>
             <div class="shelf-life-actions" style="align-items: center">
               <label class="switch">
                 <input type="checkbox" id="previewMode" checked />
@@ -7162,6 +7170,7 @@
       class ExposureLogManager {
         constructor() {
           this.loadSessions();
+          this.updateUI();
         }
 
         // ===== SESSION MANAGEMENT =====
@@ -7446,42 +7455,40 @@
          * Export sessions as CSV
          */
         exportCSV() {
-          const allSessions = [
-            ...appState.logging.permanentSessions,
-            ...appState.logging.tempSessions,
-          ];
+          const allSessions = appState.logging.permanentSessions;
 
           if (allSessions.length === 0) {
-            alert("No sessions to export");
+            alert("No permanent sessions to export");
             return;
           }
 
           let csv =
-            "Session,Date,Phase,Source,BaseTime,Stop,FinalTime,SoftFilter,HardFilter,FilterBrand,PaperBrand,Notes\n";
+            "Session,Date,Time,Phase,BaseTime,Stop,FinalTime,SoftFilter,HardFilter,FilterBrand,Notes\n";
 
           allSessions.forEach((session) => {
             const sessionName = session.name.replace(/,/g, ";");
             const sessionDate = new Date(session.created).toLocaleDateString();
+            const sessionTime = new Date(session.created).toLocaleTimeString();
 
             // TEST phase
             if (session.phases.test) {
-              csv += `${sessionName},${sessionDate},TEST,${session.source},${session.phases.test.baseTime},N/A,N/A,N/A,N/A,N/A,N/A,"${session.phases.test.transferDestination}"\n`;
+              csv += `${sessionName},${sessionDate},${sessionTime},TEST,${session.phases.test.baseTime},N/A,N/A,N/A,N/A,N/A,"${session.phases.test.transferDestination}"\n`;
             }
 
             // SPLIT phase
             if (session.phases.split) {
-              csv += `${sessionName},${sessionDate},SPLIT,${session.source},${session.phases.split.neutralTime},N/A,${session.phases.split.totalTime},${session.phases.split.softFilter},${session.phases.split.hardFilter},${session.phases.split.filterBrand},${session.phases.split.paperBrand},N/A\n`;
+              csv += `${sessionName},${sessionDate},${sessionTime},SPLIT,${session.phases.split.neutralTime},N/A,${session.phases.split.totalTime},${session.phases.split.softFilter},${session.phases.split.hardFilter},${session.phases.split.filterBrand},N/A\n`;
             }
 
             // CALC phases
             if (session.phases.calc && session.phases.calc.length > 0) {
               session.phases.calc.forEach((calc) => {
                 const filterContext = calc.filterContext || "N/A";
-                csv += `${sessionName},${sessionDate},CALC,${session.source},${
+                csv += `${sessionName},${sessionDate},${sessionTime},CALC,${
                   calc.baseTime
                 },${calc.stopAdjustment},${
                   calc.finalTime
-                },${filterContext},N/A,N/A,N/A,"${calc.notes.replace(
+                },${filterContext},N/A,N/A,"${calc.notes.replace(
                   /,/g,
                   ";"
                 )}"\n`;
@@ -7490,7 +7497,7 @@
 
             // TIMER phase
             if (session.phases.timer) {
-              csv += `${sessionName},${sessionDate},TIMER,${session.source},N/A,N/A,N/A,N/A,N/A,N/A,N/A,"Dev:${session.phases.timer.dev},Stop:${session.phases.timer.stop},Fix:${session.phases.timer.fix},Flo:${session.phases.timer.flo}"\n`;
+              csv += `${sessionName},${sessionDate},${sessionTime},TIMER,N/A,N/A,N/A,N/A,N/A,N/A,"Dev:${session.phases.timer.dev},Stop:${session.phases.timer.stop},Fix:${session.phases.timer.fix},Flo:${session.phases.timer.flo}"\n`;
             }
           });
 
@@ -7513,7 +7520,6 @@
           const data = {
             exported: new Date().toISOString(),
             permanentSessions: appState.logging.permanentSessions,
-            tempSessions: appState.logging.tempSessions,
           };
 
           const json = JSON.stringify(data, null, 2);
@@ -7842,14 +7848,14 @@
           );
           if (!session) return;
 
+          const name = prompt("Enter custom name (optional):", session.name);
+          if (name === null) return;
+
           const notes = prompt(
             "Enter session notes (optional):",
             session.notes || ""
           );
           if (notes === null) return;
-
-          const name = prompt("Enter custom name (optional):", session.name);
-          if (name === null) return;
 
           this.saveToPermanent(sessionId, notes, name);
         }
@@ -8594,7 +8600,7 @@
          */
         constructor() {
           this.neutralTime = 10.0; // Test strip result
-          this.paperBrand = "Ilford";
+          this.paperBrand = "FOMA";
           this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
           this.softFilter = "00";
           this.hardFilter = "5";
@@ -8634,25 +8640,25 @@
         static FILTER_FACTORS = {
           Ilford: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.2, 5: 1.5 },
           Kodak: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.1, 4: 1.3, 5: 1.6 },
-          FOMA: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.15, 5: 1.4 },
+          FOMA: { "00": 1.6, 0: 1.4, 1: 1.0, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
           // FOMA paper-specific factors (will override base FOMA when selected)
           FOMASPEED: {
-            "00": 1.0,
-            0: 1.0,
+            "00": 1.6,
+            0: 1.4,
             1: 1.0,
-            2: 1.0,
-            3: 1.0,
-            4: 1.15,
-            5: 1.4,
+            2: 1.4,
+            3: 2.1,
+            4: 2.6,
+            5: 4.6,
           },
           FOMATONE: {
-            "00": 1.0,
-            0: 1.0,
+            "00": 2.0,
+            0: 1.5,
             1: 1.0,
-            2: 1.0,
-            3: 1.0,
-            4: 1.2,
-            5: 1.5,
+            2: 1.5,
+            3: 1.8,
+            4: 2.0,
+            5: 3.0,
           },
           // Custom factors are stored in instance properties, not here
         };
@@ -8676,6 +8682,9 @@
           // Paper brand selector
           const paperSelect = document.getElementById("splitPaperBrand");
           if (paperSelect) {
+            // Set initial value to match constructor default
+            paperSelect.value = this.paperBrand;
+
             paperSelect.addEventListener("change", (e) => {
               this.paperBrand = e.target.value;
               this.updateBrandVisibility();
@@ -8703,6 +8712,17 @@
               fomaSpeedBtn.classList.remove("active");
               this.calculate();
             });
+          }
+
+          // Initialize FOMA paper type button states
+          if (fomaSpeedBtn && fomaToneBtn) {
+            if (this.fomaPaperType === "fomaspeed") {
+              fomaSpeedBtn.classList.add("active");
+              fomaToneBtn.classList.remove("active");
+            } else {
+              fomaSpeedBtn.classList.remove("active");
+              fomaToneBtn.classList.add("active");
+            }
           }
 
           // Custom filter factor inputs (7 grades)
@@ -8758,6 +8778,8 @@
           }
 
           // Initial calculation
+          this.updateBrandVisibility();
+          this.updateFilterLabels();
           this.calculate();
           this.updatePresetList();
         }
@@ -8822,6 +8844,73 @@
             fomaSection.style.display = "none";
             customSection.style.display = "none";
           }
+
+          // Update filter labels based on brand
+          this.updateFilterLabels();
+        }
+
+        /**
+         * Update filter button labels based on selected brand
+         */
+        updateFilterLabels() {
+          const softContainer = document.getElementById("splitSoftFilter");
+          const hardContainer = document.getElementById("splitHardFilter");
+
+          if (!softContainer || !hardContainer) return;
+
+          // Define filter labels for each brand
+          const filterLabels = {
+            FOMA: {
+              "00": "2xY",
+              0: "Y",
+              1: "No filter",
+              2: "M1",
+              3: "2xM1",
+              4: "M2",
+              5: "2xM2",
+            },
+            Ilford: {
+              "00": "00",
+              0: "0",
+              1: "1",
+              2: "2",
+              3: "3",
+              4: "4",
+              5: "5",
+            },
+            Kodak: {
+              "00": "00",
+              0: "0",
+              1: "1",
+              2: "2",
+              3: "3",
+              4: "4",
+              5: "5",
+            },
+            Custom: {
+              "00": "00",
+              0: "0",
+              1: "1",
+              2: "2",
+              3: "3",
+              4: "4",
+              5: "5",
+            },
+          };
+
+          // Get labels for current brand
+          const labels = filterLabels[this.paperBrand] || filterLabels.Ilford;
+
+          // Update both soft and hard filter containers
+          [softContainer, hardContainer].forEach((container) => {
+            const buttons = container.querySelectorAll(".segmented-btn");
+            buttons.forEach((btn) => {
+              const filterValue = btn.dataset.filter;
+              if (labels[filterValue]) {
+                btn.textContent = labels[filterValue];
+              }
+            });
+          });
         }
 
         /**
@@ -13279,6 +13368,28 @@
             const denom = window.stopDenominator || 3;
             const stepSize = this.stepIncrement / denom;
             this.stepSizeDisplay.textContent = `${stepSize.toFixed(1)} stops`;
+
+            // Update timer display and step info when not running
+            if (
+              !this.isRunning &&
+              !this.isPaused &&
+              !this.isWaitingForNextStep
+            ) {
+              const firstStep = this.steps[0];
+              this.testTimerDisplay.textContent = firstStep.time.toFixed(2);
+              this.currentStepDisplay.textContent = `1/${this.steps.length}`;
+              this.currentTimeDisplay.textContent = `${firstStep.time.toFixed(
+                2
+              )}s`;
+              this.currentStopDisplay.textContent =
+                this.method === "cumulative"
+                  ? `${this.formatStop(firstStep.stop)}`
+                  : `+${this.getIncrementLabel(this.stepIncrement)}`;
+              this.timeMultiplierDisplay.textContent =
+                this.method === "cumulative"
+                  ? `${Math.pow(2, firstStep.stop).toFixed(2)}×`
+                  : `${firstStep.totalExposure.toFixed(1)}s total`;
+            }
           }
         }
 
@@ -15473,6 +15584,10 @@
               if (baseSlider) {
                 baseSlider.value = time;
                 baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+                // Reset CALC timer
+                if (window.incrementalTimer) {
+                  window.incrementalTimer.reset();
+                }
                 playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Highlights (F${
@@ -15496,6 +15611,10 @@
               if (baseSlider) {
                 baseSlider.value = time;
                 baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+                // Reset CALC timer
+                if (window.incrementalTimer) {
+                  window.incrementalTimer.reset();
+                }
                 playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Shadows (F${
