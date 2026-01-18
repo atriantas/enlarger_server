@@ -3614,7 +3614,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 1 (GPIO 25)</div>
+                    <div class="settings-label">Relay 1 (GPIO 14)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3629,7 +3629,7 @@
                       class="settings-btn"
                       style="min-width: 80px"
                       data-relay="1"
-                      data-gpio="25"
+                      data-gpio="14"
                       id="toggleRelay1"
                     >
                       OFF
@@ -3641,7 +3641,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 2 (GPIO 17)</div>
+                    <div class="settings-label">Relay 2 (GPIO 15)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3656,7 +3656,7 @@
                       class="settings-btn"
                       style="min-width: 80px"
                       data-relay="2"
-                      data-gpio="17"
+                      data-gpio="15"
                       id="toggleRelay2"
                     >
                       OFF
@@ -3668,7 +3668,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 3 (GPIO 27)</div>
+                    <div class="settings-label">Relay 3 (GPIO 16)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3683,7 +3683,7 @@
                       class="settings-btn"
                       style="min-width: 80px"
                       data-relay="3"
-                      data-gpio="27"
+                      data-gpio="16"
                       id="toggleRelay3"
                     >
                       OFF
@@ -3695,7 +3695,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 4 (GPIO 22)</div>
+                    <div class="settings-label">Relay 4 (GPIO 17)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3710,7 +3710,7 @@
                       class="settings-btn"
                       style="min-width: 80px"
                       data-relay="4"
-                      data-gpio="22"
+                      data-gpio="17"
                       id="toggleRelay4"
                     >
                       OFF
@@ -3740,8 +3740,8 @@
                   type="text"
                   class="settings-input"
                   id="relayServerIP"
-                  placeholder="192.168.1.xxx"
-                  value="192.168.1.100"
+                  placeholder="192.168.4.1"
+                  value="192.168.4.1"
                 />
               </div>
               <div class="settings-item">
@@ -3750,7 +3750,7 @@
                   type="number"
                   class="settings-input"
                   id="relayServerPort"
-                  value="5000"
+                  value="80"
                 />
               </div>
             </div>
@@ -3771,18 +3771,58 @@
                 </div>
               </div>
             </div>
+            <!-- WiFi Configuration for AP → STA -->
             <div class="settings-group">
               <div class="settings-item">
-                <button class="settings-btn warning" id="rebootPi">
-                  Reboot Raspberry Pi
+                <div class="settings-label">WiFi SSID</div>
+                <input
+                  type="text"
+                  class="settings-input"
+                  id="wifiSSID"
+                  placeholder="YourRouterSSID"
+                />
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">WiFi Password</div>
+                <input
+                  type="password"
+                  class="settings-input"
+                  id="wifiPassword"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <div class="settings-label">Connect to Router</div>
+                <button class="settings-btn" id="connectWifiBtn">
+                  Connect
                 </button>
               </div>
               <div class="settings-item">
-                <button class="settings-btn danger" id="shutdownPi">
-                  Shutdown Raspberry Pi
+                <div class="settings-label">WiFi Status</div>
+                <div
+                  id="wifiStatus"
+                  style="color: var(--text-secondary); font-size: 0.8rem"
+                >
+                  Unknown
+                </div>
+              </div>
+            </div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <button class="settings-btn" id="wifiModeAPBtn">
+                  Force AP Mode
+                </button>
+              </div>
+              <div class="settings-item">
+                <button class="settings-btn" id="wifiModeSTABtn">
+                  Force STA Mode
                 </button>
               </div>
             </div>
+            <!-- Shutdown/Reboot buttons removed for Pico 2 W standalone operation -->
+            <!-- Use physical power button to shutdown device -->
           </div>
         </div>
       </div>
@@ -4168,7 +4208,7 @@
                   margin-top: 10px;
                 "
               >
-                Note: When enabled, the timer relay (GPIO 25) will automatically
+                Note: When enabled, the timer relay (GPIO 14) will automatically
                 trigger during countdown timers in CALC and F-STOP TEST tabs.
                 Time is sent as a single request with delay parameter for
                 maximum accuracy.
@@ -9710,8 +9750,8 @@
        * implements auto-trigger functionality for timer integration, and provides
        * safelight auto-off feature to prevent fogging during exposures.
        *
-       * @property {string} serverIP - The IP address of the Raspberry Pi server (default: "192.168.1.100")
-       * @property {number} serverPort - The port number of the Flask server (default: 5000)
+       * @property {string} serverIP - The IP address of the Pico 2 W hotspot (default: "192.168.4.1")
+       * @property {number} serverPort - The port number of the HTTP server (default: 80)
        * @property {boolean} autoTrigger - Whether to automatically trigger the enlarger relay when timers start
        * @property {boolean} safelightAutoOff - Whether to automatically turn off safelight when enlarger activates
        * @property {boolean} safelightWasOn - Tracks if safelight was on before enlarger started (for restoration)
@@ -9728,15 +9768,15 @@
        *
        * @description
        * Relay Mapping:
-       * - Relay 1 → GPIO 25 (Enlarger Timer) - Primary exposure control
-       * - Relay 2 → GPIO 17 (Safelight) - Auto-controlled during exposure
-       * - Relay 3 → GPIO 27 (Ventilation)
-       * - Relay 4 → GPIO 22 (White Light)
+       * - Relay 1 → GPIO 14 (Enlarger Timer) - Primary exposure control
+       * - Relay 2 → GPIO 15 (Safelight) - Auto-controlled during exposure
+       * - Relay 3 → GPIO 16 (Ventilation)
+       * - Relay 4 → GPIO 17 (White Light)
        *
        * Safelight Auto-Off Flow:
        * 1. User starts exposure (CALC, TEST, or TIMER with auto-trigger)
        * 2. If safelight is on, remember state and turn it OFF
-       * 3. Server starts GPIO 25 timer for specified duration
+       * 3. Server starts GPIO 14 timer for specified duration
        * 4. After duration, safelight is automatically restored
        *
        * Triple-Fallback Fetch Strategy:
@@ -9762,17 +9802,17 @@
          * Loads saved settings from localStorage and sets up the initial UI state.
          */
         constructor() {
-          this.serverIP = "192.168.1.100";
-          this.serverPort = 5000;
+          this.serverIP = "192.168.4.1";
+          this.serverPort = 80;
           this.autoTrigger = true;
           this.safelightAutoOff = true; // NEW: Default to enabled
           this.safelightWasOn = false; // NEW: Track if safelight was on before enlarger
 
           this.relayStates = {
-            1: false, // GPIO 25 - Enlarger Timer
-            2: false, // GPIO 17 - Safelight
-            3: false, // GPIO 27 - Ventilation
-            4: false, // GPIO 22 - White Light
+            1: false, // GPIO 14 - Enlarger Timer (Pico 2 W)
+            2: false, // GPIO 15 - Safelight (Pico 2 W)
+            3: false, // GPIO 16 - Ventilation (Pico 2 W)
+            4: false, // GPIO 17 - White Light (Pico 2 W)
           };
 
           this.init();
@@ -9796,6 +9836,13 @@
             "testRelayConnection",
           );
           this.relayStatus = document.getElementById("relayStatus");
+          // WiFi config elements
+          this.wifiSSID = document.getElementById("wifiSSID");
+          this.wifiPassword = document.getElementById("wifiPassword");
+          this.connectWifiBtn = document.getElementById("connectWifiBtn");
+          this.wifiStatus = document.getElementById("wifiStatus");
+          this.wifiModeAPBtn = document.getElementById("wifiModeAPBtn");
+          this.wifiModeSTABtn = document.getElementById("wifiModeSTABtn");
           this.autoTriggerRelay = document.getElementById("autoTriggerRelay");
           this.testTimerRelayBtn = document.getElementById("testTimerRelay");
           this.testTimerSeconds = document.getElementById("testTimerSeconds");
@@ -9809,16 +9856,7 @@
           if (this.autoTriggerRelay)
             this.autoTriggerRelay.checked = this.autoTrigger;
 
-          // Add event listeners
-          // In the init() method, add:
-          const shutdownBtn = document.getElementById("shutdownPi");
-          if (shutdownBtn) {
-            shutdownBtn.addEventListener("click", () => this.shutdownPi());
-          }
-          const rebootBtn = document.getElementById("rebootPi");
-          if (rebootBtn) {
-            rebootBtn.addEventListener("click", () => this.rebootPi());
-          }
+          // Shutdown/Reboot button listeners removed for Pico 2 W standalone operation
 
           if (this.relayServerIP)
             this.relayServerIP.addEventListener("change", () =>
@@ -9835,6 +9873,18 @@
           if (this.testRelayConnectionBtn)
             this.testRelayConnectionBtn.addEventListener("click", () =>
               this.testConnection(),
+            );
+          if (this.connectWifiBtn)
+            this.connectWifiBtn.addEventListener("click", () =>
+              this.connectWifi(),
+            );
+          if (this.wifiModeAPBtn)
+            this.wifiModeAPBtn.addEventListener("click", () =>
+              this.switchWiFiMode("ap"),
+            );
+          if (this.wifiModeSTABtn)
+            this.wifiModeSTABtn.addEventListener("click", () =>
+              this.switchWiFiMode("sta"),
             );
           if (this.testTimerRelayBtn)
             this.testTimerRelayBtn.addEventListener("click", () =>
@@ -9861,6 +9911,9 @@
           // Update safelight auto-off status display
           this.updateSafelightAutoOffStatus();
 
+          // Fetch initial WiFi status
+          this.getWiFiStatus();
+
           // Add event listener for the toggle in settings
           document
             .getElementById("safelightAutoOff")
@@ -9872,119 +9925,9 @@
             });
         }
 
-        /**
-         * @method shutdownPi
-         * @description Initiates a graceful shutdown of the Raspberry Pi.
-         * Sends a shutdown command to the server with user confirmation.
-         * Provides visual feedback during the shutdown process.
-         * @returns {Promise<void>} Resolves when shutdown command is sent (or fails)
-         * @throws {Error} If shutdown command fails to send
-         * @fires updateStatus - Updates UI with shutdown progress
-         * @fires playBeep - Audio feedback on success
-         * @example
-         * await relayManager.shutdownPi(); // User will see confirmation dialog
-         */
-        async shutdownPi() {
-          if (
-            !confirm(
-              "Are you sure you want to shutdown the Raspberry Pi?\n\nThe server will stop and the Pi will power off.",
-            )
-          ) {
-            return;
-          }
+        // shutdownPi() method removed for Pico 2 W - use physical power button to shutdown
 
-          try {
-            const response = await this.sendRequest("shutdown");
-
-            if (response) {
-              this.updateStatus(
-                "Shutdown command sent. Raspberry Pi will power off in 3 seconds...",
-                "success",
-              );
-
-              // Visual feedback
-              const btn = document.getElementById("shutdownPi");
-              if (btn) {
-                const originalText = btn.textContent;
-                btn.textContent = "Shutting down...";
-                btn.disabled = true;
-
-                // Update status message after a delay
-                setTimeout(() => {
-                  this.updateStatus(
-                    "Raspberry Pi is shutting down. Server connection will be lost.",
-                    "info",
-                  );
-                }, 2000);
-
-                setTimeout(() => {
-                  btn.textContent = originalText;
-                  btn.disabled = false;
-                }, 5000);
-              }
-            }
-          } catch (error) {
-            this.updateStatus("Failed to send shutdown command", "error");
-            console.error("Shutdown error:", error);
-          }
-        }
-
-        /**
-         * @method rebootPi
-         * @description Initiates a reboot of the Raspberry Pi.
-         * Sends a reboot command to the server with user confirmation.
-         * Provides visual feedback during the reboot process.
-         * @returns {Promise<void>} Resolves when reboot command is sent (or fails)
-         * @throws {Error} If reboot command fails to send
-         * @fires updateStatus - Updates UI with reboot progress
-         * @fires playBeep - Audio feedback on success
-         * @example
-         * await relayManager.rebootPi(); // User will see confirmation dialog
-         */
-        async rebootPi() {
-          if (
-            !confirm(
-              "Are you sure you want to reboot the Raspberry Pi?\n\nThe server will stop and the Pi will power off.",
-            )
-          ) {
-            return;
-          }
-
-          try {
-            const response = await this.sendRequest("reboot");
-
-            if (response) {
-              this.updateStatus(
-                "Reboot command sent. Raspberry Pi will reboot in 3 seconds...",
-                "success",
-              );
-
-              // Visual feedback
-              const btn = document.getElementById("rebootPi");
-              if (btn) {
-                const originalText = btn.textContent;
-                btn.textContent = "Reboot...";
-                btn.disabled = true;
-
-                // Update status message after a delay
-                setTimeout(() => {
-                  this.updateStatus(
-                    "Raspberry Pi is rebooting. Server connection will be lost.",
-                    "info",
-                  );
-                }, 2000);
-
-                setTimeout(() => {
-                  btn.textContent = originalText;
-                  btn.disabled = false;
-                }, 5000);
-              }
-            }
-          } catch (error) {
-            this.updateStatus("Failed to send reboot command", "error");
-            console.error("Shutdown error:", error);
-          }
-        }
+        // rebootPi() method removed for Pico 2 W - use physical power button and reconnect
 
         /**
          * @method updateSafelightAutoOffStatus
@@ -10041,10 +9984,10 @@
         saveSettings() {
           this.serverIP = this.relayServerIP
             ? this.relayServerIP.value
-            : "192.168.1.100";
+            : "192.168.4.1";
           this.serverPort = this.relayServerPort
             ? parseInt(this.relayServerPort.value)
-            : 5000;
+            : 80;
           this.autoTrigger = this.autoTriggerRelay
             ? this.autoTriggerRelay.checked
             : true;
@@ -10085,8 +10028,8 @@
             const saved = localStorage.getItem("relaySettings");
             if (saved) {
               const settings = JSON.parse(saved);
-              this.serverIP = settings.serverIP || "192.168.1.100";
-              this.serverPort = settings.serverPort || 5000;
+              this.serverIP = settings.serverIP || "192.168.4.1";
+              this.serverPort = settings.serverPort || 80;
               this.autoTrigger = settings.autoTrigger !== false;
               this.safelightAutoOff = settings.safelightAutoOff !== false; // NEW: Default to true
 
@@ -10118,10 +10061,10 @@
          * const success = await relayManager.sendRequest("ping");
          *
          * // Control relay
-         * await relayManager.sendRequest("relay", { gpio: 25, state: "on" });
+         * await relayManager.sendRequest("relay", { gpio: 14, state: "on" });
          *
          * // Start timer
-         * await relayManager.sendRequest("timer", { gpio: 25, duration: 10.5 });
+         * await relayManager.sendRequest("timer", { gpio: 14, duration: 10.5 });
          */
         async sendRequest(endpoint, params = {}) {
           const url = `http://${this.serverIP}:${this.serverPort}/${endpoint}`;
@@ -10345,15 +10288,15 @@
          * @returns {number} The GPIO pin number for the specified relay
          * @constant {Object} pinMap - Static mapping of relay to GPIO pins
          * @example
-         * const pin = relayManager.getGPIOPin(1); // Returns 25 (Enlarger)
-         * const pin = relayManager.getGPIOPin(2); // Returns 17 (Safelight)
+         * const pin = relayManager.getGPIOPin(1); // Returns 14 (Enlarger)
+         * const pin = relayManager.getGPIOPin(2); // Returns 15 (Safelight)
          */
         getGPIOPin(relayNum) {
           const pinMap = {
-            1: 25, // Enlarger Timer
-            2: 17, // Safelight
-            3: 27, // Ventilation
-            4: 22, // White Light
+            1: 14, // Enlarger Timer (Pico 2 W)
+            2: 15, // Safelight (Pico 2 W)
+            3: 16, // Ventilation (Pico 2 W)
+            4: 17, // White Light (Pico 2 W)
           };
           return pinMap[relayNum] || 14;
         }
@@ -10367,7 +10310,7 @@
          * @returns {Promise<void>} Resolves when timer trigger completes
          * @throws {Error} Logs error if timer request fails
          * @fires console.log - Logs safelight state changes for debugging
-         * @fires sendRequest - Sends timer command to server (gpio=25, duration=durationSeconds)
+         * @fires sendRequest - Sends timer command to server (gpio=14, duration=durationSeconds)
          * @fires updateStatus - Updates UI with timer status
          * @fires setTimeout - Schedules safelight restoration after exposure
          * @fires setRelay - Controls safelight (relay 2) before and after exposure
@@ -10376,7 +10319,7 @@
          * 2. If safelight auto-off is enabled and safelight is on:
          *    - Remember safelight was on
          *    - Turn off safelight (relay 2)
-         * 3. Send timer request to server (gpio=25, duration=durationSeconds)
+         * 3. Send timer request to server (gpio=14, duration=durationSeconds)
          * 4. After duration:
          *    - Restore safelight if it was on
          *    - Reset safelightWasOn flag
@@ -10404,8 +10347,9 @@
           }
 
           // Send single request with duration parameter
+          const enlargerPin = this.getGPIOPin(1);
           const success = await this.sendRequest("timer", {
-            gpio: 25,
+            gpio: enlargerPin,
             duration: durationSeconds.toFixed(3),
           });
 
@@ -10454,6 +10398,87 @@
             playBeep(600, 0.3, 0.3);
           } else {
             this.updateStatus("Connection failed", "error");
+          }
+        }
+
+        /**
+         * Fetch WiFi status and update UI; if STA is connected, update server IP.
+         */
+        async getWiFiStatus() {
+          try {
+            const url = `http://${this.serverIP}:${this.serverPort}/wifi-status`;
+            const res = await fetch(url, { method: "GET", mode: "cors" });
+            if (!res.ok) throw new Error("HTTP status " + res.status);
+            const data = await res.json();
+            const {
+              mode,
+              ap_active,
+              ap_ip,
+              sta_connected,
+              sta_ip,
+              ap_ssid,
+              sta_ssid,
+            } = data;
+            const statusText = `Mode: ${mode} • AP: ${ap_active ? ap_ip : "off"} • STA: ${sta_connected ? sta_ip : "disconnected"}`;
+            if (this.wifiStatus) this.wifiStatus.textContent = statusText;
+
+            // If STA is connected, update server IP automatically
+            if (sta_connected && sta_ip) {
+              this.serverIP = sta_ip;
+              if (this.relayServerIP) this.relayServerIP.value = sta_ip;
+              this.saveSettings();
+            }
+          } catch (e) {
+            if (this.wifiStatus)
+              this.wifiStatus.textContent = "WiFi status unavailable";
+          }
+        }
+
+        /**
+         * Submit SSID/password to the Pico and attempt STA connection. Updates status.
+         */
+        async connectWifi() {
+          const ssid = this.wifiSSID ? this.wifiSSID.value : "";
+          const password = this.wifiPassword ? this.wifiPassword.value : "";
+          if (!ssid) {
+            this.updateStatus("Enter SSID", "error");
+            return;
+          }
+          this.updateStatus("Connecting to router...", "info");
+          try {
+            const ok = await this.sendRequest("wifi-config", {
+              ssid,
+              password,
+            });
+            if (ok) {
+              // Try to read details
+              await this.getWiFiStatus();
+              this.updateStatus("Router connection requested", "success");
+            } else {
+              this.updateStatus("WiFi connect failed", "error");
+            }
+          } catch (e) {
+            this.updateStatus("WiFi connect error", "error");
+          }
+        }
+
+        /**
+         * Switch WiFi mode explicitly (ap|sta) using saved credentials for STA.
+         */
+        async switchWiFiMode(mode) {
+          try {
+            const ok = await this.sendRequest("wifi-mode", { value: mode });
+            if (ok) {
+              await this.getWiFiStatus();
+              this.updateStatus(
+                `Switched WiFi to ${mode.toUpperCase()}`,
+                "success",
+              );
+            } else {
+              this.updateStatus("WiFi mode switch failed", "error");
+            }
+          } catch (e) {
+            this.updateStatus("WiFi mode switch error", "error");
           }
         }
 
