@@ -9982,12 +9982,20 @@
          * relayManager.saveSettings(); // Persists current configuration
          */
         saveSettings() {
-          this.serverIP = this.relayServerIP
-            ? this.relayServerIP.value
-            : "192.168.4.1";
-          this.serverPort = this.relayServerPort
+          // Read from UI if available, but don't override auto-detected values unnecessarily
+          const uiIP = this.relayServerIP ? this.relayServerIP.value : null;
+          const uiPort = this.relayServerPort
             ? parseInt(this.relayServerPort.value)
-            : 80;
+            : null;
+
+          // Only update if user explicitly changed the value in the UI
+          if (uiIP && uiIP !== this.serverIP) {
+            this.serverIP = uiIP;
+          }
+          if (uiPort && uiPort !== this.serverPort) {
+            this.serverPort = uiPort;
+          }
+
           this.autoTrigger = this.autoTriggerRelay
             ? this.autoTriggerRelay.checked
             : true;
@@ -10017,6 +10025,7 @@
          * @description Loads relay manager settings from localStorage.
          * Restores server configuration, auto-trigger preference, safelight auto-off setting,
          * and relay states. Uses default values if no saved settings exist.
+         * Auto-detects server IP from window.location when served from Pico.
          * @returns {void}
          * @fires localStorage.getItem - Retrieves "relaySettings" and "relayStates" keys
          * @throws {Error} Logs error if localStorage load or parse fails
@@ -10025,11 +10034,29 @@
          */
         loadSettings() {
           try {
+            // Auto-detect server IP from current page location
+            // This ensures API calls go to the same server that served the page
+            const currentHost = window.location.hostname;
+            const currentPort = window.location.port || "80";
+
+            // If page is served from a valid IP (not localhost or file://), use it
+            const isServedFromServer =
+              currentHost &&
+              currentHost !== "localhost" &&
+              currentHost !== "127.0.0.1" &&
+              !currentHost.includes("file://") &&
+              window.location.protocol !== "file:";
+
             const saved = localStorage.getItem("relaySettings");
             if (saved) {
               const settings = JSON.parse(saved);
-              this.serverIP = settings.serverIP || "192.168.4.1";
-              this.serverPort = settings.serverPort || 80;
+              // If served from server, use current host; otherwise use saved/default
+              this.serverIP = isServedFromServer
+                ? currentHost
+                : settings.serverIP || "192.168.4.1";
+              this.serverPort = isServedFromServer
+                ? parseInt(currentPort)
+                : settings.serverPort || 80;
               this.autoTrigger = settings.autoTrigger !== false;
               this.safelightAutoOff = settings.safelightAutoOff !== false; // NEW: Default to true
 
@@ -10038,7 +10065,16 @@
               if (savedStates) {
                 this.relayStates = JSON.parse(savedStates);
               }
+            } else {
+              // No saved settings - use auto-detected or defaults
+              this.serverIP = isServedFromServer ? currentHost : "192.168.4.1";
+              this.serverPort = isServedFromServer ? parseInt(currentPort) : 80;
             }
+
+            // Log the detected server for debugging
+            console.log(
+              `RelayManager: Using server ${this.serverIP}:${this.serverPort} (auto-detected: ${isServedFromServer})`,
+            );
           } catch (e) {
             console.error("Failed to load relay settings:", e);
           }

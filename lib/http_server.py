@@ -54,7 +54,22 @@ class HTTPServer:
             # Create server socket
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.bind(('0.0.0.0', self.port))
+            
+            # Try to bind to specified port
+            try:
+                self.socket.bind(('0.0.0.0', self.port))
+                print(f"✓ HTTP Server bound to port {self.port}")
+            except OSError as bind_error:
+                print(f"⚠️  Failed to bind to port {self.port}: {bind_error}")
+                print(f"   Attempting with port 8080...")
+                self.port = 8080
+                try:
+                    self.socket.bind(('0.0.0.0', self.port))
+                    print(f"✓ HTTP Server bound to port {self.port}")
+                except OSError as bind_error2:
+                    print(f"❌ Failed to bind to port 8080: {bind_error2}")
+                    raise
+            
             self.socket.listen(self.MAX_CONNECTIONS)
             self.socket.setblocking(False)
             
@@ -66,6 +81,7 @@ class HTTPServer:
                 try:
                     # Accept connection with timeout
                     conn, addr = self.socket.accept()
+                    print(f"📨 New connection from {addr[0]}:{addr[1]}")
                     
                     # Handle connection in background task
                     asyncio.create_task(self._handle_connection(conn, addr))
@@ -82,6 +98,8 @@ class HTTPServer:
                 
         except Exception as e:
             print(f"❌ Server error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
             
     async def _handle_connection(self, conn, addr):
@@ -93,8 +111,8 @@ class HTTPServer:
             addr: Client address tuple
         """
         try:
-            # Set timeout
-            conn.settimeout(5.0)
+            # Set timeout - longer timeout for large file transfers (609KB+ HTML file)
+            conn.settimeout(30.0)
             
             # Receive request
             request_data = b''
@@ -108,16 +126,25 @@ class HTTPServer:
                     # Check if we have complete header
                     if b'\r\n\r\n' in request_data:
                         break
-                except socket.timeout:
+                # MicroPython raises OSError for timeouts; CPython uses socket.timeout
+                except OSError:
                     break
                     
             if not request_data:
                 conn.close()
                 return
-                
+            
             # Parse request
             try:
-                request_str = request_data.decode('utf-8')
+                # MicroPython decode does not support the 'errors' keyword, so fall back safely
+                try:
+                    request_str = request_data.decode('utf-8')
+                except Exception:
+                    try:
+                        # Latin-1 never fails and preserves byte values
+                        request_str = request_data.decode('latin-1')
+                    except Exception:
+                        request_str = str(request_data)
                 lines = request_str.split('\r\n')
                 
                 if not lines:
@@ -127,11 +154,13 @@ class HTTPServer:
                 # Parse request line
                 parts = lines[0].split()
                 if len(parts) < 2:
+                    print(f"  ❌ Bad request line: {lines[0]}")
                     self._send_error(conn, 400, "Bad Request")
                     return
                     
                 method = parts[0]
                 path = parts[1]
+                print(f"  📍 {method} {path}")
                 
                 # Handle OPTIONS for CORS preflight
                 if method == 'OPTIONS':
@@ -142,11 +171,11 @@ class HTTPServer:
                 await self._route_request(conn, method, path)
                 
             except Exception as e:
-                print(f"Request parsing error: {e}")
+                print(f"  ⚠️  Request parsing error: {e}")
                 self._send_error(conn, 400, "Bad Request")
                 
         except Exception as e:
-            print(f"Connection handler error: {e}")
+            print(f"  ⚠️  Connection handler error: {e}")
             
         finally:
             try:
@@ -225,8 +254,9 @@ class HTTPServer:
                 try:
                     import os
                     file_size = os.stat(filename)[6]
-                except:
-                    pass
+                    print(f"  📄 Serving {filename} ({file_size} bytes)")
+                except Exception as size_err:
+                    print(f"  ⚠️  Could not get file size: {size_err}")
                     
                 # Send headers
                 headers = (
@@ -243,23 +273,38 @@ class HTTPServer:
                     "\r\n"
                 )
                 
-                conn.send(headers.encode())
+                # Use sendall to ensure all header bytes are sent
+                await self._sendall(conn, headers.encode())
                 
-                # Send file in chunks
+                # Send file in chunks with proper send verification
                 with open(filename, 'rb') as f:
+                    bytes_sent = 0
+                    chunk_count = 0
                     while True:
                         chunk = f.read(self.CHUNK_SIZE)
                         if not chunk:
                             break
-                        conn.send(chunk)
-                        await asyncio.sleep(0.001)  # Small delay
+                        # Use sendall to ensure all bytes of chunk are sent
+                        await self._sendall(conn, chunk)
+                        bytes_sent += len(chunk)
+                        chunk_count += 1
+                        # Yield control every 10 chunks to allow other tasks
+                        if chunk_count % 10 == 0:
+                            await asyncio.sleep(0.001)
+                    print(f"  ✓ Sent {bytes_sent} bytes in {chunk_count} chunks")
                         
             except FileNotFoundError:
+                print(f"  ❌ HTML file not found: {filename}")
                 self._send_error(conn, 404, "HTML file not found")
                 
         except Exception as e:
-            print(f"Error serving HTML: {e}")
-            self._send_error(conn, 500, "Internal Server Error")
+            print(f"  ❌ Error serving HTML: {e}")
+            import traceback
+            traceback.print_exc()
+            try:
+                self._send_error(conn, 500, "Internal Server Error")
+            except:
+                pass
             
     def _handle_ping(self, conn):
         """Handle /ping endpoint"""
@@ -699,6 +744,40 @@ class HTTPServer:
             conn.send(response.encode())
         except Exception as e:
             print(f"Error sending JSON: {e}")
+    
+    async def _sendall(self, conn, data):
+        """
+        Send all bytes over socket, retrying if TCP buffer is full.
+        
+        MicroPython's socket.send() may not send all bytes if the
+        TCP buffer is full. This method loops until all bytes are sent.
+        
+        Args:
+            conn: Socket connection
+            data: Bytes to send
+        """
+        total_sent = 0
+        data_len = len(data)
+        retries = 0
+        max_retries = 100  # Prevent infinite loops
+        
+        while total_sent < data_len and retries < max_retries:
+            try:
+                sent = conn.send(data[total_sent:])
+                if sent == 0:
+                    # Socket closed
+                    raise OSError("Socket connection closed")
+                total_sent += sent
+            except OSError as e:
+                # EAGAIN/EWOULDBLOCK - buffer full, wait and retry
+                if "EAGAIN" in str(e) or retries < max_retries:
+                    await asyncio.sleep(0.01)
+                    retries += 1
+                else:
+                    raise
+        
+        if total_sent < data_len:
+            raise OSError(f"Failed to send all bytes: {total_sent}/{data_len}")
             
     def _send_response(self, conn, status_code, data, content_type="text/plain"):
         """

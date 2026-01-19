@@ -63,12 +63,17 @@ async def main():
                 sta_connected = await wifi_sta.connect(saved_ssid, saved_password, timeout_s=20)
             except Exception as e:
                 print(f"STA connect error: {e}")
+                import traceback
+                traceback.print_exc()
 
         if sta_connected:
             # Start AP for a short grace period, then stop
             print("✅ STA connected. Starting AP for grace period...")
             wifi_ap.start()
             wifi_ap.print_info()
+            # Get IPs for debugging
+            sta_ip = wifi_sta.get_ip()
+            print(f"🌐 STA IP: {sta_ip}")
             # Schedule AP stop in background
             async def stop_ap_after_grace():
                 await asyncio.sleep(AP_GRACE_SECONDS)
