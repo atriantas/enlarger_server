@@ -3823,6 +3823,22 @@
                 </div>
               </div>
             </div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <button
+                  class="settings-btn"
+                  id="forceHotspotMode"
+                  style="background: var(--accent-color)"
+                >
+                  Force Hotspot Mode
+                </button>
+              </div>
+              <div class="settings-item">
+                <button class="settings-btn danger" id="clearWifiCredentials">
+                  Clear WiFi Credentials
+                </button>
+              </div>
+            </div>
             <div
               style="
                 font-size: 0.65rem;
@@ -9867,6 +9883,24 @@
             connectWifiBtn.addEventListener("click", () => this.connectWifi());
           }
 
+          // Force Hotspot Mode button
+          const forceHotspotBtn = document.getElementById("forceHotspotMode");
+          if (forceHotspotBtn) {
+            forceHotspotBtn.addEventListener("click", () =>
+              this.forceHotspotMode(),
+            );
+          }
+
+          // Clear WiFi Credentials button
+          const clearCredentialsBtn = document.getElementById(
+            "clearWifiCredentials",
+          );
+          if (clearCredentialsBtn) {
+            clearCredentialsBtn.addEventListener("click", () =>
+              this.clearWifiCredentials(),
+            );
+          }
+
           // Load WiFi status on init
           this.updateWifiStatus();
 
@@ -10030,6 +10064,144 @@
           } catch (error) {
             // Silently fail on status check - might not be connected yet
             console.log("WiFi status check failed:", error);
+          }
+        }
+
+        /**
+         * @method forceHotspotMode
+         * @description Forces the Pico to switch to AP (hotspot) mode.
+         * Disconnects from any router WiFi and enables the access point.
+         * @returns {Promise<void>}
+         */
+        async forceHotspotMode() {
+          const statusElement = document.getElementById("wifiStatus");
+
+          if (
+            !confirm(
+              "Switch to Hotspot mode? This will disconnect from the current WiFi network.",
+            )
+          ) {
+            return;
+          }
+
+          if (statusElement) {
+            statusElement.textContent = "Switching to Hotspot...";
+            statusElement.style.color = "#ff0";
+          }
+
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/wifi-ap-force`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.status === "success") {
+                if (statusElement) {
+                  statusElement.textContent = `Hotspot Mode: ${data.ap_ip || "192.168.4.1"}`;
+                  statusElement.style.color = "#ff0";
+                }
+                // Update server IP to AP address
+                this.serverIP = data.ap_ip || "192.168.4.1";
+                if (this.relayServerIP)
+                  this.relayServerIP.value = this.serverIP;
+                this.saveSettings();
+
+                alert(
+                  `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`,
+                );
+              } else {
+                if (statusElement) {
+                  statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
+                  statusElement.style.color = "#f00";
+                }
+              }
+            } else {
+              if (statusElement) {
+                statusElement.textContent = "Switch failed";
+                statusElement.style.color = "#f00";
+              }
+            }
+          } catch (error) {
+            console.error("Force hotspot error:", error);
+            if (statusElement) {
+              statusElement.textContent =
+                "Request failed - may need to reconnect via hotspot";
+              statusElement.style.color = "#f00";
+            }
+            // Provide instructions since connection likely dropped
+            alert(
+              "Connection lost. Connect to WiFi 'DarkroomTimer' (password: darkroom123) and access http://192.168.4.1/",
+            );
+          }
+        }
+
+        /**
+         * @method clearWifiCredentials
+         * @description Clears saved WiFi credentials from the Pico's storage.
+         * After clearing, the Pico will only use hotspot mode on next boot.
+         * @returns {Promise<void>}
+         */
+        async clearWifiCredentials() {
+          const statusElement = document.getElementById("wifiStatus");
+
+          if (
+            !confirm(
+              "Clear saved WiFi credentials? The Pico will start in Hotspot mode on next boot.",
+            )
+          ) {
+            return;
+          }
+
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/wifi-clear`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.status === "success") {
+                if (statusElement) {
+                  statusElement.textContent = "Credentials cleared";
+                  statusElement.style.color = "#0f0";
+                }
+                // Clear the input fields
+                const ssidInput = document.getElementById("wifiSSID");
+                const passwordInput = document.getElementById("wifiPassword");
+                if (ssidInput) ssidInput.value = "";
+                if (passwordInput) passwordInput.value = "";
+
+                alert(
+                  "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.",
+                );
+              } else {
+                if (statusElement) {
+                  statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
+                  statusElement.style.color = "#f00";
+                }
+              }
+            } else {
+              if (statusElement) {
+                statusElement.textContent = "Clear failed";
+                statusElement.style.color = "#f00";
+              }
+            }
+          } catch (error) {
+            console.error("Clear credentials error:", error);
+            if (statusElement) {
+              statusElement.textContent = "Request failed";
+              statusElement.style.color = "#f00";
+            }
           }
         }
 

@@ -415,6 +415,72 @@ class HTTPServer:
         
         await self._sendall(conn, response)
     
+    async def _handle_wifi_ap_force(self, conn, params):
+        """Handle /wifi-ap-force endpoint - force AP (hotspot) mode."""
+        try:
+            # Disconnect from STA if connected
+            if self.wifi_sta:
+                print("Disconnecting from WiFi router...")
+                self.wifi_sta.disconnect()
+                await asyncio.sleep(0.5)
+            
+            # Ensure AP is running
+            ap_ip = "192.168.4.1"
+            if self.wifi_ap:
+                if not self.wifi_ap.ap or not self.wifi_ap.ap.active():
+                    print("Starting WiFi AP...")
+                    ap_ip = self.wifi_ap.start() or "192.168.4.1"
+                else:
+                    ap_ip = self.wifi_ap.ap.ifconfig()[0]
+                    print(f"AP already active: {ap_ip}")
+            
+            response = self._json_response({
+                "status": "success",
+                "message": "Switched to AP (hotspot) mode",
+                "ap_ip": ap_ip,
+                "timestamp": time.ticks_ms()
+            })
+        except Exception as e:
+            print(f"Force AP error: {e}")
+            response = self._json_response({
+                "error": f"Failed to switch to AP mode: {e}"
+            }, 500)
+        
+        await self._sendall(conn, response)
+    
+    async def _handle_wifi_clear(self, conn, params):
+        """Handle /wifi-clear endpoint - clear saved WiFi credentials."""
+        try:
+            import os
+            config_file = "wifi_config.json"
+            
+            # Try to delete the config file
+            try:
+                os.remove(config_file)
+                message = "WiFi credentials cleared successfully"
+                print(f"Deleted {config_file}")
+            except OSError:
+                message = "No saved credentials found (already cleared)"
+                print(f"No {config_file} to delete")
+            
+            # Clear in-memory credentials if wifi_sta exists
+            if self.wifi_sta:
+                self.wifi_sta.ssid = None
+                self.wifi_sta.password = None
+            
+            response = self._json_response({
+                "status": "success",
+                "message": message,
+                "timestamp": time.ticks_ms()
+            })
+        except Exception as e:
+            print(f"Clear credentials error: {e}")
+            response = self._json_response({
+                "error": f"Failed to clear credentials: {e}"
+            }, 500)
+        
+        await self._sendall(conn, response)
+    
     async def _handle_options(self, conn):
         """Handle OPTIONS preflight request."""
         response = (
@@ -467,6 +533,10 @@ class HTTPServer:
                 await self._handle_wifi_status(conn, params)
             elif path == '/wifi-config':
                 await self._handle_wifi_config(conn, params)
+            elif path == '/wifi-ap-force':
+                await self._handle_wifi_ap_force(conn, params)
+            elif path == '/wifi-clear':
+                await self._handle_wifi_clear(conn, params)
             elif path == '/favicon.ico':
                 # Return empty response for favicon
                 response = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
