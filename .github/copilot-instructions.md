@@ -18,15 +18,15 @@ Phone/Tablet Browser ──WiFi Hotspot──► Pico 2 W (192.168.4.1:80)
 
 ## Essential Files
 
-| File                                                         | Purpose           | Key Details                                            |
-| ------------------------------------------------------------ | ----------------- | ------------------------------------------------------ |
-| [boot.py](RaspberryPiPico/boot.py)                           | Main entry point  | Async event loop, WiFi setup, component initialization |
-| [lib/gpio_control.py](RaspberryPiPico/lib/gpio_control.py)   | Relay control     | Active-LOW logic, pins GP14-17                         |
-| [lib/http_server.py](RaspberryPiPico/lib/http_server.py)     | HTTP server       | Socket-based, CORS, 512-byte chunked file serving      |
-| [lib/timer_manager.py](RaspberryPiPico/lib/timer_manager.py) | Timer management  | Async non-blocking, scheduled start for sync           |
-| [lib/wifi_ap.py](RaspberryPiPico/lib/wifi_ap.py)             | WiFi hotspot      | SSID: DarkroomTimer, IP: 192.168.4.1                   |
-| [lib/wifi_sta.py](RaspberryPiPico/lib/wifi_sta.py)           | Router connection | Saves credentials to wifi_config.json                  |
-| [index.html](RaspberryPiPico/index.html)                     | Web client        | Single-file app with all UI/logic                      |
+| File                                         | Purpose           | Key Details                                            |
+| -------------------------------------------- | ----------------- | ------------------------------------------------------ |
+| [boot.py](boot.py)                           | Main entry point  | Async event loop, WiFi setup, component initialization |
+| [lib/gpio_control.py](lib/gpio_control.py)   | Relay control     | Active-LOW logic, pins GP14-17                         |
+| [lib/http_server.py](lib/http_server.py)     | HTTP server       | Socket-based, CORS, 512-byte chunked file serving      |
+| [lib/timer_manager.py](lib/timer_manager.py) | Timer management  | Async non-blocking, scheduled start for sync           |
+| [lib/wifi_ap.py](lib/wifi_ap.py)             | WiFi hotspot      | SSID: DarkroomTimer, IP: 192.168.4.1                   |
+| [lib/wifi_sta.py](lib/wifi_sta.py)           | Router connection | Saves credentials to wifi_config.json                  |
+| [index.html](index.html)                     | Web client        | Single-file app with all UI/logic (~610KB)             |
 
 ## GPIO Pin Mapping (Active-LOW)
 
@@ -68,8 +68,10 @@ def calculate_start_at(self):
 
 - **No urllib.parse** - use `_url_decode()` in http_server.py
 - **Memory management** - 512-byte chunks for large files, `gc.collect()` periodically
-- **Non-blocking sockets** - `OSError` when no data (not None)
+- **Non-blocking sockets** - `OSError` when no data (not None); EAGAIN (errno 11) requires retry with `asyncio.sleep_ms(10)`
 - **Async only** - use `asyncio.create_task()`, never threading
+- **Socket buffer limits** - use `_sendall()` with retry logic for large responses
+- **Error handling** - Always wrap socket operations in try/except for OSError
 
 ### 3. WiFi Dual-Mode Boot Sequence
 
@@ -97,14 +99,14 @@ network.hostname("darkroom")  # Accessible as darkroom.local
 pip3 install adafruit-ampy
 export AMPY_PORT=/dev/tty.usbmodem1101
 
-ampy put RaspberryPiPico/boot.py boot.py
-ampy put RaspberryPiPico/index.html index.html
+ampy put boot.py
+ampy put index.html
 ampy mkdir lib
-ampy put RaspberryPiPico/lib/gpio_control.py lib/gpio_control.py
-ampy put RaspberryPiPico/lib/http_server.py lib/http_server.py
-ampy put RaspberryPiPico/lib/timer_manager.py lib/timer_manager.py
-ampy put RaspberryPiPico/lib/wifi_ap.py lib/wifi_ap.py
-ampy put RaspberryPiPico/lib/wifi_sta.py lib/wifi_sta.py
+ampy put lib/gpio_control.py lib/gpio_control.py
+ampy put lib/http_server.py lib/http_server.py
+ampy put lib/timer_manager.py lib/timer_manager.py
+ampy put lib/wifi_ap.py lib/wifi_ap.py
+ampy put lib/wifi_sta.py lib/wifi_sta.py
 ```
 
 ### Monitor Console
@@ -126,29 +128,49 @@ curl "http://192.168.4.1/timer?gpio=14&duration=5.0"
 
 ### Adding New Endpoint
 
-1. Add handler method to `HTTPServer` class in [lib/http_server.py](RaspberryPiPico/lib/http_server.py)
+1. Add async handler method to `HTTPServer` class in [lib/http_server.py](lib/http_server.py)
 2. Add route in `_handle_request()` method
-3. Include CORS headers in response
+3. Use `_json_response()` or `_sendall()` for responses
+4. Always include CORS headers via `_cors_headers()`
+5. Handle query params with `_parse_query_string()` (no urllib available)
 
 ### Changing Default WiFi
 
-Edit [boot.py](RaspberryPiPico/boot.py) or [lib/wifi_ap.py](RaspberryPiPico/lib/wifi_ap.py):
+Edit [lib/wifi_ap.py](lib/wifi_ap.py) constants:
 
 ```python
 DEFAULT_SSID = "DarkroomTimer"
-DEFAULT_PASSWORD = "darkroom123"
+DEFAULT_PASSWORD = "darkroom123"  # Min 8 chars
+DEFAULT_CHANNEL = 6  # 1-11
 ```
 
 ### Modifying Relay Pins
 
-Update `RELAY_PINS` dict in [lib/gpio_control.py](RaspberryPiPico/lib/gpio_control.py)
+Update `RELAY_PINS` dict in [lib/gpio_control.py](lib/gpio_control.py). Remember active-LOW: `Pin.value(0)` = ON
+
+### WiFi Config Persistence
+
+Credentials saved to `wifi_config.json` at root:
+
+```python
+{"ssid": "MyNetwork", "password": "mypassword"}
+```
+
+Delete this file to reset WiFi or redeploy with different settings
 
 ## Troubleshooting
 
-| Issue            | Solution                                                  |
-| ---------------- | --------------------------------------------------------- |
-| Pico won't boot  | Reflash MicroPython UF2, check `screen` for errors        |
-| WiFi not visible | Verify MicroPython v1.27.0+, check AP initialization logs |
-| HTML page slow   | Normal - ~610KB file, uses 512-byte chunks                |
-| mDNS not working | Ensure `network.hostname()` called before WLAN activation |
-| Relay stuck      | Check active-LOW logic: value(0)=ON, value(1)=OFF         |
+| Issue                  | Solution                                                             |
+| ---------------------- | -------------------------------------------------------------------- |
+| Pico won't boot        | Reflash MicroPython UF2, check `screen` for errors                   |
+| WiFi not visible       | Verify MicroPython v1.27.0+, check AP initialization logs            |
+| HTML page slow/timeout | Normal - ~610KB file, uses 512-byte chunks; wait 10-15 seconds       |
+| mDNS not working       | Ensure `network.hostname()` called before WLAN activation            |
+| Relay stuck ON         | Check active-LOW logic: `value(0)`=ON, `value(1)`=OFF                |
+| OSError EAGAIN (11)    | Socket buffer full; use retry loop with `asyncio.sleep_ms(10)`       |
+| Memory errors          | Increase `gc.collect()` frequency, reduce chunk sizes                |
+| Timer desync           | Client must respect `start_at` timestamp in response (not immediate) |
+| WiFi not visible       | Verify MicroPython v1.27.0+, check AP initialization logs            |
+| HTML page slow         | Normal - ~610KB file, uses 512-byte chunks                           |
+| mDNS not working       | Ensure `network.hostname()` called before WLAN activation            |
+| Relay stuck            | Check active-LOW logic: value(0)=ON, value(1)=OFF                    |
