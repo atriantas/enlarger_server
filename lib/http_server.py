@@ -6,6 +6,7 @@ Socket-based HTTP server serving darkroom timer API and HTML interface
 import socket
 import json
 import asyncio
+import time as utime
 
 
 class HTTPServer:
@@ -98,8 +99,7 @@ class HTTPServer:
                 
         except Exception as e:
             print(f"❌ Server error: {e}")
-            import traceback
-            traceback.print_exc()
+            # MicroPython doesn't have traceback module
             return False
             
     async def _handle_connection(self, conn, addr):
@@ -221,6 +221,9 @@ class HTTPServer:
             elif clean_path == '/timer':
                 await self._handle_timer(conn, path)
                 
+            elif clean_path == '/timer-status':
+                self._handle_timer_status(conn)
+                
             elif clean_path == '/status':
                 self._handle_status(conn)
                 
@@ -234,6 +237,8 @@ class HTTPServer:
                 await self._handle_wifi_config(conn, path)
             elif clean_path == '/wifi-mode':
                 await self._handle_wifi_mode(conn, path)
+            elif clean_path == '/wifi-hostname':
+                await self._handle_wifi_hostname(conn, path)
                 
             else:
                 self._send_error(conn, 404, "Not Found")
@@ -277,30 +282,41 @@ class HTTPServer:
                 await self._sendall(conn, headers.encode())
                 
                 # Send file in chunks with proper send verification
-                with open(filename, 'rb') as f:
-                    bytes_sent = 0
-                    chunk_count = 0
-                    while True:
-                        chunk = f.read(self.CHUNK_SIZE)
-                        if not chunk:
-                            break
-                        # Use sendall to ensure all bytes of chunk are sent
-                        await self._sendall(conn, chunk)
-                        bytes_sent += len(chunk)
-                        chunk_count += 1
-                        # Yield control every 10 chunks to allow other tasks
-                        if chunk_count % 10 == 0:
-                            await asyncio.sleep(0.001)
-                    print(f"  ✓ Sent {bytes_sent} bytes in {chunk_count} chunks")
+                try:
+                    with open(filename, 'rb') as f:
+                        bytes_sent = 0
+                        chunk_count = 0
+                        while True:
+                            chunk = f.read(self.CHUNK_SIZE)
+                            if not chunk:
+                                break
+                            # Use sendall to ensure all bytes of chunk are sent
+                            await self._sendall(conn, chunk)
+                            bytes_sent += len(chunk)
+                            chunk_count += 1
+                            # Yield control every 10 chunks to allow other tasks
+                            if chunk_count % 10 == 0:
+                                await asyncio.sleep(0.001)
+                        print(f"  ✓ Sent {bytes_sent} bytes in {chunk_count} chunks")
+                except OSError as e:
+                    # OSError with errno 2 = file not found
+                    if e.args[0] == 2:
+                        print(f"  ❌ HTML file not found: {filename}")
+                        self._send_error(conn, 404, "HTML file not found")
+                    else:
+                        raise
                         
-            except FileNotFoundError:
-                print(f"  ❌ HTML file not found: {filename}")
-                self._send_error(conn, 404, "HTML file not found")
-                
+            except OSError as e:
+                # OSError with errno 2 = file not found
+                if e.args[0] == 2:
+                    print(f"  ❌ HTML file not found: {filename}")
+                    self._send_error(conn, 404, "HTML file not found")
+                else:
+                    raise
+                    
         except Exception as e:
             print(f"  ❌ Error serving HTML: {e}")
-            import traceback
-            traceback.print_exc()
+            # MicroPython doesn't have traceback module, just print the error
             try:
                 self._send_error(conn, 500, "Internal Server Error")
             except:
@@ -368,7 +384,7 @@ class HTTPServer:
             self._send_error(conn, 500, "Internal Server Error")
             
     async def _handle_timer(self, conn, path):
-        """Handle /timer endpoint (timed relay activation)"""
+        """Handle /timer endpoint - starts timer and returns immediately (non-blocking)"""
         try:
             # Parse query parameters
             if '?' not in path:
@@ -397,17 +413,22 @@ class HTTPServer:
                 self._send_json(conn, 400, response_data)
                 return
                 
-            # Start timer
-            self.timer.create_timer_task(gpio, duration)
+            # Start timer in background (non-blocking)
+            # Create timer task and return immediately
+            task = self.timer.create_timer_task(gpio, duration)
+            
+            # Get start time for response
+            start_time = utime.time()
             
             relay_num = self.GPIO_TO_RELAY.get(gpio, 0)
             response_data = json.dumps({
-                "status": "success",
+                "status": "started",
                 "gpio": gpio,
                 "relay": relay_num,
                 "duration": duration,
                 "name": self.gpio.RELAY_PINS[gpio]["name"],
-                "message": f"Timer started for {duration}s"
+                "message": f"Timer started for {duration}s",
+                "start_time": start_time
             })
             self._send_json(conn, 200, response_data)
             
@@ -433,6 +454,21 @@ class HTTPServer:
             
         except Exception as e:
             print(f"Status handler error: {e}")
+            self._send_error(conn, 500, "Internal Server Error")
+            
+    def _handle_timer_status(self, conn):
+        """Handle /timer-status endpoint - get status of all active timers"""
+        try:
+            active_timers = self.timer.get_active_timers()
+            
+            response_data = json.dumps({
+                "status": "success",
+                "timers": active_timers
+            })
+            self._send_json(conn, 200, response_data)
+            
+        except Exception as e:
+            print(f"Timer status handler error: {e}")
             self._send_error(conn, 500, "Internal Server Error")
             
     async def _handle_all(self, conn, path):
@@ -482,23 +518,28 @@ class HTTPServer:
             ap_active = False
             ap_ip = None
             ap_ssid = None
+            ap_hostname = None
             if self.wifi_ap:
                 try:
                     status = self.wifi_ap.get_status()
                     ap_active = bool(status.get('active'))
                     ap_ip = status.get('ip')
                     ap_ssid = status.get('ssid')
+                    ap_hostname = status.get('hostname')
                 except Exception:
                     pass
 
             sta_connected = False
             sta_ip = None
             sta_ssid = None
+            sta_hostname = None
             if self.wifi_sta:
                 try:
                     sta_connected = self.wifi_sta.is_connected()
                     sta_ip = self.wifi_sta.get_ip()
-                    sta_ssid = self.wifi_sta.status().get('ssid')
+                    sta_status = self.wifi_sta.status()
+                    sta_ssid = sta_status.get('ssid')
+                    sta_hostname = sta_status.get('hostname')
                 except Exception:
                     pass
 
@@ -514,9 +555,11 @@ class HTTPServer:
                 "ap_active": ap_active,
                 "ap_ip": ap_ip,
                 "ap_ssid": ap_ssid,
+                "ap_hostname": ap_hostname,
                 "sta_connected": sta_connected,
                 "sta_ip": sta_ip,
                 "sta_ssid": sta_ssid,
+                "sta_hostname": sta_hostname,
             })
             self._send_json(conn, 200, data)
         except Exception as e:
@@ -536,10 +579,23 @@ class HTTPServer:
                 self._send_error(conn, 400, "ssid and password required")
                 return
 
-            # Persist credentials
+            # Load existing config to preserve hostname
+            existing_hostname = "darkroom-timer"
+            try:
+                with open('wifi_config.json', 'r') as f:
+                    existing = json.loads(f.read())
+                    existing_hostname = existing.get('hostname', "darkroom-timer")
+            except Exception:
+                pass
+            
+            # Persist credentials (including hostname)
             try:
                 with open('wifi_config.json', 'w') as f:
-                    f.write(json.dumps({"ssid": ssid, "password": password}))
+                    f.write(json.dumps({
+                        "ssid": ssid,
+                        "password": password,
+                        "hostname": existing_hostname
+                    }))
             except Exception as e:
                 print(f"WiFi config save error: {e}")
 
@@ -663,6 +719,71 @@ class HTTPServer:
         except Exception as e:
             print(f"Grace timer error: {e}")
             
+    async def _handle_wifi_hostname(self, conn, path):
+        """Set hostname for WiFi interfaces (STA and AP)"""
+        try:
+            if '?' not in path:
+                self._send_error(conn, 400, "Missing parameters")
+                return
+            params = self._parse_query_params(path.split('?')[1])
+            hostname = params.get('hostname')
+            
+            if not hostname:
+                self._send_error(conn, 400, "hostname parameter required")
+                return
+                
+            # Validate hostname (32 chars max, alphanumeric and hyphens only)
+            if len(hostname) > 32:
+                self._send_error(conn, 400, "Hostname too long (max 32 characters)")
+                return
+                
+            if not all(c.isalnum() or c == '-' for c in hostname):
+                self._send_error(conn, 400, "Hostname must contain only alphanumeric characters and hyphens")
+                return
+                
+            # Update WiFi managers with new hostname
+            if self.wifi_ap:
+                self.wifi_ap.hostname = hostname
+            if self.wifi_sta:
+                self.wifi_sta.hostname = hostname
+                
+            # Persist hostname to wifi_config.json
+            try:
+                # Load existing config
+                existing_ssid = None
+                existing_password = None
+                try:
+                    with open('wifi_config.json', 'r') as f:
+                        existing = json.loads(f.read())
+                        existing_ssid = existing.get('ssid')
+                        existing_password = existing.get('password')
+                except Exception:
+                    pass
+                
+                # Save with new hostname
+                with open('wifi_config.json', 'w') as f:
+                    f.write(json.dumps({
+                        "ssid": existing_ssid,
+                        "password": existing_password,
+                        "hostname": hostname
+                    }))
+            except Exception as e:
+                print(f"Hostname config save error: {e}")
+                self._send_error(conn, 500, "Failed to save hostname")
+                return
+                
+            data = json.dumps({
+                "status": "success",
+                "message": "Hostname updated",
+                "hostname": hostname,
+                "note": "Changes will take effect after WiFi restart"
+            })
+            self._send_json(conn, 200, data)
+            
+        except Exception as e:
+            print(f"WiFi hostname error: {e}")
+            self._send_error(conn, 500, "Internal Server Error")
+            
     def _url_decode(self, text):
         """
         Simple URL decoder for MicroPython (replaces urllib.parse.unquote)
@@ -742,6 +863,12 @@ class HTTPServer:
                 f"{data}"
             )
             conn.send(response.encode())
+        except OSError as e:
+            # EBADF (9) = Bad file descriptor - socket is closed
+            if e.args[0] == 9:
+                print(f"Socket closed before response could be sent")
+            else:
+                print(f"Error sending JSON: {e}")
         except Exception as e:
             print(f"Error sending JSON: {e}")
     
@@ -769,8 +896,12 @@ class HTTPServer:
                     raise OSError("Socket connection closed")
                 total_sent += sent
             except OSError as e:
+                # EBADF (9) = Bad file descriptor - socket is closed
+                if e.args[0] == 9:
+                    print(f"Socket closed during send")
+                    return  # Don't raise, just return
                 # EAGAIN/EWOULDBLOCK - buffer full, wait and retry
-                if "EAGAIN" in str(e) or retries < max_retries:
+                elif "EAGAIN" in str(e) or retries < max_retries:
                     await asyncio.sleep(0.01)
                     retries += 1
                 else:
@@ -803,6 +934,12 @@ class HTTPServer:
                 f"{data}"
             )
             conn.send(response.encode())
+        except OSError as e:
+            # EBADF (9) = Bad file descriptor - socket is closed
+            if e.args[0] == 9:
+                print(f"Socket closed before response could be sent")
+            else:
+                print(f"Error sending response: {e}")
         except Exception as e:
             print(f"Error sending response: {e}")
             

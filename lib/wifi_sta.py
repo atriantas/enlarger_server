@@ -11,13 +11,18 @@ import asyncio
 class WiFiSTA:
     """WiFi Station mode manager for Pico 2 W"""
     
-    def __init__(self):
+    def __init__(self, hostname="darkroom-timer"):
         """
         Initialize WiFi Station configuration
+        
+        Args:
+            hostname (str): Device hostname for mDNS/DHCP (default: "darkroom-timer")
         """
         self.sta = None
         self.ip = None
         self.ssid = None
+        self.hostname = hostname
+        self.mdns = None  # mDNS responder instance
         
     async def connect(self, ssid, password, timeout_s=20):
         """
@@ -32,6 +37,9 @@ class WiFiSTA:
             bool: True if connected successfully, False otherwise
         """
         try:
+            # Set hostname BEFORE activating WiFi (required for mDNS/DHCP)
+            network.hostname(self.hostname)
+            
             # Create STA interface
             self.sta = network.WLAN(network.STA_IF)
             
@@ -69,12 +77,60 @@ class WiFiSTA:
             self.ip = self.sta.ifconfig()[0]
             print(f"✅ WiFi STA connected")
             print(f"   IP: {self.ip}")
+            
+            # Start mDNS responder for .local hostname resolution
+            self._start_mdns()
+            
             return True
             
         except Exception as e:
             print(f"❌ STA connection error: {e}")
             return False
             
+    def _start_mdns(self):
+        """Start mDNS responder if available"""
+        try:
+            # Run garbage collection to free memory before starting mDNS
+            import gc
+            gc.collect()
+            
+            # Try to import and use umdns library
+            import umdns
+            print("✅ umdns library found, starting mDNS responder...")
+            
+            # Create mDNS responder with our hostname and IP
+            self.mdns = umdns.MDNS(self.hostname, self.ip)
+            
+            # Start mDNS responder (runs as async task)
+            if self.mdns.start():
+                print(f"✅ mDNS responder started: {self.hostname}.local → {self.ip}")
+                
+                # Send initial announcement
+                self.mdns.advertise()
+                print("   Sent mDNS announcement")
+            else:
+                print("⚠️  mDNS responder failed to start")
+                print(f"   Use IP address instead: http://{self.ip}")
+                self.mdns = None
+                
+        except ImportError:
+            print("⚠️  umdns library not available")
+            print(f"   Copy umdns.py to Pico root, or use IP: http://{self.ip}")
+            
+        except OSError as e:
+            # Handle memory errors (ENOMEM = errno 12)
+            if e.args[0] == 12:  # ENOMEM
+                print(f"⚠️  mDNS skipped: Not enough memory (ENOMEM)")
+            else:
+                print(f"⚠️  mDNS error: {e}")
+            print(f"   Use IP address instead: http://{self.ip}")
+            self.mdns = None
+            
+        except Exception as e:
+            print(f"⚠️  mDNS error: {e}")
+            print(f"   Use IP address instead: http://{self.ip}")
+            self.mdns = None
+    
     def is_connected(self):
         """
         Check if STA is connected
@@ -110,6 +166,7 @@ class WiFiSTA:
         status = {
             "connected": self.sta.isconnected(),
             "ssid": self.ssid,
+            "hostname": self.hostname,
             "ip": None,
         }
         
@@ -144,8 +201,11 @@ class WiFiSTA:
         print("✅ WiFi Station Connected")
         print("=" * 60)
         print(f"📡 SSID:     {self.ssid}")
+        print(f"🏷️  Hostname: {self.hostname}")
         print(f"📍 IP:       {ip}")
         print("=" * 60)
         print(f"🌐 Access browser at: http://{ip}/")
+        if self.hostname:
+            print(f"🔗 Or use mDNS: http://{self.hostname}.local")
         print("=" * 60)
         print()

@@ -29,6 +29,7 @@ async def main():
     # Configuration
     WIFI_SSID = "DarkroomTimer"
     WIFI_PASSWORD = "darkroom123"
+    HOSTNAME = "darkroom-timer"
     HTTP_PORT = 80
     AP_GRACE_SECONDS = 30  # Option A: short grace period
     
@@ -42,21 +43,27 @@ async def main():
             
         # Step 2: Initialize WiFi managers
         print("\n📡 Initializing WiFi...")
-        wifi_ap = WiFiAP(ssid=WIFI_SSID, password=WIFI_PASSWORD)
-        wifi_sta = WiFiSTA()
-
-        # Attempt STA first using saved credentials (Option A)
-        sta_connected = False
+        
+        # Load saved WiFi config (including hostname)
         saved_ssid = None
         saved_password = None
+        saved_hostname = HOSTNAME
         try:
             with open('wifi_config.json', 'r') as f:
                 saved = __import__('json').loads(f.read())
                 saved_ssid = saved.get('ssid')
                 saved_password = saved.get('password')
-        except Exception:
-            pass
+                saved_hostname = saved.get('hostname', HOSTNAME)
+                print(f"📁 Loaded config: SSID={saved_ssid}, Hostname={saved_hostname}")
+        except Exception as e:
+            print(f"⚠️  No saved config found, using defaults: {HOSTNAME}")
+        
+        # Initialize WiFi managers with hostname
+        wifi_ap = WiFiAP(ssid=WIFI_SSID, password=WIFI_PASSWORD, hostname=saved_hostname)
+        wifi_sta = WiFiSTA(hostname=saved_hostname)
 
+        # Attempt STA first using saved credentials (Option A)
+        sta_connected = False
         if saved_ssid and (saved_password is not None):
             print(f"🔗 Attempting STA connect to '{saved_ssid}'...")
             try:
@@ -87,6 +94,12 @@ async def main():
                 print("❌ Failed to start WiFi AP")
                 return False
             wifi_ap.print_info()
+            
+            # Show mDNS status
+            if wifi_ap.mdns:
+                print(f"✅ mDNS enabled: http://{wifi_ap.hostname}.local")
+            else:
+                print("⚠️  mDNS not available - use IP address: http://" + wifi_ap.ip)
         
         # Step 3: Initialize timer manager
         print("⏱️  Initializing timer manager...")

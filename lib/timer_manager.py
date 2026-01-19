@@ -26,7 +26,6 @@ class TimerManager:
         Start a timed relay activation
         
         Turns relay ON immediately, waits for duration, then turns relay OFF.
-        Cancels any existing timer for the pin first.
         
         Args:
             gpio_pin (int): GPIO pin number
@@ -36,8 +35,8 @@ class TimerManager:
             bool: True if timer started successfully
         """
         try:
-            # Cancel existing timer for this pin
-            await self.stop_timer(gpio_pin)
+            # Note: Don't call stop_timer here - it's called by create_timer_task
+            # before this task is created
             
             # Create timer record
             self.active_timers[gpio_pin] = {
@@ -45,6 +44,9 @@ class TimerManager:
                 'duration': duration,
                 'running': True
             }
+            
+            # Store task reference for tracking
+            self.tasks[gpio_pin] = asyncio.current_task()
             
             print(f"Timer started: GPIO {gpio_pin} for {duration}s")
             
@@ -100,13 +102,17 @@ class TimerManager:
             # Cancel task if exists
             if gpio_pin in self.tasks:
                 task = self.tasks[gpio_pin]
-                if not task.done():
+                # Only cancel if it's not the current task
+                current_task = asyncio.current_task()
+                if not task.done() and task is not current_task:
                     task.cancel()
                     try:
                         await task
                     except asyncio.CancelledError:
                         pass
-                del self.tasks[gpio_pin]
+                # Remove from tasks (will be cleaned up by start_timer's finally block)
+                if gpio_pin in self.tasks:
+                    del self.tasks[gpio_pin]
                 
             # Turn off relay immediately
             self.gpio.set_relay_state(gpio_pin, False)
@@ -136,17 +142,41 @@ class TimerManager:
         Returns:
             asyncio.Task: The created task
         """
-        # Cancel existing task for this pin
+        # Cancel existing task for this pin (if it exists)
         if gpio_pin in self.tasks:
             task = self.tasks[gpio_pin]
-            if not task.done():
+            # Only cancel if it's not the current task
+            current_task = asyncio.current_task()
+            if not task.done() and task is not current_task:
                 task.cancel()
+                # Note: We don't await here since this is a sync method
+                # The task will be cleaned up when it completes
                 
         # Create new task
         task = asyncio.create_task(self.start_timer(gpio_pin, duration))
-        self.tasks[gpio_pin] = task
         
         return task
+        
+    async def wait_for_timer(self, gpio_pin, duration):
+        """
+        Start a timer and wait for it to complete
+        
+        This method blocks until the timer finishes, returning the completion status.
+        
+        Args:
+            gpio_pin (int): GPIO pin number
+            duration (float): Duration in seconds
+            
+        Returns:
+            bool: True if timer completed successfully, False if cancelled or failed
+        """
+        try:
+            # Start timer and wait for completion
+            result = await self.start_timer(gpio_pin, duration)
+            return result
+        except Exception as e:
+            print(f"Error waiting for timer on GPIO {gpio_pin}: {e}")
+            return False
         
     def is_timer_active(self, gpio_pin):
         """

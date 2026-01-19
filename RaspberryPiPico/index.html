@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Darkroom Timer</title>
+    <title>Darkroom Timer (Pico 2 W)</title>
     <style>
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
@@ -3614,7 +3614,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 1 (GPIO 14)</div>
+                    <div class="settings-label">Relay 1 (GP14)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3641,7 +3641,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 2 (GPIO 15)</div>
+                    <div class="settings-label">Relay 2 (GP15)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3668,7 +3668,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 3 (GPIO 16)</div>
+                    <div class="settings-label">Relay 3 (GP16)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3695,7 +3695,7 @@
               <div class="shelf-life-item" style="display: block">
                 <div class="settings-group">
                   <div class="settings-item">
-                    <div class="settings-label">Relay 4 (GPIO 17)</div>
+                    <div class="settings-label">Relay 4 (GP17)</div>
                     <input
                       type="text"
                       class="settings-input"
@@ -3735,13 +3735,14 @@
             <div class="title-md">Controller Manager</div>
             <div class="settings-group">
               <div class="settings-item">
-                <div class="settings-label">Server IP</div>
+                <div class="settings-label">Server IP (auto-detected)</div>
                 <input
                   type="text"
                   class="settings-input"
                   id="relayServerIP"
-                  placeholder="192.168.4.1"
-                  value="192.168.4.1"
+                  placeholder="Auto-detected from page URL"
+                  value=""
+                  readonly
                 />
               </div>
               <div class="settings-item">
@@ -3751,6 +3752,7 @@
                   class="settings-input"
                   id="relayServerPort"
                   value="80"
+                  readonly
                 />
               </div>
             </div>
@@ -3771,7 +3773,20 @@
                 </div>
               </div>
             </div>
-            <!-- WiFi Configuration for AP → STA -->
+          </div>
+
+          <!-- WiFi Configuration Section (Pico 2 W) -->
+          <div class="settings-section">
+            <div class="title-md">WiFi Configuration</div>
+            <div
+              style="
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                margin-bottom: 8px;
+              "
+            >
+              Connect to a WiFi router for mDNS access (darkroom.local)
+            </div>
             <div class="settings-group">
               <div class="settings-item">
                 <div class="settings-label">WiFi SSID</div>
@@ -3779,7 +3794,7 @@
                   type="text"
                   class="settings-input"
                   id="wifiSSID"
-                  placeholder="YourRouterSSID"
+                  placeholder="Your WiFi network name"
                 />
               </div>
               <div class="settings-item">
@@ -3788,15 +3803,14 @@
                   type="password"
                   class="settings-input"
                   id="wifiPassword"
-                  placeholder="••••••••"
+                  placeholder="WiFi password"
                 />
               </div>
             </div>
             <div class="settings-group">
               <div class="settings-item">
-                <div class="settings-label">Connect to Router</div>
-                <button class="settings-btn" id="connectWifiBtn">
-                  Connect
+                <button class="settings-btn primary" id="connectWifi">
+                  Connect to WiFi
                 </button>
               </div>
               <div class="settings-item">
@@ -3805,61 +3819,19 @@
                   id="wifiStatus"
                   style="color: var(--text-secondary); font-size: 0.8rem"
                 >
-                  Unknown
+                  AP Mode (192.168.4.1)
                 </div>
               </div>
             </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn" id="wifiModeAPBtn">
-                  Force AP Mode
-                </button>
-              </div>
-              <div class="settings-item">
-                <button class="settings-btn" id="wifiModeSTABtn">
-                  Force STA Mode
-                </button>
-              </div>
+            <div
+              style="
+                font-size: 0.65rem;
+                color: var(--text-secondary);
+                margin-top: 8px;
+              "
+            >
+              Note: After connecting to WiFi, access via darkroom.local
             </div>
-            <!-- Hostname Configuration -->
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Device Hostname</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="hostnameInput"
-                  placeholder="darkroom-timer"
-                  maxlength="32"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Set Hostname</div>
-                <button class="settings-btn" id="setHostnameBtn">Apply</button>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Current Hostname</div>
-                <div
-                  id="hostnameStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  Unknown
-                </div>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">mDNS Access</div>
-                <div
-                  id="mdnsStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  Not available
-                </div>
-              </div>
-            </div>
-            <!-- Shutdown/Reboot buttons removed for Pico 2 W standalone operation -->
-            <!-- Use physical power button to shutdown device -->
           </div>
         </div>
       </div>
@@ -4245,7 +4217,7 @@
                   margin-top: 10px;
                 "
               >
-                Note: When enabled, the timer relay (GPIO 14) will automatically
+                Note: When enabled, the timer relay (GP14) will automatically
                 trigger during countdown timers in CALC and F-STOP TEST tabs.
                 Time is sent as a single request with delay parameter for
                 maximum accuracy.
@@ -4364,7 +4336,7 @@
       </div>
 
       <footer>
-        <div>DARKROOM TIMER v3.0.0</div>
+        <div>DARKROOM TIMER v3.0.0 (Pico 2 W)</div>
         <div>
           Height & Aperture & Paper Size & Contrast Calculator: New Time =
           Original Time × (New Height ÷ Original Height)² × (New F-Stop ÷
@@ -9783,11 +9755,11 @@
       /**
        * @class RelayManager
        * @classdesc Central hub for managing relay control and server communication.
-       * Handles all HTTP requests to Flask server, manages relay state tracking,
+       * Handles all HTTP requests to Pico 2 W server, manages relay state tracking,
        * implements auto-trigger functionality for timer integration, and provides
        * safelight auto-off feature to prevent fogging during exposures.
        *
-       * @property {string} serverIP - The IP address of the Pico 2 W hotspot (default: "192.168.4.1")
+       * @property {string} serverIP - The IP address of the Pico 2 W server (default: "192.168.4.1")
        * @property {number} serverPort - The port number of the HTTP server (default: 80)
        * @property {boolean} autoTrigger - Whether to automatically trigger the enlarger relay when timers start
        * @property {boolean} safelightAutoOff - Whether to automatically turn off safelight when enlarger activates
@@ -9804,16 +9776,16 @@
        * @property {HTMLElement} allRelaysOffBtn - Button to turn all relays off
        *
        * @description
-       * Relay Mapping:
-       * - Relay 1 → GPIO 14 (Enlarger Timer) - Primary exposure control
-       * - Relay 2 → GPIO 15 (Safelight) - Auto-controlled during exposure
-       * - Relay 3 → GPIO 16 (Ventilation)
-       * - Relay 4 → GPIO 17 (White Light)
+       * Relay Mapping (Pico 2 W):
+       * - Relay 1 → GP14 (Enlarger Timer) - Primary exposure control
+       * - Relay 2 → GP15 (Safelight) - Auto-controlled during exposure
+       * - Relay 3 → GP16 (Ventilation)
+       * - Relay 4 → GP17 (White Light)
        *
        * Safelight Auto-Off Flow:
        * 1. User starts exposure (CALC, TEST, or TIMER with auto-trigger)
        * 2. If safelight is on, remember state and turn it OFF
-       * 3. Server starts GPIO 14 timer for specified duration
+       * 3. Server starts GP14 timer for specified duration
        * 4. After duration, safelight is automatically restored
        *
        * Triple-Fallback Fetch Strategy:
@@ -9836,20 +9808,23 @@
         /**
          * @constructor
          * @description Creates a RelayManager instance with default settings and initializes the relay state tracking.
+         * Auto-detects server IP from window.location for seamless AP/STA mode switching.
          * Loads saved settings from localStorage and sets up the initial UI state.
          */
         constructor() {
-          this.serverIP = "192.168.4.1";
-          this.serverPort = 80;
+          // Auto-detect server IP from current page location
+          // This ensures it works in both AP mode (192.168.4.1) and STA mode (router-assigned IP)
+          this.serverIP = window.location.hostname || "192.168.4.1";
+          this.serverPort = parseInt(window.location.port) || 80;
           this.autoTrigger = true;
-          this.safelightAutoOff = true; // NEW: Default to enabled
-          this.safelightWasOn = false; // NEW: Track if safelight was on before enlarger
+          this.safelightAutoOff = true; // Default to enabled
+          this.safelightWasOn = false; // Track if safelight was on before enlarger
 
           this.relayStates = {
-            1: false, // GPIO 14 - Enlarger Timer (Pico 2 W)
-            2: false, // GPIO 15 - Safelight (Pico 2 W)
-            3: false, // GPIO 16 - Ventilation (Pico 2 W)
-            4: false, // GPIO 17 - White Light (Pico 2 W)
+            1: false, // GP14 - Enlarger Timer
+            2: false, // GP15 - Safelight
+            3: false, // GP16 - Ventilation
+            4: false, // GP17 - White Light
           };
 
           this.init();
@@ -9873,18 +9848,6 @@
             "testRelayConnection",
           );
           this.relayStatus = document.getElementById("relayStatus");
-          // WiFi config elements
-          this.wifiSSID = document.getElementById("wifiSSID");
-          this.wifiPassword = document.getElementById("wifiPassword");
-          this.connectWifiBtn = document.getElementById("connectWifiBtn");
-          this.wifiStatus = document.getElementById("wifiStatus");
-          this.wifiModeAPBtn = document.getElementById("wifiModeAPBtn");
-          this.wifiModeSTABtn = document.getElementById("wifiModeSTABtn");
-          // Hostname config elements
-          this.hostnameInput = document.getElementById("hostnameInput");
-          this.setHostnameBtn = document.getElementById("setHostnameBtn");
-          this.hostnameStatus = document.getElementById("hostnameStatus");
-          this.mdnsStatus = document.getElementById("mdnsStatus");
           this.autoTriggerRelay = document.getElementById("autoTriggerRelay");
           this.testTimerRelayBtn = document.getElementById("testTimerRelay");
           this.testTimerSeconds = document.getElementById("testTimerSeconds");
@@ -9898,7 +9861,14 @@
           if (this.autoTriggerRelay)
             this.autoTriggerRelay.checked = this.autoTrigger;
 
-          // Shutdown/Reboot button listeners removed for Pico 2 W standalone operation
+          // Add event listeners for WiFi configuration (Pico 2 W)
+          const connectWifiBtn = document.getElementById("connectWifi");
+          if (connectWifiBtn) {
+            connectWifiBtn.addEventListener("click", () => this.connectWifi());
+          }
+
+          // Load WiFi status on init
+          this.updateWifiStatus();
 
           if (this.relayServerIP)
             this.relayServerIP.addEventListener("change", () =>
@@ -9915,22 +9885,6 @@
           if (this.testRelayConnectionBtn)
             this.testRelayConnectionBtn.addEventListener("click", () =>
               this.testConnection(),
-            );
-          if (this.connectWifiBtn)
-            this.connectWifiBtn.addEventListener("click", () =>
-              this.connectWifi(),
-            );
-          if (this.wifiModeAPBtn)
-            this.wifiModeAPBtn.addEventListener("click", () =>
-              this.switchWiFiMode("ap"),
-            );
-          if (this.wifiModeSTABtn)
-            this.wifiModeSTABtn.addEventListener("click", () =>
-              this.switchWiFiMode("sta"),
-            );
-          if (this.setHostnameBtn)
-            this.setHostnameBtn.addEventListener("click", () =>
-              this.setHostname(),
             );
           if (this.testTimerRelayBtn)
             this.testTimerRelayBtn.addEventListener("click", () =>
@@ -9957,9 +9911,6 @@
           // Update safelight auto-off status display
           this.updateSafelightAutoOffStatus();
 
-          // Fetch initial WiFi status
-          this.getWiFiStatus();
-
           // Add event listener for the toggle in settings
           document
             .getElementById("safelightAutoOff")
@@ -9971,9 +9922,116 @@
             });
         }
 
-        // shutdownPi() method removed for Pico 2 W - use physical power button to shutdown
+        /**
+         * @method shutdownPi
+         * @description Initiates a graceful shutdown of the Raspberry Pi.
+         * Sends a shutdown command to the server with user confirmation.
+         * Provides visual feedback during the shutdown process.
+         * @returns {Promise<void>} Resolves when shutdown command is sent (or fails)
+         * @throws {Error} If shutdown command fails to send
+         * @fires updateStatus - Updates UI with shutdown progress
+         * @fires playBeep - Audio feedback on success
+         * @example
+         * await relayManager.connectWifi(); // Connects to configured WiFi
+         */
+        async connectWifi() {
+          const ssidInput = document.getElementById("wifiSSID");
+          const passwordInput = document.getElementById("wifiPassword");
+          const statusElement = document.getElementById("wifiStatus");
 
-        // rebootPi() method removed for Pico 2 W - use physical power button and reconnect
+          if (!ssidInput || !ssidInput.value.trim()) {
+            if (statusElement)
+              statusElement.textContent = "Please enter WiFi SSID";
+            return;
+          }
+
+          const ssid = ssidInput.value.trim();
+          const password = passwordInput ? passwordInput.value : "";
+
+          if (statusElement) statusElement.textContent = "Connecting...";
+
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/wifi-config?ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.status === "success") {
+                if (statusElement) {
+                  statusElement.textContent = `Connected! IP: ${data.ip || "pending"}`;
+                  statusElement.style.color = "#0f0";
+                }
+                // Update server IP if we got a new one
+                if (data.ip && data.ip !== "0.0.0.0") {
+                  this.serverIP = data.ip;
+                  if (this.relayServerIP) this.relayServerIP.value = data.ip;
+                  this.saveSettings();
+                }
+              } else {
+                if (statusElement) {
+                  statusElement.textContent = `Failed: ${data.message || "Unknown error"}`;
+                  statusElement.style.color = "#f00";
+                }
+              }
+            } else {
+              if (statusElement) {
+                statusElement.textContent = "Connection failed";
+                statusElement.style.color = "#f00";
+              }
+            }
+          } catch (error) {
+            console.error("WiFi connection error:", error);
+            if (statusElement) {
+              statusElement.textContent = "Request failed - check connection";
+              statusElement.style.color = "#f00";
+            }
+          }
+        }
+
+        /**
+         * @method updateWifiStatus
+         * @description Queries the server for current WiFi connection status.
+         * Updates the UI to show current connection mode and IP address.
+         * @returns {Promise<void>}
+         */
+        async updateWifiStatus() {
+          const statusElement = document.getElementById("wifiStatus");
+          if (!statusElement) return;
+
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/wifi-status`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.sta_connected) {
+                statusElement.textContent = `Connected: ${data.sta_ip} (${data.ssid || "WiFi"})`;
+                statusElement.style.color = "#0f0";
+              } else if (data.ap_active) {
+                statusElement.textContent = `AP Mode: ${data.ap_ip}`;
+                statusElement.style.color = "#ff0";
+              } else {
+                statusElement.textContent = "Disconnected";
+                statusElement.style.color = "#f00";
+              }
+            }
+          } catch (error) {
+            // Silently fail on status check - might not be connected yet
+            console.log("WiFi status check failed:", error);
+          }
+        }
 
         /**
          * @method updateSafelightAutoOffStatus
@@ -10028,20 +10086,12 @@
          * relayManager.saveSettings(); // Persists current configuration
          */
         saveSettings() {
-          // Read from UI if available, but don't override auto-detected values unnecessarily
-          const uiIP = this.relayServerIP ? this.relayServerIP.value : null;
-          const uiPort = this.relayServerPort
+          this.serverIP = this.relayServerIP
+            ? this.relayServerIP.value
+            : "192.168.1.100";
+          this.serverPort = this.relayServerPort
             ? parseInt(this.relayServerPort.value)
-            : null;
-
-          // Only update if user explicitly changed the value in the UI
-          if (uiIP && uiIP !== this.serverIP) {
-            this.serverIP = uiIP;
-          }
-          if (uiPort && uiPort !== this.serverPort) {
-            this.serverPort = uiPort;
-          }
-
+            : 5000;
           this.autoTrigger = this.autoTriggerRelay
             ? this.autoTriggerRelay.checked
             : true;
@@ -10071,7 +10121,6 @@
          * @description Loads relay manager settings from localStorage.
          * Restores server configuration, auto-trigger preference, safelight auto-off setting,
          * and relay states. Uses default values if no saved settings exist.
-         * Auto-detects server IP from window.location when served from Pico.
          * @returns {void}
          * @fires localStorage.getItem - Retrieves "relaySettings" and "relayStates" keys
          * @throws {Error} Logs error if localStorage load or parse fails
@@ -10080,47 +10129,24 @@
          */
         loadSettings() {
           try {
-            // Auto-detect server IP from current page location
-            // This ensures API calls go to the same server that served the page
-            const currentHost = window.location.hostname;
-            const currentPort = window.location.port || "80";
-
-            // If page is served from a valid IP (not localhost or file://), use it
-            const isServedFromServer =
-              currentHost &&
-              currentHost !== "localhost" &&
-              currentHost !== "127.0.0.1" &&
-              !currentHost.includes("file://") &&
-              window.location.protocol !== "file:";
-
             const saved = localStorage.getItem("relaySettings");
             if (saved) {
               const settings = JSON.parse(saved);
-              // If served from server, use current host; otherwise use saved/default
-              this.serverIP = isServedFromServer
-                ? currentHost
-                : settings.serverIP || "192.168.4.1";
-              this.serverPort = isServedFromServer
-                ? parseInt(currentPort)
-                : settings.serverPort || 80;
+              // Always use current page location for IP - ensures correct server in AP/STA modes
+              // Only fall back to saved IP if page was opened from file:// or other non-HTTP source
+              this.serverIP =
+                window.location.hostname || settings.serverIP || "192.168.4.1";
+              this.serverPort =
+                parseInt(window.location.port) || settings.serverPort || 80;
               this.autoTrigger = settings.autoTrigger !== false;
-              this.safelightAutoOff = settings.safelightAutoOff !== false; // NEW: Default to true
+              this.safelightAutoOff = settings.safelightAutoOff !== false;
 
               // Load relay states
               const savedStates = localStorage.getItem("relayStates");
               if (savedStates) {
                 this.relayStates = JSON.parse(savedStates);
               }
-            } else {
-              // No saved settings - use auto-detected or defaults
-              this.serverIP = isServedFromServer ? currentHost : "192.168.4.1";
-              this.serverPort = isServedFromServer ? parseInt(currentPort) : 80;
             }
-
-            // Log the detected server for debugging
-            console.log(
-              `RelayManager: Using server ${this.serverIP}:${this.serverPort} (auto-detected: ${isServedFromServer})`,
-            );
           } catch (e) {
             console.error("Failed to load relay settings:", e);
           }
@@ -10128,14 +10154,11 @@
 
         /**
          * @method sendRequest
-         * @description Sends an HTTP GET request to the server with triple-fallback strategy.
+         * @description Sends an HTTP GET request to the Flask server with triple-fallback strategy.
          * Tries CORS mode first, then no-cors mode, then Image object for maximum compatibility.
-         * For timer endpoints, waits for the server to complete the countdown before resolving.
          * @param {string} endpoint - The server endpoint to request (e.g., "ping", "relay", "timer")
          * @param {Object} [params={}] - Query parameters to include in the request
-         * @param {Object} [options={}] - Additional options
-         * @param {boolean} [options.expectJSON=true] - Whether to expect and parse JSON response
-         * @returns {Promise<boolean|Object>} Resolves to true/false for non-timer, or response object for timer
+         * @returns {Promise<boolean>} Resolves to true if request succeeds, false otherwise
          * @throws {Error} May throw if CORS request fails with non-200 status
          * @description Triple-Fallback Strategy:
          * 1. CORS mode (Chrome/Safari) - preferred, allows reading response
@@ -10146,13 +10169,12 @@
          * const success = await relayManager.sendRequest("ping");
          *
          * // Control relay
-         * await relayManager.sendRequest("relay", { gpio: 14, state: "on" });
+         * await relayManager.sendRequest("relay", { gpio: 25, state: "on" });
          *
-         * // Start timer (waits for completion)
-         * const result = await relayManager.sendRequest("timer", { gpio: 14, duration: 10.5 });
+         * // Start timer
+         * await relayManager.sendRequest("timer", { gpio: 25, duration: 10.5 });
          */
-        async sendRequest(endpoint, params = {}, options = {}) {
-          const { expectJSON = true } = options;
+        async sendRequest(endpoint, params = {}) {
           const url = `http://${this.serverIP}:${this.serverPort}/${endpoint}`;
           const queryString = Object.keys(params)
             .map(
@@ -10175,10 +10197,6 @@
             });
 
             if (response.ok) {
-              if (expectJSON) {
-                const data = await response.json();
-                return data;
-              }
               return true;
             } else {
               throw new Error(`HTTP ${response.status}`);
@@ -10191,28 +10209,16 @@
 
             // Fallback 1: Try with no-cors mode
             try {
-              const noCorsResponse = await fetch(fullUrl, {
+              await fetch(fullUrl, {
                 method: "GET",
                 mode: "no-cors",
                 cache: "no-cache",
               });
-              // In no-cors mode, we can't read the response
-              // For timer endpoints, this is problematic, so we return false
-              if (endpoint === "timer") {
-                console.warn("Timer endpoint requires CORS mode");
-                return false;
-              }
-              return true;
+              return true; // Assume success (we can't read response in no-cors mode)
             } catch (noCorsError) {
               console.warn("No-cors fetch failed:", noCorsError);
 
               // Fallback 2: Use Image object (works for GET requests, no CORS)
-              // Note: This is only suitable for non-timer endpoints
-              if (endpoint === "timer") {
-                console.warn("Timer endpoint cannot use Image fallback");
-                return false;
-              }
-
               return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => resolve(true);
@@ -10395,35 +10401,36 @@
          */
         getGPIOPin(relayNum) {
           const pinMap = {
-            1: 14, // Enlarger Timer (Pico 2 W)
-            2: 15, // Safelight (Pico 2 W)
-            3: 16, // Ventilation (Pico 2 W)
-            4: 17, // White Light (Pico 2 W)
+            1: 14, // Enlarger Timer (GP14)
+            2: 15, // Safelight (GP15)
+            3: 16, // Ventilation (GP16)
+            4: 17, // White Light (GP17)
           };
           return pinMap[relayNum] || 14;
         }
 
         /**
          * @method triggerTimerRelay
-         * @description Triggers the enlarger relay with a timed duration and waits for completion.
+         * @description Triggers the enlarger relay with a timed duration.
          * This is the primary method used by CALC, TEST, and TIMER tabs for exposures.
          * Implements the complete safelight auto-off flow with immediate restoration.
          * @param {number} durationSeconds - The exposure duration in seconds
-         * @returns {Promise<boolean>} Resolves to true when timer completes successfully
+         * @returns {Promise<void>} Resolves when timer trigger completes
          * @throws {Error} Logs error if timer request fails
          * @fires console.log - Logs safelight state changes for debugging
-         * @fires sendRequest - Sends timer command to server (gpio=14, duration=durationSeconds)
+         * @fires sendRequest - Sends timer command to server (gpio=25, duration=durationSeconds)
          * @fires updateStatus - Updates UI with timer status
+         * @fires setTimeout - Schedules safelight restoration after exposure
          * @fires setRelay - Controls safelight (relay 2) before and after exposure
          * @description Critical Safelight Flow:
          * 1. Check if auto-trigger is enabled (required for this method)
          * 2. If safelight auto-off is enabled and safelight is on:
          *    - Remember safelight was on
          *    - Turn off safelight (relay 2)
-         * 3. Send timer request to server (gpio=14, duration=durationSeconds)
-         * 4. Wait for server to complete countdown and respond
-         * 5. Restore safelight if it was on
-         * 6. Reset safelightWasOn flag
+         * 3. Send timer request to server (gpio=25, duration=durationSeconds)
+         * 4. After duration:
+         *    - Restore safelight if it was on
+         *    - Reset safelightWasOn flag
          * @example
          * // From CALC tab with 10.5 second exposure
          * await relayManager.triggerTimerRelay(10.5);
@@ -10437,49 +10444,40 @@
         async triggerTimerRelay(durationSeconds) {
           if (!this.autoTrigger) {
             console.log("Auto-trigger disabled");
-            return false;
+            return;
           }
 
-          // Handle safelight auto-off when timer starts
+          // NEW: Handle safelight auto-off when timer starts
           if (this.safelightAutoOff && this.relayStates[2]) {
             console.log("Timer starting - turning off safelight");
             this.safelightWasOn = true;
             await this.setRelay(2, false);
           }
 
-          // Send timer request and wait for completion
-          const enlargerPin = this.getGPIOPin(1);
-          const result = await this.sendRequest("timer", {
-            gpio: enlargerPin,
+          // Send single request with duration parameter
+          const success = await this.sendRequest("timer", {
+            gpio: 14,
             duration: durationSeconds.toFixed(3),
           });
 
-          if (result && result.status === "success") {
+          if (success) {
             this.updateStatus(
-              `Timer completed for ${durationSeconds}s`,
+              `Timer relay triggered for ${durationSeconds}s`,
               "success",
             );
 
-            // Restore safelight after timer completes
+            // NEW: Restore safelight after timer completes
             if (this.safelightAutoOff && this.safelightWasOn) {
-              console.log("Timer completed - restoring safelight");
-              if (!this.relayStates[2]) {
-                await this.setRelay(2, true);
-              }
-              this.safelightWasOn = false;
+              setTimeout(async () => {
+                console.log("Timer completed - restoring safelight");
+                if (!this.relayStates[2]) {
+                  await this.setRelay(2, true);
+                }
+                this.safelightWasOn = false;
+              }, durationSeconds * 1000); // Immediate restoration
             }
-
-            return true;
           } else {
             this.updateStatus("Timer relay failed", "error");
-            // Ensure safelight is restored even on failure
-            if (this.safelightAutoOff && this.safelightWasOn) {
-              if (!this.relayStates[2]) {
-                await this.setRelay(2, true);
-              }
-              this.safelightWasOn = false;
-            }
-            return false;
           }
         }
 
@@ -10511,225 +10509,13 @@
         }
 
         /**
-         * @method triggerSynchronizedTimerRelay
-         * @description Triggers timer on server and starts browser countdown simultaneously.
-         * Returns immediately after starting both timers - does not wait for completion.
-         * @param {number} durationSeconds - The exposure duration in seconds
-         * @returns {Promise<boolean>} Resolves to true when both timers are started
-         * @fires sendRequest - Starts timer on server (non-blocking)
-         */
-        async triggerSynchronizedTimerRelay(durationSeconds) {
-          if (!this.autoTrigger) {
-            console.log("Auto-trigger disabled");
-            return false;
-          }
-
-          // Handle safelight auto-off when timer starts
-          if (this.safelightAutoOff && this.relayStates[2]) {
-            console.log("Timer starting - turning off safelight");
-            this.safelightWasOn = true;
-            await this.setRelay(2, false);
-          }
-
-          // Start timer on server (non-blocking, returns immediately)
-          const enlargerPin = this.getGPIOPin(1);
-          const result = await this.sendRequest("timer", {
-            gpio: enlargerPin,
-            duration: durationSeconds.toFixed(3),
-          });
-
-          if (!result || result.status !== "started") {
-            this.updateStatus("Failed to start timer on server", "error");
-            // Restore safelight on failure
-            if (this.safelightAutoOff && this.safelightWasOn) {
-              if (!this.relayStates[2]) {
-                await this.setRelay(2, true);
-              }
-              this.safelightWasOn = false;
-            }
-            return false;
-          }
-
-          // Server timer started successfully
-          // Browser will handle its own countdown via startInterval()
-          // Safelight will be restored by the completion handler
-
-          return true;
-        }
-
-        /**
-         * @method handleTimerCompletion
-         * @description Called when browser timer completes.
-         * Restores safelight if needed and cleans up.
-         * @returns {Promise<void>}
-         */
-        async handleTimerCompletion() {
-          // Restore safelight after timer completes
-          if (this.safelightAutoOff && this.safelightWasOn) {
-            console.log("Timer completed - restoring safelight");
-            if (!this.relayStates[2]) {
-              await this.setRelay(2, true);
-            }
-            this.safelightWasOn = false;
-          }
-        }
-
-        /**
-         * Fetch WiFi status and update UI; if STA is connected, update server IP.
-         */
-        async getWiFiStatus() {
-          try {
-            const url = `http://${this.serverIP}:${this.serverPort}/wifi-status`;
-            const res = await fetch(url, { method: "GET", mode: "cors" });
-            if (!res.ok) throw new Error("HTTP status " + res.status);
-            const data = await res.json();
-            const {
-              mode,
-              ap_active,
-              ap_ip,
-              sta_connected,
-              sta_ip,
-              ap_ssid,
-              sta_ssid,
-              ap_hostname,
-              sta_hostname,
-            } = data;
-            const statusText = `Mode: ${mode} • AP: ${ap_active ? ap_ip : "off"} • STA: ${sta_connected ? sta_ip : "disconnected"}`;
-            if (this.wifiStatus) this.wifiStatus.textContent = statusText;
-
-            // Update hostname display
-            const currentHostname = ap_hostname || sta_hostname || "unknown";
-            if (this.hostnameStatus) {
-              this.hostnameStatus.textContent = currentHostname;
-            }
-
-            // Update mDNS status
-            if (this.mdnsStatus) {
-              if (currentHostname && currentHostname !== "unknown") {
-                this.mdnsStatus.textContent = `http://${currentHostname}.local`;
-              } else {
-                this.mdnsStatus.textContent = "Not available";
-              }
-            }
-
-            // If STA is connected, update server IP automatically
-            if (sta_connected && sta_ip) {
-              this.serverIP = sta_ip;
-              if (this.relayServerIP) this.relayServerIP.value = sta_ip;
-              this.saveSettings();
-            }
-          } catch (e) {
-            if (this.wifiStatus)
-              this.wifiStatus.textContent = "WiFi status unavailable";
-            if (this.hostnameStatus)
-              this.hostnameStatus.textContent = "Unknown";
-            if (this.mdnsStatus) this.mdnsStatus.textContent = "Not available";
-          }
-        }
-
-        /**
-         * Submit SSID/password to the Pico and attempt STA connection. Updates status.
-         */
-        async connectWifi() {
-          const ssid = this.wifiSSID ? this.wifiSSID.value : "";
-          const password = this.wifiPassword ? this.wifiPassword.value : "";
-          if (!ssid) {
-            this.updateStatus("Enter SSID", "error");
-            return;
-          }
-          this.updateStatus("Connecting to router...", "info");
-          try {
-            const ok = await this.sendRequest("wifi-config", {
-              ssid,
-              password,
-            });
-            if (ok) {
-              // Try to read details
-              await this.getWiFiStatus();
-              this.updateStatus("Router connection requested", "success");
-            } else {
-              this.updateStatus("WiFi connect failed", "error");
-            }
-          } catch (e) {
-            this.updateStatus("WiFi connect error", "error");
-          }
-        }
-
-        /**
-         * Switch WiFi mode explicitly (ap|sta) using saved credentials for STA.
-         */
-        async switchWiFiMode(mode) {
-          try {
-            const ok = await this.sendRequest("wifi-mode", { value: mode });
-            if (ok) {
-              await this.getWiFiStatus();
-              this.updateStatus(
-                `Switched WiFi to ${mode.toUpperCase()}`,
-                "success",
-              );
-            } else {
-              this.updateStatus("WiFi mode switch failed", "error");
-            }
-          } catch (e) {
-            this.updateStatus("WiFi mode switch error", "error");
-          }
-        }
-
-        /**
-         * Set device hostname for mDNS and DHCP
-         */
-        async setHostname() {
-          const hostname = this.hostnameInput
-            ? this.hostnameInput.value.trim()
-            : "";
-
-          if (!hostname) {
-            this.updateStatus("Enter hostname", "error");
-            return;
-          }
-
-          // Validate hostname (32 chars max, alphanumeric and hyphens only)
-          if (hostname.length > 32) {
-            this.updateStatus("Hostname too long (max 32)", "error");
-            return;
-          }
-
-          if (!/^[a-zA-Z0-9-]+$/.test(hostname)) {
-            this.updateStatus(
-              "Invalid format (use letters, numbers, hyphens)",
-              "error",
-            );
-            return;
-          }
-
-          this.updateStatus("Setting hostname...", "info");
-
-          try {
-            const ok = await this.sendRequest("wifi-hostname", { hostname });
-            if (ok) {
-              await this.getWiFiStatus();
-              this.updateStatus(
-                `Hostname set to '${hostname}' - restart WiFi to apply`,
-                "success",
-              );
-              // Clear input
-              if (this.hostnameInput) this.hostnameInput.value = "";
-            } else {
-              this.updateStatus("Failed to set hostname", "error");
-            }
-          } catch (e) {
-            this.updateStatus("Hostname set error", "error");
-          }
-        }
-
-        /**
          * @method testTimerRelay
          * @description Tests the timer relay functionality with a user-specified duration.
          * Reads duration from UI input and triggers the enlarger with safelight handling.
          * Useful for testing exposure timing and safelight auto-off feature.
-         * @returns {Promise<boolean>} Resolves to true when test timer completes successfully
+         * @returns {Promise<void>} Resolves when test timer completes
          * @fires parseFloat - Reads duration from testTimerSeconds input element
-         * @fires triggerSynchronizedTimerRelay - Starts exposure with specified duration
+         * @fires triggerTimerRelay - Starts exposure with specified duration
          * @example
          * // User clicks "Test Timer Relay" button
          * // Reads value from testTimerSeconds input (default: 5 seconds)
@@ -10740,9 +10526,8 @@
             this.testTimerSeconds ? this.testTimerSeconds.value : 5,
           );
           if (seconds > 0) {
-            return await this.triggerSynchronizedTimerRelay(seconds);
+            await this.triggerTimerRelay(seconds);
           }
-          return false;
         }
 
         /**
@@ -11769,19 +11554,18 @@
 
           appState.ui.timerStatus = "EXPOSURE IN PROGRESS";
 
-          // TRIGGER SYNCHRONIZED TIMER HERE
+          // TRIGGER RELAY HERE
           if (window.relayManager && window.relayManager.autoTrigger) {
             try {
-              // Start synchronized timer - browser and server count down together
-              await window.relayManager.triggerSynchronizedTimerRelay(
+              await window.relayManager.triggerTimerRelay(
                 this.thisExposureTime,
               );
             } catch (error) {
-              console.error("Failed to trigger synchronized timer:", error);
+              console.error("Failed to trigger relay:", error);
             }
           }
 
-          // Now start the actual exposure timer (browser-side)
+          // Now start the actual exposure timer
           this.isRunning = true;
           this.isPaused = false;
           this.lastBeepSecond = null;
@@ -11934,11 +11718,6 @@
           appState.ui.timerStatus = "EXPOSURE COMPLETE";
           this.updateCalculations();
           this.currentTime = this.thisExposureTime;
-
-          // Handle timer completion (restore safelight if needed)
-          if (window.relayManager) {
-            window.relayManager.handleTimerCompletion();
-          }
 
           // Log this CALC exposure
           if (window.exposureLogManager) {
@@ -14149,7 +13928,7 @@
          * @param {number} stepTime - Exposure time for this step in seconds
          * @returns {Promise<void>} Resolves when relay trigger completes
          * @throws {Error} Logs error if relay trigger fails
-         * @fires relayManager.triggerSynchronizedTimerRelay - Sends timer command to server
+         * @fires relayManager.triggerTimerRelay - Sends timer command to server
          * @example
          * await this.triggerRelayForStep(10.5); // Trigger for 10.5s
          */
@@ -14160,7 +13939,7 @@
             stepTime > 0
           ) {
             try {
-              await window.relayManager.triggerSynchronizedTimerRelay(stepTime);
+              await window.relayManager.triggerTimerRelay(stepTime);
             } catch (error) {
               console.error("Failed to trigger relay for step:", error);
             }
@@ -14222,14 +14001,12 @@
 
           this.updatePreview();
 
-          // TRIGGER SYNCHRONIZED TIMER FOR THIS STEP
+          // TRIGGER RELAY FOR THIS STEP - AWAIT HERE
           if (window.relayManager && window.relayManager.autoTrigger) {
             try {
-              await window.relayManager.triggerSynchronizedTimerRelay(
-                step.time,
-              );
+              await window.relayManager.triggerTimerRelay(step.time);
             } catch (error) {
-              console.error("Failed to trigger synchronized timer:", error);
+              console.error("Failed to trigger relay:", error);
             }
           }
 
@@ -14705,11 +14482,6 @@
           // Highlight all steps as complete
           this.currentStep = this.steps.length;
           this.updatePreview();
-
-          // Handle timer completion (restore safelight if needed)
-          if (window.relayManager) {
-            window.relayManager.handleTimerCompletion();
-          }
 
           // Log test strip session
           if (window.exposureLogManager && this.steps.length > 0) {
