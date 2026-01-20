@@ -23,15 +23,23 @@ class TimerManager:
     - Status tracking
     """
     
-    def __init__(self, gpio_control):
+    def __init__(self, gpio_control, temperature_sensor=None):
         """
         Initialize timer manager.
         
         Args:
             gpio_control: GPIOControl instance for relay control
+            temperature_sensor: Optional TemperatureSensor instance for heating control
         """
         self.gpio = gpio_control
         self.active_timers = {}  # pin -> task info
+        self.temperature_sensor = temperature_sensor
+        self.heating_task = None
+        self.target_temperature = 20.0  # Default target in Celsius
+        self.heating_hysteresis = 0.5  # Dead zone in Celsius
+        self.heating_pin = 16  # GP16 for heating element
+        self.heating_enabled = False  # Temperature control disabled by default
+        self.last_temperature = None  # Last read temperature
     
     def get_current_time_ms(self):
         """Get current time in milliseconds since boot."""
@@ -164,10 +172,14 @@ class TimerManager:
         return True
     
     def stop_all_timers(self):
-        """Stop all active timers."""
+        """Stop all active timers and heating control."""
         pins = list(self.active_timers.keys())
         for pin in pins:
             self.stop_timer(pin)
+        
+        if self.heating_task:
+            self.heating_task.cancel()
+            self.heating_task = None
     
     def get_timer_status(self, pin):
         """
@@ -226,3 +238,111 @@ class TimerManager:
     def get_active_count(self):
         """Get count of active timers."""
         return len(self.active_timers)
+    
+    async def start_heating_control(self):
+        """
+        Start background heating control task.
+        
+        Polls temperature sensor every 15 seconds ONLY when enabled.
+        Controls relay using hysteresis: ON when temp < (target - hysteresis),
+        OFF when temp >= target.
+        When disabled, relay is OFF and no sensor reads occur.
+        """
+        if not self.temperature_sensor:
+            print("WARNING: No temperature sensor configured, heating disabled")
+            return
+        
+        print("Heating control task started (waits for enable command)...")
+        
+        try:
+            while True:
+                if not self.heating_enabled:
+                    # Disabled - don't touch relay, allow manual control
+                    # Just wait and check enable state periodically
+                    await asyncio.sleep(1)  # Check enable state every 1s
+                    continue
+                
+                # Enabled - read temperature (async, 750ms conversion + delay)
+                temp = await self.temperature_sensor.read_temperature_async()
+                self.last_temperature = temp
+                
+                if temp is None:
+                    # Sensor read failed - ensure relay is OFF for safety
+                    self.gpio.set_relay_state(self.heating_pin, False)
+                    print("Heating: Sensor error - relay OFF (safety)")
+                else:
+                    # Apply hysteresis control
+                    current_relay_state = self.gpio.get_relay_state(self.heating_pin)
+                    
+                    if temp < (self.target_temperature - self.heating_hysteresis):
+                        # Turn relay ON (heating)
+                        if not current_relay_state:
+                            self.gpio.set_relay_state(self.heating_pin, True)
+                            print(f"Heating: ON (temp={temp:.1f}°C < {self.target_temperature - self.heating_hysteresis:.1f}°C)")
+                    elif temp >= self.target_temperature:
+                        # Turn relay OFF (reached target)
+                        if current_relay_state:
+                            self.gpio.set_relay_state(self.heating_pin, False)
+                            print(f"Heating: OFF (temp={temp:.1f}°C >= {self.target_temperature:.1f}°C)")
+                
+                # Wait 15 seconds before next poll
+                await asyncio.sleep(15)
+                
+        except asyncio.CancelledError:
+            # Heating control cancelled
+            self.gpio.set_relay_state(self.heating_pin, False)
+            print("Heating control stopped, relay OFF")
+            raise
+        except Exception as e:
+            print(f"ERROR in heating control: {e}")
+            self.gpio.set_relay_state(self.heating_pin, False)
+    
+    def set_target_temperature(self, target_celsius):
+        """
+        Set target temperature for heating control.
+        
+        Args:
+            target_celsius (float): Target temperature in Celsius
+        """
+        self.target_temperature = target_celsius
+        print(f"Target temperature set to {target_celsius}°C")
+    
+    def get_heating_status(self):
+        """
+        Get heating control status.
+        
+        Returns:
+            dict: Heating status with temperature, target, relay state, and enabled flag
+        """
+        if not self.temperature_sensor:
+            return {"error": "Temperature sensor not configured"}
+        
+        relay_state = self.gpio.get_relay_state(self.heating_pin)
+        
+        return {
+            "temperature": self.last_temperature,
+            "target": self.target_temperature,
+            "relay_on": relay_state,
+            "connected": self.temperature_sensor.is_connected() if self.heating_enabled else False,
+            "enabled": self.heating_enabled
+        }
+    
+    def set_heating_enabled(self, enabled):
+        """
+        Enable or disable temperature control.
+        
+        When disabled, sensor reading stops and relay turns OFF.
+        
+        Args:
+            enabled (bool): True to enable, False to disable
+        """
+        self.heating_enabled = enabled
+        if not enabled:
+            # Immediately turn off relay when disabled
+            self.gpio.set_relay_state(self.heating_pin, False)
+            self.last_temperature = None
+        print(f"Temperature control {'enabled' if enabled else 'disabled'}")
+    
+    def is_heating_enabled(self):
+        """Check if heating control is enabled."""
+        return self.heating_enabled

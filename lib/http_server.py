@@ -481,6 +481,120 @@ class HTTPServer:
         
         await self._sendall(conn, response)
     
+    async def _handle_temperature(self, conn, params):
+        """Handle /temperature endpoint - get current temperature reading."""
+        if not self.timer.temperature_sensor:
+            response = self._json_response({
+                "error": "Temperature sensor not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            status = self.timer.get_heating_status()
+            response = self._json_response({
+                "status": "success",
+                "temperature": status.get("temperature"),
+                "target": status.get("target"),
+                "relay_on": status.get("relay_on"),
+                "connected": status.get("connected"),
+                "enabled": status.get("enabled"),
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to read temperature: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_temperature_control(self, conn, params):
+        """Handle /temperature-control endpoint - set target temperature."""
+        if not self.timer.temperature_sensor:
+            response = self._json_response({
+                "error": "Temperature sensor not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            target_str = params.get('target', '').strip()
+            
+            if not target_str:
+                response = self._json_response({
+                    "error": "Target temperature is required (query param: ?target=X)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            target = float(target_str)
+            
+            # Validate range (18°C to 40°C for photo chemicals)
+            if target < 15 or target > 50:
+                response = self._json_response({
+                    "error": f"Target temperature out of range. Valid range: 15°C - 50°C"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            # Set target temperature
+            self.timer.set_target_temperature(target)
+            
+            response = self._json_response({
+                "status": "success",
+                "message": f"Target temperature set to {target}°C",
+                "target": target,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError:
+            response = self._json_response({
+                "error": f"Invalid target temperature: {params.get('target')}. Must be a number."
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to set temperature: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_temperature_enable(self, conn, params):
+        """Handle /temperature-enable endpoint - enable or disable temperature control."""
+        if not self.timer.temperature_sensor:
+            response = self._json_response({
+                "error": "Temperature sensor not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            enabled_str = params.get('enabled', '').strip().lower()
+            
+            if enabled_str not in ('true', 'false', '1', '0'):
+                response = self._json_response({
+                    "error": "enabled parameter required (true/false)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            enabled = enabled_str in ('true', '1')
+            self.timer.set_heating_enabled(enabled)
+            
+            response = self._json_response({
+                "status": "success",
+                "enabled": enabled,
+                "message": f"Temperature control {'enabled' if enabled else 'disabled'}",
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to set temperature enable: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
     async def _handle_options(self, conn):
         """Handle OPTIONS preflight request."""
         response = (
@@ -529,6 +643,12 @@ class HTTPServer:
                 await self._handle_status(conn, params)
             elif path == '/all':
                 await self._handle_all(conn, params)
+            elif path == '/temperature':
+                await self._handle_temperature(conn, params)
+            elif path == '/temperature-control':
+                await self._handle_temperature_control(conn, params)
+            elif path == '/temperature-enable':
+                await self._handle_temperature_enable(conn, params)
             elif path == '/wifi-status':
                 await self._handle_wifi_status(conn, params)
             elif path == '/wifi-config':

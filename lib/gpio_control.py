@@ -11,7 +11,7 @@ from machine import Pin
 RELAY_PINS = {
     14: {"name": "Enlarger Timer", "state": False},
     15: {"name": "Safelight", "state": False},
-    16: {"name": "Ventilation", "state": False},
+    16: {"name": "Heating Element", "state": False},
     17: {"name": "White Light", "state": False}
 }
 

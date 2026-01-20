@@ -3731,6 +3731,102 @@
             </div>
           </div>
 
+          <!-- Temperature Control Section -->
+          <div class="settings-section">
+            <div class="title-md">Temperature Control</div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <div class="settings-label">Enable Temperature Control</div>
+                <label class="switch">
+                  <input type="checkbox" id="temperatureControlToggle" />
+                  <span class="slider-switch"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Temperature Control Content (hidden when disabled) -->
+            <div id="temperatureControlContent" style="display: none">
+              <div class="info-box">
+                <div class="label-sm">Current Temperature</div>
+                <div
+                  class="value-display"
+                  id="temperatureDisplay"
+                  style="font-size: 1.8em"
+                >
+                  -- °C
+                </div>
+                <div
+                  class="label-sm"
+                  id="temperatureStatus"
+                  style="margin-top: 4px"
+                >
+                  Disabled
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Target (°C)</div>
+                  <input
+                    type="number"
+                    id="targetTemperatureInput"
+                    class="settings-input"
+                    placeholder="20.0"
+                    min="15"
+                    max="50"
+                    step="0.5"
+                    value="20.0"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">&nbsp;</div>
+                  <button class="settings-btn primary" id="setTargetTempBtn">
+                    Set Target
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Heating (GP16)</div>
+                  <div id="relayStatusDisplay" class="value-display">OFF</div>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Dead Zone</div>
+                  <div id="hysteresisInfo" class="value-display">±0.5°C</div>
+                </div>
+              </div>
+
+              <div class="label-sm" style="margin-top: 12px">
+                Temperature History (15 min)
+              </div>
+              <canvas
+                id="temperatureChart"
+                height="150"
+                style="
+                  width: 100%;
+                  border: 1px solid var(--border);
+                  background: var(--bg-darker);
+                  margin-top: 4px;
+                "
+              ></canvas>
+
+              <div id="dataPointsInfo" class="label-sm" style="margin-top: 8px">
+                0 readings
+              </div>
+
+              <div
+                id="temperatureConnectionStatus"
+                class="info-box"
+                style="margin-top: 12px; display: none; background: #ffeaa7"
+              >
+                <div class="label-sm" style="color: #d63031">
+                  ⚠️ Sensor Disconnected - Relay OFF
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="settings-section">
             <div class="title-md">Controller Manager</div>
             <div class="settings-group">
@@ -4754,6 +4850,447 @@
           return this.running;
         }
       }
+
+      // ===== TEMPERATURE MANAGER =====
+      /**
+       * TemperatureManager - Handles temperature sensor polling and UI updates
+       *
+       * Polls /temperature endpoint every 1-2 seconds, maintains circular buffer
+       * of last 60 readings (15-min rolling window), renders live graph.
+       * Target temperature persisted to localStorage.
+       *
+       * @class
+       */
+      class TemperatureManager {
+        constructor() {
+          this.serverIP = window.serverIP || "192.168.4.1";
+          this.pollInterval = 15000; // Poll every 15 seconds (matches backend sensor read)
+          this.pollTask = null;
+          this.dataBuffer = []; // Circular buffer (max 60 points)
+          this.maxDataPoints = 60; // 15 minutes at 15sec intervals
+          this.lastUpdateTime = 0;
+          this.enabled = false;
+
+          // Storage keys
+          this.storageKey = "temperature_target";
+          this.enabledKey = "temperature_enabled";
+
+          // Load settings from localStorage
+          this.targetTemperature = this.loadTargetTemperature();
+          this.enabled = this.loadEnabled();
+
+          // Initialize UI elements
+          this.initUI();
+        }
+
+        initUI() {
+          const targetInput = document.getElementById("targetTemperatureInput");
+          const setBtn = document.getElementById("setTargetTempBtn");
+          const toggle = document.getElementById("temperatureControlToggle");
+          const content = document.getElementById("temperatureControlContent");
+
+          if (targetInput) {
+            targetInput.value = this.targetTemperature.toFixed(1);
+          }
+
+          if (setBtn) {
+            setBtn.addEventListener("click", () => this.setTargetTemperature());
+          }
+
+          // Enter key support
+          if (targetInput) {
+            targetInput.addEventListener("keypress", (e) => {
+              if (e.key === "Enter") {
+                this.setTargetTemperature();
+              }
+            });
+          }
+
+          // Toggle switch handler
+          if (toggle) {
+            toggle.checked = this.enabled;
+            toggle.addEventListener("change", () => {
+              this.setEnabled(toggle.checked);
+            });
+          }
+
+          // Show/hide content based on enabled state
+          if (content) {
+            content.style.display = this.enabled ? "block" : "none";
+          }
+
+          // If enabled from localStorage, sync with backend and start polling
+          if (this.enabled) {
+            this.syncAndStartPolling();
+          }
+        }
+
+        async syncAndStartPolling() {
+          // Sync enable state with backend on startup
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/temperature-enable?enabled=true`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.startPolling();
+              this.pollTemperature();
+            } else {
+              console.warn(
+                "Failed to enable temperature on backend:",
+                data.error,
+              );
+              // Disable locally if backend fails
+              this.enabled = false;
+              this.saveEnabled(false);
+              const toggle = document.getElementById(
+                "temperatureControlToggle",
+              );
+              if (toggle) toggle.checked = false;
+              const content = document.getElementById(
+                "temperatureControlContent",
+              );
+              if (content) content.style.display = "none";
+            }
+          } catch (e) {
+            console.error("Failed to sync with backend:", e);
+            // Keep local state but show connection error
+            const statusEl = document.getElementById("temperatureStatus");
+            if (statusEl) statusEl.textContent = "⚠️ Server unreachable";
+          }
+        }
+
+        loadTargetTemperature() {
+          const saved = localStorage.getItem(this.storageKey);
+          return saved ? parseFloat(saved) : 20.0;
+        }
+
+        saveTargetTemperature(target) {
+          localStorage.setItem(this.storageKey, target.toFixed(1));
+        }
+
+        loadEnabled() {
+          return localStorage.getItem(this.enabledKey) === "true";
+        }
+
+        saveEnabled(enabled) {
+          localStorage.setItem(this.enabledKey, enabled.toString());
+        }
+
+        isEnabled() {
+          return this.enabled;
+        }
+
+        async setEnabled(enabled) {
+          // Send enable/disable command to backend first
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/temperature-enable?enabled=${enabled}`,
+            );
+            const data = await response.json();
+
+            if (data.status !== "success") {
+              console.error("Failed to set temperature enable:", data.error);
+              // Revert toggle state on failure
+              const toggle = document.getElementById(
+                "temperatureControlToggle",
+              );
+              if (toggle) toggle.checked = this.enabled;
+              alert(
+                `Error: ${data.error || "Failed to enable temperature control"}`,
+              );
+              return;
+            }
+          } catch (e) {
+            console.error("Error setting temperature enable:", e);
+            // Revert toggle state on failure
+            const toggle = document.getElementById("temperatureControlToggle");
+            if (toggle) toggle.checked = this.enabled;
+            alert("Failed to connect to server");
+            return;
+          }
+
+          // Backend confirmed - update local state
+          this.enabled = enabled;
+          this.saveEnabled(enabled);
+
+          const content = document.getElementById("temperatureControlContent");
+          const statusEl = document.getElementById("temperatureStatus");
+
+          if (content) {
+            content.style.display = enabled ? "block" : "none";
+          }
+
+          if (enabled) {
+            this.startPolling();
+            // Immediately poll to get first reading
+            this.pollTemperature();
+            if (statusEl) {
+              statusEl.textContent = "Starting...";
+            }
+          } else {
+            this.stopPolling();
+            // Clear data buffer when disabled
+            this.dataBuffer = [];
+            if (statusEl) {
+              statusEl.textContent = "Disabled";
+            }
+          }
+        }
+
+        async setTargetTemperature() {
+          try {
+            const input = document.getElementById("targetTemperatureInput");
+            if (!input) return;
+
+            const target = parseFloat(input.value);
+
+            if (isNaN(target) || target < 15 || target > 50) {
+              alert("Temperature must be between 15°C and 50°C");
+              input.value = this.targetTemperature.toFixed(1);
+              return;
+            }
+
+            // Send to server
+            const response = await fetch(
+              `http://${this.serverIP}/temperature-control?target=${target}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.targetTemperature = target;
+              this.saveTargetTemperature(target);
+              console.log(`✓ Target temperature set to ${target}°C`);
+            } else {
+              alert(`Error: ${data.error || "Failed to set temperature"}`);
+              input.value = this.targetTemperature.toFixed(1);
+            }
+          } catch (e) {
+            console.error("Error setting temperature:", e);
+            alert("Failed to set temperature - server unreachable?");
+          }
+        }
+
+        async pollTemperature() {
+          try {
+            const response = await fetch(`http://${this.serverIP}/temperature`);
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.addDataPoint(data.temperature, data.target, data.relay_on);
+              this.updateDisplay(data);
+            } else {
+              console.warn("Temperature read failed:", data.error);
+              this.updateDisplayError(data.error);
+            }
+          } catch (e) {
+            console.error("Temperature poll error:", e);
+            this.updateDisplayError("Connection failed");
+          }
+        }
+
+        addDataPoint(temp, target, relayOn) {
+          if (temp === null || temp === undefined) return;
+
+          this.dataBuffer.push({
+            temp,
+            target,
+            relayOn,
+            timestamp: Date.now(),
+          });
+
+          // Keep circular buffer size
+          if (this.dataBuffer.length > this.maxDataPoints) {
+            this.dataBuffer.shift();
+          }
+        }
+
+        updateDisplay(data) {
+          // Update current temperature
+          const tempDisplay = document.getElementById("temperatureDisplay");
+          if (tempDisplay && data.temperature !== null) {
+            tempDisplay.textContent = `${data.temperature.toFixed(1)} °C`;
+
+            // Color code based on status
+            if (data.temperature < data.target - 0.5) {
+              tempDisplay.style.color = "#74b9ff"; // Blue - heating
+            } else if (data.temperature >= data.target) {
+              tempDisplay.style.color = "#00b894"; // Green - at target
+            } else {
+              tempDisplay.style.color = "#fdcb6e"; // Orange - close
+            }
+          }
+
+          // Update status
+          const statusEl = document.getElementById("temperatureStatus");
+          if (statusEl) {
+            if (!data.connected) {
+              statusEl.textContent = "⚠️ Sensor disconnected";
+              statusEl.style.color = "#d63031";
+            } else if (data.relay_on) {
+              statusEl.textContent = "🔥 Heating...";
+              statusEl.style.color = "#ff7675";
+            } else {
+              statusEl.textContent = "✓ Ready";
+              statusEl.style.color = "#00b894";
+            }
+          }
+
+          // Update relay status
+          const relayDisplay = document.getElementById("relayStatusDisplay");
+          if (relayDisplay) {
+            relayDisplay.textContent = data.relay_on ? "ON" : "OFF";
+            relayDisplay.style.color = data.relay_on
+              ? "#ff7675"
+              : "var(--text)";
+          }
+
+          // Update connection status alert
+          const connStatus = document.getElementById(
+            "temperatureConnectionStatus",
+          );
+          if (connStatus) {
+            connStatus.style.display = !data.connected ? "block" : "none";
+          }
+
+          // Update data points info
+          const pointsInfo = document.getElementById("dataPointsInfo");
+          if (pointsInfo) {
+            pointsInfo.textContent = `${this.dataBuffer.length} readings in buffer`;
+          }
+
+          // Render graph
+          this.renderGraph();
+        }
+
+        updateDisplayError(error) {
+          const statusEl = document.getElementById("temperatureStatus");
+          if (statusEl) {
+            statusEl.textContent = `⚠️ ${error}`;
+            statusEl.style.color = "#d63031";
+          }
+
+          const connStatus = document.getElementById(
+            "temperatureConnectionStatus",
+          );
+          if (connStatus) {
+            connStatus.style.display = "block";
+          }
+        }
+
+        renderGraph() {
+          const canvas = document.getElementById("temperatureChart");
+          if (!canvas || this.dataBuffer.length === 0) return;
+
+          const ctx = canvas.getContext("2d");
+          const width = canvas.offsetWidth;
+          const height = canvas.height;
+
+          // Clear canvas
+          ctx.fillStyle = "var(--bg-darker)";
+          ctx.fillRect(0, 0, width, height);
+
+          // Find min/max temps for scaling
+          let minTemp = Math.min(...this.dataBuffer.map((p) => p.temp));
+          let maxTemp = Math.max(...this.dataBuffer.map((p) => p.temp));
+          const targetTemp = this.dataBuffer[0].target;
+
+          // Add some padding
+          const tempRange = maxTemp - minTemp || 1;
+          minTemp = Math.floor(minTemp - tempRange * 0.1);
+          maxTemp = Math.ceil(maxTemp + tempRange * 0.1);
+
+          const tempScale = maxTemp - minTemp || 1;
+
+          // Draw grid and labels
+          ctx.strokeStyle = "rgba(100, 100, 100, 0.2)";
+          ctx.lineWidth = 1;
+          ctx.font = "10px sans-serif";
+          ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
+
+          // Horizontal grid lines
+          for (let t = Math.ceil(minTemp); t <= Math.floor(maxTemp); t++) {
+            const y = height - ((t - minTemp) / tempScale) * height;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+            ctx.fillText(t.toFixed(1), 3, y - 2);
+          }
+
+          // Draw target line
+          const targetY =
+            height - ((targetTemp - minTemp) / tempScale) * height;
+          ctx.strokeStyle = "rgba(0, 184, 148, 0.3)"; // Green dashed
+          ctx.setLineDash([5, 5]);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, targetY);
+          ctx.lineTo(width, targetY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Draw temperature line
+          ctx.strokeStyle = "#74b9ff"; // Blue
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+
+          const pointSpacing = width / Math.max(this.dataBuffer.length - 1, 1);
+          for (let i = 0; i < this.dataBuffer.length; i++) {
+            const x = i * pointSpacing;
+            const y =
+              height -
+              ((this.dataBuffer[i].temp - minTemp) / tempScale) * height;
+
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+
+          // Draw current point (larger)
+          if (this.dataBuffer.length > 0) {
+            const lastPoint = this.dataBuffer[this.dataBuffer.length - 1];
+            const x = width - 2;
+            const y =
+              height - ((lastPoint.temp - minTemp) / tempScale) * height;
+
+            ctx.fillStyle = lastPoint.relayOn ? "#ff7675" : "#00b894";
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        startPolling() {
+          if (this.pollTask) return;
+          console.log("Starting temperature polling...");
+          this.pollTask = setInterval(
+            () => this.pollTemperature(),
+            this.pollInterval,
+          );
+        }
+
+        stopPolling() {
+          if (this.pollTask) {
+            clearInterval(this.pollTask);
+            this.pollTask = null;
+            console.log("Temperature polling stopped");
+          }
+        }
+
+        refreshDisplay() {
+          // Called when CONTROL tab is shown and temperature is enabled
+          if (this.enabled) {
+            this.pollTemperature();
+            this.renderGraph();
+          }
+        }
+      }
+
       // Application State - Single Source of Truth Pattern
       // =====================================================
       // STATE MANAGEMENT ARCHITECTURE:
@@ -5211,6 +5748,13 @@
         } else if (tabId === "relay") {
           if (window.relayManager) {
             window.relayManager.updateRelayButtons();
+          }
+          // Update temperature display if enabled
+          if (
+            window.temperatureManager &&
+            window.temperatureManager.isEnabled()
+          ) {
+            window.temperatureManager.refreshDisplay();
           }
         }
       }
@@ -15983,6 +16527,9 @@
 
         // Initialize relay manager
         window.relayManager = new RelayManager();
+
+        // Initialize temperature manager
+        window.temperatureManager = new TemperatureManager();
 
         // Initialize Real-Time Auto Factorial Development manager
         window.realTimeAutoFactorial = new RealTimeAutoFactorial(timerManager);

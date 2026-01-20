@@ -20,6 +20,7 @@ import time
 # Import modules from lib folder
 from lib.gpio_control import GPIOControl
 from lib.timer_manager import TimerManager
+from lib.temperature_sensor import TemperatureSensor
 from lib.wifi_ap import WiFiAP
 from lib.wifi_sta import WiFiSTA
 from lib.http_server import HTTPServer
@@ -45,9 +46,13 @@ class DarkroomTimer:
         print("\nInitializing GPIO...")
         self.gpio = GPIOControl()
         
-        # Initialize timer manager
+        # Initialize temperature sensor
+        print("\nInitializing temperature sensor...")
+        self.temperature = TemperatureSensor(pin_num=18)
+        
+        # Initialize timer manager with temperature sensor
         print("\nInitializing timer manager...")
-        self.timer = TimerManager(self.gpio)
+        self.timer = TimerManager(self.gpio, self.temperature)
         
         # Set mDNS hostname BEFORE any WiFi initialization
         # This MUST be done before creating WLAN interfaces
@@ -153,7 +158,8 @@ class DarkroomTimer:
             
             # Create async tasks
             tasks = [
-                asyncio.create_task(self.http.run_async())
+                asyncio.create_task(self.http.run_async()),
+                asyncio.create_task(self.timer.start_heating_control())
             ]
             
             # Run forever
