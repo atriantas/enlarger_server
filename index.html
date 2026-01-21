@@ -1454,6 +1454,13 @@
           >
             TEST
           </button>
+          <button
+            class="tab-dropdown-item"
+            data-tab="light-meter"
+            role="menuitem"
+          >
+            METER
+          </button>
           <button class="tab-dropdown-item" data-tab="split" role="menuitem">
             SPLIT
           </button>
@@ -4392,6 +4399,670 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- LIGHT METER / CONTRAST ANALYZER Tab -->
+      <div id="light-meter" class="tab-content">
+        <!-- Mode Selection -->
+        <div class="control">
+          <div class="control-label">
+            <span>METER MODE</span>
+            <span class="value-display" id="meterModeValue">Exposure</span>
+          </div>
+          <div class="segmented-control-container">
+            <div
+              class="segmented-control"
+              id="meterModeSeg"
+              role="tablist"
+              aria-label="Meter mode selection"
+            >
+              <button
+                type="button"
+                class="segmented-btn active"
+                data-mode="exposure"
+                aria-pressed="true"
+              >
+                Exposure
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-mode="contrast"
+                aria-pressed="false"
+              >
+                Contrast
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-mode="split"
+                aria-pressed="false"
+              >
+                Split-Grade
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paper & Filter System Selection -->
+        <section class="collapsible" data-id="paper-filter-setup">
+          <button class="collapsible-header" aria-expanded="true">
+            PAPER & FILTER SETUP
+          </button>
+          <div class="collapsible-content" style="display: block">
+            <div class="incremental-timer">
+              <!-- Paper Brand Selection -->
+              <div class="control">
+                <div class="control-label">
+                  <span>PAPER BRAND</span>
+                </div>
+                <div class="settings-group" style="margin-top: 5px">
+                  <button
+                    class="toggle-btn active"
+                    data-brand="ilford"
+                    id="btnMeterIlford"
+                  >
+                    Ilford
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    data-brand="foma"
+                    id="btnMeterFoma"
+                  >
+                    FOMA
+                  </button>
+                </div>
+              </div>
+
+              <!-- Ilford Paper Type (visible when Ilford selected) -->
+              <div id="ilfordPaperSelector" class="control">
+                <div class="control-label">
+                  <span>ILFORD PAPER TYPE</span>
+                </div>
+                <select
+                  class="settings-input"
+                  id="ilfordPaperType"
+                  style="width: 100%"
+                >
+                  <option value="mg4_rc">Multigrade IV RC Deluxe</option>
+                  <option value="warmtone">Warmtone</option>
+                  <option value="cooltone">Cooltone</option>
+                  <option value="portfolio">Portfolio</option>
+                </select>
+              </div>
+
+              <!-- FOMA Paper Type (hidden by default) -->
+              <div id="fomaPaperSelector" class="control" style="display: none">
+                <div class="control-label">
+                  <span>FOMA PAPER TYPE</span>
+                </div>
+                <div class="settings-group" style="margin-top: 5px">
+                  <button
+                    class="toggle-btn active"
+                    data-foma="fomaspeed"
+                    id="btnFomaSpeed2"
+                  >
+                    FOMASPEED
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    data-foma="fomatone"
+                    id="btnFomaTone2"
+                  >
+                    FOMATONE
+                  </button>
+                </div>
+              </div>
+
+              <!-- Calibration Display -->
+              <div class="info-box" style="margin-top: 10px">
+                <div class="label-sm">CALIBRATION CONSTANT</div>
+                <div class="value-display" id="meterCalibrationValue">
+                  1000 lux·s
+                </div>
+                <div
+                  class="label-sm"
+                  style="margin-top: 4px; font-size: 0.55rem"
+                >
+                  Adjust via test strip: calibration = lux × correct_time
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXPOSURE METER MODE -->
+        <div id="meterExposureMode" class="meter-mode-content">
+          <div class="incremental-timer">
+            <div class="title-sm" style="text-align: center">
+              EXPOSURE METER
+            </div>
+            <div
+              class="label-sm"
+              style="text-align: center; margin-bottom: 10px"
+            >
+              Place sensor on baseboard under enlarger light
+            </div>
+
+            <!-- Sensor Status -->
+            <div class="info-box" style="margin-bottom: 10px">
+              <div class="label-sm">SENSOR STATUS</div>
+              <div class="value-display" id="sensorStatus">Checking...</div>
+            </div>
+
+            <!-- Averaging Control -->
+            <div class="control">
+              <div class="control-label">
+                <span>AVERAGING SAMPLES</span>
+                <span class="value-display" id="avgSamplesValue">5</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value="5"
+                class="slider"
+                id="avgSamplesSlider"
+              />
+            </div>
+
+            <!-- Measure Button -->
+            <div class="settings-btn-group" style="margin-top: 10px">
+              <button class="exp-btn" id="measureLuxBtn">MEASURE LUX</button>
+            </div>
+
+            <!-- Results Display -->
+            <div class="exp-info" style="margin-top: 10px">
+              <div class="info-box">
+                <div class="label-sm">LUX READING</div>
+                <div class="value-display" id="luxReading">--</div>
+              </div>
+              <div class="info-box">
+                <div class="label-sm">VARIANCE</div>
+                <div class="value-display" id="luxVariance">--</div>
+              </div>
+            </div>
+
+            <!-- Exposure Time Result -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">CALCULATED EXPOSURE TIME</div>
+              <div
+                class="timer-display"
+                id="meterExposureTime"
+                style="font-size: 2.5rem"
+              >
+                --.--
+              </div>
+            </div>
+
+            <!-- Filter Grade Selection (for exposure adjustment) -->
+            <div class="control" style="margin-top: 10px">
+              <div class="control-label">
+                <span>FILTER GRADE (optional)</span>
+              </div>
+              <select
+                class="settings-input"
+                id="exposureFilterGrade"
+                style="width: 100%"
+              >
+                <option value="">None (no filter)</option>
+                <option value="00">Grade 00</option>
+                <option value="0">Grade 0</option>
+                <option value="1">Grade 1</option>
+                <option value="2" selected>Grade 2 (Normal)</option>
+                <option value="3">Grade 3</option>
+                <option value="4">Grade 4</option>
+                <option value="5">Grade 5</option>
+              </select>
+            </div>
+
+            <!-- Send to CALC Button -->
+            <div class="settings-btn-group" style="margin-top: 15px">
+              <button
+                class="settings-btn primary"
+                id="sendExposureToCalc"
+                disabled
+              >
+                → Send to CALC Timer
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTRAST ANALYSIS MODE (Single-Grade) -->
+        <div
+          id="meterContrastMode"
+          class="meter-mode-content"
+          style="display: none"
+        >
+          <div class="incremental-timer">
+            <div class="title-sm" style="text-align: center">
+              CONTRAST ANALYZER
+            </div>
+            <div
+              class="label-sm"
+              style="text-align: center; margin-bottom: 10px"
+            >
+              Measure highlight and shadow areas to determine negative contrast
+            </div>
+
+            <!-- Averaging Control -->
+            <div class="control">
+              <div class="control-label">
+                <span>AVERAGING SAMPLES</span>
+                <span class="value-display" id="contrastAvgSamplesValue"
+                  >5</span
+                >
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value="5"
+                class="slider"
+                id="contrastAvgSamplesSlider"
+              />
+            </div>
+
+            <!-- Highlight Measurement -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">HIGHLIGHT (brightest area)</div>
+              <div class="value-display" id="highlightLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="measureHighlightBtn"
+                style="margin-top: 5px"
+              >
+                Measure Highlight
+              </button>
+            </div>
+
+            <!-- Shadow Measurement -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">SHADOW (darkest area)</div>
+              <div class="value-display" id="shadowLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="measureShadowBtn"
+                style="margin-top: 5px"
+              >
+                Measure Shadow
+              </button>
+            </div>
+
+            <!-- Contrast Analysis Results -->
+            <div class="info-box" style="margin-top: 15px">
+              <div class="label-sm">CONTRAST RANGE (ΔEV)</div>
+              <div
+                class="timer-display"
+                id="deltaEVDisplay"
+                style="font-size: 2.5rem"
+              >
+                --
+              </div>
+              <div class="label-sm" style="margin-top: 4px">
+                Higher ΔEV = higher contrast negative
+              </div>
+            </div>
+
+            <!-- Recommended Filter Grade -->
+            <div class="exp-info" style="margin-top: 10px">
+              <div class="info-box">
+                <div class="label-sm">RECOMMENDED GRADE</div>
+                <div class="value-display" id="recommendedGrade">--</div>
+              </div>
+              <div class="info-box">
+                <div class="label-sm">MATCH QUALITY</div>
+                <div class="value-display" id="matchQuality">--</div>
+              </div>
+            </div>
+
+            <!-- Exposure Time with Recommended Filter -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">EXPOSURE TIME (with filter)</div>
+              <div
+                class="timer-display"
+                id="contrastExposureTime"
+                style="font-size: 2rem"
+              >
+                --.--
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="settings-btn-group" style="margin-top: 15px">
+              <button class="settings-btn" id="analyzeContrastBtn" disabled>
+                Analyze Contrast
+              </button>
+              <button
+                class="settings-btn primary"
+                id="sendContrastToCalc"
+                disabled
+              >
+                → Send to CALC
+              </button>
+              <button class="settings-btn" id="clearContrastBtn">
+                Clear Readings
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPLIT-GRADE MODE -->
+        <div
+          id="meterSplitMode"
+          class="meter-mode-content"
+          style="display: none"
+        >
+          <div class="incremental-timer">
+            <div class="title-sm" style="text-align: center">
+              SPLIT-GRADE CALCULATOR
+            </div>
+            <div
+              class="label-sm"
+              style="text-align: center; margin-bottom: 10px"
+            >
+              Calculate separate soft/hard exposures for optimal contrast
+              control
+            </div>
+
+            <!-- Averaging Control -->
+            <div class="control">
+              <div class="control-label">
+                <span>AVERAGING SAMPLES</span>
+                <span class="value-display" id="splitAvgSamplesValue">5</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value="5"
+                class="slider"
+                id="splitAvgSamplesSlider"
+              />
+            </div>
+
+            <!-- Highlight Measurement for Split Grade -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">HIGHLIGHT AREA (for soft exposure)</div>
+              <div class="value-display" id="splitHighlightLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="splitMeasureHighlightBtn"
+                style="margin-top: 5px"
+              >
+                Measure Highlight
+              </button>
+            </div>
+
+            <!-- Shadow Measurement for Split Grade -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">SHADOW AREA (for hard exposure)</div>
+              <div class="value-display" id="splitShadowLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="splitMeasureShadowBtn"
+                style="margin-top: 5px"
+              >
+                Measure Shadow
+              </button>
+            </div>
+
+            <!-- Split Grade Results -->
+            <div class="info-box" style="margin-top: 15px">
+              <div class="label-sm">NEGATIVE CONTRAST (ΔEV)</div>
+              <div
+                class="value-display"
+                id="splitDeltaEV"
+                style="font-size: 1.5rem"
+              >
+                --
+              </div>
+            </div>
+
+            <!-- Soft Exposure -->
+            <div class="exp-info" style="margin-top: 15px">
+              <div
+                class="info-box"
+                style="
+                  background: rgba(255, 200, 50, 0.1);
+                  border-color: rgba(255, 200, 50, 0.3);
+                "
+              >
+                <div class="label-sm" style="color: #ffcc00">
+                  SOFT EXPOSURE (Highlights)
+                </div>
+                <div class="value-display" id="splitSoftFilter">--</div>
+                <div
+                  class="timer-display"
+                  id="splitSoftTime"
+                  style="font-size: 2rem"
+                >
+                  --.--
+                </div>
+                <div class="label-sm" style="margin-top: 4px">
+                  Factor: <span id="splitSoftFactor">--</span>
+                </div>
+              </div>
+              <div
+                class="info-box"
+                style="
+                  background: rgba(200, 50, 255, 0.1);
+                  border-color: rgba(200, 50, 255, 0.3);
+                "
+              >
+                <div class="label-sm" style="color: #cc66ff">
+                  HARD EXPOSURE (Shadows)
+                </div>
+                <div class="value-display" id="splitHardFilter">--</div>
+                <div
+                  class="timer-display"
+                  id="splitHardTime"
+                  style="font-size: 2rem"
+                >
+                  --.--
+                </div>
+                <div class="label-sm" style="margin-top: 4px">
+                  Factor: <span id="splitHardFactor">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Exposure -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">TOTAL EXPOSURE TIME</div>
+              <div
+                class="timer-display"
+                id="splitTotalTime"
+                style="font-size: 2rem"
+              >
+                --.--
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="settings-btn-group" style="margin-top: 15px">
+              <button class="settings-btn" id="calculateSplitBtn" disabled>
+                Calculate Split-Grade
+              </button>
+              <button class="settings-btn primary" id="sendSoftToCalc" disabled>
+                → Send Soft to CALC
+              </button>
+              <button class="settings-btn primary" id="sendHardToCalc" disabled>
+                → Send Hard to CALC
+              </button>
+            </div>
+
+            <div class="settings-btn-group" style="margin-top: 10px">
+              <button class="settings-btn" id="clearSplitBtn">
+                Clear Readings
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calibration Section -->
+        <section class="collapsible" data-id="meter-calibration">
+          <button class="collapsible-header" aria-expanded="false">
+            CALIBRATION
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer">
+              <div class="title-sm" style="text-align: center">
+                CALIBRATION PROCEDURE
+              </div>
+              <div class="label-sm" style="line-height: 1.4; padding: 5px">
+                <strong>To calibrate:</strong><br />
+                1. Set up enlarger with a typical negative<br />
+                2. Measure lux at baseboard (use exposure mode)<br />
+                3. Make test strip prints<br />
+                4. Determine correct exposure time<br />
+                5. Calculate: calibration = measured_lux × correct_time<br />
+                6. Enter value below
+              </div>
+
+              <!-- Manual Calibration Input -->
+              <div class="control" style="margin-top: 10px">
+                <div class="control-label">
+                  <span>CALIBRATION CONSTANT (lux·s)</span>
+                </div>
+                <input
+                  type="number"
+                  id="calibrationInput"
+                  class="settings-input"
+                  placeholder="e.g., 1000"
+                  min="1"
+                  max="100000"
+                  step="1"
+                  value="1000"
+                  style="width: 100%"
+                />
+              </div>
+
+              <!-- Quick Calibration Calculator -->
+              <div class="info-box" style="margin-top: 10px">
+                <div class="label-sm">QUICK CALIBRATION CALCULATOR</div>
+                <div style="display: flex; gap: 10px; margin-top: 5px">
+                  <div style="flex: 1">
+                    <div class="label-sm">Measured Lux</div>
+                    <input
+                      type="number"
+                      id="calMeasuredLux"
+                      class="settings-input"
+                      placeholder="lux"
+                      style="width: 100%"
+                    />
+                  </div>
+                  <div style="flex: 1">
+                    <div class="label-sm">Correct Time (s)</div>
+                    <input
+                      type="number"
+                      id="calCorrectTime"
+                      class="settings-input"
+                      placeholder="seconds"
+                      step="0.1"
+                      style="width: 100%"
+                    />
+                  </div>
+                </div>
+                <button
+                  class="settings-btn"
+                  id="calculateCalibrationBtn"
+                  style="margin-top: 8px; width: 100%"
+                >
+                  Calculate & Apply
+                </button>
+              </div>
+
+              <!-- Save Calibration -->
+              <div class="settings-btn-group" style="margin-top: 15px">
+                <button class="settings-btn primary" id="saveCalibrationBtn">
+                  Save Calibration
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sensor Information -->
+        <section class="collapsible" data-id="sensor-info">
+          <button class="collapsible-header" aria-expanded="false">
+            SENSOR INFORMATION
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer">
+              <div class="exp-info">
+                <div class="info-box">
+                  <div class="label-sm">SENSOR TYPE</div>
+                  <div class="value-display" id="sensorType">TSL2591X</div>
+                </div>
+                <div class="info-box">
+                  <div class="label-sm">CONNECTION</div>
+                  <div class="value-display" id="sensorConnection">I²C</div>
+                </div>
+              </div>
+              <div class="exp-info" style="margin-top: 10px">
+                <div class="info-box">
+                  <div class="label-sm">CURRENT GAIN</div>
+                  <div class="value-display" id="sensorGain">MED (25×)</div>
+                </div>
+                <div class="info-box">
+                  <div class="label-sm">INTEGRATION</div>
+                  <div class="value-display" id="sensorIntegration">300ms</div>
+                </div>
+              </div>
+
+              <!-- Gain Control -->
+              <div class="control" style="margin-top: 10px">
+                <div class="control-label">
+                  <span>SENSOR GAIN</span>
+                </div>
+                <select
+                  class="settings-input"
+                  id="sensorGainSelect"
+                  style="width: 100%"
+                >
+                  <option value="auto">Auto (recommended)</option>
+                  <option value="low">Low (1×) - very bright</option>
+                  <option value="med" selected>Medium (25×) - normal</option>
+                  <option value="high">High (428×) - dim</option>
+                  <option value="max">Maximum (9876×) - very dim</option>
+                </select>
+              </div>
+
+              <!-- Integration Time Control -->
+              <div class="control" style="margin-top: 10px">
+                <div class="control-label">
+                  <span>INTEGRATION TIME</span>
+                </div>
+                <select
+                  class="settings-input"
+                  id="sensorIntegrationSelect"
+                  style="width: 100%"
+                >
+                  <option value="100">100ms (fastest)</option>
+                  <option value="200">200ms</option>
+                  <option value="300" selected>300ms (balanced)</option>
+                  <option value="400">400ms</option>
+                  <option value="500">500ms</option>
+                  <option value="600">600ms (most sensitive)</option>
+                </select>
+              </div>
+
+              <div class="settings-btn-group" style="margin-top: 10px">
+                <button class="settings-btn" id="applySensorSettingsBtn">
+                  Apply Sensor Settings
+                </button>
+                <button class="settings-btn" id="refreshSensorStatusBtn">
+                  Refresh Status
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- NEW: LOGS Tab for Exposure Session Logging -->
@@ -16480,6 +17151,1185 @@
         }
       }
 
+      /**
+       * @class LightMeterManager
+       * @classdesc Light Meter / Contrast Analyzer for darkroom exposure metering.
+       * Uses TSL2591X sensor via server API to measure light, calculate exposures,
+       * analyze contrast, and recommend filter grades.
+       *
+       * EXPOSURE METER MODE:
+       * - Measures lux at baseboard
+       * - Calculates exposure time using calibration constant
+       * - Applies filter factor for grade selection
+       * - Sends calculated time to CALC tab timer
+       *
+       * CONTRAST ANALYZER MODE:
+       * - Measures highlight and shadow areas separately
+       * - Calculates ΔEV (contrast range) from the readings
+       * - Recommends appropriate filter grade
+       * - Calculates exposure time with recommended filter
+       *
+       * SPLIT-GRADE MODE:
+       * - Uses highlight/shadow readings for split-grade printing
+       * - Calculates separate soft/hard exposure times
+       * - Supports Ilford and FOMA filter systems
+       * - Sends individual times to CALC tab
+       *
+       * INTEGRATION:
+       * - Uses same pattern as TEST STRIP to send times to CALC tab
+       * - Leverages existing IncrementalTimer for exposure execution
+       * - Stores calibration in localStorage for persistence
+       */
+      class LightMeterManager {
+        constructor() {
+          // Mode: 'exposure', 'contrast', or 'split'
+          this.currentMode = "exposure";
+
+          // Filter system: 'ilford', 'foma_fomaspeed', 'foma_fomatone'
+          this.filterSystem = "ilford";
+          this.paperBrand = "ilford";
+          this.fomaPaperType = "fomaspeed";
+
+          // Calibration (lux × seconds for proper exposure)
+          this.calibration = this.loadCalibration() || 1000;
+
+          // Sensor status
+          this.sensorConnected = false;
+          this.lastLux = null;
+
+          // Stored readings for contrast analysis
+          this.highlightLux = null;
+          this.shadowLux = null;
+
+          // Calculated values
+          this.exposureTime = null;
+          this.deltaEV = null;
+          this.recommendedGrade = null;
+          this.splitGradeResult = null;
+
+          // Ilford Multigrade filter data
+          this.ILFORD_FILTERS = {
+            "00": { iso_r: 180, factor: 1.6, name: "Grade 00" },
+            0: { iso_r: 160, factor: 1.4, name: "Grade 0" },
+            1: { iso_r: 130, factor: 1.3, name: "Grade 1" },
+            2: { iso_r: 110, factor: 1.1, name: "Grade 2" },
+            3: { iso_r: 90, factor: 0.9, name: "Grade 3" },
+            4: { iso_r: 60, factor: 0.6, name: "Grade 4" },
+            5: { iso_r: 40, factor: 0.4, name: "Grade 5" },
+            "": { iso_r: 110, factor: 1.0, name: "No Filter" },
+          };
+
+          // FOMA FOMASPEED / FOMABROM Variant III
+          this.FOMA_FOMASPEED_FILTERS = {
+            "2xY": { iso_r: 135, factor: 1.6, name: "2×Y (Soft)" },
+            Y: { iso_r: 120, factor: 1.4, name: "Y" },
+            "": { iso_r: 105, factor: 1.0, name: "No Filter" },
+            M1: { iso_r: 90, factor: 1.4, name: "M1" },
+            "2xM1": { iso_r: 80, factor: 2.1, name: "2×M1" },
+            M2: { iso_r: 65, factor: 2.6, name: "M2" },
+            "2xM2": { iso_r: 55, factor: 4.6, name: "2×M2 (Hard)" },
+          };
+
+          // FOMA FOMATONE MG / MG Classic
+          this.FOMA_FOMATONE_FILTERS = {
+            "2xY": { iso_r: 120, factor: 2.0, name: "2×Y (Soft)" },
+            Y: { iso_r: 105, factor: 1.5, name: "Y" },
+            "": { iso_r: 90, factor: 1.0, name: "No Filter" },
+            M1: { iso_r: 80, factor: 1.5, name: "M1" },
+            "2xM1": { iso_r: 75, factor: 1.8, name: "2×M1" },
+            M2: { iso_r: 65, factor: 2.0, name: "M2" },
+            "2xM2": { iso_r: 55, factor: 3.0, name: "2×M2 (Hard)" },
+          };
+
+          // ISO R to EV mapping (exposure latitude)
+          this.ISO_R_TO_EV = {
+            180: 8.0,
+            160: 7.5,
+            135: 7.0,
+            130: 6.8,
+            120: 6.5,
+            110: 6.2,
+            105: 6.0,
+            90: 5.6,
+            80: 5.2,
+            75: 5.0,
+            65: 4.8,
+            60: 4.6,
+            55: 4.4,
+            40: 4.0,
+          };
+
+          this.init();
+        }
+
+        /**
+         * Initialize light meter UI and event listeners
+         */
+        init() {
+          // Mode selection
+          this.bindModeSelection();
+
+          // Paper/filter system selection
+          this.bindPaperSelection();
+
+          // Exposure mode controls
+          this.bindExposureModeControls();
+
+          // Contrast mode controls
+          this.bindContrastModeControls();
+
+          // Split-grade mode controls
+          this.bindSplitModeControls();
+
+          // Calibration controls
+          this.bindCalibrationControls();
+
+          // Sensor settings controls
+          this.bindSensorControls();
+
+          // Check sensor status on init
+          this.checkSensorStatus();
+
+          // Update calibration display
+          this.updateCalibrationDisplay();
+
+          console.log("LightMeterManager initialized");
+        }
+
+        /**
+         * Bind mode selection segmented control
+         */
+        bindModeSelection() {
+          document
+            .querySelectorAll("#meterModeSeg .segmented-btn")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const mode = btn.getAttribute("data-mode");
+                this.setMode(mode);
+              });
+            });
+        }
+
+        /**
+         * Set active meter mode
+         */
+        setMode(mode) {
+          this.currentMode = mode;
+
+          // Update segmented control
+          document
+            .querySelectorAll("#meterModeSeg .segmented-btn")
+            .forEach((btn) => {
+              const isActive = btn.getAttribute("data-mode") === mode;
+              btn.classList.toggle("active", isActive);
+              btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+
+          // Update mode value display
+          const modeNames = {
+            exposure: "Exposure",
+            contrast: "Contrast",
+            split: "Split-Grade",
+          };
+          const modeDisplay = document.getElementById("meterModeValue");
+          if (modeDisplay) modeDisplay.textContent = modeNames[mode] || mode;
+
+          // Show/hide mode content panels
+          document.getElementById("meterExposureMode").style.display =
+            mode === "exposure" ? "block" : "none";
+          document.getElementById("meterContrastMode").style.display =
+            mode === "contrast" ? "block" : "none";
+          document.getElementById("meterSplitMode").style.display =
+            mode === "split" ? "block" : "none";
+        }
+
+        /**
+         * Bind paper and filter system selection
+         */
+        bindPaperSelection() {
+          // Paper brand buttons
+          const ilfordBtn = document.getElementById("btnMeterIlford");
+          const fomaBtn = document.getElementById("btnMeterFoma");
+
+          if (ilfordBtn) {
+            ilfordBtn.addEventListener("click", () => {
+              this.setPaperBrand("ilford");
+            });
+          }
+
+          if (fomaBtn) {
+            fomaBtn.addEventListener("click", () => {
+              this.setPaperBrand("foma");
+            });
+          }
+
+          // FOMA paper type buttons
+          const fomaSpeedBtn = document.getElementById("btnFomaSpeed2");
+          const fomaToneBtn = document.getElementById("btnFomaTone2");
+
+          if (fomaSpeedBtn) {
+            fomaSpeedBtn.addEventListener("click", () => {
+              this.setFomaPaperType("fomaspeed");
+            });
+          }
+
+          if (fomaToneBtn) {
+            fomaToneBtn.addEventListener("click", () => {
+              this.setFomaPaperType("fomatone");
+            });
+          }
+
+          // Update filter grade dropdown based on paper brand
+          this.updateFilterDropdown();
+        }
+
+        /**
+         * Set paper brand
+         */
+        setPaperBrand(brand) {
+          this.paperBrand = brand;
+
+          // Update UI
+          document
+            .getElementById("btnMeterIlford")
+            ?.classList.toggle("active", brand === "ilford");
+          document
+            .getElementById("btnMeterFoma")
+            ?.classList.toggle("active", brand === "foma");
+
+          // Show/hide FOMA paper type selector
+          document.getElementById("ilfordPaperSelector").style.display =
+            brand === "ilford" ? "block" : "none";
+          document.getElementById("fomaPaperSelector").style.display =
+            brand === "foma" ? "block" : "none";
+
+          // Update filter system
+          if (brand === "ilford") {
+            this.filterSystem = "ilford";
+          } else {
+            this.filterSystem =
+              this.fomaPaperType === "fomaspeed"
+                ? "foma_fomaspeed"
+                : "foma_fomatone";
+          }
+
+          // Update filter dropdown
+          this.updateFilterDropdown();
+        }
+
+        /**
+         * Set FOMA paper type
+         */
+        setFomaPaperType(type) {
+          this.fomaPaperType = type;
+          this.filterSystem =
+            type === "fomaspeed" ? "foma_fomaspeed" : "foma_fomatone";
+
+          // Update UI
+          document
+            .getElementById("btnFomaSpeed2")
+            ?.classList.toggle("active", type === "fomaspeed");
+          document
+            .getElementById("btnFomaTone2")
+            ?.classList.toggle("active", type === "fomatone");
+
+          // Update filter dropdown
+          this.updateFilterDropdown();
+        }
+
+        /**
+         * Update filter grade dropdown based on current paper brand
+         */
+        updateFilterDropdown() {
+          const dropdown = document.getElementById("exposureFilterGrade");
+          if (!dropdown) return;
+
+          // Clear existing options
+          dropdown.innerHTML = "";
+
+          // Add appropriate options based on filter system
+          const filters = this.getFilterData();
+
+          // Add "No Filter" option first
+          const noneOption = document.createElement("option");
+          noneOption.value = "";
+          noneOption.textContent = "None (no filter)";
+          dropdown.appendChild(noneOption);
+
+          // Add filter options
+          Object.entries(filters).forEach(([grade, data]) => {
+            if (grade !== "") {
+              const option = document.createElement("option");
+              option.value = grade;
+              option.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              if (grade === "2") option.selected = true; // Default to grade 2
+              dropdown.appendChild(option);
+            }
+          });
+        }
+
+        /**
+         * Get filter data for current system
+         */
+        getFilterData() {
+          if (this.filterSystem === "ilford") {
+            return this.ILFORD_FILTERS;
+          } else if (this.filterSystem === "foma_fomaspeed") {
+            return this.FOMA_FOMASPEED_FILTERS;
+          } else {
+            return this.FOMA_FOMATONE_FILTERS;
+          }
+        }
+
+        /**
+         * Bind exposure mode controls
+         */
+        bindExposureModeControls() {
+          // Averaging slider
+          const avgSlider = document.getElementById("avgSamplesSlider");
+          const avgValue = document.getElementById("avgSamplesValue");
+          if (avgSlider && avgValue) {
+            avgSlider.addEventListener("input", () => {
+              avgValue.textContent = avgSlider.value;
+            });
+          }
+
+          // Measure button
+          const measureBtn = document.getElementById("measureLuxBtn");
+          if (measureBtn) {
+            measureBtn.addEventListener("click", () => this.measureLux());
+          }
+
+          // Send to CALC button
+          const sendBtn = document.getElementById("sendExposureToCalc");
+          if (sendBtn) {
+            sendBtn.addEventListener("click", () => this.sendExposureToCalc());
+          }
+
+          // Filter grade change
+          const filterSelect = document.getElementById("exposureFilterGrade");
+          if (filterSelect) {
+            filterSelect.addEventListener("change", () => {
+              if (this.lastLux) {
+                this.calculateExposureTime(this.lastLux);
+              }
+            });
+          }
+        }
+
+        /**
+         * Bind contrast mode controls
+         */
+        bindContrastModeControls() {
+          // Averaging slider
+          const avgSlider = document.getElementById("contrastAvgSamplesSlider");
+          const avgValue = document.getElementById("contrastAvgSamplesValue");
+          if (avgSlider && avgValue) {
+            avgSlider.addEventListener("input", () => {
+              avgValue.textContent = avgSlider.value;
+            });
+          }
+
+          // Highlight measure button
+          const highlightBtn = document.getElementById("measureHighlightBtn");
+          if (highlightBtn) {
+            highlightBtn.addEventListener("click", () =>
+              this.measureHighlight("contrast"),
+            );
+          }
+
+          // Shadow measure button
+          const shadowBtn = document.getElementById("measureShadowBtn");
+          if (shadowBtn) {
+            shadowBtn.addEventListener("click", () =>
+              this.measureShadow("contrast"),
+            );
+          }
+
+          // Analyze button
+          const analyzeBtn = document.getElementById("analyzeContrastBtn");
+          if (analyzeBtn) {
+            analyzeBtn.addEventListener("click", () => this.analyzeContrast());
+          }
+
+          // Send to CALC button
+          const sendBtn = document.getElementById("sendContrastToCalc");
+          if (sendBtn) {
+            sendBtn.addEventListener("click", () => this.sendContrastToCalc());
+          }
+
+          // Clear button
+          const clearBtn = document.getElementById("clearContrastBtn");
+          if (clearBtn) {
+            clearBtn.addEventListener("click", () =>
+              this.clearContrastReadings(),
+            );
+          }
+        }
+
+        /**
+         * Bind split-grade mode controls
+         */
+        bindSplitModeControls() {
+          // Averaging slider
+          const avgSlider = document.getElementById("splitAvgSamplesSlider");
+          const avgValue = document.getElementById("splitAvgSamplesValue");
+          if (avgSlider && avgValue) {
+            avgSlider.addEventListener("input", () => {
+              avgValue.textContent = avgSlider.value;
+            });
+          }
+
+          // Highlight measure button
+          const highlightBtn = document.getElementById(
+            "splitMeasureHighlightBtn",
+          );
+          if (highlightBtn) {
+            highlightBtn.addEventListener("click", () =>
+              this.measureHighlight("split"),
+            );
+          }
+
+          // Shadow measure button
+          const shadowBtn = document.getElementById("splitMeasureShadowBtn");
+          if (shadowBtn) {
+            shadowBtn.addEventListener("click", () =>
+              this.measureShadow("split"),
+            );
+          }
+
+          // Calculate button
+          const calcBtn = document.getElementById("calculateSplitBtn");
+          if (calcBtn) {
+            calcBtn.addEventListener("click", () => this.calculateSplitGrade());
+          }
+
+          // Send soft to CALC
+          const sendSoftBtn = document.getElementById("sendSoftToCalc");
+          if (sendSoftBtn) {
+            sendSoftBtn.addEventListener("click", () =>
+              this.sendSplitToCalc("soft"),
+            );
+          }
+
+          // Send hard to CALC
+          const sendHardBtn = document.getElementById("sendHardToCalc");
+          if (sendHardBtn) {
+            sendHardBtn.addEventListener("click", () =>
+              this.sendSplitToCalc("hard"),
+            );
+          }
+
+          // Clear button
+          const clearBtn = document.getElementById("clearSplitBtn");
+          if (clearBtn) {
+            clearBtn.addEventListener("click", () => this.clearSplitReadings());
+          }
+        }
+
+        /**
+         * Bind calibration controls
+         */
+        bindCalibrationControls() {
+          // Manual calibration input
+          const calInput = document.getElementById("calibrationInput");
+          if (calInput) {
+            calInput.value = this.calibration;
+          }
+
+          // Calculate calibration button
+          const calcCalBtn = document.getElementById("calculateCalibrationBtn");
+          if (calcCalBtn) {
+            calcCalBtn.addEventListener("click", () =>
+              this.calculateCalibration(),
+            );
+          }
+
+          // Save calibration button
+          const saveBtn = document.getElementById("saveCalibrationBtn");
+          if (saveBtn) {
+            saveBtn.addEventListener("click", () =>
+              this.saveCalibrationFromInput(),
+            );
+          }
+        }
+
+        /**
+         * Bind sensor settings controls
+         */
+        bindSensorControls() {
+          // Apply sensor settings
+          const applyBtn = document.getElementById("applySensorSettingsBtn");
+          if (applyBtn) {
+            applyBtn.addEventListener("click", () =>
+              this.applySensorSettings(),
+            );
+          }
+
+          // Refresh status
+          const refreshBtn = document.getElementById("refreshSensorStatusBtn");
+          if (refreshBtn) {
+            refreshBtn.addEventListener("click", () =>
+              this.checkSensorStatus(),
+            );
+          }
+        }
+
+        /**
+         * Check sensor status via API
+         */
+        async checkSensorStatus() {
+          const statusDisplay = document.getElementById("sensorStatus");
+
+          try {
+            const response = await fetch("/light-meter-config");
+            const data = await response.json();
+
+            if (data.status === "success" && data.light_meter) {
+              const sensor = data.light_meter.sensor;
+              this.sensorConnected = sensor.connected;
+
+              if (sensor.connected) {
+                statusDisplay.textContent = "Connected";
+                statusDisplay.style.color = "var(--accent)";
+
+                // Update sensor info
+                document.getElementById("sensorGain").textContent =
+                  sensor.gain || "Unknown";
+                document.getElementById("sensorIntegration").textContent =
+                  (sensor.integration_ms || 300) + "ms";
+              } else {
+                statusDisplay.textContent = "Not Connected";
+                statusDisplay.style.color = "var(--danger)";
+              }
+            } else {
+              statusDisplay.textContent = "Not Available";
+              statusDisplay.style.color = "var(--danger)";
+              this.sensorConnected = false;
+            }
+          } catch (error) {
+            statusDisplay.textContent = "Error: " + error.message;
+            statusDisplay.style.color = "var(--danger)";
+            this.sensorConnected = false;
+          }
+        }
+
+        /**
+         * Apply sensor settings
+         */
+        async applySensorSettings() {
+          const gain = document.getElementById("sensorGainSelect").value;
+          const integration = document.getElementById(
+            "sensorIntegrationSelect",
+          ).value;
+
+          try {
+            const params = new URLSearchParams();
+            if (gain) params.append("gain", gain);
+            if (integration) params.append("integration", integration);
+            params.append("filter_system", this.filterSystem);
+
+            const response = await fetch(
+              "/light-meter-config?" + params.toString(),
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.showFeedback("Sensor settings applied", "success");
+              this.checkSensorStatus();
+            } else {
+              this.showFeedback("Error: " + data.error, "error");
+            }
+          } catch (error) {
+            this.showFeedback("Connection error: " + error.message, "error");
+          }
+        }
+
+        /**
+         * Measure lux (exposure mode)
+         */
+        async measureLux() {
+          const samples =
+            parseInt(document.getElementById("avgSamplesSlider").value) || 5;
+          const filterGrade = document.getElementById(
+            "exposureFilterGrade",
+          ).value;
+
+          const luxDisplay = document.getElementById("luxReading");
+          const varianceDisplay = document.getElementById("luxVariance");
+          const measureBtn = document.getElementById("measureLuxBtn");
+
+          // Show loading state
+          measureBtn.disabled = true;
+          measureBtn.textContent = "Measuring...";
+          luxDisplay.textContent = "...";
+
+          try {
+            const params = new URLSearchParams({
+              samples: samples,
+              calibration: this.calibration,
+              filter: filterGrade,
+            });
+
+            const response = await fetch("/light-meter?" + params.toString());
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.lastLux = data.lux;
+              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+              varianceDisplay.textContent = data.variance
+                ? data.variance.toFixed(2)
+                : "--";
+
+              // Calculate and display exposure time
+              this.calculateExposureTime(data.lux);
+
+              // Enable send button
+              document.getElementById("sendExposureToCalc").disabled = false;
+
+              playBeep(800, 0.3, 0.2);
+            } else {
+              luxDisplay.textContent = "Error";
+              this.showFeedback("Measurement error: " + data.error, "error");
+            }
+          } catch (error) {
+            luxDisplay.textContent = "Error";
+            this.showFeedback("Connection error: " + error.message, "error");
+          } finally {
+            measureBtn.disabled = false;
+            measureBtn.textContent = "MEASURE LUX";
+          }
+        }
+
+        /**
+         * Calculate exposure time from lux reading
+         */
+        calculateExposureTime(lux) {
+          if (!lux || lux <= 0) return;
+
+          const filterGrade = document.getElementById(
+            "exposureFilterGrade",
+          ).value;
+          const filters = this.getFilterData();
+          const filterData = filters[filterGrade] || filters[""];
+          const factor = filterData.factor;
+
+          // Base exposure time
+          let time = this.calibration / lux;
+
+          // Apply filter factor
+          time *= factor;
+
+          this.exposureTime = time;
+
+          // Update display
+          const timeDisplay = document.getElementById("meterExposureTime");
+          if (timeDisplay) {
+            timeDisplay.textContent = time.toFixed(2);
+          }
+        }
+
+        /**
+         * Send exposure time to CALC tab
+         */
+        sendExposureToCalc() {
+          if (!this.exposureTime || this.exposureTime <= 0) {
+            this.showFeedback("No exposure time calculated", "error");
+            return;
+          }
+
+          this.sendTimeToCalc(this.exposureTime, "Exposure meter");
+        }
+
+        /**
+         * Measure highlight area
+         */
+        async measureHighlight(mode = "contrast") {
+          const samples =
+            parseInt(
+              document.getElementById(
+                mode === "split"
+                  ? "splitAvgSamplesSlider"
+                  : "contrastAvgSamplesSlider",
+              ).value,
+            ) || 5;
+
+          const displayId =
+            mode === "split" ? "splitHighlightLux" : "highlightLux";
+          const luxDisplay = document.getElementById(displayId);
+          const btnId =
+            mode === "split"
+              ? "splitMeasureHighlightBtn"
+              : "measureHighlightBtn";
+          const measureBtn = document.getElementById(btnId);
+
+          // Show loading state
+          measureBtn.disabled = true;
+          measureBtn.textContent = "Measuring...";
+          luxDisplay.textContent = "...";
+
+          try {
+            const response = await fetch(
+              `/light-meter-highlight?samples=${samples}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.highlightLux = data.lux;
+              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+
+              this.updateContrastButtons(mode);
+              playBeep(800, 0.3, 0.2);
+            } else {
+              luxDisplay.textContent = "Error";
+              this.showFeedback("Measurement error: " + data.error, "error");
+            }
+          } catch (error) {
+            luxDisplay.textContent = "Error";
+            this.showFeedback("Connection error: " + error.message, "error");
+          } finally {
+            measureBtn.disabled = false;
+            measureBtn.textContent = "Measure Highlight";
+          }
+        }
+
+        /**
+         * Measure shadow area
+         */
+        async measureShadow(mode = "contrast") {
+          const samples =
+            parseInt(
+              document.getElementById(
+                mode === "split"
+                  ? "splitAvgSamplesSlider"
+                  : "contrastAvgSamplesSlider",
+              ).value,
+            ) || 5;
+
+          const displayId = mode === "split" ? "splitShadowLux" : "shadowLux";
+          const luxDisplay = document.getElementById(displayId);
+          const btnId =
+            mode === "split" ? "splitMeasureShadowBtn" : "measureShadowBtn";
+          const measureBtn = document.getElementById(btnId);
+
+          // Show loading state
+          measureBtn.disabled = true;
+          measureBtn.textContent = "Measuring...";
+          luxDisplay.textContent = "...";
+
+          try {
+            const response = await fetch(
+              `/light-meter-shadow?samples=${samples}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.shadowLux = data.lux;
+              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+
+              this.updateContrastButtons(mode);
+              playBeep(800, 0.3, 0.2);
+            } else {
+              luxDisplay.textContent = "Error";
+              this.showFeedback("Measurement error: " + data.error, "error");
+            }
+          } catch (error) {
+            luxDisplay.textContent = "Error";
+            this.showFeedback("Connection error: " + error.message, "error");
+          } finally {
+            measureBtn.disabled = false;
+            measureBtn.textContent = "Measure Shadow";
+          }
+        }
+
+        /**
+         * Update contrast/split mode buttons based on readings
+         */
+        updateContrastButtons(mode) {
+          const hasBoth = this.highlightLux !== null && this.shadowLux !== null;
+
+          if (mode === "contrast") {
+            document.getElementById("analyzeContrastBtn").disabled = !hasBoth;
+          } else {
+            document.getElementById("calculateSplitBtn").disabled = !hasBoth;
+          }
+        }
+
+        /**
+         * Analyze contrast from stored readings
+         */
+        async analyzeContrast() {
+          if (!this.highlightLux || !this.shadowLux) {
+            this.showFeedback(
+              "Measure both highlight and shadow first",
+              "error",
+            );
+            return;
+          }
+
+          try {
+            const response = await fetch("/light-meter-contrast");
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.deltaEV = data.delta_ev;
+              this.recommendedGrade = data.recommended_grade;
+
+              // Update displays
+              document.getElementById("deltaEVDisplay").textContent =
+                data.delta_ev.toFixed(1) + " EV";
+
+              if (data.recommended_grade) {
+                document.getElementById("recommendedGrade").textContent =
+                  data.recommended_grade.grade;
+                document.getElementById("matchQuality").textContent =
+                  data.recommended_grade.match_quality;
+
+                // Calculate exposure time with recommended filter
+                const filters = this.getFilterData();
+                const filterData =
+                  filters[data.recommended_grade.grade] || filters[""];
+                const time =
+                  (this.calibration / this.highlightLux) * filterData.factor;
+
+                document.getElementById("contrastExposureTime").textContent =
+                  time.toFixed(2);
+                this.exposureTime = time;
+
+                // Enable send button
+                document.getElementById("sendContrastToCalc").disabled = false;
+              }
+
+              playBeep(1000, 0.3, 0.3);
+            } else {
+              this.showFeedback("Analysis error: " + data.error, "error");
+            }
+          } catch (error) {
+            this.showFeedback("Connection error: " + error.message, "error");
+          }
+        }
+
+        /**
+         * Send contrast exposure to CALC tab
+         */
+        sendContrastToCalc() {
+          if (!this.exposureTime || this.exposureTime <= 0) {
+            this.showFeedback("No exposure time calculated", "error");
+            return;
+          }
+
+          const grade = this.recommendedGrade
+            ? this.recommendedGrade.grade
+            : "none";
+          this.sendTimeToCalc(
+            this.exposureTime,
+            `Contrast analyzer (Grade ${grade})`,
+          );
+        }
+
+        /**
+         * Clear contrast readings
+         */
+        async clearContrastReadings() {
+          this.highlightLux = null;
+          this.shadowLux = null;
+          this.deltaEV = null;
+          this.recommendedGrade = null;
+
+          // Clear displays
+          document.getElementById("highlightLux").textContent = "-- lux";
+          document.getElementById("shadowLux").textContent = "-- lux";
+          document.getElementById("deltaEVDisplay").textContent = "--";
+          document.getElementById("recommendedGrade").textContent = "--";
+          document.getElementById("matchQuality").textContent = "--";
+          document.getElementById("contrastExposureTime").textContent = "--.--";
+
+          // Disable buttons
+          document.getElementById("analyzeContrastBtn").disabled = true;
+          document.getElementById("sendContrastToCalc").disabled = true;
+
+          // Clear on server too
+          try {
+            await fetch("/light-meter-config?clear=true");
+          } catch (e) {}
+
+          this.showFeedback("Contrast readings cleared", "success");
+        }
+
+        /**
+         * Calculate split-grade exposures
+         */
+        async calculateSplitGrade() {
+          if (!this.highlightLux || !this.shadowLux) {
+            this.showFeedback(
+              "Measure both highlight and shadow first",
+              "error",
+            );
+            return;
+          }
+
+          try {
+            const response = await fetch("/light-meter-contrast");
+            const data = await response.json();
+
+            if (data.status === "success" && data.split_grade) {
+              this.splitGradeResult = data.split_grade;
+
+              // Update displays
+              document.getElementById("splitDeltaEV").textContent =
+                data.delta_ev.toFixed(1) + " EV";
+
+              document.getElementById("splitSoftFilter").textContent =
+                "Filter " + data.split_grade.soft_filter;
+              document.getElementById("splitSoftTime").textContent =
+                data.split_grade.soft_time.toFixed(2);
+              document.getElementById("splitSoftFactor").textContent =
+                "×" + data.split_grade.soft_factor.toFixed(1);
+
+              document.getElementById("splitHardFilter").textContent =
+                "Filter " + data.split_grade.hard_filter;
+              document.getElementById("splitHardTime").textContent =
+                data.split_grade.hard_time.toFixed(2);
+              document.getElementById("splitHardFactor").textContent =
+                "×" + data.split_grade.hard_factor.toFixed(1);
+
+              document.getElementById("splitTotalTime").textContent =
+                data.split_grade.total_time.toFixed(2);
+
+              // Enable send buttons
+              document.getElementById("sendSoftToCalc").disabled = false;
+              document.getElementById("sendHardToCalc").disabled = false;
+
+              playBeep(1000, 0.3, 0.3);
+            } else {
+              this.showFeedback(
+                "Calculation error: " + (data.error || "Unknown"),
+                "error",
+              );
+            }
+          } catch (error) {
+            this.showFeedback("Connection error: " + error.message, "error");
+          }
+        }
+
+        /**
+         * Send split-grade time to CALC tab
+         */
+        sendSplitToCalc(type) {
+          if (!this.splitGradeResult) {
+            this.showFeedback("Calculate split-grade first", "error");
+            return;
+          }
+
+          const time =
+            type === "soft"
+              ? this.splitGradeResult.soft_time
+              : this.splitGradeResult.hard_time;
+          const filter =
+            type === "soft"
+              ? this.splitGradeResult.soft_filter
+              : this.splitGradeResult.hard_filter;
+
+          this.sendTimeToCalc(time, `Split-grade ${type} (Filter ${filter})`);
+        }
+
+        /**
+         * Clear split-grade readings
+         */
+        async clearSplitReadings() {
+          this.highlightLux = null;
+          this.shadowLux = null;
+          this.splitGradeResult = null;
+
+          // Clear displays
+          document.getElementById("splitHighlightLux").textContent = "-- lux";
+          document.getElementById("splitShadowLux").textContent = "-- lux";
+          document.getElementById("splitDeltaEV").textContent = "--";
+          document.getElementById("splitSoftFilter").textContent = "--";
+          document.getElementById("splitSoftTime").textContent = "--.--";
+          document.getElementById("splitSoftFactor").textContent = "--";
+          document.getElementById("splitHardFilter").textContent = "--";
+          document.getElementById("splitHardTime").textContent = "--.--";
+          document.getElementById("splitHardFactor").textContent = "--";
+          document.getElementById("splitTotalTime").textContent = "--.--";
+
+          // Disable buttons
+          document.getElementById("calculateSplitBtn").disabled = true;
+          document.getElementById("sendSoftToCalc").disabled = true;
+          document.getElementById("sendHardToCalc").disabled = true;
+
+          // Clear on server too
+          try {
+            await fetch("/light-meter-config?clear=true");
+          } catch (e) {}
+
+          this.showFeedback("Split-grade readings cleared", "success");
+        }
+
+        /**
+         * Send time to CALC tab timer
+         * Uses the same mechanism as TEST STRIP tab
+         */
+        sendTimeToCalc(time, source) {
+          if (!time || time <= 0) {
+            this.showFeedback("Invalid exposure time", "error");
+            return;
+          }
+
+          // Update CALC tab base time slider
+          const baseSlider = document.getElementById("baseTimeSlider");
+          if (baseSlider) {
+            // Clamp to slider range
+            const clampedTime = Math.min(
+              Math.max(time, parseFloat(baseSlider.min)),
+              parseFloat(baseSlider.max),
+            );
+            baseSlider.value = clampedTime;
+            baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          // Reset the incremental timer for fresh start
+          if (window.incrementalTimer) {
+            window.incrementalTimer.baseTime = time;
+            window.incrementalTimer.reset();
+          }
+
+          // Switch to CALC tab
+          switchTab("calc");
+
+          // Scroll to top
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          // Audio feedback
+          playBeep(800, 0.3, 0.3);
+
+          // Show feedback
+          this.showFeedback(`${source}: ${time.toFixed(2)}s → CALC`, "success");
+
+          // Log to exposure log manager
+          if (window.exposureLogManager) {
+            window.exposureLogManager.addCalcPhase({
+              baseTime: time,
+              stopAdjustment: 0,
+              finalTime: time,
+              filterContext: source,
+              notes: `Via light meter: ${source}`,
+            });
+          }
+        }
+
+        /**
+         * Calculate calibration from lux and time
+         */
+        calculateCalibration() {
+          const luxInput = document.getElementById("calMeasuredLux");
+          const timeInput = document.getElementById("calCorrectTime");
+
+          const lux = parseFloat(luxInput.value);
+          const time = parseFloat(timeInput.value);
+
+          if (!lux || lux <= 0 || !time || time <= 0) {
+            this.showFeedback("Enter valid lux and time values", "error");
+            return;
+          }
+
+          const calibration = lux * time;
+
+          // Update calibration input
+          document.getElementById("calibrationInput").value =
+            calibration.toFixed(0);
+
+          // Save calibration
+          this.calibration = calibration;
+          this.saveCalibration();
+          this.updateCalibrationDisplay();
+
+          this.showFeedback(
+            `Calibration calculated: ${calibration.toFixed(0)} lux·s`,
+            "success",
+          );
+        }
+
+        /**
+         * Save calibration from input field
+         */
+        saveCalibrationFromInput() {
+          const input = document.getElementById("calibrationInput");
+          const value = parseFloat(input.value);
+
+          if (!value || value <= 0) {
+            this.showFeedback("Enter a valid calibration value", "error");
+            return;
+          }
+
+          this.calibration = value;
+          this.saveCalibration();
+          this.updateCalibrationDisplay();
+
+          // Also send to server
+          this.sendCalibrationToServer(value);
+
+          this.showFeedback(
+            `Calibration saved: ${value.toFixed(0)} lux·s`,
+            "success",
+          );
+        }
+
+        /**
+         * Send calibration to server
+         */
+        async sendCalibrationToServer(value) {
+          try {
+            await fetch(
+              `/light-meter-calibrate?constant=${value}&set_default=true`,
+            );
+          } catch (e) {
+            console.warn("Could not send calibration to server:", e);
+          }
+        }
+
+        /**
+         * Load calibration from localStorage
+         */
+        loadCalibration() {
+          const stored = localStorage.getItem("lightMeterCalibration");
+          return stored ? parseFloat(stored) : null;
+        }
+
+        /**
+         * Save calibration to localStorage
+         */
+        saveCalibration() {
+          localStorage.setItem(
+            "lightMeterCalibration",
+            this.calibration.toString(),
+          );
+        }
+
+        /**
+         * Update calibration display
+         */
+        updateCalibrationDisplay() {
+          const display = document.getElementById("meterCalibrationValue");
+          if (display) {
+            display.textContent = this.calibration.toFixed(0) + " lux·s";
+          }
+        }
+
+        /**
+         * Show feedback message (uses existing pattern)
+         */
+        showFeedback(message, type = "success") {
+          if (settingsManager && settingsManager.showAllProfilesFeedback) {
+            settingsManager.showAllProfilesFeedback(message, type);
+          } else {
+            console.log(`[${type}] ${message}`);
+          }
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         // Initialize audio service first (for all sound functionality)
         audioService = new AudioService();
@@ -16509,6 +18359,9 @@
 
         // Initialize split-grade calculator
         window.splitGradeCalculator = new SplitGradeCalculator();
+
+        // Initialize light meter manager
+        window.lightMeterManager = new LightMeterManager();
 
         // Initialize countdown manager
         window.countdownManager = new CountdownManager();
@@ -17120,7 +18973,7 @@
           const STORAGE_KEY = "calc_collapsed";
           let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
           const sections = document.querySelectorAll(
-            "#calc .collapsible, #split .collapsible, #fstop-test .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible",
+            "#calc .collapsible, #split .collapsible, #fstop-test .collapsible, #chemical .collapsible, #timer .collapsible, #settings .collapsible, #light-meter .collapsible",
           );
           // Clean up any stored keys that no longer correspond to existing sections
           const existingIds = Array.from(sections)

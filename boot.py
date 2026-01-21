@@ -25,8 +25,18 @@ from lib.wifi_ap import WiFiAP
 from lib.wifi_sta import WiFiSTA
 from lib.http_server import HTTPServer
 
+# Optional: Light meter sensor (TSL2591X via I2C)
+try:
+    from lib.light_sensor import DarkroomLightMeter
+    LIGHT_METER_AVAILABLE = True
+except ImportError:
+    LIGHT_METER_AVAILABLE = False
+    print("Note: Light meter module not available")
+
 # Configuration
 AP_GRACE_PERIOD = 5  # Seconds to wait before disabling AP after STA connects
+LIGHT_METER_SDA_PIN = 0  # GP0 for I2C SDA
+LIGHT_METER_SCL_PIN = 1  # GP1 for I2C SCL
 
 
 class DarkroomTimer:
@@ -49,6 +59,23 @@ class DarkroomTimer:
         # Initialize temperature sensor
         print("\nInitializing temperature sensor...")
         self.temperature = TemperatureSensor(pin_num=18)
+        
+        # Initialize light meter (TSL2591X) if available
+        self.light_meter = None
+        if LIGHT_METER_AVAILABLE:
+            print("\nInitializing light meter (TSL2591X)...")
+            try:
+                self.light_meter = DarkroomLightMeter(
+                    sda_pin=LIGHT_METER_SDA_PIN,
+                    scl_pin=LIGHT_METER_SCL_PIN
+                )
+                if self.light_meter.sensor.connected:
+                    print("✓ Light meter initialized successfully")
+                else:
+                    print("Note: Light meter sensor not connected")
+            except Exception as e:
+                print(f"Warning: Light meter init failed: {e}")
+                self.light_meter = None
         
         # Initialize timer manager with temperature sensor
         print("\nInitializing timer manager...")
@@ -124,7 +151,8 @@ class DarkroomTimer:
             self.gpio,
             self.timer,
             self.wifi_ap,
-            self.wifi_sta
+            self.wifi_sta,
+            self.light_meter
         )
         self.http.start()
     

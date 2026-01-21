@@ -31,7 +31,7 @@ class HTTPServer:
     - WiFi configuration endpoint
     """
     
-    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None):
+    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None, light_meter=None):
         """
         Initialize HTTP server.
         
@@ -40,11 +40,13 @@ class HTTPServer:
             timer_manager: TimerManager instance
             wifi_ap: WiFiAP instance (optional)
             wifi_sta: WiFiSTA instance (optional)
+            light_meter: DarkroomLightMeter instance (optional)
         """
         self.gpio = gpio_control
         self.timer = timer_manager
         self.wifi_ap = wifi_ap
         self.wifi_sta = wifi_sta
+        self.light_meter = light_meter
         self.sock = None
         self.running = False
     
@@ -595,6 +597,375 @@ class HTTPServer:
             }, 500)
             await self._sendall(conn, response)
     
+    async def _handle_light_meter(self, conn, params):
+        """
+        Handle /light-meter endpoint - take a light measurement.
+        
+        Query params:
+            samples: Number of samples to average (default: 5)
+            calibration: Calibration constant for exposure calc (optional)
+            filter: Filter grade for exposure calc (optional)
+        
+        Returns lux reading and calculated exposure time.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            samples = int(params.get('samples', 5))
+            calibration = params.get('calibration')
+            filter_grade = params.get('filter')
+            
+            if calibration:
+                calibration = float(calibration)
+            
+            # Take measurement
+            result = await self.light_meter.measure_lux_async(samples=samples)
+            
+            if result.get('lux') is None:
+                response = self._json_response({
+                    "error": result.get('error', "Failed to read sensor"),
+                    "sensor_status": self.light_meter.sensor.get_status()
+                }, 500)
+                await self._sendall(conn, response)
+                return
+            
+            # Calculate exposure time
+            exposure_time = self.light_meter.calculate_exposure_time(
+                result['lux'],
+                calibration=calibration,
+                filter_grade=filter_grade
+            )
+            
+            response = self._json_response({
+                "status": "success",
+                "lux": result['lux'],
+                "min_lux": result.get('min'),
+                "max_lux": result.get('max'),
+                "samples": result.get('samples'),
+                "variance": result.get('variance'),
+                "exposure_time": exposure_time,
+                "filter": filter_grade,
+                "calibration": calibration or self.light_meter.default_calibration,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Light meter error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_highlight(self, conn, params):
+        """
+        Handle /light-meter-highlight endpoint - measure highlight area.
+        
+        Stores the reading for contrast analysis.
+        Place sensor at brightest area of projected image.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            samples = int(params.get('samples', 5))
+            
+            result = await self.light_meter.measure_highlight_async(samples=samples)
+            
+            if result.get('lux') is None:
+                response = self._json_response({
+                    "error": result.get('error', "Failed to read sensor")
+                }, 500)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response({
+                "status": "success",
+                "type": "highlight",
+                "lux": result['lux'],
+                "samples": result.get('samples'),
+                "variance": result.get('variance'),
+                "stored_highlight": self.light_meter.highlight_lux,
+                "stored_shadow": self.light_meter.shadow_lux,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Highlight measurement error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_shadow(self, conn, params):
+        """
+        Handle /light-meter-shadow endpoint - measure shadow area.
+        
+        Stores the reading for contrast analysis.
+        Place sensor at darkest area of projected image.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            samples = int(params.get('samples', 5))
+            
+            result = await self.light_meter.measure_shadow_async(samples=samples)
+            
+            if result.get('lux') is None:
+                response = self._json_response({
+                    "error": result.get('error', "Failed to read sensor")
+                }, 500)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response({
+                "status": "success",
+                "type": "shadow",
+                "lux": result['lux'],
+                "samples": result.get('samples'),
+                "variance": result.get('variance'),
+                "stored_highlight": self.light_meter.highlight_lux,
+                "stored_shadow": self.light_meter.shadow_lux,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Shadow measurement error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_contrast(self, conn, params):
+        """
+        Handle /light-meter-contrast endpoint - get contrast analysis.
+        
+        Returns ΔEV, recommended filter grade, and split-grade calculations
+        based on stored highlight and shadow readings.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            analysis = self.light_meter.get_contrast_analysis()
+            
+            if 'error' in analysis:
+                response = self._json_response({
+                    "error": analysis['error'],
+                    "highlight_lux": analysis.get('highlight_lux'),
+                    "shadow_lux": analysis.get('shadow_lux')
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response({
+                "status": "success",
+                "highlight_lux": analysis['highlight_lux'],
+                "shadow_lux": analysis['shadow_lux'],
+                "delta_ev": analysis['delta_ev'],
+                "recommended_grade": analysis['recommended_grade'],
+                "split_grade": analysis['split_grade'],
+                "filter_system": self.light_meter.filter_system,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Contrast analysis error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_calibrate(self, conn, params):
+        """
+        Handle /light-meter-calibrate endpoint - set calibration.
+        
+        Query params:
+            paper_id: Paper identifier (e.g., 'ilford_mg4_rc')
+            constant: Calibration constant (lux × seconds)
+            set_default: If 'true', set as default calibration
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            paper_id = params.get('paper_id', '').strip()
+            constant_str = params.get('constant', '').strip()
+            set_default = params.get('set_default', '').lower() == 'true'
+            
+            if not constant_str:
+                response = self._json_response({
+                    "error": "Calibration constant required (?constant=X)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            constant = float(constant_str)
+            
+            if constant <= 0:
+                response = self._json_response({
+                    "error": "Calibration constant must be positive"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            if paper_id:
+                self.light_meter.set_calibration(paper_id, constant)
+            
+            if set_default or not paper_id:
+                self.light_meter.default_calibration = constant
+            
+            response = self._json_response({
+                "status": "success",
+                "paper_id": paper_id or "default",
+                "calibration": constant,
+                "is_default": set_default or not paper_id,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError:
+            response = self._json_response({
+                "error": "Invalid calibration value"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Calibration error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_config(self, conn, params):
+        """
+        Handle /light-meter-config endpoint - configure light meter.
+        
+        Query params:
+            filter_system: 'ilford', 'foma_fomaspeed', or 'foma_fomatone'
+            gain: 'low', 'med', 'high', 'max', or 'auto'
+            integration: 100, 200, 300, 400, 500, or 600 (ms)
+            clear: 'true' to clear stored highlight/shadow readings
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            filter_system = params.get('filter_system', '').strip().lower()
+            gain = params.get('gain', '').strip().lower()
+            integration = params.get('integration', '').strip()
+            clear = params.get('clear', '').lower() == 'true'
+            
+            changes = []
+            
+            # Set filter system
+            if filter_system:
+                valid_systems = ['ilford', 'foma_fomaspeed', 'foma_fomatone']
+                if filter_system in valid_systems:
+                    self.light_meter.set_filter_system(filter_system)
+                    changes.append(f"filter_system={filter_system}")
+                else:
+                    response = self._json_response({
+                        "error": f"Invalid filter system. Use: {valid_systems}"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+            
+            # Set gain
+            if gain:
+                from lib.light_sensor import TSL2591
+                gain_map = {
+                    'low': TSL2591.GAIN_LOW,
+                    'med': TSL2591.GAIN_MED,
+                    'high': TSL2591.GAIN_HIGH,
+                    'max': TSL2591.GAIN_MAX
+                }
+                
+                if gain == 'auto':
+                    self.light_meter.sensor.auto_gain()
+                    changes.append("gain=auto")
+                elif gain in gain_map:
+                    self.light_meter.sensor.set_gain(gain_map[gain])
+                    changes.append(f"gain={gain}")
+                else:
+                    response = self._json_response({
+                        "error": "Invalid gain. Use: low, med, high, max, auto"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+            
+            # Set integration time
+            if integration:
+                from lib.light_sensor import TSL2591
+                int_map = {
+                    '100': TSL2591.INTEGRATIONTIME_100MS,
+                    '200': TSL2591.INTEGRATIONTIME_200MS,
+                    '300': TSL2591.INTEGRATIONTIME_300MS,
+                    '400': TSL2591.INTEGRATIONTIME_400MS,
+                    '500': TSL2591.INTEGRATIONTIME_500MS,
+                    '600': TSL2591.INTEGRATIONTIME_600MS
+                }
+                
+                if integration in int_map:
+                    self.light_meter.sensor.set_integration_time(int_map[integration])
+                    changes.append(f"integration={integration}ms")
+                else:
+                    response = self._json_response({
+                        "error": "Invalid integration. Use: 100, 200, 300, 400, 500, 600"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+            
+            # Clear readings
+            if clear:
+                self.light_meter.clear_readings()
+                changes.append("readings_cleared")
+            
+            # Return current status
+            status = self.light_meter.get_status()
+            
+            response = self._json_response({
+                "status": "success",
+                "changes": changes,
+                "light_meter": status,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Configuration error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
     async def _handle_options(self, conn):
         """Handle OPTIONS preflight request."""
         response = (
@@ -657,6 +1028,18 @@ class HTTPServer:
                 await self._handle_wifi_ap_force(conn, params)
             elif path == '/wifi-clear':
                 await self._handle_wifi_clear(conn, params)
+            elif path == '/light-meter':
+                await self._handle_light_meter(conn, params)
+            elif path == '/light-meter-highlight':
+                await self._handle_light_meter_highlight(conn, params)
+            elif path == '/light-meter-shadow':
+                await self._handle_light_meter_shadow(conn, params)
+            elif path == '/light-meter-contrast':
+                await self._handle_light_meter_contrast(conn, params)
+            elif path == '/light-meter-calibrate':
+                await self._handle_light_meter_calibrate(conn, params)
+            elif path == '/light-meter-config':
+                await self._handle_light_meter_config(conn, params)
             elif path == '/favicon.ico':
                 # Return empty response for favicon
                 response = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
