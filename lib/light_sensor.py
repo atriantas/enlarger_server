@@ -721,17 +721,11 @@ class DarkroomLightMeter:
         for grade, data in filter_data.items():
             iso_r = data['iso_r']
             
-            # Find closest ISO R value in our EV mapping
-            printable_ev = None
-            for r, ev in self.ISO_R_TO_EV.items():
-                if abs(r - iso_r) < abs(r - best_diff):
-                    printable_ev = ev
-                    break
+            # Convert ISO R to printable EV range via interpolation
+            printable_ev = self._iso_r_to_ev(iso_r)
             
-            if printable_ev is None:
-                # Interpolate EV from ISO R
-                printable_ev = self._iso_r_to_ev(iso_r)
-            
+            # Match paper's printable EV to measured scene contrast
+            # Higher ISO R = more paper latitude = handles more contrast
             diff = abs(printable_ev - abs(delta_ev))
             
             if diff < best_diff:

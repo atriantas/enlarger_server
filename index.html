@@ -4516,7 +4516,18 @@
 
               <!-- Calibration Display -->
               <div class="info-box" style="margin-top: 10px">
-                <div class="label-sm">CALIBRATION CONSTANT</div>
+                <div class="label-sm">CALIBRATION FOR CURRENT PAPER</div>
+                <div
+                  class="label-sm"
+                  id="meterCurrentPaperName"
+                  style="
+                    font-size: 0.6rem;
+                    color: var(--accent);
+                    margin-bottom: 4px;
+                  "
+                >
+                  Ilford MG IV RC
+                </div>
                 <div class="value-display" id="meterCalibrationValue">
                   1000 lux·s
                 </div>
@@ -4524,7 +4535,7 @@
                   class="label-sm"
                   style="margin-top: 4px; font-size: 0.55rem"
                 >
-                  Adjust via test strip: calibration = lux × correct_time
+                  Auto-saved per paper type
                 </div>
               </div>
             </div>
@@ -4644,7 +4655,7 @@
               class="label-sm"
               style="text-align: center; margin-bottom: 10px"
             >
-              Measure highlight and shadow areas to determine negative contrast
+              Measure highlight and shadow areas to determine contrast grade
             </div>
 
             <!-- Averaging Control -->
@@ -4711,7 +4722,13 @@
             <div class="exp-info" style="margin-top: 10px">
               <div class="info-box">
                 <div class="label-sm">RECOMMENDED GRADE</div>
-                <div class="value-display" id="recommendedGrade">--</div>
+                <div
+                  class="value-display"
+                  id="recommendedGrade"
+                  style="font-size: 1.8rem"
+                >
+                  --
+                </div>
               </div>
               <div class="info-box">
                 <div class="label-sm">MATCH QUALITY</div>
@@ -4719,15 +4736,21 @@
               </div>
             </div>
 
-            <!-- Exposure Time with Recommended Filter -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">EXPOSURE TIME (with filter)</div>
-              <div
-                class="timer-display"
-                id="contrastExposureTime"
-                style="font-size: 2rem"
-              >
-                --.--
+            <!-- Guidance Message -->
+            <div
+              class="info-box"
+              style="
+                margin-top: 15px;
+                background: rgba(50, 150, 255, 0.1);
+                border-color: rgba(50, 150, 255, 0.3);
+              "
+            >
+              <div class="label-sm" style="color: #6699ff; text-align: center">
+                NEXT STEP
+              </div>
+              <div class="label-sm" style="text-align: center; margin-top: 5px">
+                Use EXPOSURE METER mode with the recommended grade filter to
+                determine exposure time.
               </div>
             </div>
 
@@ -4735,13 +4758,6 @@
             <div class="settings-btn-group" style="margin-top: 15px">
               <button class="settings-btn" id="analyzeContrastBtn" disabled>
                 Analyze Contrast
-              </button>
-              <button
-                class="settings-btn primary"
-                id="sendContrastToCalc"
-                disabled
-              >
-                → Send to CALC
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -4758,14 +4774,13 @@
         >
           <div class="incremental-timer">
             <div class="title-sm" style="text-align: center">
-              SPLIT-GRADE CALCULATOR
+              SPLIT-GRADE ANALYZER
             </div>
             <div
               class="label-sm"
               style="text-align: center; margin-bottom: 10px"
             >
-              Calculate separate soft/hard exposures for optimal contrast
-              control
+              Analyze contrast to determine split-grade proportions
             </div>
 
             <!-- Averaging Control -->
@@ -4787,7 +4802,7 @@
 
             <!-- Highlight Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">HIGHLIGHT AREA (for soft exposure)</div>
+              <div class="label-sm">HIGHLIGHT AREA</div>
               <div class="value-display" id="splitHighlightLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -4800,7 +4815,7 @@
 
             <!-- Shadow Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">SHADOW AREA (for hard exposure)</div>
+              <div class="label-sm">SHADOW AREA</div>
               <div class="value-display" id="splitShadowLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -4815,15 +4830,15 @@
             <div class="info-box" style="margin-top: 15px">
               <div class="label-sm">NEGATIVE CONTRAST (ΔEV)</div>
               <div
-                class="value-display"
+                class="timer-display"
                 id="splitDeltaEV"
-                style="font-size: 1.5rem"
+                style="font-size: 2rem"
               >
                 --
               </div>
             </div>
 
-            <!-- Soft Exposure -->
+            <!-- Split-Grade Recommendation -->
             <div class="exp-info" style="margin-top: 15px">
               <div
                 class="info-box"
@@ -4832,19 +4847,16 @@
                   border-color: rgba(255, 200, 50, 0.3);
                 "
               >
-                <div class="label-sm" style="color: #ffcc00">
-                  SOFT EXPOSURE (Highlights)
-                </div>
-                <div class="value-display" id="splitSoftFilter">--</div>
+                <div class="label-sm" style="color: #ffcc00">SOFT FILTER</div>
                 <div
-                  class="timer-display"
-                  id="splitSoftTime"
-                  style="font-size: 2rem"
+                  class="value-display"
+                  id="splitSoftFilter"
+                  style="font-size: 1.5rem"
                 >
-                  --.--
+                  --
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  Factor: <span id="splitSoftFactor">--</span>
+                  Proportion: <span id="splitSoftPercent">--%</span>
                 </div>
               </div>
               <div
@@ -4854,45 +4866,43 @@
                   border-color: rgba(200, 50, 255, 0.3);
                 "
               >
-                <div class="label-sm" style="color: #cc66ff">
-                  HARD EXPOSURE (Shadows)
-                </div>
-                <div class="value-display" id="splitHardFilter">--</div>
+                <div class="label-sm" style="color: #cc66ff">HARD FILTER</div>
                 <div
-                  class="timer-display"
-                  id="splitHardTime"
-                  style="font-size: 2rem"
+                  class="value-display"
+                  id="splitHardFilter"
+                  style="font-size: 1.5rem"
                 >
-                  --.--
+                  --
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  Factor: <span id="splitHardFactor">--</span>
+                  Proportion: <span id="splitHardPercent">--%</span>
                 </div>
               </div>
             </div>
 
-            <!-- Total Exposure -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">TOTAL EXPOSURE TIME</div>
-              <div
-                class="timer-display"
-                id="splitTotalTime"
-                style="font-size: 2rem"
-              >
-                --.--
+            <!-- Guidance Message -->
+            <div
+              class="info-box"
+              style="
+                margin-top: 15px;
+                background: rgba(50, 150, 255, 0.1);
+                border-color: rgba(50, 150, 255, 0.3);
+              "
+            >
+              <div class="label-sm" style="color: #6699ff; text-align: center">
+                HOW TO USE
+              </div>
+              <div class="label-sm" style="text-align: center; margin-top: 5px">
+                1. Use EXPOSURE METER with soft filter for highlight time<br />
+                2. Multiply by soft proportion for soft exposure<br />
+                3. Multiply by hard proportion for hard exposure
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
               <button class="settings-btn" id="calculateSplitBtn" disabled>
-                Calculate Split-Grade
-              </button>
-              <button class="settings-btn primary" id="sendSoftToCalc" disabled>
-                → Send Soft to CALC
-              </button>
-              <button class="settings-btn primary" id="sendHardToCalc" disabled>
-                → Send Hard to CALC
+                Analyze Split-Grade
               </button>
             </div>
 
@@ -5165,6 +5175,8 @@
         SPLIT_GRADE_PRESETS: "darkroom_timer_split_grade_presets",
         CURRENT_SPLIT_PRESET: "darkroom_timer_current_split_preset",
         TEST_TRANSFER_DESTINATION: "darkroom_timer_test_transfer_destination",
+        // Light meter calibrations (per paper type)
+        LIGHT_METER_CALIBRATIONS: "darkroom_timer_light_meter_calibrations",
         // Logging tool storage keys
         TEMP_SESSIONS: "darkroom_timer_temp_sessions",
         PERMANENT_SESSIONS: "darkroom_timer_permanent_sessions",
@@ -8356,6 +8368,12 @@
             splitGradePresets: window.splitGradeCalculator
               ? window.splitGradeCalculator.splitPresets
               : [],
+            lightMeterCalibrations: window.lightMeterManager
+              ? window.lightMeterManager.calibrations
+              : JSON.parse(
+                  localStorage.getItem(STORAGE_KEYS.LIGHT_METER_CALIBRATIONS) ||
+                    "{}",
+                ),
           };
 
           const jsonStr = JSON.stringify(exportData, null, 2);
@@ -8644,6 +8662,35 @@
                 window.splitGradeCalculator.updatePresetList();
                 importedCount += validPresets.length;
               }
+            }
+
+            // Import light meter calibrations
+            if (
+              data.lightMeterCalibrations &&
+              typeof data.lightMeterCalibrations === "object"
+            ) {
+              // Merge with existing calibrations
+              if (window.lightMeterManager) {
+                window.lightMeterManager.calibrations = {
+                  ...window.lightMeterManager.calibrations,
+                  ...data.lightMeterCalibrations,
+                };
+                window.lightMeterManager.saveAllCalibrations();
+                window.lightMeterManager.loadCalibrationForCurrentPaper();
+                window.lightMeterManager.updateCalibrationDisplay();
+              } else {
+                // Direct save to localStorage if manager not loaded yet
+                const existing = JSON.parse(
+                  localStorage.getItem(STORAGE_KEYS.LIGHT_METER_CALIBRATIONS) ||
+                    "{}",
+                );
+                const merged = { ...existing, ...data.lightMeterCalibrations };
+                localStorage.setItem(
+                  STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
+                  JSON.stringify(merged),
+                );
+              }
+              importedCount++;
             }
 
             // Refresh the chemical tab if it's currently active
@@ -17189,9 +17236,12 @@
           this.filterSystem = "ilford";
           this.paperBrand = "ilford";
           this.fomaPaperType = "fomaspeed";
+          this.ilfordPaperType = "mg4_rc"; // Track Ilford paper type
 
-          // Calibration (lux × seconds for proper exposure)
-          this.calibration = this.loadCalibration() || 1000;
+          // Calibration profiles (lux × seconds per paper type)
+          // Each paper type has its own calibration value
+          this.calibrations = this.loadAllCalibrations();
+          this.calibration = this.getCalibrationForCurrentPaper();
 
           // Sensor status
           this.sensorConnected = false;
@@ -17293,6 +17343,9 @@
           // Update calibration display
           this.updateCalibrationDisplay();
 
+          // Sync filter system with server on init (default: ilford)
+          this.syncFilterSystemWithServer();
+
           console.log("LightMeterManager initialized");
         }
 
@@ -17363,6 +17416,14 @@
             });
           }
 
+          // Ilford paper type dropdown
+          const ilfordPaperSelect = document.getElementById("ilfordPaperType");
+          if (ilfordPaperSelect) {
+            ilfordPaperSelect.addEventListener("change", () => {
+              this.setIlfordPaperType(ilfordPaperSelect.value);
+            });
+          }
+
           // FOMA paper type buttons
           const fomaSpeedBtn = document.getElementById("btnFomaSpeed2");
           const fomaToneBtn = document.getElementById("btnFomaTone2");
@@ -17381,6 +17442,17 @@
 
           // Update filter grade dropdown based on paper brand
           this.updateFilterDropdown();
+        }
+
+        /**
+         * Set Ilford paper type (from dropdown)
+         */
+        setIlfordPaperType(type) {
+          this.ilfordPaperType = type;
+
+          // Load calibration for new paper and update display
+          this.loadCalibrationForCurrentPaper();
+          this.updateCalibrationDisplay();
         }
 
         /**
@@ -17413,8 +17485,15 @@
                 : "foma_fomatone";
           }
 
+          // SYNC WITH SERVER - Critical for correct grade recommendations
+          this.syncFilterSystemWithServer();
+
           // Update filter dropdown
           this.updateFilterDropdown();
+
+          // Load calibration for new paper and update display
+          this.loadCalibrationForCurrentPaper();
+          this.updateCalibrationDisplay();
         }
 
         /**
@@ -17433,8 +17512,15 @@
             .getElementById("btnFomaTone2")
             ?.classList.toggle("active", type === "fomatone");
 
+          // SYNC WITH SERVER - Critical for correct grade recommendations
+          this.syncFilterSystemWithServer();
+
           // Update filter dropdown
           this.updateFilterDropdown();
+
+          // Load calibration for new paper and update display
+          this.loadCalibrationForCurrentPaper();
+          this.updateCalibrationDisplay();
         }
 
         /**
@@ -17478,6 +17564,25 @@
             return this.FOMA_FOMASPEED_FILTERS;
           } else {
             return this.FOMA_FOMATONE_FILTERS;
+          }
+        }
+
+        /**
+         * Sync filter system with server
+         * Called when paper brand or FOMA paper type changes
+         * Ensures Contrast Analyzer uses correct ISO R values for recommendations
+         */
+        async syncFilterSystemWithServer() {
+          try {
+            const response = await fetch(
+              `/light-meter-config?filter_system=${this.filterSystem}`,
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              console.log(`Filter system synced: ${this.filterSystem}`);
+            }
+          } catch (error) {
+            console.error("Failed to sync filter system:", error);
           }
         }
 
@@ -17552,12 +17657,6 @@
             analyzeBtn.addEventListener("click", () => this.analyzeContrast());
           }
 
-          // Send to CALC button
-          const sendBtn = document.getElementById("sendContrastToCalc");
-          if (sendBtn) {
-            sendBtn.addEventListener("click", () => this.sendContrastToCalc());
-          }
-
           // Clear button
           const clearBtn = document.getElementById("clearContrastBtn");
           if (clearBtn) {
@@ -17602,22 +17701,6 @@
           const calcBtn = document.getElementById("calculateSplitBtn");
           if (calcBtn) {
             calcBtn.addEventListener("click", () => this.calculateSplitGrade());
-          }
-
-          // Send soft to CALC
-          const sendSoftBtn = document.getElementById("sendSoftToCalc");
-          if (sendSoftBtn) {
-            sendSoftBtn.addEventListener("click", () =>
-              this.sendSplitToCalc("soft"),
-            );
-          }
-
-          // Send hard to CALC
-          const sendHardBtn = document.getElementById("sendHardToCalc");
-          if (sendHardBtn) {
-            sendHardBtn.addEventListener("click", () =>
-              this.sendSplitToCalc("hard"),
-            );
           }
 
           // Clear button
@@ -17944,19 +18027,30 @@
 
         /**
          * Update contrast/split mode buttons based on readings
+         * Auto-triggers analysis when both measurements are complete
          */
         updateContrastButtons(mode) {
           const hasBoth = this.highlightLux !== null && this.shadowLux !== null;
 
           if (mode === "contrast") {
             document.getElementById("analyzeContrastBtn").disabled = !hasBoth;
+            // Auto-analyze when both readings are available
+            if (hasBoth) {
+              this.analyzeContrast();
+            }
           } else {
             document.getElementById("calculateSplitBtn").disabled = !hasBoth;
+            // Auto-calculate split-grade when both readings are available
+            if (hasBoth) {
+              this.calculateSplitGrade();
+            }
           }
         }
 
         /**
          * Analyze contrast from stored readings
+         * DESIGN: Only measures contrast and recommends grade - NO exposure time calculation
+         * Exposure time must be determined using Exposure Meter mode with the recommended grade filter
          */
         async analyzeContrast() {
           if (!this.highlightLux || !this.shadowLux) {
@@ -17975,7 +18069,7 @@
               this.deltaEV = data.delta_ev;
               this.recommendedGrade = data.recommended_grade;
 
-              // Update displays
+              // Update displays - CONTRAST AND GRADE ONLY, NO EXPOSURE TIME
               document.getElementById("deltaEVDisplay").textContent =
                 data.delta_ev.toFixed(1) + " EV";
 
@@ -17984,20 +18078,6 @@
                   data.recommended_grade.grade;
                 document.getElementById("matchQuality").textContent =
                   data.recommended_grade.match_quality;
-
-                // Calculate exposure time with recommended filter
-                const filters = this.getFilterData();
-                const filterData =
-                  filters[data.recommended_grade.grade] || filters[""];
-                const time =
-                  (this.calibration / this.highlightLux) * filterData.factor;
-
-                document.getElementById("contrastExposureTime").textContent =
-                  time.toFixed(2);
-                this.exposureTime = time;
-
-                // Enable send button
-                document.getElementById("sendContrastToCalc").disabled = false;
               }
 
               playBeep(1000, 0.3, 0.3);
@@ -18007,24 +18087,6 @@
           } catch (error) {
             this.showFeedback("Connection error: " + error.message, "error");
           }
-        }
-
-        /**
-         * Send contrast exposure to CALC tab
-         */
-        sendContrastToCalc() {
-          if (!this.exposureTime || this.exposureTime <= 0) {
-            this.showFeedback("No exposure time calculated", "error");
-            return;
-          }
-
-          const grade = this.recommendedGrade
-            ? this.recommendedGrade.grade
-            : "none";
-          this.sendTimeToCalc(
-            this.exposureTime,
-            `Contrast analyzer (Grade ${grade})`,
-          );
         }
 
         /**
@@ -18042,11 +18104,9 @@
           document.getElementById("deltaEVDisplay").textContent = "--";
           document.getElementById("recommendedGrade").textContent = "--";
           document.getElementById("matchQuality").textContent = "--";
-          document.getElementById("contrastExposureTime").textContent = "--.--";
 
           // Disable buttons
           document.getElementById("analyzeContrastBtn").disabled = true;
-          document.getElementById("sendContrastToCalc").disabled = true;
 
           // Clear on server too
           try {
@@ -18057,7 +18117,9 @@
         }
 
         /**
-         * Calculate split-grade exposures
+         * Analyze split-grade proportions from stored readings
+         * DESIGN: Only analyzes contrast and recommends PROPORTIONS - NO absolute exposure times
+         * Absolute times must be determined using Exposure Meter mode
          */
         async calculateSplitGrade() {
           if (!this.highlightLux || !this.shadowLux) {
@@ -18075,30 +18137,36 @@
             if (data.status === "success" && data.split_grade) {
               this.splitGradeResult = data.split_grade;
 
-              // Update displays
+              // Update displays - SHOW ΔEV, FILTERS, AND PROPORTIONS ONLY
               document.getElementById("splitDeltaEV").textContent =
                 data.delta_ev.toFixed(1) + " EV";
 
+              // Show filter names
               document.getElementById("splitSoftFilter").textContent =
-                "Filter " + data.split_grade.soft_filter;
-              document.getElementById("splitSoftTime").textContent =
-                data.split_grade.soft_time.toFixed(2);
-              document.getElementById("splitSoftFactor").textContent =
-                "×" + data.split_grade.soft_factor.toFixed(1);
-
+                "Grade " + data.split_grade.soft_filter;
               document.getElementById("splitHardFilter").textContent =
-                "Filter " + data.split_grade.hard_filter;
-              document.getElementById("splitHardTime").textContent =
-                data.split_grade.hard_time.toFixed(2);
-              document.getElementById("splitHardFactor").textContent =
-                "×" + data.split_grade.hard_factor.toFixed(1);
+                "Grade " + data.split_grade.hard_filter;
 
-              document.getElementById("splitTotalTime").textContent =
-                data.split_grade.total_time.toFixed(2);
+              // Calculate relative proportions from the lux ratio
+              // The ratio of highlight_lux to shadow_lux determines the split
+              const highlightLux =
+                data.split_grade.highlight_lux || this.highlightLux;
+              const shadowLux = data.split_grade.shadow_lux || this.shadowLux;
+              const totalLux = highlightLux + shadowLux;
 
-              // Enable send buttons
-              document.getElementById("sendSoftToCalc").disabled = false;
-              document.getElementById("sendHardToCalc").disabled = false;
+              // Soft proportion based on shadow detail needs (inverted because brighter = less dense)
+              // Higher shadow lux means more soft filter needed
+              const softProportion = Math.round((shadowLux / totalLux) * 100);
+              const hardProportion = 100 - softProportion;
+
+              document.getElementById("splitSoftPercent").textContent =
+                softProportion + "%";
+              document.getElementById("splitHardPercent").textContent =
+                hardProportion + "%";
+
+              // Store proportions in result for reference
+              this.splitGradeResult.softProportion = softProportion;
+              this.splitGradeResult.hardProportion = hardProportion;
 
               playBeep(1000, 0.3, 0.3);
             } else {
@@ -18110,27 +18178,6 @@
           } catch (error) {
             this.showFeedback("Connection error: " + error.message, "error");
           }
-        }
-
-        /**
-         * Send split-grade time to CALC tab
-         */
-        sendSplitToCalc(type) {
-          if (!this.splitGradeResult) {
-            this.showFeedback("Calculate split-grade first", "error");
-            return;
-          }
-
-          const time =
-            type === "soft"
-              ? this.splitGradeResult.soft_time
-              : this.splitGradeResult.hard_time;
-          const filter =
-            type === "soft"
-              ? this.splitGradeResult.soft_filter
-              : this.splitGradeResult.hard_filter;
-
-          this.sendTimeToCalc(time, `Split-grade ${type} (Filter ${filter})`);
         }
 
         /**
@@ -18146,17 +18193,12 @@
           document.getElementById("splitShadowLux").textContent = "-- lux";
           document.getElementById("splitDeltaEV").textContent = "--";
           document.getElementById("splitSoftFilter").textContent = "--";
-          document.getElementById("splitSoftTime").textContent = "--.--";
-          document.getElementById("splitSoftFactor").textContent = "--";
+          document.getElementById("splitSoftPercent").textContent = "--%";
           document.getElementById("splitHardFilter").textContent = "--";
-          document.getElementById("splitHardTime").textContent = "--.--";
-          document.getElementById("splitHardFactor").textContent = "--";
-          document.getElementById("splitTotalTime").textContent = "--.--";
+          document.getElementById("splitHardPercent").textContent = "--%";
 
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
-          document.getElementById("sendSoftToCalc").disabled = true;
-          document.getElementById("sendHardToCalc").disabled = true;
 
           // Clear on server too
           try {
@@ -18292,29 +18334,132 @@
 
         /**
          * Load calibration from localStorage
+         * Now loads all calibrations as a dict keyed by paper ID
          */
-        loadCalibration() {
-          const stored = localStorage.getItem("lightMeterCalibration");
-          return stored ? parseFloat(stored) : null;
+        loadAllCalibrations() {
+          const stored = localStorage.getItem(
+            STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
+          );
+          if (stored) {
+            try {
+              return JSON.parse(stored);
+            } catch (e) {
+              console.warn("Could not parse calibrations, using defaults");
+            }
+          }
+          // Migrate old single calibration value if exists
+          const oldCalibration = localStorage.getItem("lightMeterCalibration");
+          if (oldCalibration) {
+            const defaultCalibrations = this.getDefaultCalibrations();
+            defaultCalibrations["ilford_mg4_rc"] = parseFloat(oldCalibration);
+            localStorage.removeItem("lightMeterCalibration"); // Remove old key
+            this.saveAllCalibrations(defaultCalibrations);
+            return defaultCalibrations;
+          }
+          return this.getDefaultCalibrations();
         }
 
         /**
-         * Save calibration to localStorage
+         * Get default calibrations for all paper types
          */
-        saveCalibration() {
+        getDefaultCalibrations() {
+          return {
+            // Ilford papers
+            ilford_mg4_rc: 1000,
+            ilford_warmtone: 1000,
+            ilford_cooltone: 1000,
+            ilford_portfolio: 1000,
+            // FOMA papers
+            foma_fomaspeed: 1000,
+            foma_fomatone: 1000,
+          };
+        }
+
+        /**
+         * Get current paper ID based on brand and type selection
+         */
+        getCurrentPaperId() {
+          if (this.paperBrand === "ilford") {
+            return `ilford_${this.ilfordPaperType}`;
+          } else {
+            return `foma_${this.fomaPaperType}`;
+          }
+        }
+
+        /**
+         * Get calibration for current paper
+         */
+        getCalibrationForCurrentPaper() {
+          const paperId = this.getCurrentPaperId();
+          return this.calibrations[paperId] || 1000;
+        }
+
+        /**
+         * Save all calibrations to localStorage
+         */
+        saveAllCalibrations(calibrations = null) {
+          const data = calibrations || this.calibrations;
           localStorage.setItem(
-            "lightMeterCalibration",
-            this.calibration.toString(),
+            STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
+            JSON.stringify(data),
           );
         }
 
         /**
-         * Update calibration display
+         * Save calibration for current paper to localStorage
+         */
+        saveCalibration() {
+          const paperId = this.getCurrentPaperId();
+          this.calibrations[paperId] = this.calibration;
+          this.saveAllCalibrations();
+        }
+
+        /**
+         * Load calibration for current paper (updates this.calibration)
+         */
+        loadCalibrationForCurrentPaper() {
+          this.calibration = this.getCalibrationForCurrentPaper();
+        }
+
+        /**
+         * Get human-readable paper name for display
+         */
+        getCurrentPaperName() {
+          const paperNames = {
+            ilford_mg4_rc: "Ilford MG IV RC",
+            ilford_warmtone: "Ilford Warmtone",
+            ilford_cooltone: "Ilford Cooltone",
+            ilford_portfolio: "Ilford Portfolio",
+            foma_fomaspeed: "FOMA FOMASPEED",
+            foma_fomatone: "FOMA FOMATONE",
+          };
+          return (
+            paperNames[this.getCurrentPaperId()] || this.getCurrentPaperId()
+          );
+        }
+
+        /**
+         * Update calibration display with current paper name and value
          */
         updateCalibrationDisplay() {
+          // Update calibration value
           const display = document.getElementById("meterCalibrationValue");
           if (display) {
             display.textContent = this.calibration.toFixed(0) + " lux·s";
+          }
+
+          // Update paper name display
+          const paperNameDisplay = document.getElementById(
+            "meterCurrentPaperName",
+          );
+          if (paperNameDisplay) {
+            paperNameDisplay.textContent = this.getCurrentPaperName();
+          }
+
+          // Update calibration input field if present
+          const calibrationInput = document.getElementById("calibrationInput");
+          if (calibrationInput) {
+            calibrationInput.value = this.calibration.toFixed(0);
           }
         }
 
