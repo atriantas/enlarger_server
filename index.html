@@ -1454,6 +1454,9 @@
           >
             TEST
           </button>
+          <button class="tab-dropdown-item" data-tab="meter" role="menuitem">
+            METER
+          </button>
           <button class="tab-dropdown-item" data-tab="split" role="menuitem">
             SPLIT
           </button>
@@ -2214,6 +2217,714 @@
               filter<br />
               Example with filter: 10s at f/5.6 → 14s with Y filter (1.4×
               factor)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- METER Tab - Light Meter Tool -->
+      <div id="meter" class="tab-content">
+        <div class="incremental-timer">
+          <div class="title-md">Light Meter</div>
+
+          <!-- Live Reading Panel -->
+          <div class="info-box" style="margin-bottom: 12px">
+            <div class="label-sm">LIVE READING</div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 8px;
+              "
+            >
+              <div style="text-align: center; flex: 1">
+                <div class="label-sm">LUX</div>
+                <div
+                  class="value-display"
+                  id="meterLuxDisplay"
+                  style="font-size: 2rem"
+                >
+                  --
+                </div>
+              </div>
+              <div style="text-align: center; flex: 1">
+                <div class="label-sm">EV</div>
+                <div
+                  class="value-display"
+                  id="meterEvDisplay"
+                  style="font-size: 2rem"
+                >
+                  --
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+              "
+            >
+              <span class="label-sm"
+                >Gain: <span id="meterGainDisplay">--</span></span
+              >
+              <span class="label-sm"
+                >Int: <span id="meterIntDisplay">--</span>ms</span
+              >
+            </div>
+            <button
+              class="settings-btn primary"
+              id="meterReadBtn"
+              style="width: 100%; margin-top: 12px"
+            >
+              📷 READ
+            </button>
+          </div>
+
+          <!-- Mode Selector -->
+          <div class="control">
+            <div class="control-label">
+              <span>MODE</span>
+            </div>
+            <div class="paper-selector" style="margin-top: 5px">
+              <button
+                class="toggle-btn active"
+                data-meter-mode="exposure"
+                id="meterModeExposure"
+              >
+                EXPOSURE
+              </button>
+              <button
+                class="toggle-btn"
+                data-meter-mode="grade"
+                id="meterModeGrade"
+              >
+                GRADE
+              </button>
+              <button
+                class="toggle-btn"
+                data-meter-mode="split"
+                id="meterModeSplit"
+              >
+                SPLIT
+              </button>
+            </div>
+          </div>
+
+          <!-- Paper Profile Selector -->
+          <div class="control">
+            <div class="control-label">
+              <span>PAPER PROFILE</span>
+            </div>
+            <select class="settings-input" id="meterPaperProfile">
+              <option value="Ilford MGIV RC">Ilford MGIV RC</option>
+              <option value="Ilford MGV FB">Ilford MGV FB</option>
+              <option value="Foma Variant III">Foma Variant III</option>
+              <option value="Fomatone MG">Fomatone MG</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+
+          <!-- Sensor Gain Control -->
+          <div class="control">
+            <div class="control-label">
+              <span>SENSOR GAIN</span>
+            </div>
+            <div class="paper-selector" style="margin-top: 5px">
+              <button
+                class="toggle-btn"
+                id="meterGainAuto"
+                title="Enable auto-gain (less stable)"
+              >
+                AUTO
+              </button>
+              <button
+                class="toggle-btn active"
+                id="meterGainDisable"
+                title="Disable auto-gain (stable readings)"
+              >
+                FIXED
+              </button>
+            </div>
+            <div class="paper-selector" style="margin-top: 8px">
+              <button
+                class="settings-btn"
+                id="meterGain1x"
+                style="font-size: 0.75rem; padding: 4px 8px"
+                title="1x gain - very bright conditions"
+              >
+                1x
+              </button>
+              <button
+                class="settings-btn"
+                id="meterGain25x"
+                style="font-size: 0.75rem; padding: 4px 8px"
+                title="25x gain - standard"
+              >
+                25x
+              </button>
+              <button
+                class="settings-btn"
+                id="meterGain428x"
+                style="font-size: 0.75rem; padding: 4px 8px"
+                title="428x gain - dim light"
+              >
+                428x
+              </button>
+              <button
+                class="settings-btn"
+                id="meterGain9876x"
+                style="font-size: 0.75rem; padding: 4px 8px"
+                title="9876x gain - darkroom"
+              >
+                MAX
+              </button>
+            </div>
+          </div>
+
+          <!-- Response Mode Control -->
+          <div class="control">
+            <div class="control-label">
+              <span>UPDATE SPEED</span>
+            </div>
+            <div class="paper-selector" style="margin-top: 5px">
+              <button
+                class="toggle-btn"
+                id="meterModeStable"
+                title="Full filtering - smoothest but slower"
+              >
+                STABLE
+              </button>
+              <button
+                class="toggle-btn active"
+                id="meterModeBalanced"
+                title="Medium filtering - good balance (recommended)"
+              >
+                BALANCED
+              </button>
+              <button
+                class="toggle-btn"
+                id="meterModeFast"
+                title="Minimal filtering - fastest updates but noisier"
+              >
+                FAST
+              </button>
+            </div>
+            <div class="label-sm" style="margin-top: 8px; opacity: 0.8">
+              <span id="meterResponseDesc"
+                >Good balance of speed and smoothness</span
+              >
+            </div>
+          </div>
+
+          <!-- Shadow/Highlight Capture Panel -->
+          <div class="info-box" style="margin-bottom: 12px">
+            <div class="label-sm">CAPTURE READINGS</div>
+
+            <!-- Shadow Section -->
+            <div
+              style="
+                margin-top: 12px;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 4px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <div>
+                  <div class="label-sm">SHADOW (Thin Negative)</div>
+                  <div style="display: flex; gap: 12px; margin-top: 4px">
+                    <span
+                      class="value-display"
+                      id="meterShadowLux"
+                      style="font-size: 1.2rem"
+                      >-- lux</span
+                    >
+                    <span
+                      class="value-display"
+                      id="meterShadowEv"
+                      style="font-size: 1.2rem"
+                      >-- EV</span
+                    >
+                  </div>
+                  <div
+                    class="label-sm"
+                    id="meterShadowSamples"
+                    style="margin-top: 4px"
+                  >
+                    0 samples
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <button
+                    class="settings-btn"
+                    id="meterAddShadow"
+                    style="font-size: 0.8rem; padding: 4px 8px"
+                  >
+                    + ADD
+                  </button>
+                  <button
+                    class="settings-btn primary"
+                    id="meterCaptureShadow"
+                    style="font-size: 0.8rem; padding: 4px 8px"
+                  >
+                    CAPTURE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Highlight Section -->
+            <div
+              style="
+                margin-top: 8px;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 4px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <div>
+                  <div class="label-sm">HIGHLIGHT (Dense Negative)</div>
+                  <div style="display: flex; gap: 12px; margin-top: 4px">
+                    <span
+                      class="value-display"
+                      id="meterHighlightLux"
+                      style="font-size: 1.2rem"
+                      >-- lux</span
+                    >
+                    <span
+                      class="value-display"
+                      id="meterHighlightEv"
+                      style="font-size: 1.2rem"
+                      >-- EV</span
+                    >
+                  </div>
+                  <div
+                    class="label-sm"
+                    id="meterHighlightSamples"
+                    style="margin-top: 4px"
+                  >
+                    0 samples
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <button
+                    class="settings-btn"
+                    id="meterAddHighlight"
+                    style="font-size: 0.8rem; padding: 4px 8px"
+                  >
+                    + ADD
+                  </button>
+                  <button
+                    class="settings-btn primary"
+                    id="meterCaptureHighlight"
+                    style="font-size: 0.8rem; padding: 4px 8px"
+                  >
+                    CAPTURE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="settings-btn"
+              id="meterClearReadings"
+              style="width: 100%; margin-top: 12px"
+            >
+              CLEAR ALL READINGS
+            </button>
+          </div>
+
+          <!-- Results Panel - Exposure Mode -->
+          <div
+            class="info-box"
+            id="meterResultsExposure"
+            style="margin-bottom: 12px"
+          >
+            <div class="label-sm">EXPOSURE RESULT</div>
+            <div style="text-align: center; margin-top: 12px">
+              <div class="label-sm">CALCULATED EXPOSURE TIME</div>
+              <div
+                class="value-display"
+                id="meterExposureTime"
+                style="font-size: 2.5rem; color: #4caf50"
+              >
+                --
+              </div>
+              <div class="label-sm" style="margin-top: 8px">seconds</div>
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 12px;
+              "
+            >
+              <span class="label-sm"
+                >Base: <span id="meterBaseTime">--</span>s</span
+              >
+              <span class="label-sm"
+                >Factor: <span id="meterFilterFactor">--</span>x</span
+              >
+            </div>
+            <button
+              class="settings-btn primary"
+              id="meterSendToCalc"
+              style="width: 100%; margin-top: 12px"
+            >
+              📤 SEND TO CALCULATOR
+            </button>
+          </div>
+
+          <!-- Results Panel - Grade Mode -->
+          <div
+            class="info-box"
+            id="meterResultsGrade"
+            style="margin-bottom: 12px; display: none"
+          >
+            <div class="label-sm">GRADE RECOMMENDATION</div>
+            <div style="text-align: center; margin-top: 12px">
+              <div class="label-sm">NEGATIVE DENSITY RANGE (NDR)</div>
+              <div
+                class="value-display"
+                id="meterNdrValue"
+                style="font-size: 2rem"
+              >
+                --
+              </div>
+            </div>
+            <div
+              style="
+                margin-top: 12px;
+                padding: 12px;
+                background: rgba(76, 175, 80, 0.2);
+                border-radius: 4px;
+              "
+            >
+              <div class="label-sm">RECOMMENDED GRADE</div>
+              <div
+                class="value-display"
+                id="meterRecommendedGrade"
+                style="font-size: 2.5rem; color: #4caf50"
+              >
+                --
+              </div>
+              <div
+                class="label-sm"
+                id="meterGradeText"
+                style="margin-top: 8px; line-height: 1.4"
+              >
+                --
+              </div>
+            </div>
+            <div
+              id="meterAlternativeGrade"
+              style="
+                margin-top: 8px;
+                padding: 12px;
+                background: rgba(255, 152, 0, 0.2);
+                border-radius: 4px;
+                display: none;
+              "
+            >
+              <div class="label-sm">ALTERNATIVE</div>
+              <div
+                class="value-display"
+                id="meterAltGrade"
+                style="font-size: 1.5rem; color: #ff9800"
+              >
+                --
+              </div>
+              <div class="label-sm" id="meterAltText" style="margin-top: 4px">
+                --
+              </div>
+            </div>
+            <button
+              class="settings-btn primary"
+              id="meterSendGradeToCalc"
+              style="width: 100%; margin-top: 12px"
+            >
+              📤 SEND EXPOSURE TO CALCULATOR
+            </button>
+          </div>
+
+          <!-- Results Panel - Split Mode -->
+          <div
+            class="info-box"
+            id="meterResultsSplit"
+            style="margin-bottom: 12px; display: none"
+          >
+            <div class="label-sm">SPLIT-GRADE OPTIMIZATION</div>
+            <div style="text-align: center; margin-top: 12px">
+              <div class="label-sm">NEUTRAL TIME</div>
+              <div
+                class="value-display"
+                id="meterSplitNeutral"
+                style="font-size: 1.8rem"
+              >
+                --
+              </div>
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 12px;
+              "
+            >
+              <div
+                style="
+                  text-align: center;
+                  flex: 1;
+                  padding: 8px;
+                  background: rgba(33, 150, 243, 0.2);
+                  border-radius: 4px;
+                  margin-right: 4px;
+                "
+              >
+                <div class="label-sm">
+                  SOFT (F<span id="meterSplitSoftFilter">00</span>)
+                </div>
+                <div
+                  class="value-display"
+                  id="meterSplitSoftTime"
+                  style="font-size: 1.5rem; color: #2196f3"
+                >
+                  --
+                </div>
+              </div>
+              <div
+                style="
+                  text-align: center;
+                  flex: 1;
+                  padding: 8px;
+                  background: rgba(244, 67, 54, 0.2);
+                  border-radius: 4px;
+                  margin-left: 4px;
+                "
+              >
+                <div class="label-sm">
+                  HARD (F<span id="meterSplitHardFilter">5</span>)
+                </div>
+                <div
+                  class="value-display"
+                  id="meterSplitHardTime"
+                  style="font-size: 1.5rem; color: #f44336"
+                >
+                  --
+                </div>
+              </div>
+            </div>
+            <div style="text-align: center; margin-top: 12px">
+              <div class="label-sm">TOTAL EXPOSURE</div>
+              <div
+                class="value-display"
+                id="meterSplitTotal"
+                style="font-size: 2rem; color: #4caf50"
+              >
+                --
+              </div>
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+              "
+            >
+              <span class="label-sm"
+                >Burn: <span id="meterSplitBurn">--</span>%</span
+              >
+              <span class="label-sm"
+                >Grade: <span id="meterSplitGrade">--</span></span
+              >
+            </div>
+            <button
+              class="settings-btn primary"
+              id="meterSendToSplit"
+              style="width: 100%; margin-top: 12px"
+            >
+              📤 SEND TO SPLIT CALCULATOR
+            </button>
+          </div>
+
+          <!-- Calibration Panel -->
+          <div class="info-box" style="margin-bottom: 12px">
+            <div class="label-sm">CALIBRATION</div>
+            <div class="control" style="margin-top: 8px">
+              <div class="control-label">
+                <span>METHOD</span>
+              </div>
+              <div class="paper-selector" style="margin-top: 5px">
+                <button
+                  class="toggle-btn active"
+                  data-calibration="absolute"
+                  id="meterCalibAbsolute"
+                >
+                  ABSOLUTE (ISO)
+                </button>
+                <button
+                  class="toggle-btn"
+                  data-calibration="perfect"
+                  id="meterCalibPerfect"
+                >
+                  PERFECT PRINT
+                </button>
+              </div>
+            </div>
+
+            <!-- Absolute Calibration -->
+            <div id="meterCalibAbsolutePanel" style="margin-top: 12px">
+              <div class="control">
+                <div class="control-label">
+                  <span>PAPER ISO-P</span>
+                  <span class="value-display" id="meterIsoPValue">200</span>
+                </div>
+                <input
+                  type="range"
+                  class="slider"
+                  id="meterIsoPSlider"
+                  min="50"
+                  max="400"
+                  step="10"
+                  value="200"
+                />
+              </div>
+            </div>
+
+            <!-- Perfect Print Calibration -->
+            <div
+              id="meterCalibPerfectPanel"
+              style="margin-top: 12px; display: none"
+            >
+              <div class="label-sm" style="margin-bottom: 8px">
+                Make a perfect print, then enter the lux reading and exposure
+                time used:
+              </div>
+              <div style="display: flex; gap: 8px">
+                <div style="flex: 1">
+                  <div class="label-sm">Reference Lux</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="meterRefLux"
+                    placeholder="e.g. 150"
+                    style="width: 100%"
+                  />
+                </div>
+                <div style="flex: 1">
+                  <div class="label-sm">Reference Time (s)</div>
+                  <input
+                    type="number"
+                    class="settings-input"
+                    id="meterRefTime"
+                    placeholder="e.g. 12"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="settings-btn"
+              id="meterCalibrateBtn"
+              style="width: 100%; margin-top: 12px"
+            >
+              💾 SAVE CALIBRATION
+            </button>
+            <div
+              class="label-sm"
+              id="meterCalibStatus"
+              style="margin-top: 8px; text-align: center"
+            >
+              Current: Absolute (ISO-P 200)
+            </div>
+          </div>
+
+          <!-- Settings Panel -->
+          <div class="info-box" style="margin-bottom: 12px">
+            <div class="label-sm">METER SETTINGS</div>
+
+            <div class="control" style="margin-top: 8px">
+              <div class="control-label">
+                <span>FLARE COMPENSATION</span>
+                <span class="value-display" id="meterFlareValue">10%</span>
+              </div>
+              <input
+                type="range"
+                class="slider"
+                id="meterFlareSlider"
+                min="5"
+                max="15"
+                step="1"
+                value="10"
+              />
+            </div>
+
+            <div class="control">
+              <div class="control-label">
+                <span>ENLARGER TYPE</span>
+              </div>
+              <div class="paper-selector" style="margin-top: 5px">
+                <button
+                  class="toggle-btn active"
+                  data-enlarger="diffuser"
+                  id="meterEnlargerDiffuser"
+                >
+                  DIFFUSER
+                </button>
+                <button
+                  class="toggle-btn"
+                  data-enlarger="condenser"
+                  id="meterEnlargerCondenser"
+                >
+                  CONDENSER (+1 Grade)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sensor Status -->
+          <div class="info-box">
+            <div class="label-sm">SENSOR STATUS</div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+              "
+            >
+              <span class="label-sm">Connection:</span>
+              <span
+                class="label-sm"
+                id="meterSensorStatus"
+                style="color: #4caf50"
+                >Checking...</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 4px;
+              "
+            >
+              <span class="label-sm">I2C Address:</span>
+              <span class="label-sm">0x29 (GP0/GP1)</span>
             </div>
           </div>
         </div>
@@ -5427,6 +6138,26 @@
           currentStepNotes: "", // Notes for current step
           sessionNotes: "", // Notes for entire session
           autoSessionActive: false, // Flag for test strip auto-session
+        },
+
+        // Light meter state (runtime/transient)
+        lightMeter: {
+          mode: "exposure", // "exposure", "grade", "split"
+          currentProfile: "Ilford MGIV RC",
+          lastLux: null,
+          lastEv: null,
+          shadowLux: null,
+          shadowEv: null,
+          highlightLux: null,
+          highlightEv: null,
+          ndr: null,
+          recommendedGrade: null,
+          calculatedExposure: null,
+          splitResult: null,
+          calibrationMethod: "absolute",
+          isoP: 200,
+          flareCompensation: 0.1,
+          enlargerType: "diffuser",
         },
       };
 
@@ -9497,6 +10228,947 @@
           this.updateCapacityDisplay();
           this.updateChemicalPresetList();
           this.updateShelfLifeList();
+        }
+      }
+
+      /**
+       * @class LightMeterManager
+       * @classdesc Light meter manager for exposure and contrast analysis.
+       * Communicates with TSL2591X sensor via HTTP API and provides
+       * exposure calculation, grade recommendation, and split-grade optimization.
+       */
+      class LightMeterManager {
+        constructor() {
+          this.serverIP = window.location.hostname || "192.168.4.1";
+          this.mode = "exposure"; // "exposure", "grade", "split"
+          this.currentProfile = "Ilford MGIV RC";
+          this.calibrationMethod = "absolute";
+
+          // State
+          this.lastReading = null;
+          this.shadowSamples = 0;
+          this.highlightSamples = 0;
+          this.shadowAvgLux = null;
+          this.highlightAvgLux = null;
+          this.capturedShadow = null;
+          this.capturedHighlight = null;
+          this.lastResult = null;
+
+          // Settings
+          this.flareCompensation = 10;
+          this.enlargerType = "diffuser";
+          this.isoP = 200;
+          this.refLux = null;
+          this.refTime = null;
+
+          // Initialize UI
+          this.initializeUI();
+          this.checkSensorStatus();
+        }
+
+        /**
+         * Initialize UI event listeners
+         */
+        initializeUI() {
+          // Read button
+          const readBtn = document.getElementById("meterReadBtn");
+          if (readBtn) {
+            readBtn.addEventListener("click", () => this.readLux());
+          }
+
+          // Mode selector buttons
+          const modeButtons = document.querySelectorAll("[data-meter-mode]");
+          modeButtons.forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              const mode = e.target.dataset.meterMode;
+              this.setMode(mode);
+            });
+          });
+
+          // Paper profile selector
+          const profileSelect = document.getElementById("meterPaperProfile");
+          if (profileSelect) {
+            profileSelect.addEventListener("change", (e) => {
+              this.currentProfile = e.target.value;
+              this.calculate();
+            });
+          }
+
+          // Gain control buttons
+          const gainAutoBtn = document.getElementById("meterGainAuto");
+          if (gainAutoBtn) {
+            gainAutoBtn.addEventListener("click", () => this.setGain("auto"));
+          }
+
+          const gainDisableBtn = document.getElementById("meterGainDisable");
+          if (gainDisableBtn) {
+            gainDisableBtn.addEventListener("click", () =>
+              this.setGain("disable"),
+            );
+          }
+
+          const gainButtons = {
+            meterGain1x: "1x",
+            meterGain25x: "25x",
+            meterGain428x: "428x",
+            meterGain9876x: "9876x",
+          };
+
+          Object.entries(gainButtons).forEach(([btnId, gainLevel]) => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+              btn.addEventListener("click", () => this.setGain(gainLevel));
+            }
+          });
+
+          // Response mode buttons
+          const responseModes = {
+            meterModeStable: "stable",
+            meterModeBalanced: "balanced",
+            meterModeFast: "fast",
+          };
+
+          Object.entries(responseModes).forEach(([btnId, mode]) => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+              btn.addEventListener("click", () => this.setResponseMode(mode));
+            }
+          });
+
+          // Shadow buttons
+          const addShadowBtn = document.getElementById("meterAddShadow");
+          if (addShadowBtn) {
+            addShadowBtn.addEventListener("click", () =>
+              this.addReading("shadow"),
+            );
+          }
+          const captureShadowBtn =
+            document.getElementById("meterCaptureShadow");
+          if (captureShadowBtn) {
+            captureShadowBtn.addEventListener("click", () =>
+              this.capture("shadow"),
+            );
+          }
+
+          // Highlight buttons
+          const addHighlightBtn = document.getElementById("meterAddHighlight");
+          if (addHighlightBtn) {
+            addHighlightBtn.addEventListener("click", () =>
+              this.addReading("highlight"),
+            );
+          }
+          const captureHighlightBtn = document.getElementById(
+            "meterCaptureHighlight",
+          );
+          if (captureHighlightBtn) {
+            captureHighlightBtn.addEventListener("click", () =>
+              this.capture("highlight"),
+            );
+          }
+
+          // Clear readings button
+          const clearBtn = document.getElementById("meterClearReadings");
+          if (clearBtn) {
+            clearBtn.addEventListener("click", () => this.clearReadings());
+          }
+
+          // Send to calculator buttons
+          const sendToCalcBtn = document.getElementById("meterSendToCalc");
+          if (sendToCalcBtn) {
+            sendToCalcBtn.addEventListener("click", () => this.sendToCalc());
+          }
+          const sendGradeToCalcBtn = document.getElementById(
+            "meterSendGradeToCalc",
+          );
+          if (sendGradeToCalcBtn) {
+            sendGradeToCalcBtn.addEventListener("click", () =>
+              this.sendToCalc(),
+            );
+          }
+          const sendToSplitBtn = document.getElementById("meterSendToSplit");
+          if (sendToSplitBtn) {
+            sendToSplitBtn.addEventListener("click", () =>
+              this.sendToSplitCalc(),
+            );
+          }
+
+          // Calibration method buttons
+          const calibAbsoluteBtn =
+            document.getElementById("meterCalibAbsolute");
+          const calibPerfectBtn = document.getElementById("meterCalibPerfect");
+          if (calibAbsoluteBtn) {
+            calibAbsoluteBtn.addEventListener("click", () =>
+              this.setCalibrationMethod("absolute"),
+            );
+          }
+          if (calibPerfectBtn) {
+            calibPerfectBtn.addEventListener("click", () =>
+              this.setCalibrationMethod("perfect"),
+            );
+          }
+
+          // ISO-P slider
+          const isoPSlider = document.getElementById("meterIsoPSlider");
+          if (isoPSlider) {
+            isoPSlider.addEventListener("input", (e) => {
+              this.isoP = parseInt(e.target.value);
+              document.getElementById("meterIsoPValue").textContent = this.isoP;
+            });
+          }
+
+          // Calibrate button
+          const calibrateBtn = document.getElementById("meterCalibrateBtn");
+          if (calibrateBtn) {
+            calibrateBtn.addEventListener("click", () =>
+              this.saveCalibration(),
+            );
+          }
+
+          // Flare slider
+          const flareSlider = document.getElementById("meterFlareSlider");
+          if (flareSlider) {
+            flareSlider.addEventListener("input", (e) => {
+              this.flareCompensation = parseInt(e.target.value);
+              document.getElementById("meterFlareValue").textContent =
+                `${this.flareCompensation}%`;
+              this.updateSettings();
+            });
+          }
+
+          // Enlarger type buttons
+          const enlargerDiffuserBtn = document.getElementById(
+            "meterEnlargerDiffuser",
+          );
+          const enlargerCondenserBtn = document.getElementById(
+            "meterEnlargerCondenser",
+          );
+          if (enlargerDiffuserBtn) {
+            enlargerDiffuserBtn.addEventListener("click", () =>
+              this.setEnlargerType("diffuser"),
+            );
+          }
+          if (enlargerCondenserBtn) {
+            enlargerCondenserBtn.addEventListener("click", () =>
+              this.setEnlargerType("condenser"),
+            );
+          }
+        }
+
+        /**
+         * Set the meter mode
+         */
+        setMode(mode) {
+          this.mode = mode;
+
+          // Update button states
+          document.querySelectorAll("[data-meter-mode]").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.meterMode === mode);
+          });
+
+          // Show/hide result panels
+          document.getElementById("meterResultsExposure").style.display =
+            mode === "exposure" ? "block" : "none";
+          document.getElementById("meterResultsGrade").style.display =
+            mode === "grade" ? "block" : "none";
+          document.getElementById("meterResultsSplit").style.display =
+            mode === "split" ? "block" : "none";
+
+          // Recalculate if we have data
+          if (this.capturedShadow || this.capturedHighlight) {
+            this.calculate();
+          }
+        }
+
+        /**
+         * Set sensor gain (auto or manual level)
+         */
+        async setGain(gainSetting) {
+          try {
+            const response = await fetch(
+              `/meter/gain?action=${encodeURIComponent(gainSetting)}`,
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+              // Update UI
+              const gainDisplay = document.getElementById("meterGainDisplay");
+              if (gainDisplay) {
+                gainDisplay.textContent =
+                  gainSetting === "auto" ? "AUTO" : gainSetting;
+              }
+
+              // Update button states
+              if (gainSetting === "auto") {
+                document
+                  .getElementById("meterGainAuto")
+                  .classList.add("active");
+                document
+                  .getElementById("meterGainDisable")
+                  .classList.remove("active");
+              } else if (gainSetting === "disable") {
+                document
+                  .getElementById("meterGainAuto")
+                  .classList.remove("active");
+                document
+                  .getElementById("meterGainDisable")
+                  .classList.add("active");
+              } else {
+                // Manual gain level
+                document
+                  .getElementById("meterGainAuto")
+                  .classList.remove("active");
+                document
+                  .getElementById("meterGainDisable")
+                  .classList.add("active");
+
+                // Update gain level buttons
+                Object.entries({
+                  meterGain1x: "1x",
+                  meterGain25x: "25x",
+                  meterGain428x: "428x",
+                  meterGain9876x: "9876x",
+                }).forEach(([btnId, level]) => {
+                  const btn = document.getElementById(btnId);
+                  if (btn) {
+                    btn.classList.toggle("active", level === gainSetting);
+                  }
+                });
+              }
+
+              console.log(`✅ Gain set to: ${gainSetting}`);
+            } else {
+              console.error(`❌ Failed to set gain: ${data.error}`);
+            }
+          } catch (error) {
+            console.error(`❌ Gain control error: ${error}`);
+          }
+        }
+
+        /**
+         * Set sensor response mode (update speed vs noise)
+         */
+        async setResponseMode(mode) {
+          try {
+            const response = await fetch(
+              `/meter/response-mode?mode=${encodeURIComponent(mode)}`,
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+              // Update UI
+              const modeMap = {
+                stable: "meterModeStable",
+                balanced: "meterModeBalanced",
+                fast: "meterModeFast",
+              };
+
+              Object.entries(modeMap).forEach(([m, btnId]) => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                  btn.classList.toggle("active", m === mode);
+                }
+              });
+
+              // Update description
+              const descMap = {
+                stable: "Smoothest readings (slower updates)",
+                balanced: "Good balance of speed and smoothness",
+                fast: "Fastest updates (may be noisier)",
+              };
+
+              const descEl = document.getElementById("meterResponseDesc");
+              if (descEl) {
+                descEl.textContent = descMap[mode];
+              }
+
+              console.log(`✅ Response mode set to: ${mode}`);
+            } else {
+              console.error(`❌ Failed to set response mode: ${data.error}`);
+            }
+          } catch (error) {
+            console.error(`❌ Response mode control error: ${error}`);
+          }
+        }
+
+        /**
+         * Set calibration method
+         */
+        setCalibrationMethod(method) {
+          this.calibrationMethod = method;
+
+          // Update button states
+          document
+            .getElementById("meterCalibAbsolute")
+            .classList.toggle("active", method === "absolute");
+          document
+            .getElementById("meterCalibPerfect")
+            .classList.toggle("active", method === "perfect");
+
+          // Show/hide panels
+          document.getElementById("meterCalibAbsolutePanel").style.display =
+            method === "absolute" ? "block" : "none";
+          document.getElementById("meterCalibPerfectPanel").style.display =
+            method === "perfect" ? "block" : "none";
+        }
+
+        /**
+         * Set enlarger type
+         */
+        setEnlargerType(type) {
+          this.enlargerType = type;
+
+          // Update button states
+          document
+            .getElementById("meterEnlargerDiffuser")
+            .classList.toggle("active", type === "diffuser");
+          document
+            .getElementById("meterEnlargerCondenser")
+            .classList.toggle("active", type === "condenser");
+
+          this.updateSettings();
+        }
+
+        /**
+         * Update meter settings on server
+         */
+        async updateSettings() {
+          try {
+            const flare = this.flareCompensation / 100;
+            await fetch(
+              `http://${this.serverIP}/meter/settings?flare=${flare}&enlarger=${this.enlargerType}`,
+            );
+          } catch (e) {
+            console.error("Failed to update settings:", e);
+          }
+        }
+
+        /**
+         * Check sensor connection status
+         */
+        async checkSensorStatus() {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/meter/status`,
+            );
+            const data = await response.json();
+
+            const statusEl = document.getElementById("meterSensorStatus");
+            if (statusEl) {
+              if (
+                data.status === "success" &&
+                data.sensor &&
+                data.sensor.is_connected
+              ) {
+                statusEl.textContent = "Connected";
+                statusEl.style.color = "#4CAF50";
+              } else {
+                statusEl.textContent = "Not Connected";
+                statusEl.style.color = "#F44336";
+              }
+            }
+          } catch (e) {
+            const statusEl = document.getElementById("meterSensorStatus");
+            if (statusEl) {
+              statusEl.textContent = "Server Error";
+              statusEl.style.color = "#FF9800";
+            }
+          }
+        }
+
+        /**
+         * Read lux from sensor
+         */
+        async readLux() {
+          try {
+            const readBtn = document.getElementById("meterReadBtn");
+            if (readBtn) readBtn.textContent = "📷 READING...";
+
+            const response = await fetch(`http://${this.serverIP}/meter/read`);
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.lastReading = data;
+              this.updateLiveDisplay(data);
+              playBeep(800, 0.1, 0.2);
+            } else {
+              console.error("Read error:", data.error);
+              settingsManager.showAllProfilesFeedback(
+                `Read error: ${data.error}`,
+                "error",
+              );
+            }
+
+            if (readBtn) readBtn.textContent = "📷 READ";
+          } catch (e) {
+            console.error("Failed to read lux:", e);
+            settingsManager.showAllProfilesFeedback(
+              "Failed to read sensor",
+              "error",
+            );
+            const readBtn = document.getElementById("meterReadBtn");
+            if (readBtn) readBtn.textContent = "📷 READ";
+          }
+        }
+
+        /**
+         * Update live reading display
+         */
+        updateLiveDisplay(data) {
+          document.getElementById("meterLuxDisplay").textContent =
+            data.lux !== null ? data.lux.toFixed(1) : "--";
+          document.getElementById("meterEvDisplay").textContent =
+            data.ev !== null ? data.ev.toFixed(1) : "--";
+          document.getElementById("meterGainDisplay").textContent =
+            data.gain || "--";
+          document.getElementById("meterIntDisplay").textContent =
+            data.integration_ms || "--";
+        }
+
+        /**
+         * Add reading to multi-point average
+         */
+        async addReading(type) {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/meter/add-reading?type=${type}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              if (type === "shadow") {
+                this.shadowSamples = data.count;
+                this.shadowAvgLux = data.average_lux;
+                document.getElementById("meterShadowSamples").textContent =
+                  `${data.count} samples (avg: ${data.average_lux} lux)`;
+              } else {
+                this.highlightSamples = data.count;
+                this.highlightAvgLux = data.average_lux;
+                document.getElementById("meterHighlightSamples").textContent =
+                  `${data.count} samples (avg: ${data.average_lux} lux)`;
+              }
+
+              // Update live display with the reading
+              if (data.reading) {
+                this.updateLiveDisplay({
+                  lux: data.reading.lux,
+                  ev: data.reading.ev,
+                  gain: this.lastReading?.gain,
+                  integration_ms: this.lastReading?.integration_ms,
+                });
+              }
+
+              playBeep(600, 0.1, 0.1);
+            } else {
+              settingsManager.showAllProfilesFeedback(
+                `Add reading error: ${data.error}`,
+                "error",
+              );
+            }
+          } catch (e) {
+            console.error("Failed to add reading:", e);
+            settingsManager.showAllProfilesFeedback(
+              "Failed to add reading",
+              "error",
+            );
+          }
+        }
+
+        /**
+         * Capture (finalize) a reading
+         */
+        async capture(type) {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/meter/capture?type=${type}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              if (type === "shadow") {
+                this.capturedShadow = { lux: data.lux, ev: data.ev };
+                this.shadowSamples = 0;
+                document.getElementById("meterShadowLux").textContent =
+                  `${data.lux.toFixed(1)} lux`;
+                document.getElementById("meterShadowEv").textContent =
+                  `${data.ev.toFixed(1)} EV`;
+                document.getElementById("meterShadowSamples").textContent =
+                  `Captured (${data.samples_used} samples)`;
+              } else {
+                this.capturedHighlight = { lux: data.lux, ev: data.ev };
+                this.highlightSamples = 0;
+                document.getElementById("meterHighlightLux").textContent =
+                  `${data.lux.toFixed(1)} lux`;
+                document.getElementById("meterHighlightEv").textContent =
+                  `${data.ev.toFixed(1)} EV`;
+                document.getElementById("meterHighlightSamples").textContent =
+                  `Captured (${data.samples_used} samples)`;
+              }
+
+              playBeep(800, 0.2, 0.3);
+
+              // Auto-calculate if we have both readings
+              if (this.capturedShadow && this.capturedHighlight) {
+                this.calculate();
+              } else if (this.capturedShadow && this.mode === "exposure") {
+                // For exposure mode, we only need shadow
+                this.calculate();
+              }
+            } else {
+              settingsManager.showAllProfilesFeedback(
+                `Capture error: ${data.error}`,
+                "error",
+              );
+            }
+          } catch (e) {
+            console.error("Failed to capture:", e);
+            settingsManager.showAllProfilesFeedback(
+              "Failed to capture reading",
+              "error",
+            );
+          }
+        }
+
+        /**
+         * Clear all readings
+         */
+        async clearReadings() {
+          try {
+            await fetch(`http://${this.serverIP}/meter/clear?type=all`);
+
+            this.shadowSamples = 0;
+            this.highlightSamples = 0;
+            this.shadowAvgLux = null;
+            this.highlightAvgLux = null;
+            this.capturedShadow = null;
+            this.capturedHighlight = null;
+            this.lastResult = null;
+
+            // Reset displays
+            document.getElementById("meterShadowLux").textContent = "-- lux";
+            document.getElementById("meterShadowEv").textContent = "-- EV";
+            document.getElementById("meterShadowSamples").textContent =
+              "0 samples";
+            document.getElementById("meterHighlightLux").textContent = "-- lux";
+            document.getElementById("meterHighlightEv").textContent = "-- EV";
+            document.getElementById("meterHighlightSamples").textContent =
+              "0 samples";
+
+            // Reset result displays
+            this.resetResultDisplays();
+
+            playBeep(400, 0.1, 0.2);
+          } catch (e) {
+            console.error("Failed to clear readings:", e);
+          }
+        }
+
+        /**
+         * Reset result displays
+         */
+        resetResultDisplays() {
+          // Exposure
+          document.getElementById("meterExposureTime").textContent = "--";
+          document.getElementById("meterBaseTime").textContent = "--";
+          document.getElementById("meterFilterFactor").textContent = "--";
+
+          // Grade
+          document.getElementById("meterNdrValue").textContent = "--";
+          document.getElementById("meterRecommendedGrade").textContent = "--";
+          document.getElementById("meterGradeText").textContent = "--";
+          document.getElementById("meterAlternativeGrade").style.display =
+            "none";
+
+          // Split
+          document.getElementById("meterSplitNeutral").textContent = "--";
+          document.getElementById("meterSplitSoftTime").textContent = "--";
+          document.getElementById("meterSplitHardTime").textContent = "--";
+          document.getElementById("meterSplitTotal").textContent = "--";
+          document.getElementById("meterSplitBurn").textContent = "--";
+          document.getElementById("meterSplitGrade").textContent = "--";
+        }
+
+        /**
+         * Calculate based on current mode
+         */
+        async calculate() {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/meter/calculate?mode=${this.mode}&profile=${encodeURIComponent(this.currentProfile)}`,
+            );
+            const data = await response.json();
+
+            if (data.status === "success") {
+              this.lastResult = data;
+              this.updateResultDisplay(data);
+            } else {
+              console.error("Calculate error:", data.error);
+              // Don't show error for missing readings - that's expected
+              if (!data.error.includes("must be captured")) {
+                settingsManager.showAllProfilesFeedback(
+                  `Calculate error: ${data.error}`,
+                  "error",
+                );
+              }
+            }
+          } catch (e) {
+            console.error("Failed to calculate:", e);
+          }
+        }
+
+        /**
+         * Update result display based on mode
+         */
+        updateResultDisplay(data) {
+          if (this.mode === "exposure") {
+            document.getElementById("meterExposureTime").textContent =
+              data.exposure_time ? data.exposure_time.toFixed(2) : "--";
+            document.getElementById("meterBaseTime").textContent =
+              data.base_time ? data.base_time.toFixed(2) : "--";
+            document.getElementById("meterFilterFactor").textContent =
+              data.filter_factor ? data.filter_factor.toFixed(2) : "--";
+          } else if (this.mode === "grade") {
+            document.getElementById("meterNdrValue").textContent = data.ndr
+              ? data.ndr.toFixed(3)
+              : "--";
+
+            const grade =
+              data.exact_grade || data.primary_grade || data.recommendation;
+            document.getElementById("meterRecommendedGrade").textContent = grade
+              ? `Grade ${grade}`
+              : "--";
+            document.getElementById("meterGradeText").textContent =
+              data.recommendation_text || "--";
+
+            // Show alternative if interpolated
+            const altPanel = document.getElementById("meterAlternativeGrade");
+            if (data.interpolated && data.secondary_grade) {
+              altPanel.style.display = "block";
+              document.getElementById("meterAltGrade").textContent =
+                `Grade ${data.secondary_grade}`;
+              document.getElementById("meterAltText").textContent =
+                data.alternative_text || "";
+            } else {
+              altPanel.style.display = "none";
+            }
+
+            // Also calculate exposure for the send button
+            this.calculateExposureForGrade();
+          } else if (this.mode === "split") {
+            document.getElementById("meterSplitNeutral").textContent =
+              data.neutral_time ? `${data.neutral_time.toFixed(2)}s` : "--";
+            document.getElementById("meterSplitSoftTime").textContent =
+              data.soft_time ? `${data.soft_time.toFixed(2)}s` : "--";
+            document.getElementById("meterSplitHardTime").textContent =
+              data.hard_time ? `${data.hard_time.toFixed(2)}s` : "--";
+            document.getElementById("meterSplitTotal").textContent =
+              data.total_time ? `${data.total_time.toFixed(2)}s` : "--";
+            document.getElementById("meterSplitBurn").textContent =
+              data.burn_percent ? data.burn_percent.toFixed(0) : "--";
+            document.getElementById("meterSplitGrade").textContent =
+              data.recommended_grade || "--";
+            document.getElementById("meterSplitSoftFilter").textContent =
+              data.soft_filter || "00";
+            document.getElementById("meterSplitHardFilter").textContent =
+              data.hard_filter || "5";
+          }
+        }
+
+        /**
+         * Calculate exposure for grade mode (for send button)
+         */
+        async calculateExposureForGrade() {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}/meter/calculate?mode=exposure&profile=${encodeURIComponent(this.currentProfile)}`,
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              this.lastResult.exposure_time = data.exposure_time;
+            }
+          } catch (e) {
+            console.error("Failed to calculate exposure for grade:", e);
+          }
+        }
+
+        /**
+         * Send exposure to calculator
+         */
+        sendToCalc() {
+          if (!this.lastResult || !this.lastResult.exposure_time) {
+            settingsManager.showAllProfilesFeedback(
+              "No exposure calculated yet",
+              "error",
+            );
+            return;
+          }
+
+          const exposureTime = this.lastResult.exposure_time;
+
+          // Update appState
+          appState.calculator.baseTime = exposureTime;
+          appState.calculator.currentStop = 0;
+          appState.calculator.currentTotalTime = exposureTime;
+          appState.calculator.thisExposureTime = exposureTime;
+
+          // Update slider
+          const slider = document.getElementById("baseTimeSlider");
+          if (slider) {
+            // Clamp to slider range
+            const clampedTime = Math.max(
+              parseFloat(slider.min),
+              Math.min(parseFloat(slider.max), exposureTime),
+            );
+            slider.value = clampedTime;
+          }
+
+          // Render calculator display
+          renderCalculatorDisplay();
+
+          // Switch to calc tab
+          switchTab("calc");
+
+          // Scroll to top
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          // Feedback
+          playBeep(800, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Exposure sent: ${exposureTime.toFixed(2)}s`,
+            "success",
+          );
+        }
+
+        /**
+         * Send to split calculator
+         */
+        sendToSplitCalc() {
+          if (!this.lastResult || this.mode !== "split") {
+            settingsManager.showAllProfilesFeedback(
+              "No split calculation available",
+              "error",
+            );
+            return;
+          }
+
+          const data = this.lastResult;
+
+          // Update SplitGradeCalculator
+          if (window.splitGradeCalculator) {
+            const calc = window.splitGradeCalculator;
+
+            // Set neutral time
+            calc.neutralTime = data.neutral_time;
+            const neutralSlider = document.getElementById("neutralTimeSlider");
+            if (neutralSlider) {
+              neutralSlider.value = data.neutral_time;
+              document.getElementById("neutralTimeValue").textContent =
+                `${data.neutral_time.toFixed(1)}s`;
+            }
+
+            // Set paper brand based on profile
+            if (data.paper_brand) {
+              calc.paperBrand = data.paper_brand;
+              const paperSelect = document.getElementById("splitPaperBrand");
+              if (paperSelect) {
+                // Find matching option
+                for (let option of paperSelect.options) {
+                  if (
+                    option.value === data.paper_brand ||
+                    option.text.includes(data.paper_brand)
+                  ) {
+                    paperSelect.value = option.value;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Set burn percent
+            calc.burnPercent = data.burn_percent;
+            const burnSlider = document.getElementById("burnSlider");
+            if (burnSlider) {
+              burnSlider.value = data.burn_percent;
+              document.getElementById("burnValue").textContent =
+                `${data.burn_percent.toFixed(0)}%`;
+            }
+
+            // Recalculate
+            calc.calculate();
+          }
+
+          // Switch to split tab
+          switchTab("split");
+
+          // Scroll to top
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          // Feedback
+          playBeep(800, 0.3, 0.3);
+          settingsManager.showAllProfilesFeedback(
+            `Split-grade sent: ${data.soft_time.toFixed(2)}s + ${data.hard_time.toFixed(2)}s = ${data.total_time.toFixed(2)}s`,
+            "success",
+          );
+        }
+
+        /**
+         * Save calibration
+         */
+        async saveCalibration() {
+          try {
+            let url;
+            if (this.calibrationMethod === "absolute") {
+              url = `http://${this.serverIP}/meter/calibrate?method=absolute&iso_p=${this.isoP}`;
+            } else {
+              const refLux = document.getElementById("meterRefLux").value;
+              const refTime = document.getElementById("meterRefTime").value;
+
+              if (!refLux || !refTime) {
+                settingsManager.showAllProfilesFeedback(
+                  "Please enter reference lux and time",
+                  "error",
+                );
+                return;
+              }
+
+              this.refLux = parseFloat(refLux);
+              this.refTime = parseFloat(refTime);
+              url = `http://${this.serverIP}/meter/calibrate?method=perfect&lux=${this.refLux}&time=${this.refTime}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.status === "success") {
+              // Update status display
+              const statusEl = document.getElementById("meterCalibStatus");
+              if (this.calibrationMethod === "absolute") {
+                statusEl.textContent = `Current: Absolute (ISO-P ${this.isoP})`;
+              } else {
+                statusEl.textContent = `Current: Perfect Print (${this.refLux} lux → ${this.refTime}s)`;
+              }
+
+              playBeep(800, 0.2, 0.3);
+              settingsManager.showAllProfilesFeedback(
+                "Calibration saved",
+                "success",
+              );
+            } else {
+              settingsManager.showAllProfilesFeedback(
+                `Calibration error: ${data.error}`,
+                "error",
+              );
+            }
+          } catch (e) {
+            console.error("Failed to save calibration:", e);
+            settingsManager.showAllProfilesFeedback(
+              "Failed to save calibration",
+              "error",
+            );
+          }
         }
       }
 
@@ -16530,6 +18202,9 @@
 
         // Initialize temperature manager
         window.temperatureManager = new TemperatureManager();
+
+        // Initialize light meter manager
+        window.lightMeterManager = new LightMeterManager();
 
         // Initialize Real-Time Auto Factorial Development manager
         window.realTimeAutoFactorial = new RealTimeAutoFactorial(timerManager);

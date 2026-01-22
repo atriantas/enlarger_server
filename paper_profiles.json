@@ -1,0 +1,160 @@
+{
+  "profiles": [
+    {
+      "name": "Ilford MGIV RC",
+      "brand": "Ilford",
+      "iso_p": 200,
+      "iso_p_high_grades": 100,
+      "speed_matched_to": 3.5,
+      "iso_range": {
+        "00": 180,
+        "0": 160,
+        "1": 130,
+        "2": 110,
+        "3": 90,
+        "4": 60,
+        "5": 40
+      },
+      "factors": {
+        "00": 1.0,
+        "0": 1.0,
+        "0.5": 1.0,
+        "1": 1.0,
+        "1.5": 1.0,
+        "2": 1.0,
+        "2.5": 1.0,
+        "3": 1.0,
+        "3.5": 1.0,
+        "4": 1.2,
+        "4.5": 1.35,
+        "5": 1.5
+      },
+      "notes": "Multigrade IV RC Deluxe. Speed-matched Grade 00-3.5. Grades 4-5 require 2x exposure (ISO-P 100)."
+    },
+    {
+      "name": "Ilford MGV FB",
+      "brand": "Ilford",
+      "iso_p": 160,
+      "iso_p_high_grades": 80,
+      "speed_matched_to": 3.5,
+      "iso_range": {
+        "00": 180,
+        "0": 160,
+        "1": 130,
+        "2": 110,
+        "3": 90,
+        "4": 60,
+        "5": 40
+      },
+      "factors": {
+        "00": 1.0,
+        "0": 1.0,
+        "0.5": 1.0,
+        "1": 1.0,
+        "1.5": 1.0,
+        "2": 1.0,
+        "2.5": 1.0,
+        "3": 1.0,
+        "3.5": 1.0,
+        "4": 1.2,
+        "4.5": 1.35,
+        "5": 1.5
+      },
+      "notes": "Multigrade V FB Classic. Fiber base, neutral to warm tone. Speed-matched to Grade 3.5."
+    },
+    {
+      "name": "Foma Variant III",
+      "brand": "FOMA",
+      "iso_p": 200,
+      "iso_p_high_grades": 100,
+      "speed_matched_to": 1,
+      "iso_range": {
+        "00": 160,
+        "0": 130,
+        "1": 110,
+        "2": 90,
+        "3": 70,
+        "4": 60,
+        "5": 50
+      },
+      "factors": {
+        "00": 1.6,
+        "0": 1.4,
+        "0.5": 1.2,
+        "1": 1.0,
+        "1.5": 1.2,
+        "2": 1.4,
+        "2.5": 1.75,
+        "3": 2.1,
+        "3.5": 2.35,
+        "4": 2.6,
+        "4.5": 3.6,
+        "5": 4.6
+      },
+      "notes": "Fomaspeed Variant III RC. Variable contrast with significant filter factors. Base speed at Grade 1."
+    },
+    {
+      "name": "Fomatone MG",
+      "brand": "FOMA",
+      "iso_p": 160,
+      "iso_p_high_grades": 80,
+      "speed_matched_to": 1,
+      "iso_range": {
+        "00": 160,
+        "0": 130,
+        "1": 110,
+        "2": 90,
+        "3": 70,
+        "4": 60,
+        "5": 50
+      },
+      "factors": {
+        "00": 2.0,
+        "0": 1.5,
+        "0.5": 1.25,
+        "1": 1.0,
+        "1.5": 1.25,
+        "2": 1.5,
+        "2.5": 1.65,
+        "3": 1.8,
+        "3.5": 1.9,
+        "4": 2.0,
+        "4.5": 2.5,
+        "5": 3.0
+      },
+      "notes": "Fomatone MG Classic FB. Warm tone fiber base. Requires filter factor adjustment at all grades."
+    },
+    {
+      "name": "Custom",
+      "brand": "Custom",
+      "iso_p": 200,
+      "iso_p_high_grades": 200,
+      "speed_matched_to": 2,
+      "iso_range": {
+        "00": 180,
+        "0": 160,
+        "1": 130,
+        "2": 110,
+        "3": 90,
+        "4": 60,
+        "5": 40
+      },
+      "factors": {
+        "00": 1.0,
+        "0": 1.0,
+        "0.5": 1.0,
+        "1": 1.0,
+        "1.5": 1.0,
+        "2": 1.0,
+        "2.5": 1.0,
+        "3": 1.0,
+        "3.5": 1.0,
+        "4": 1.0,
+        "4.5": 1.0,
+        "5": 1.0
+      },
+      "notes": "User-calibrated profile. Adjust ISO-P and filter factors based on your paper and developer combination.",
+      "user_calibrated": true
+    }
+  ]
+}

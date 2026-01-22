@@ -21,6 +21,8 @@ import time
 from lib.gpio_control import GPIOControl
 from lib.timer_manager import TimerManager
 from lib.temperature_sensor import TemperatureSensor
+from lib.light_sensor import LightSensor
+from lib.light_meter_manager import LightMeterManager
 from lib.wifi_ap import WiFiAP
 from lib.wifi_sta import WiFiSTA
 from lib.http_server import HTTPServer
@@ -49,6 +51,14 @@ class DarkroomTimer:
         # Initialize temperature sensor
         print("\nInitializing temperature sensor...")
         self.temperature = TemperatureSensor(pin_num=18)
+        
+        # Initialize light sensor (TSL2591X on I2C0: GP0=SDA, GP1=SCL)
+        print("\nInitializing light sensor...")
+        self.light_sensor = LightSensor(sda_pin=0, scl_pin=1)
+        
+        # Initialize light meter manager
+        print("\nInitializing light meter manager...")
+        self.light_meter = LightMeterManager(self.light_sensor)
         
         # Initialize timer manager with temperature sensor
         print("\nInitializing timer manager...")
@@ -124,7 +134,8 @@ class DarkroomTimer:
             self.gpio,
             self.timer,
             self.wifi_ap,
-            self.wifi_sta
+            self.wifi_sta,
+            self.light_meter
         )
         self.http.start()
     

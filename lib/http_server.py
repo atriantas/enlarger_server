@@ -31,7 +31,7 @@ class HTTPServer:
     - WiFi configuration endpoint
     """
     
-    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None):
+    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None, light_meter=None):
         """
         Initialize HTTP server.
         
@@ -40,11 +40,13 @@ class HTTPServer:
             timer_manager: TimerManager instance
             wifi_ap: WiFiAP instance (optional)
             wifi_sta: WiFiSTA instance (optional)
+            light_meter: LightMeterManager instance (optional)
         """
         self.gpio = gpio_control
         self.timer = timer_manager
         self.wifi_ap = wifi_ap
         self.wifi_sta = wifi_sta
+        self.light_meter = light_meter
         self.sock = None
         self.running = False
     
@@ -595,6 +597,443 @@ class HTTPServer:
             }, 500)
             await self._sendall(conn, response)
     
+    # ===== LIGHT METER ENDPOINTS =====
+    
+    async def _handle_meter_read(self, conn, params):
+        """Handle /meter/read endpoint - take a single lux reading."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            reading = self.light_meter.read_lux()
+            response = self._json_response(reading)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to read light meter: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_add_reading(self, conn, params):
+        """Handle /meter/add-reading endpoint - add reading to multi-point average."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            reading_type = params.get('type', '').lower()
+            
+            if reading_type not in ('shadow', 'highlight'):
+                response = self._json_response({
+                    "error": "type parameter required (shadow or highlight)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            result = self.light_meter.add_reading(reading_type)
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to add reading: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_get_average(self, conn, params):
+        """Handle /meter/get-average endpoint - get current average for a reading type."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            reading_type = params.get('type', '').lower()
+            
+            if reading_type not in ('shadow', 'highlight'):
+                response = self._json_response({
+                    "error": "type parameter required (shadow or highlight)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            result = self.light_meter.get_average(reading_type)
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to get average: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_capture(self, conn, params):
+        """Handle /meter/capture endpoint - finalize capture using averaged value."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            reading_type = params.get('type', '').lower()
+            
+            if reading_type not in ('shadow', 'highlight'):
+                response = self._json_response({
+                    "error": "type parameter required (shadow or highlight)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            result = self.light_meter.capture(reading_type)
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to capture: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_calculate(self, conn, params):
+        """Handle /meter/calculate endpoint - calculate exposure/grade/split."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            mode = params.get('mode', 'exposure').lower()
+            profile = params.get('profile', '')
+            
+            # Set profile if specified
+            if profile:
+                self.light_meter.set_current_profile(profile)
+            
+            if mode not in ('exposure', 'grade', 'split'):
+                response = self._json_response({
+                    "error": "mode must be 'exposure', 'grade', or 'split'"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            result = self.light_meter.calculate(mode)
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to calculate: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_gain(self, conn, params):
+        """Handle /meter/gain endpoint - control sensor gain (fixed or auto)."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            action = params.get('action', '').lower()
+            
+            if action == 'auto':
+                # Enable auto-gain
+                self.light_meter.light_sensor.enable_auto_gain()
+                response = self._json_response({
+                    "message": "Auto-gain enabled",
+                    "auto_gain": True,
+                    "gain": "auto"
+                })
+            elif action == 'disable':
+                # Disable auto-gain (keep current gain)
+                self.light_meter.light_sensor.disable_auto_gain()
+                response = self._json_response({
+                    "message": "Auto-gain disabled",
+                    "auto_gain": False,
+                    "gain": self.light_meter.light_sensor.gain
+                })
+            elif action in ('1x', '25x', '428x', '9876x', 'low', 'med', 'high', 'max'):
+                # Set manual gain
+                gain_map = {
+                    '1x': 0x00, 'low': 0x00,
+                    '25x': 0x10, 'med': 0x10,
+                    '428x': 0x20, 'high': 0x20,
+                    '9876x': 0x30, 'max': 0x30
+                }
+                gain_level = gain_map[action]
+                success = self.light_meter.light_sensor.set_manual_gain(gain_level)
+                
+                if success:
+                    response = self._json_response({
+                        "message": f"Gain set to {action}",
+                        "auto_gain": False,
+                        "gain": action
+                    })
+                else:
+                    response = self._json_response({
+                        "error": f"Failed to set gain to {action}"
+                    }, 400)
+            else:
+                response = self._json_response({
+                    "error": "action required: 'auto', 'disable', or gain level (1x, 25x, 428x, 9876x)"
+                }, 400)
+            
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to control gain: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_response_mode(self, conn, params):
+        """Handle /meter/response-mode endpoint - control sensor update speed."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            mode = params.get('mode', '').lower()
+            
+            mode_map = {
+                'stable': 0,
+                'balanced': 1,
+                'fast': 2
+            }
+            
+            if mode in mode_map:
+                mode_num = mode_map[mode]
+                success = self.light_meter.light_sensor.set_response_mode(mode_num)
+                
+                if success:
+                    response = self._json_response({
+                        "message": f"Response mode set to {mode}",
+                        "mode": mode,
+                        "description": {
+                            "stable": "Full filtering - slow but smooth",
+                            "balanced": "Medium filtering - good balance (default)",
+                            "fast": "Minimal filtering - fast but noisier"
+                        }[mode]
+                    })
+                else:
+                    response = self._json_response({
+                        "error": f"Failed to set response mode to {mode}"
+                    }, 400)
+            else:
+                response = self._json_response({
+                    "error": "mode required: 'stable', 'balanced', or 'fast'"
+                }, 400)
+            
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to set response mode: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_calibrate(self, conn, params):
+        """Handle /meter/calibrate endpoint - set calibration."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            method = params.get('method', '').lower()
+            
+            if method == 'absolute':
+                iso_p = params.get('iso_p', '')
+                if not iso_p:
+                    response = self._json_response({
+                        "error": "iso_p parameter required for absolute calibration"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+                
+                result = self.light_meter.calibrate_absolute(float(iso_p))
+                
+            elif method == 'perfect':
+                lux = params.get('lux', '')
+                time_val = params.get('time', '')
+                
+                if not lux or not time_val:
+                    response = self._json_response({
+                        "error": "lux and time parameters required for perfect print calibration"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+                
+                result = self.light_meter.calibrate_perfect_print(float(lux), float(time_val))
+                
+            else:
+                response = self._json_response({
+                    "error": "method must be 'absolute' or 'perfect'"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameter value: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to calibrate: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_profiles(self, conn, params):
+        """Handle /meter/profiles endpoint - list all paper profiles."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            result = self.light_meter.get_profiles()
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to get profiles: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_profile(self, conn, params):
+        """Handle /meter/profile endpoint - get or set specific profile."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            name = params.get('name', '')
+            
+            if not name:
+                response = self._json_response({
+                    "error": "name parameter required"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            # Check if setting current profile
+            set_current = params.get('set', '').lower() in ('true', '1')
+            
+            if set_current:
+                result = self.light_meter.set_current_profile(name)
+            else:
+                result = self.light_meter.get_profile(name)
+            
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to handle profile: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_clear(self, conn, params):
+        """Handle /meter/clear endpoint - clear readings."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            reading_type = params.get('type', 'all').lower()
+            
+            if reading_type not in ('shadow', 'highlight', 'all'):
+                response = self._json_response({
+                    "error": "type must be 'shadow', 'highlight', or 'all'"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            result = self.light_meter.clear_readings(reading_type)
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to clear readings: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_settings(self, conn, params):
+        """Handle /meter/settings endpoint - get or set meter settings."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            # Check if setting values
+            flare = params.get('flare', '')
+            enlarger = params.get('enlarger', '')
+            
+            if flare or enlarger:
+                flare_val = float(flare) if flare else None
+                result = self.light_meter.set_settings(flare=flare_val, enlarger=enlarger or None)
+            else:
+                result = self.light_meter.get_settings()
+            
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameter value: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to handle settings: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_meter_status(self, conn, params):
+        """Handle /meter/status endpoint - get complete meter status."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            result = self.light_meter.get_status()
+            response = self._json_response(result)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to get status: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+
     async def _handle_options(self, conn):
         """Handle OPTIONS preflight request."""
         response = (
@@ -657,6 +1096,33 @@ class HTTPServer:
                 await self._handle_wifi_ap_force(conn, params)
             elif path == '/wifi-clear':
                 await self._handle_wifi_clear(conn, params)
+            # Light meter endpoints
+            elif path == '/meter/read':
+                await self._handle_meter_read(conn, params)
+            elif path == '/meter/add-reading':
+                await self._handle_meter_add_reading(conn, params)
+            elif path == '/meter/get-average':
+                await self._handle_meter_get_average(conn, params)
+            elif path == '/meter/capture':
+                await self._handle_meter_capture(conn, params)
+            elif path == '/meter/calculate':
+                await self._handle_meter_calculate(conn, params)
+            elif path == '/meter/gain':
+                await self._handle_meter_gain(conn, params)
+            elif path == '/meter/response-mode':
+                await self._handle_meter_response_mode(conn, params)
+            elif path == '/meter/calibrate':
+                await self._handle_meter_calibrate(conn, params)
+            elif path == '/meter/profiles':
+                await self._handle_meter_profiles(conn, params)
+            elif path == '/meter/profile':
+                await self._handle_meter_profile(conn, params)
+            elif path == '/meter/clear':
+                await self._handle_meter_clear(conn, params)
+            elif path == '/meter/settings':
+                await self._handle_meter_settings(conn, params)
+            elif path == '/meter/status':
+                await self._handle_meter_status(conn, params)
             elif path == '/favicon.ico':
                 # Return empty response for favicon
                 response = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
