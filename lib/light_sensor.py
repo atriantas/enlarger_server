@@ -507,10 +507,17 @@ class DarkroomLightMeter:
     ISO_R_TO_EV = {
         180: 8.0,   # Grade 00 - very soft
         160: 7.5,   # Grade 0
+        135: 7.0,   # FOMA 2xY
         130: 6.8,   # Grade 1
+        120: 6.5,   # FOMA Y
         110: 6.2,   # Grade 2 (normal)
-        90: 5.6,    # Grade 3
-        60: 4.8,    # Grade 4
+        105: 6.0,   # FOMA no filter
+        90: 5.6,    # Grade 3 / FOMA M1
+        80: 5.2,    # FOMA 2xM1
+        75: 5.0,    # FOMA 2xM1
+        65: 4.8,    # Grade 4 / FOMA M2
+        60: 4.6,    # Grade 4
+        55: 4.4,    # Grade 5 / FOMA 2xM2
         40: 4.0     # Grade 5 - very hard
     }
     
@@ -667,7 +674,7 @@ class DarkroomLightMeter:
         """
         Calculate contrast range (ΔEV) from highlight and shadow readings.
         
-        ΔEV = log₂(shadow_lux / highlight_lux)
+        ΔEV = abs(log₂(shadow_lux / highlight_lux))
         
         Note: Shadow areas receive more light than highlight areas
         because they're less dense on the negative.
@@ -677,7 +684,7 @@ class DarkroomLightMeter:
             shadow_lux: Lux reading at paper shadow area
         
         Returns:
-            float: Contrast range in EV stops
+            float: Contrast range in EV stops (always positive)
         """
         if highlight_lux is None or shadow_lux is None:
             return None
@@ -686,7 +693,7 @@ class DarkroomLightMeter:
             return None
         
         import math
-        delta_ev = math.log2(shadow_lux / highlight_lux)
+        delta_ev = abs(math.log2(shadow_lux / highlight_lux))
         
         return delta_ev
     
