@@ -780,6 +780,12 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
             
+            # Log split_grade for debugging
+            print(f"DEBUG: split_grade = {analysis['split_grade']}")
+            if analysis['split_grade']:
+                print(f"  soft_filter = {analysis['split_grade'].get('soft_filter')}")
+                print(f"  hard_filter = {analysis['split_grade'].get('hard_filter')}")
+            
             response = self._json_response({
                 "status": "success",
                 "highlight_lux": analysis['highlight_lux'],

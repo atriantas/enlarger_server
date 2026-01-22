@@ -795,7 +795,8 @@ class DarkroomLightMeter:
                 'total_time': float,     # Total exposure time
                 'delta_ev': float,       # Measured contrast
                 'soft_factor': float,    # Soft filter factor
-                'hard_factor': float     # Hard filter factor
+                'hard_factor': float,    # Hard filter factor
+                'normalization_scale': float  # Normalization factor
             }
         """
         if highlight_lux is None or shadow_lux is None:
@@ -808,17 +809,33 @@ class DarkroomLightMeter:
         system = system or self.filter_system
         filter_data = self.get_filter_data(system)
         
-        # Determine soft and hard filters based on system
+        # Calculate contrast (ΔEV)
+        delta_ev = self.calculate_delta_ev(highlight_lux, shadow_lux)
+        
+        # Determine soft and hard filters based on ΔEV
+        # Step A: Use ΔEV to recommend appropriate soft filter grade
+        recommended = self.recommend_filter_grade(delta_ev, system)
+        
+        if recommended:
+            soft_filter = recommended['grade']
+        else:
+            # Fallback to defaults based on system
+            if system == 'ilford':
+                soft_filter = '00'
+            elif system == 'foma_fomaspeed':
+                soft_filter = '2xY'
+            else:  # foma_fomatone
+                soft_filter = '2xY'
+        
+        # Determine hard filter (always the hardest grade for maximum shadow control)
         if system == 'ilford':
-            soft_filter = '00'
             hard_filter = '5'
         elif system == 'foma_fomaspeed':
-            soft_filter = '2xY'
             hard_filter = '2xM2'
         else:  # foma_fomatone
-            soft_filter = '2xY'
             hard_filter = '2xM2'
         
+        # Get filter factors
         soft_factor = filter_data[soft_filter]['factor']
         hard_factor = filter_data[hard_filter]['factor']
         
@@ -828,24 +845,36 @@ class DarkroomLightMeter:
         soft_base_time = cal / highlight_lux
         hard_base_time = cal / shadow_lux
         
-        # Apply filter factors
-        soft_time = soft_base_time * soft_factor
-        hard_time = hard_base_time * hard_factor
+        # Apply filter factors (raw, before normalization)
+        raw_soft_time = soft_base_time * soft_factor
+        raw_hard_time = hard_base_time * hard_factor
+        raw_total = raw_soft_time + raw_hard_time
         
-        # Calculate contrast
-        delta_ev = self.calculate_delta_ev(highlight_lux, shadow_lux)
+        # Normalize to preserve total exposure
+        # Target: calibration / average_lux (balanced split)
+        average_lux = (highlight_lux + shadow_lux) / 2
+        target_total = cal / average_lux
+        
+        # Calculate normalization scale
+        normalization_scale = target_total / raw_total if raw_total > 0 else 1.0
+        
+        # Apply normalization
+        soft_time = raw_soft_time * normalization_scale
+        hard_time = raw_hard_time * normalization_scale
+        total_time = soft_time + hard_time
         
         return {
             'soft_filter': soft_filter,
             'hard_filter': hard_filter,
             'soft_time': soft_time,
             'hard_time': hard_time,
-            'total_time': soft_time + hard_time,
+            'total_time': total_time,
             'delta_ev': delta_ev,
             'soft_factor': soft_factor,
             'hard_factor': hard_factor,
             'highlight_lux': highlight_lux,
-            'shadow_lux': shadow_lux
+            'shadow_lux': shadow_lux,
+            'normalization_scale': normalization_scale
         }
     
     async def measure_highlight_async(self, samples=5):
