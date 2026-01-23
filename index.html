@@ -2447,52 +2447,18 @@
 
           <div class="control">
             <div class="control-label">
-              <span>CONTRAST SPLIT (Shadow Emphasis)</span>
-              <span class="value-display" id="contrastSplitValue">50%</span>
+              <span>SHADOW BURN PERCENTAGE</span>
+              <span class="value-display" id="burnPercentValue">50%</span>
             </div>
             <input
               type="range"
               class="slider"
-              id="contrastSplitSlider"
+              id="burnPercentSlider"
               min="0"
               max="100"
               step="5"
               value="50"
             />
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                margin-top: 4px;
-              "
-            >
-              <div style="font-size: 0.6rem; color: var(--text-secondary)">
-                Recommended: <span id="recommendedSplitValue">--</span>
-              </div>
-              <div
-                id="splitRecommendationStatus"
-                style="font-size: 0.55rem; color: var(--text-secondary)"
-              >
-                No ΔEV data
-              </div>
-            </div>
-            <button
-              class="settings-btn"
-              id="syncDeltaEVBtn"
-              style="margin-top: 8px; width: 100%"
-            >
-              Sync from Contrast Analyzer
-            </button>
-            <div
-              style="
-                font-size: 0.55rem;
-                color: var(--text-secondary);
-                margin-top: 4px;
-                text-align: center;
-              "
-            >
-              Split-Grade redistributes contrast without changing base exposure
-            </div>
           </div>
 
           <div class="info-box">
@@ -2511,17 +2477,6 @@
             </div>
             <div class="value-display" id="totalResult" style="font-size: 1rem">
               -- s
-            </div>
-            <div
-              class="label-sm"
-              style="
-                margin-top: 4px;
-                font-size: 0.55rem;
-                color: var(--text-secondary);
-              "
-            >
-              Normalization: <span id="normalizationFactor">×1.00</span>
-              <span style="margin-left: 4px">(keeps total stable)</span>
             </div>
           </div>
 
@@ -6082,10 +6037,7 @@
             hardFilter: null,
             paperBrand: null,
             fomaPaperType: null,
-            contrastSplit: null,
-            recommendedSplit: null,
-            userOverride: false,
-            normalizationScale: null,
+            burnPercent: null,
             softFactor: null,
             hardFactor: null,
             customFactors: null,
@@ -8662,18 +8614,13 @@
                     typeof preset.neutralTime === "number" &&
                     typeof preset.softFilter === "string" &&
                     typeof preset.hardFilter === "string" &&
-                    // Support both old (burnPercent) and new (contrastSplit) field names
-                    (typeof preset.contrastSplit === "number" ||
-                      typeof preset.burnPercent === "number")
+                    typeof preset.burnPercent === "number"
                   );
                 })
                 .map((preset) => ({
                   // Ensure all new properties have defaults for backward compatibility
                   ...preset,
                   fomaPaperType: preset.fomaPaperType || "fomaspeed",
-                  // Migrate burnPercent to contrastSplit
-                  contrastSplit:
-                    preset.contrastSplit ?? preset.burnPercent ?? 50,
                   customFactors: preset.customFactors || {
                     "00": preset.customSoftFactor || 1.0,
                     0: preset.customSoftFactor || 1.0,
@@ -8962,8 +8909,7 @@
               softTime: data.softTime,
               hardTime: data.hardTime,
               totalTime: data.totalTime,
-              contrastSplit: data.contrastSplit,
-              normalizationScale: data.normalizationScale,
+              burnPercent: data.burnPercent,
             };
 
             // Update session name
@@ -10274,56 +10220,20 @@
 
       /**
        * @class SplitGradeCalculator
-       * @classdesc Split-grade printing calculator with contrast-driven split and
-       * filter factor normalization.
+       * @classdesc Split-grade printing calculator with filter factor compensation.
+       * Calculates highlight and shadow exposure times based on base time,
+       * paper brand, and filter selections.
        *
-       * DESIGN PHILOSOPHY (OPTION A):
-       * - Exposure time comes from Exposure Meter / Test Strip (neutralTime)
-       * - Contrast Analyzer provides ΔEV which drives the recommended split
-       * - Filter factors are normalized to prevent total exposure drift
-       * - User can override the recommended split manually
-       *
-       * @property {number} neutralTime - Base exposure time from test strip (seconds)
+       * @property {number} baseTime - Base exposure time in seconds
        * @property {string} paperBrand - Paper brand ('Ilford', 'Kodak', 'FOMA', 'Custom')
        * @property {string} fomaPaperType - FOMA paper type ('fomaspeed' or 'fomatonemg')
        * @property {string} softFilter - Soft filter number (e.g., '0', '4', '5')
        * @property {string} hardFilter - Hard filter number
-       * @property {Object} customFactors - Custom filter factors for all 7 grades
-       * @property {number} contrastSplit - Shadow emphasis percentage (0-100)
-       * @property {number|null} recommendedSplit - ΔEV-derived split (null if no ΔEV)
-       * @property {boolean} userOverride - True if user manually adjusted split
+       * @property {Object} customFactors - Custom filter factors for all 7 grades (when brand = 'Custom')
+       * @property {Object} splitPresets - Saved split-grade configurations
+       * @property {string} currentSplitPreset - Currently loaded preset name
        */
       class SplitGradeCalculator {
-        /**
-         * ΔEV to Split Percentage mapping table
-         * Maps measured scene contrast to recommended hard/shadow emphasis
-         *
-         * Logic:
-         * - Low contrast (ΔEV < 4) → More hard filter to increase contrast
-         * - Normal contrast (ΔEV ~5-6) → Balanced 50/50 split
-         * - High contrast (ΔEV > 7) → More soft filter to reduce contrast
-         *
-         * Values are monotonic and deterministic for predictable behavior
-         */
-        static DELTA_EV_TO_SPLIT = [
-          { deltaEV: 3.0, split: 70 }, // Very low contrast → heavy hard emphasis
-          { deltaEV: 4.0, split: 65 }, // Low contrast
-          { deltaEV: 4.5, split: 60 },
-          { deltaEV: 5.0, split: 55 },
-          { deltaEV: 5.5, split: 50 }, // Normal contrast → balanced
-          { deltaEV: 6.0, split: 45 },
-          { deltaEV: 6.5, split: 40 },
-          { deltaEV: 7.0, split: 35 }, // High contrast
-          { deltaEV: 7.5, split: 30 },
-          { deltaEV: 8.0, split: 25 }, // Very high contrast → heavy soft emphasis
-        ];
-
-        /**
-         * Reference filter factor for normalization
-         * Grade 2 / No Filter is the neutral baseline
-         */
-        static REFERENCE_FACTOR = 1.0;
-
         /**
          * Creates a SplitGradeCalculator instance
          * @constructor
@@ -10334,11 +10244,7 @@
           this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
           this.softFilter = "00";
           this.hardFilter = "5";
-
-          // Contrast-driven split (renamed from burnPercent)
-          this.contrastSplit = 50; // Shadow emphasis percentage (0-100)
-          this.recommendedSplit = null; // ΔEV-derived recommendation
-          this.userOverride = false; // True when user manually adjusted
+          this.burnPercent = 50; // Shadow burn percentage
 
           // Custom filter factors (when paperBrand = "Custom")
           // Object with all 7 grades: 00, 0, 1, 2, 3, 4, 5
@@ -10470,25 +10376,15 @@
             }
           });
 
-          // Contrast split slider (renamed from burnPercent)
-          const splitSlider = document.getElementById("contrastSplitSlider");
-          if (splitSlider) {
-            splitSlider.addEventListener("input", (e) => {
-              this.contrastSplit = parseInt(e.target.value);
-              this.userOverride = true; // User manually adjusted
-              document.getElementById("contrastSplitValue").textContent =
-                `${this.contrastSplit}%`;
-              this.updateSplitRecommendationDisplay();
+          // Burn percentage slider
+          const burnSlider = document.getElementById("burnPercentSlider");
+          if (burnSlider) {
+            burnSlider.addEventListener("input", (e) => {
+              this.burnPercent = parseInt(e.target.value);
+              document.getElementById("burnPercentValue").textContent =
+                `${this.burnPercent}%`;
               this.calculate();
             });
-          }
-
-          // Sync from Contrast Analyzer button
-          const syncDeltaEVBtn = document.getElementById("syncDeltaEVBtn");
-          if (syncDeltaEVBtn) {
-            syncDeltaEVBtn.addEventListener("click", () =>
-              this.syncFromContrastAnalyzer(),
-            );
           }
 
           // Filter segmented controls
@@ -10519,107 +10415,11 @@
             );
           }
 
-          // Initial sync from Contrast Analyzer if available
-          this.syncFromContrastAnalyzer();
-
           // Initial calculation
           this.updateBrandVisibility();
           this.updateFilterLabels();
           this.calculate();
           this.updatePresetList();
-        }
-
-        /**
-         * Sync recommended split from Contrast Analyzer's ΔEV
-         * This reads the ΔEV from LightMeterManager and sets the recommended split
-         */
-        syncFromContrastAnalyzer() {
-          const lightMeter = window.lightMeterManager;
-          if (lightMeter && lightMeter.deltaEV !== null) {
-            this.recommendedSplit = this.deltaEVToSplit(lightMeter.deltaEV);
-
-            // If user hasn't overridden, apply the recommendation
-            if (!this.userOverride) {
-              this.contrastSplit = this.recommendedSplit;
-              const slider = document.getElementById("contrastSplitSlider");
-              if (slider) slider.value = this.contrastSplit;
-              document.getElementById("contrastSplitValue").textContent =
-                `${this.contrastSplit}%`;
-            }
-
-            this.updateSplitRecommendationDisplay();
-            this.calculate();
-          } else {
-            this.recommendedSplit = null;
-            this.updateSplitRecommendationDisplay();
-          }
-        }
-
-        /**
-         * Map ΔEV to recommended split percentage using lookup table
-         * Uses linear interpolation between table entries
-         * @param {number} deltaEV - Measured contrast range
-         * @returns {number} - Recommended shadow emphasis percentage (0-100)
-         */
-        deltaEVToSplit(deltaEV) {
-          const table = SplitGradeCalculator.DELTA_EV_TO_SPLIT;
-
-          // Clamp to table bounds
-          if (deltaEV <= table[0].deltaEV) return table[0].split;
-          if (deltaEV >= table[table.length - 1].deltaEV)
-            return table[table.length - 1].split;
-
-          // Find bracketing entries and interpolate
-          for (let i = 0; i < table.length - 1; i++) {
-            if (
-              deltaEV >= table[i].deltaEV &&
-              deltaEV <= table[i + 1].deltaEV
-            ) {
-              const t =
-                (deltaEV - table[i].deltaEV) /
-                (table[i + 1].deltaEV - table[i].deltaEV);
-              return Math.round(
-                table[i].split + t * (table[i + 1].split - table[i].split),
-              );
-            }
-          }
-
-          return 50; // Fallback to balanced
-        }
-
-        /**
-         * Update the split recommendation display
-         */
-        updateSplitRecommendationDisplay() {
-          const recommendedEl = document.getElementById(
-            "recommendedSplitValue",
-          );
-          const statusEl = document.getElementById("splitRecommendationStatus");
-
-          if (recommendedEl) {
-            if (this.recommendedSplit !== null) {
-              recommendedEl.textContent = `${this.recommendedSplit}%`;
-            } else {
-              recommendedEl.textContent = "--";
-            }
-          }
-
-          if (statusEl) {
-            if (this.recommendedSplit === null) {
-              statusEl.textContent =
-                "No ΔEV data - use Contrast Analyzer first";
-              statusEl.style.color = "var(--text-secondary)";
-            } else if (
-              this.userOverride &&
-              this.contrastSplit !== this.recommendedSplit
-            ) {
-              statusEl.textContent = `Adjusted from ${this.recommendedSplit}%`;
-              statusEl.style.color = "var(--accent)";
-            } else {
-              statusEl.textContent = "From Contrast Analyzer";
-              statusEl.style.color = "var(--text-primary)";
-            }
-          }
         }
 
         /**
@@ -10752,28 +10552,18 @@
         }
 
         /**
-         * Calculate split-grade times with normalization
-         *
-         * ARCHITECTURE (OPTION A compliant):
-         * 1. Split the neutral time based on contrastSplit percentage
-         * 2. Apply filter factors to each split
-         * 3. NORMALIZE total exposure to prevent density drift
-         *
-         * Normalization ensures that:
-         * - Changing filters redistributes contrast
-         * - Total exposure remains stable (~neutralTime × referenceFactor)
-         * - Only the contrast character of the print changes
+         * Calculate split-grade times using user's burn method
          *
          * Formula:
-         * 1. highlightsBase = neutralTime × (100 - contrastSplit) / 100
-         * 2. shadowsBase = neutralTime × contrastSplit / 100
-         * 3. rawSoftTime = highlightsBase × softFactor
-         * 4. rawHardTime = shadowsBase × hardFactor
-         * 5. rawTotal = rawSoftTime + rawHardTime
-         * 6. targetTotal = neutralTime × referenceFactor
-         * 7. normalizationScale = targetTotal / rawTotal
-         * 8. softTime = rawSoftTime × normalizationScale
-         * 9. hardTime = rawHardTime × normalizationScale
+         * Highlights = Neutral Time × (100% - burn%) / 100
+         * Shadows = Neutral Time × burn% / 100
+         * Then apply filter factors to each
+         *
+         * Filter factor selection:
+         * - Ilford/Kodak: Use predefined factors from FILTER_FACTORS
+         * - FOMA: Use paper-specific factors (FOMASPEED or FOMATONE)
+         * - Custom: Use customFactors object with all 7 grades (00, 0, 1, 2, 3, 4, 5)
+         *   The selected softFilter and hardFilter keys are used to look up values
          */
         calculate() {
           let softFactor, hardFactor;
@@ -10804,36 +10594,23 @@
               ] || 1.0;
           }
 
-          // Step 1: Calculate base times based on contrastSplit percentage
+          // Calculate base times based on burn percentage
           const highlightsBase =
-            (this.neutralTime * (100 - this.contrastSplit)) / 100;
-          const shadowsBase = this.neutralTime * (this.contrastSplit / 100);
+            (this.neutralTime * (100 - this.burnPercent)) / 100;
+          const shadowsBase = this.neutralTime * (this.burnPercent / 100);
 
-          // Step 2: Apply filter factors (raw, before normalization)
-          const rawSoftTime = highlightsBase * softFactor;
-          const rawHardTime = shadowsBase * hardFactor;
-          const rawTotal = rawSoftTime + rawHardTime;
+          // Apply filter factors
+          const softTime = highlightsBase * softFactor;
+          const hardTime = shadowsBase * hardFactor;
 
-          // Step 3: Calculate normalization scale
-          // Target: neutralTime × referenceFactor (Grade 2 baseline)
-          const targetTotal =
-            this.neutralTime * SplitGradeCalculator.REFERENCE_FACTOR;
-          const normalizationScale =
-            rawTotal > 0 ? targetTotal / rawTotal : 1.0;
-
-          // Step 4: Apply normalization to preserve total exposure
-          const softTime = rawSoftTime * normalizationScale;
-          const hardTime = rawHardTime * normalizationScale;
-          const totalTime = softTime + hardTime; // Should be ≈ targetTotal
+          // Total exposure
+          const totalTime = softTime + hardTime;
 
           // Update display
           const splitDisplay = document.getElementById("splitTimeDisplay");
           const softResult = document.getElementById("softResult");
           const hardResult = document.getElementById("hardResult");
           const totalResult = document.getElementById("totalResult");
-          const normalizationDisplay = document.getElementById(
-            "normalizationFactor",
-          );
 
           if (splitDisplay)
             splitDisplay.textContent = `${highlightsBase.toFixed(
@@ -10843,8 +10620,6 @@
           if (hardResult) hardResult.textContent = `${hardTime.toFixed(2)} s`;
           if (totalResult)
             totalResult.textContent = `${totalTime.toFixed(2)} s`;
-          if (normalizationDisplay)
-            normalizationDisplay.textContent = `×${normalizationScale.toFixed(2)}`;
 
           return {
             highlightsBase,
@@ -10854,11 +10629,7 @@
             totalTime,
             softFactor,
             hardFactor,
-            contrastSplit: this.contrastSplit,
-            recommendedSplit: this.recommendedSplit,
-            userOverride: this.userOverride,
-            normalizationScale,
-            rawTotal,
+            burnPercent: this.burnPercent,
           };
         }
 
@@ -10881,10 +10652,7 @@
             hardFilter: this.hardFilter,
             paperBrand: this.paperBrand,
             fomaPaperType: this.fomaPaperType,
-            contrastSplit: this.contrastSplit,
-            recommendedSplit: this.recommendedSplit,
-            userOverride: this.userOverride,
-            normalizationScale: result.normalizationScale,
+            burnPercent: this.burnPercent,
             softFactor: result.softFactor,
             hardFactor: result.hardFactor,
             customFactors: { ...this.customFactors },
@@ -10931,8 +10699,7 @@
               softTime: result.softTime,
               hardTime: result.hardTime,
               totalTime: result.totalTime,
-              contrastSplit: this.contrastSplit,
-              normalizationScale: result.normalizationScale,
+              burnPercent: this.burnPercent,
             });
           }
 
@@ -10968,9 +10735,7 @@
           this.fomaPaperType = "fomaspeed";
           this.softFilter = "00";
           this.hardFilter = "5";
-          this.contrastSplit = 50;
-          this.recommendedSplit = null;
-          this.userOverride = false;
+          this.burnPercent = 50;
 
           // Reset custom factors to all 1.0
           this.customFactors = {
@@ -10987,11 +10752,8 @@
           document.getElementById("neutralTimeSlider").value = 10.0;
           document.getElementById("neutralTimeValue").textContent = "10.0s";
           document.getElementById("splitPaperBrand").value = "Ilford";
-
-          const splitSlider = document.getElementById("contrastSplitSlider");
-          if (splitSlider) splitSlider.value = 50;
-          const splitValue = document.getElementById("contrastSplitValue");
-          if (splitValue) splitValue.textContent = "50%";
+          document.getElementById("burnPercentSlider").value = 50;
+          document.getElementById("burnPercentValue").textContent = "50%";
 
           // Reset custom inputs (all 7 grades)
           const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
@@ -11020,10 +10782,6 @@
             .querySelector('#splitHardFilter [data-filter="5"]')
             ?.classList.add("active");
 
-          // Try to sync from Contrast Analyzer
-          this.syncFromContrastAnalyzer();
-          this.updateSplitRecommendationDisplay();
-
           // Hide brand-specific sections
           this.updateBrandVisibility();
           this.calculate();
@@ -11051,7 +10809,7 @@
             fomaPaperType: this.fomaPaperType,
             softFilter: this.softFilter,
             hardFilter: this.hardFilter,
-            contrastSplit: this.contrastSplit,
+            burnPercent: this.burnPercent,
             customFactors: { ...this.customFactors }, // Clone the object
             date: new Date().toISOString(),
           };
@@ -11089,11 +10847,7 @@
           this.fomaPaperType = preset.fomaPaperType || "fomaspeed";
           this.softFilter = preset.softFilter || "00";
           this.hardFilter = preset.hardFilter || "5";
-
-          // Support both old (burnPercent) and new (contrastSplit) field names
-          this.contrastSplit = preset.contrastSplit ?? preset.burnPercent ?? 50;
-          this.userOverride = false; // Reset override when loading preset
-          this.recommendedSplit = null; // Will be re-synced
+          this.burnPercent = preset.burnPercent || 50;
 
           // Load custom factors with defaults for backward compatibility
           if (preset.customFactors) {
@@ -11131,11 +10885,9 @@
           document.getElementById("neutralTimeValue").textContent =
             `${this.neutralTime.toFixed(1)}s`;
           document.getElementById("splitPaperBrand").value = this.paperBrand;
-
-          const splitSlider = document.getElementById("contrastSplitSlider");
-          if (splitSlider) splitSlider.value = this.contrastSplit;
-          const splitValue = document.getElementById("contrastSplitValue");
-          if (splitValue) splitValue.textContent = `${this.contrastSplit}%`;
+          document.getElementById("burnPercentSlider").value = this.burnPercent;
+          document.getElementById("burnPercentValue").textContent =
+            `${this.burnPercent}%`;
 
           // Update custom factor inputs (all 7 grades)
           const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
@@ -11175,9 +10927,6 @@
 
           // Update visibility of brand-specific sections
           this.updateBrandVisibility();
-
-          // Update recommendation display
-          this.updateSplitRecommendationDisplay();
 
           this.currentSplitPreset = preset.name;
           StorageManager.saveCurrentSplitPreset(preset.name);
@@ -11248,10 +10997,7 @@
               this.currentSplitPreset === preset.name ? "active" : ""
             }`;
 
-            // Support both old (burnPercent) and new (contrastSplit) field names
-            const splitPercent =
-              preset.contrastSplit ?? preset.burnPercent ?? 50;
-            const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${splitPercent}%`;
+            const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${preset.burnPercent}%`;
             const dateStr = new Date(preset.date).toLocaleDateString();
 
             // Build additional info string
@@ -18971,11 +18717,10 @@
               hardFilter: null,
               paperBrand: null,
               fomaPaperType: null,
-              contrastSplit: null,
+              burnPercent: null,
               softFactor: null,
               hardFactor: null,
               customFactors: null,
-              normalizationScale: null,
             };
             const display = document.getElementById("splitGradeDisplay");
             if (display) display.style.display = "none";
