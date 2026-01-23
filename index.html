@@ -4903,9 +4903,6 @@
                 <div class="label-sm" style="margin-top: 4px">
                   Proportion: <span id="splitSoftPercent">--%</span>
                 </div>
-                <div class="label-sm" style="margin-top: 4px">
-                  Time: <span id="splitSoftTime">--</span>
-                </div>
               </div>
               <div
                 class="info-box"
@@ -4925,21 +4922,6 @@
                 <div class="label-sm" style="margin-top: 4px">
                   Proportion: <span id="splitHardPercent">--%</span>
                 </div>
-                <div class="label-sm" style="margin-top: 4px">
-                  Time: <span id="splitHardTime">--</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Total Time Display -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">TOTAL EXPOSURE TIME</div>
-              <div
-                class="timer-display"
-                id="splitTotalTime"
-                style="font-size: 2rem"
-              >
-                --
               </div>
             </div>
 
@@ -4972,17 +4954,6 @@
             <div class="settings-btn-group" style="margin-top: 10px">
               <button class="settings-btn" id="clearSplitBtn">
                 Clear Readings
-              </button>
-            </div>
-
-            <!-- Send to CALC Tab Button -->
-            <div class="settings-btn-group" style="margin-top: 10px">
-              <button
-                class="settings-btn primary"
-                id="sendSplitToCalcBtn"
-                disabled
-              >
-                Send to CALC Tab
               </button>
             </div>
           </div>
@@ -10931,14 +10902,11 @@
 
           if (display) display.style.display = "block";
           if (neutralDisplay)
-            neutralDisplay.textContent = this.neutralTime
-              ? `${this.neutralTime.toFixed(2)}s`
-              : "N/A";
+            neutralDisplay.textContent = `${this.neutralTime.toFixed(2)}s`;
           if (splitTimeDisplay)
-            splitTimeDisplay.textContent =
-              result.highlightsBase && result.shadowsBase
-                ? `${result.highlightsBase.toFixed(2)}s / ${result.shadowsBase.toFixed(2)}s`
-                : "N/A";
+            splitTimeDisplay.textContent = `${result.highlightsBase.toFixed(
+              2,
+            )}s / ${result.shadowsBase.toFixed(2)}s`;
           if (totalDisplay)
             totalDisplay.textContent = `${result.totalTime.toFixed(2)}s`;
           if (highlightsSpan)
@@ -17994,14 +17962,6 @@
           if (clearBtn) {
             clearBtn.addEventListener("click", () => this.clearSplitReadings());
           }
-
-          // Send to CALC button
-          const sendSplitBtn = document.getElementById("sendSplitToCalcBtn");
-          if (sendSplitBtn) {
-            sendSplitBtn.addEventListener("click", () =>
-              this.sendSplitToCalc(),
-            );
-          }
         }
 
         /**
@@ -18428,34 +18388,18 @@
             const response = await fetch("/light-meter-contrast");
             const data = await response.json();
 
-            console.log("Light meter response:", data);
-
             if (data.status === "success" && data.split_grade) {
               this.splitGradeResult = data.split_grade;
-
-              // Debug logging
-              console.log("Split-Grade Result:", data.split_grade);
-              console.log("Soft Filter:", data.split_grade.soft_filter);
-              console.log("Hard Filter:", data.split_grade.hard_filter);
 
               // Update displays - SHOW ΔEV, FILTERS, AND PROPORTIONS ONLY
               document.getElementById("splitDeltaEV").textContent =
                 data.delta_ev.toFixed(1) + " EV";
 
               // Show filter names
-              if (data.split_grade.soft_filter) {
-                document.getElementById("splitSoftFilter").textContent =
-                  "Grade " + data.split_grade.soft_filter;
-              } else {
-                console.error("Soft filter is missing or null");
-              }
-
-              if (data.split_grade.hard_filter) {
-                document.getElementById("splitHardFilter").textContent =
-                  "Grade " + data.split_grade.hard_filter;
-              } else {
-                console.error("Hard filter is missing or null");
-              }
+              document.getElementById("splitSoftFilter").textContent =
+                "Grade " + data.split_grade.soft_filter;
+              document.getElementById("splitHardFilter").textContent =
+                "Grade " + data.split_grade.hard_filter;
 
               // Calculate relative proportions from the lux ratio
               // The ratio of highlight_lux to shadow_lux determines the split
@@ -18478,17 +18422,6 @@
               this.splitGradeResult.softProportion = softProportion;
               this.splitGradeResult.hardProportion = hardProportion;
 
-              // Display exposure times
-              document.getElementById("splitSoftTime").textContent =
-                this.splitGradeResult.soft_time.toFixed(2) + "s";
-              document.getElementById("splitHardTime").textContent =
-                this.splitGradeResult.hard_time.toFixed(2) + "s";
-              document.getElementById("splitTotalTime").textContent =
-                this.splitGradeResult.total_time.toFixed(2) + "s";
-
-              // Enable Send to CALC button
-              document.getElementById("sendSplitToCalcBtn").disabled = false;
-
               playBeep(1000, 0.3, 0.3);
             } else {
               this.showFeedback(
@@ -18499,99 +18432,6 @@
           } catch (error) {
             this.showFeedback("Connection error: " + error.message, "error");
           }
-        }
-
-        /**
-         * Send split-grade results to CALC tab
-         * Reuses SplitGradeCalculator's sendToCalc() method
-         */
-        async sendSplitToCalc() {
-          if (!this.splitGradeResult) {
-            this.showFeedback("No split-grade data to send", "error");
-            return;
-          }
-
-          // Get or create SplitGradeCalculator instance
-          if (!window.splitGradeCalculator) {
-            window.splitGradeCalculator = new SplitGradeCalculator();
-          }
-
-          // Populate SplitGradeCalculator with METER tab data
-          // Note: We don't have neutralTime from METER tab, so we'll use the soft/hard times directly
-          window.splitGradeCalculator.neutralTime =
-            this.splitGradeResult.soft_time + this.splitGradeResult.hard_time;
-          window.splitGradeCalculator.paperBrand = this.paperBrand;
-          window.splitGradeCalculator.fomaPaperType = this.fomaPaperType;
-          window.splitGradeCalculator.softFilter =
-            this.splitGradeResult.soft_filter;
-          window.splitGradeCalculator.hardFilter =
-            this.splitGradeResult.hard_filter;
-
-          // Set custom factors if using custom brand
-          if (this.paperBrand === "Custom") {
-            // Would need to get custom factors from UI or storage
-            // For now, use default factors
-            window.splitGradeCalculator.customFactors = {
-              "00": 1.0,
-              0: 1.0,
-              1: 1.0,
-              2: 1.0,
-              3: 1.0,
-              4: 1.0,
-              5: 1.0,
-            };
-          }
-
-          // Set contrast split to 50% (balanced) since we don't have ΔEV-driven split from METER tab
-          // The METER tab gives us actual times, not proportions
-          window.splitGradeCalculator.contrastSplit = 50;
-          window.splitGradeCalculator.recommendedSplit = null;
-          window.splitGradeCalculator.userOverride = false;
-
-          // Call the existing sendToCalc() method
-          window.splitGradeCalculator.sendToCalc();
-
-          // Update the CALC tab display with actual times from METER tab
-          // Override the calculated times with the actual times from METER tab
-          appState.calculator.splitGrade.softTime =
-            this.splitGradeResult.soft_time;
-          appState.calculator.splitGrade.hardTime =
-            this.splitGradeResult.hard_time;
-          appState.calculator.splitGrade.totalTime =
-            this.splitGradeResult.total_time;
-
-          // Update CALC tab display directly
-          const highlightsSpan = document.getElementById("highlightsTime");
-          const shadowsSpan = document.getElementById("shadowsTime");
-          const totalDisplay = document.getElementById("splitTotalDisplay");
-
-          if (highlightsSpan)
-            highlightsSpan.textContent = `${this.splitGradeResult.soft_time.toFixed(2)}s (F${this.splitGradeResult.soft_filter})`;
-          if (shadowsSpan)
-            shadowsSpan.textContent = `${this.splitGradeResult.hard_time.toFixed(2)}s (F${this.splitGradeResult.hard_filter})`;
-          if (totalDisplay)
-            totalDisplay.textContent = `${this.splitGradeResult.total_time.toFixed(2)}s`;
-
-          // Log to exposure log
-          if (window.exposureLogManager) {
-            window.exposureLogManager.addSplitPhase({
-              neutralTime: null,
-              paperBrand: this.paperBrand,
-              softFilter: this.splitGradeResult.soft_filter,
-              hardFilter: this.splitGradeResult.hard_filter,
-              filterBrand: this.paperBrand,
-              highlightsBase: null,
-              shadowsBase: null,
-              softTime: this.splitGradeResult.soft_time,
-              hardTime: this.splitGradeResult.hard_time,
-              totalTime: this.splitGradeResult.total_time,
-              contrastSplit: null,
-              normalizationScale:
-                this.splitGradeResult.normalization_scale || 1.0,
-            });
-          }
-
-          this.showFeedback("Split-grade sent to CALC tab", "success");
         }
 
         /**
@@ -18608,15 +18448,11 @@
           document.getElementById("splitDeltaEV").textContent = "--";
           document.getElementById("splitSoftFilter").textContent = "--";
           document.getElementById("splitSoftPercent").textContent = "--%";
-          document.getElementById("splitSoftTime").textContent = "--";
           document.getElementById("splitHardFilter").textContent = "--";
           document.getElementById("splitHardPercent").textContent = "--%";
-          document.getElementById("splitHardTime").textContent = "--";
-          document.getElementById("splitTotalTime").textContent = "--";
 
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
-          document.getElementById("sendSplitToCalcBtn").disabled = true;
 
           // Clear on server too
           try {
@@ -19066,7 +18902,6 @@
           });
 
         // Split-grade CALC tab handlers
-        // Apply Highlights button - works for both SPLIT tab and METER tab data
         document
           .getElementById("applyHighlights")
           ?.addEventListener("click", () => {
@@ -19094,7 +18929,6 @@
             }
           });
 
-        // Apply Shadows button - works for both SPLIT tab and METER tab data
         document
           .getElementById("applyShadows")
           ?.addEventListener("click", () => {
