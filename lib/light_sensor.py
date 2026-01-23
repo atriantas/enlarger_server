@@ -522,37 +522,43 @@ class DarkroomLightMeter:
     }
     
     # Ilford Multigrade filter data
+    # Keys: '00', '0', '1', '2', '3', '4', '5', '' (empty string for no filter)
     ILFORD_FILTERS = {
-        '00': {'iso_r': 180, 'factor': 1.6},
-        '0':  {'iso_r': 160, 'factor': 1.4},
-        '1':  {'iso_r': 130, 'factor': 1.3},
-        '2':  {'iso_r': 110, 'factor': 1.1},
-        '3':  {'iso_r': 90,  'factor': 0.9},
-        '4':  {'iso_r': 60,  'factor': 0.6},
-        '5':  {'iso_r': 40,  'factor': 0.4},
-        'none': {'iso_r': 110, 'factor': 1.0}
+        '00': {'iso_r': 180, 'factor': 1.6, 'name': 'Grade 00'},
+        '0':  {'iso_r': 160, 'factor': 1.4, 'name': 'Grade 0'},
+        '1':  {'iso_r': 130, 'factor': 1.3, 'name': 'Grade 1'},
+        '2':  {'iso_r': 110, 'factor': 1.1, 'name': 'Grade 2'},
+        '3':  {'iso_r': 90,  'factor': 0.9, 'name': 'Grade 3'},
+        '4':  {'iso_r': 60,  'factor': 0.6, 'name': 'Grade 4'},
+        '5':  {'iso_r': 40,  'factor': 0.4, 'name': 'Grade 5'},
+        '':   {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter'},
+        'none': {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter'}  # Legacy support
     }
     
     # FOMA filter data - FOMASPEED / FOMABROM Variant III
+    # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
     FOMA_FOMASPEED_FILTERS = {
-        '2xY':  {'iso_r': 135, 'factor': 1.6},
-        'Y':    {'iso_r': 120, 'factor': 1.4},
-        'none': {'iso_r': 105, 'factor': 1.0},
-        'M1':   {'iso_r': 90,  'factor': 1.4},
-        '2xM1': {'iso_r': 80,  'factor': 2.1},
-        'M2':   {'iso_r': 65,  'factor': 2.6},
-        '2xM2': {'iso_r': 55,  'factor': 4.6}
+        '2xY':  {'iso_r': 135, 'factor': 1.6, 'name': '2×Y (Soft)'},
+        'Y':    {'iso_r': 120, 'factor': 1.4, 'name': 'Y'},
+        '':     {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter'},
+        'none': {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter'},  # Legacy support
+        'M1':   {'iso_r': 90,  'factor': 1.4, 'name': 'M1'},
+        '2xM1': {'iso_r': 80,  'factor': 2.1, 'name': '2×M1'},
+        'M2':   {'iso_r': 65,  'factor': 2.6, 'name': 'M2'},
+        '2xM2': {'iso_r': 55,  'factor': 4.6, 'name': '2×M2 (Hard)'}
     }
     
     # FOMA filter data - FOMATONE MG / MG Classic
+    # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
     FOMA_FOMATONE_FILTERS = {
-        '2xY':  {'iso_r': 120, 'factor': 2.0},
-        'Y':    {'iso_r': 105, 'factor': 1.5},
-        'none': {'iso_r': 90,  'factor': 1.0},
-        'M1':   {'iso_r': 80,  'factor': 1.5},
-        '2xM1': {'iso_r': 75,  'factor': 1.8},
-        'M2':   {'iso_r': 65,  'factor': 2.0},
-        '2xM2': {'iso_r': 55,  'factor': 3.0}
+        '2xY':  {'iso_r': 120, 'factor': 2.0, 'name': '2×Y (Soft)'},
+        'Y':    {'iso_r': 105, 'factor': 1.5, 'name': 'Y'},
+        '':     {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter'},
+        'none': {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter'},  # Legacy support
+        'M1':   {'iso_r': 80,  'factor': 1.5, 'name': 'M1'},
+        '2xM1': {'iso_r': 75,  'factor': 1.8, 'name': '2×M1'},
+        'M2':   {'iso_r': 65,  'factor': 2.0, 'name': 'M2'},
+        '2xM2': {'iso_r': 55,  'factor': 3.0, 'name': '2×M2 (Hard)'}
     }
     
     # Default calibration constant (lux × seconds)
@@ -649,6 +655,8 @@ class DarkroomLightMeter:
             lux: Measured illuminance in lux
             calibration: Calibration constant (lux × seconds)
             filter_grade: Filter grade for factor adjustment (optional)
+                         Can be '', 'none', '00', '0', '1', '2', '3', '4', '5',
+                         '2xY', 'Y', 'M1', '2xM1', 'M2', '2xM2'
         
         Returns:
             float: Exposure time in seconds
@@ -662,7 +670,8 @@ class DarkroomLightMeter:
         base_time = cal / lux
         
         # Apply filter factor if specified
-        if filter_grade:
+        # Empty string or 'none' means no filter (factor = 1.0)
+        if filter_grade is not None and filter_grade != '' and filter_grade != 'none':
             filter_data = self.get_filter_data()
             if filter_grade in filter_data:
                 factor = filter_data[filter_grade]['factor']
@@ -726,6 +735,10 @@ class DarkroomLightMeter:
         best_diff = float('inf')
         
         for grade, data in filter_data.items():
+            # Skip "no filter" options when recommending a filter grade
+            if grade == '' or grade == 'none':
+                continue
+            
             iso_r = data['iso_r']
             
             # Convert ISO R to printable EV range via interpolation

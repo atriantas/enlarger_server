@@ -17864,8 +17864,12 @@
                 ? data.variance.toFixed(2)
                 : "--";
 
-              // Calculate and display exposure time
-              this.calculateExposureTime(data.lux);
+              // Use server's calculated exposure time (includes filter factor)
+              this.exposureTime = data.exposure_time;
+              const timeDisplay = document.getElementById("meterExposureTime");
+              if (timeDisplay) {
+                timeDisplay.textContent = data.exposure_time.toFixed(2);
+              }
 
               // Enable send button
               document.getElementById("sendExposureToCalc").disabled = false;
