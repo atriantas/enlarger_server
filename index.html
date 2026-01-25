@@ -4780,7 +4780,7 @@
               class="label-sm"
               style="text-align: center; margin-bottom: 10px"
             >
-              Analyze contrast to determine split-grade proportions
+              Calculate absolute exposure times for split-grade printing
             </div>
 
             <!-- Averaging Control -->
@@ -4826,9 +4826,9 @@
               </button>
             </div>
 
-            <!-- Split Grade Results -->
+            <!-- Contrast Analysis -->
             <div class="info-box" style="margin-top: 15px">
-              <div class="label-sm">NEGATIVE CONTRAST (ΔEV)</div>
+              <div class="label-sm">CONTRAST RANGE (ΔEV)</div>
               <div
                 class="timer-display"
                 id="splitDeltaEV"
@@ -4836,9 +4836,50 @@
               >
                 --
               </div>
+              <div class="label-sm" style="margin-top: 4px">
+                Match Quality: <span id="splitMatchQuality">--</span>
+              </div>
+              <div
+                class="label-sm"
+                id="splitMatchNote"
+                style="
+                  margin-top: 4px;
+                  font-size: 0.55rem;
+                  color: var(--text-secondary);
+                "
+              >
+                --
+              </div>
             </div>
 
-            <!-- Split-Grade Recommendation -->
+            <!-- Filter Selection -->
+            <div class="control" style="margin-top: 15px">
+              <div class="control-label">
+                <span>SOFT FILTER (Highlights)</span>
+              </div>
+              <select
+                class="settings-input"
+                id="splitSoftFilterSelect"
+                style="width: 100%"
+              >
+                <option value="">Auto-Select</option>
+              </select>
+            </div>
+
+            <div class="control" style="margin-top: 10px">
+              <div class="control-label">
+                <span>HARD FILTER (Shadows)</span>
+              </div>
+              <select
+                class="settings-input"
+                id="splitHardFilterSelect"
+                style="width: 100%"
+              >
+                <option value="">Auto-Select</option>
+              </select>
+            </div>
+
+            <!-- Exposure Times Results -->
             <div class="exp-info" style="margin-top: 15px">
               <div
                 class="info-box"
@@ -4847,17 +4888,26 @@
                   border-color: rgba(255, 200, 50, 0.3);
                 "
               >
-                <div class="label-sm" style="color: #ffcc00">SOFT FILTER</div>
+                <div class="label-sm" style="color: #ffcc00">SOFT EXPOSURE</div>
                 <div
                   class="value-display"
-                  id="splitSoftFilter"
-                  style="font-size: 1.5rem"
+                  id="splitSoftTime"
+                  style="font-size: 1.8rem"
                 >
-                  --
+                  --.--
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  Proportion: <span id="splitSoftPercent">--%</span>
+                  <span id="splitSoftFilterName">--</span> |
+                  <span id="splitSoftPercent">--%</span>
                 </div>
+                <button
+                  class="settings-btn"
+                  id="sendSoftToCalc"
+                  style="margin-top: 5px; width: 100%"
+                  disabled
+                >
+                  → Send to CALC
+                </button>
               </div>
               <div
                 class="info-box"
@@ -4866,17 +4916,38 @@
                   border-color: rgba(200, 50, 255, 0.3);
                 "
               >
-                <div class="label-sm" style="color: #cc66ff">HARD FILTER</div>
+                <div class="label-sm" style="color: #cc66ff">HARD EXPOSURE</div>
                 <div
                   class="value-display"
-                  id="splitHardFilter"
-                  style="font-size: 1.5rem"
+                  id="splitHardTime"
+                  style="font-size: 1.8rem"
                 >
-                  --
+                  --.--
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  Proportion: <span id="splitHardPercent">--%</span>
+                  <span id="splitHardFilterName">--</span> |
+                  <span id="splitHardPercent">--%</span>
                 </div>
+                <button
+                  class="settings-btn"
+                  id="sendHardToCalc"
+                  style="margin-top: 5px; width: 100%"
+                  disabled
+                >
+                  → Send to CALC
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Time -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">TOTAL EXPOSURE TIME</div>
+              <div
+                class="timer-display"
+                id="splitTotalTime"
+                style="font-size: 2.2rem"
+              >
+                --.--
               </div>
             </div>
 
@@ -4893,16 +4964,17 @@
                 HOW TO USE
               </div>
               <div class="label-sm" style="text-align: center; margin-top: 5px">
-                1. Use EXPOSURE METER with soft filter for highlight time<br />
-                2. Multiply by soft proportion for soft exposure<br />
-                3. Multiply by hard proportion for hard exposure
+                1. Measure highlight and shadow areas<br />
+                2. Select filters (or use auto-select)<br />
+                3. Click "Calculate Split-Grade"<br />
+                4. Send times to CALC tab for exposure
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
               <button class="settings-btn" id="calculateSplitBtn" disabled>
-                Analyze Split-Grade
+                Calculate Split-Grade
               </button>
             </div>
 
@@ -17552,6 +17624,52 @@
               dropdown.appendChild(option);
             }
           });
+
+          // Also update split-grade filter dropdowns
+          this.updateSplitGradeFilterDropdowns();
+        }
+
+        /**
+         * Update split-grade filter dropdowns based on current paper brand
+         */
+        updateSplitGradeFilterDropdowns() {
+          const softDropdown = document.getElementById("splitSoftFilterSelect");
+          const hardDropdown = document.getElementById("splitHardFilterSelect");
+
+          if (!softDropdown || !hardDropdown) return;
+
+          // Clear existing options
+          softDropdown.innerHTML = "";
+          hardDropdown.innerHTML = "";
+
+          // Add "Auto-Select" option first
+          const autoOption = document.createElement("option");
+          autoOption.value = "";
+          autoOption.textContent = "Auto-Select";
+          softDropdown.appendChild(autoOption);
+
+          const autoOption2 = document.createElement("option");
+          autoOption2.value = "";
+          autoOption2.textContent = "Auto-Select";
+          hardDropdown.appendChild(autoOption2);
+
+          // Add appropriate options based on filter system
+          const filters = this.getFilterData();
+
+          // Add filter options to both dropdowns
+          Object.entries(filters).forEach(([grade, data]) => {
+            if (grade !== "") {
+              const softOption = document.createElement("option");
+              softOption.value = grade;
+              softOption.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              softDropdown.appendChild(softOption);
+
+              const hardOption = document.createElement("option");
+              hardOption.value = grade;
+              hardOption.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              hardDropdown.appendChild(hardOption);
+            }
+          });
         }
 
         /**
@@ -17697,10 +17815,47 @@
             );
           }
 
+          // Filter selection dropdowns
+          const softFilterSelect = document.getElementById(
+            "splitSoftFilterSelect",
+          );
+          const hardFilterSelect = document.getElementById(
+            "splitHardFilterSelect",
+          );
+
+          if (softFilterSelect) {
+            softFilterSelect.addEventListener("change", () => {
+              // Update filter display if we have results
+              if (this.splitGradeResult) {
+                this.updateSplitGradeDisplays(this.splitGradeResult);
+              }
+            });
+          }
+
+          if (hardFilterSelect) {
+            hardFilterSelect.addEventListener("change", () => {
+              // Update filter display if we have results
+              if (this.splitGradeResult) {
+                this.updateSplitGradeDisplays(this.splitGradeResult);
+              }
+            });
+          }
+
           // Calculate button
           const calcBtn = document.getElementById("calculateSplitBtn");
           if (calcBtn) {
             calcBtn.addEventListener("click", () => this.calculateSplitGrade());
+          }
+
+          // Send to CALC buttons
+          const sendSoftBtn = document.getElementById("sendSoftToCalc");
+          if (sendSoftBtn) {
+            sendSoftBtn.addEventListener("click", () => this.sendSoftToCalc());
+          }
+
+          const sendHardBtn = document.getElementById("sendHardToCalc");
+          if (sendHardBtn) {
+            sendHardBtn.addEventListener("click", () => this.sendHardToCalc());
           }
 
           // Clear button
@@ -18042,7 +18197,7 @@
             if (hasBoth) {
               this.analyzeContrast();
             }
-          } else {
+          } else if (mode === "split") {
             document.getElementById("calculateSplitBtn").disabled = !hasBoth;
             // Auto-calculate split-grade when both readings are available
             if (hasBoth) {
@@ -18121,9 +18276,9 @@
         }
 
         /**
-         * Analyze split-grade proportions from stored readings
-         * DESIGN: Only analyzes contrast and recommends PROPORTIONS - NO absolute exposure times
-         * Absolute times must be determined using Exposure Meter mode
+         * Calculate split-grade exposure times from stored readings
+         * DESIGN: Calculates absolute exposure times for both soft and hard exposures
+         * Uses paper selection from PAPER & FILTER SETUP
          */
         async calculateSplitGrade() {
           if (!this.highlightLux || !this.shadowLux) {
@@ -18134,43 +18289,112 @@
             return;
           }
 
+          // Get paper selection from PAPER & FILTER SETUP
+          const paperBrand = this.paperBrand; // 'ilford' or 'foma'
+          const fomaPaperType = this.fomaPaperType; // 'fomaspeed' or 'fomatone'
+          const system = this.filterSystem; // 'ilford', 'foma_fomaspeed', or 'foma_fomatone'
+
+          // Get calibration for current paper
+          const calibration = this.calibration;
+
+          // Get selected filters (from dropdowns or use empty for auto-select)
+          const softFilter =
+            document.getElementById("splitSoftFilterSelect")?.value || "";
+          const hardFilter =
+            document.getElementById("splitHardFilterSelect")?.value || "";
+
+          // Build query parameters
+          const params = new URLSearchParams({
+            highlight: this.highlightLux,
+            shadow: this.shadowLux,
+            calibration: calibration,
+            system: system,
+          });
+
+          if (softFilter) params.append("soft_filter", softFilter);
+          if (hardFilter) params.append("hard_filter", hardFilter);
+
           try {
-            const response = await fetch("/light-meter-contrast");
+            const response = await fetch(
+              "/light-meter-split-grade?" + params.toString(),
+            );
             const data = await response.json();
 
-            if (data.status === "success" && data.split_grade) {
-              this.splitGradeResult = data.split_grade;
+            if (data.status === "success" && data.result) {
+              const result = data.result;
 
-              // Update displays - SHOW ΔEV, FILTERS, AND PROPORTIONS ONLY
+              // Validate result has required fields
+              if (
+                !result.soft_time ||
+                !result.hard_time ||
+                !result.total_time
+              ) {
+                this.showFeedback("Invalid result from server", "error");
+                return;
+              }
+
+              this.splitGradeResult = result;
+
+              // Store paper info for sending to CALC
+              this.splitGradeResult.paperBrand = paperBrand;
+              this.splitGradeResult.fomaPaperType = fomaPaperType;
+              this.splitGradeResult.neutralTime = result.total_time;
+
+              // Update displays with absolute exposure times
               document.getElementById("splitDeltaEV").textContent =
-                data.delta_ev.toFixed(1) + " EV";
+                result.delta_ev.toFixed(1) + " EV";
 
-              // Show filter names
-              document.getElementById("splitSoftFilter").textContent =
-                "Grade " + data.split_grade.soft_filter;
-              document.getElementById("splitHardFilter").textContent =
-                "Grade " + data.split_grade.hard_filter;
+              document.getElementById("splitMatchQuality").textContent =
+                result.match_quality;
 
-              // Calculate relative proportions from the lux ratio
-              // The ratio of highlight_lux to shadow_lux determines the split
-              const highlightLux =
-                data.split_grade.highlight_lux || this.highlightLux;
-              const shadowLux = data.split_grade.shadow_lux || this.shadowLux;
-              const totalLux = highlightLux + shadowLux;
+              // Show match quality note
+              const matchNote = document.getElementById("splitMatchNote");
+              if (
+                result.match_quality === "poor" &&
+                result.total_printable_ev > result.delta_ev + 2
+              ) {
+                matchNote.textContent =
+                  "Note: Negative contrast is lower than paper's full range. Single-grade printing may be sufficient.";
+                matchNote.style.color = "#666";
+              } else if (
+                result.match_quality === "excellent" ||
+                result.match_quality === "good"
+              ) {
+                matchNote.textContent =
+                  "Split-grade is appropriate for this negative contrast.";
+                matchNote.style.color = "var(--accent)";
+              } else {
+                matchNote.textContent = "";
+              }
 
-              // Soft proportion based on shadow detail needs (inverted because brighter = less dense)
-              // Higher shadow lux means more soft filter needed
-              const softProportion = Math.round((shadowLux / totalLux) * 100);
-              const hardProportion = 100 - softProportion;
+              // Calculate split-adjusted times
+              const softAdj = result.soft_time * (result.soft_percent / 100);
+              const hardAdj = result.hard_time * (result.hard_percent / 100);
+              const totalAdj = softAdj + hardAdj;
 
+              // Soft exposure (split-adjusted)
+              document.getElementById("splitSoftTime").textContent =
+                softAdj.toFixed(2) + "s";
+              document.getElementById("splitSoftFilterName").textContent =
+                result.soft_filter;
               document.getElementById("splitSoftPercent").textContent =
-                softProportion + "%";
-              document.getElementById("splitHardPercent").textContent =
-                hardProportion + "%";
+                result.soft_percent.toFixed(0) + "%";
 
-              // Store proportions in result for reference
-              this.splitGradeResult.softProportion = softProportion;
-              this.splitGradeResult.hardProportion = hardProportion;
+              // Hard exposure (split-adjusted)
+              document.getElementById("splitHardTime").textContent =
+                hardAdj.toFixed(2) + "s";
+              document.getElementById("splitHardFilterName").textContent =
+                result.hard_filter;
+              document.getElementById("splitHardPercent").textContent =
+                result.hard_percent.toFixed(0) + "%";
+
+              // Total time (split-adjusted)
+              document.getElementById("splitTotalTime").textContent =
+                totalAdj.toFixed(2) + "s";
+
+              // Enable send buttons
+              document.getElementById("sendSoftToCalc").disabled = false;
+              document.getElementById("sendHardToCalc").disabled = false;
 
               playBeep(1000, 0.3, 0.3);
             } else {
@@ -18196,13 +18420,26 @@
           document.getElementById("splitHighlightLux").textContent = "-- lux";
           document.getElementById("splitShadowLux").textContent = "-- lux";
           document.getElementById("splitDeltaEV").textContent = "--";
-          document.getElementById("splitSoftFilter").textContent = "--";
+          document.getElementById("splitMatchQuality").textContent = "--";
+          document.getElementById("splitMatchNote").textContent = "--";
+          document.getElementById("splitSoftTime").textContent = "--.--";
+          document.getElementById("splitSoftFilterName").textContent = "--";
           document.getElementById("splitSoftPercent").textContent = "--%";
-          document.getElementById("splitHardFilter").textContent = "--";
+          document.getElementById("splitHardTime").textContent = "--.--";
+          document.getElementById("splitHardFilterName").textContent = "--";
           document.getElementById("splitHardPercent").textContent = "--%";
+          document.getElementById("splitTotalTime").textContent = "--.--";
+
+          // Reset filter dropdowns to auto-select
+          const softDropdown = document.getElementById("splitSoftFilterSelect");
+          const hardDropdown = document.getElementById("splitHardFilterSelect");
+          if (softDropdown) softDropdown.value = "";
+          if (hardDropdown) hardDropdown.value = "";
 
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
+          document.getElementById("sendSoftToCalc").disabled = true;
+          document.getElementById("sendHardToCalc").disabled = true;
 
           // Clear on server too
           try {
@@ -18210,6 +18447,38 @@
           } catch (e) {}
 
           this.showFeedback("Split-grade readings cleared", "success");
+        }
+
+        /**
+         * Send soft exposure time to CALC tab
+         */
+        sendSoftToCalc() {
+          if (!this.splitGradeResult || !this.splitGradeResult.soft_time) {
+            this.showFeedback("No soft exposure time calculated", "error");
+            return;
+          }
+
+          const time = this.splitGradeResult.soft_time;
+          const filter = this.splitGradeResult.soft_filter;
+          const source = `Split-Grade Soft (${filter})`;
+
+          this.sendTimeToCalc(time, source);
+        }
+
+        /**
+         * Send hard exposure time to CALC tab
+         */
+        sendHardToCalc() {
+          if (!this.splitGradeResult || !this.splitGradeResult.hard_time) {
+            this.showFeedback("No hard exposure time calculated", "error");
+            return;
+          }
+
+          const time = this.splitGradeResult.hard_time;
+          const filter = this.splitGradeResult.hard_filter;
+          const source = `Split-Grade Hard (${filter})`;
+
+          this.sendTimeToCalc(time, source);
         }
 
         /**

@@ -912,6 +912,171 @@ class DarkroomLightMeter:
             'split_grade': split_grade
         }
     
+    def calculate_split_grade_enhanced(self, highlight_lux, shadow_lux, 
+                                       soft_filter=None, hard_filter=None,
+                                       calibration=None, system=None):
+        """
+        Enhanced split-grade calculator with absolute exposure times.
+        
+        This method calculates both the filter recommendations AND the
+        absolute exposure times for soft and hard exposures.
+        
+        Args:
+            highlight_lux: Lux reading at highlight area
+            shadow_lux: Lux reading at shadow area
+            soft_filter: User-selected soft filter (optional, auto-selects if None)
+            hard_filter: User-selected hard filter (optional, auto-selects if None)
+            calibration: Calibration constant (lux × seconds)
+            system: Filter system ('ilford', 'foma_fomaspeed', 'foma_fomatone')
+        
+        Returns:
+            dict: Complete split-grade solution with:
+                - delta_ev: Measured contrast range
+                - soft_filter: Selected soft filter
+                - hard_filter: Selected hard filter
+                - soft_time: Soft exposure time (seconds)
+                - hard_time: Hard exposure time (seconds)
+                - total_time: Total exposure time
+                - soft_percent: Soft exposure percentage
+                - hard_percent: Hard exposure percentage
+                - soft_factor: Soft filter factor
+                - hard_factor: Hard filter factor
+                - soft_printable_ev: Soft filter's printable EV range
+                - hard_printable_ev: Hard filter's printable EV range
+                - total_printable_ev: Combined printable EV range
+                - match_quality: How well filters match the negative contrast
+        """
+        if highlight_lux is None or shadow_lux is None:
+            return None
+        
+        if highlight_lux <= 0 or shadow_lux <= 0:
+            return None
+        
+        # 1. Calculate ΔEV
+        delta_ev = self.calculate_delta_ev(highlight_lux, shadow_lux)
+        
+        # 2. Get filter data for selected paper system
+        cal = calibration or self.default_calibration
+        system = system or self.filter_system
+        filter_data = self.get_filter_data(system)
+        
+        # 3. Determine filters (user-specified or auto)
+        if soft_filter is None or hard_filter is None:
+            # Auto-select based on system (fixed filters for split-grade)
+            if soft_filter is None:
+                soft_filter = self._get_soft_filter_for_system(system)
+            if hard_filter is None:
+                hard_filter = self._get_hard_filter_for_system(system)
+        
+        # 4. Get filter factors
+        if soft_filter not in filter_data:
+            soft_filter = '00' if system == 'ilford' else '2xY'
+        if hard_filter not in filter_data:
+            hard_filter = '5' if system == 'ilford' else '2xM2'
+        
+        soft_factor = filter_data[soft_filter]['factor']
+        hard_factor = filter_data[hard_filter]['factor']
+        
+        # 5. Calculate base times from lux readings
+        #    Direct lux-based calculation (most intuitive)
+        soft_base = cal / highlight_lux
+        hard_base = cal / shadow_lux
+        
+        # 6. Apply filter factors
+        soft_time = soft_base * soft_factor
+        hard_time = hard_base * hard_factor
+        
+        # 7. Calculate proportions
+        total_time = soft_time + hard_time
+        soft_percent = (soft_time / total_time) * 100
+        hard_percent = (hard_time / total_time) * 100
+        
+        # 8. Calculate expected paper contrast
+        soft_printable_ev = self._iso_r_to_ev(filter_data[soft_filter]['iso_r'])
+        hard_printable_ev = self._iso_r_to_ev(filter_data[hard_filter]['iso_r'])
+        total_printable_ev = soft_printable_ev + hard_printable_ev
+        
+        # 9. Evaluate match quality
+        match_quality = self._evaluate_split_match(delta_ev, total_printable_ev)
+        
+        return {
+            'delta_ev': delta_ev,
+            'soft_filter': soft_filter,
+            'hard_filter': hard_filter,
+            'soft_time': soft_time,
+            'hard_time': hard_time,
+            'total_time': total_time,
+            'soft_percent': soft_percent,
+            'hard_percent': hard_percent,
+            'soft_factor': soft_factor,
+            'hard_factor': hard_factor,
+            'soft_printable_ev': soft_printable_ev,
+            'hard_printable_ev': hard_printable_ev,
+            'total_printable_ev': total_printable_ev,
+            'match_quality': match_quality,
+            'highlight_lux': highlight_lux,
+            'shadow_lux': shadow_lux
+        }
+    
+    def _get_soft_filter_for_system(self, system):
+        """
+        Get the soft filter for split-grade printing.
+        
+        Soft filter controls highlights (brighter areas).
+        For split-grade, we use the softest filter available.
+        
+        Args:
+            system: Filter system
+        
+        Returns:
+            str: Soft filter identifier
+        """
+        if system == 'ilford':
+            return '00'
+        elif system.startswith('foma'):
+            return '2xY'
+        return '00'
+    
+    def _get_hard_filter_for_system(self, system):
+        """
+        Get the hard filter for split-grade printing.
+        
+        Hard filter controls shadows (darker areas).
+        For split-grade, we use the hardest filter available.
+        
+        Args:
+            system: Filter system
+        
+        Returns:
+            str: Hard filter identifier
+        """
+        if system == 'ilford':
+            return '5'
+        elif system.startswith('foma'):
+            return '2xM2'
+        return '5'
+    
+    def _evaluate_split_match(self, delta_ev, total_printable_ev):
+        """
+        Evaluate how well the split-grade filters match the negative contrast.
+        
+        Args:
+            delta_ev: Measured contrast range
+            total_printable_ev: Combined printable EV range of filters
+        
+        Returns:
+            str: Match quality ('excellent', 'good', 'fair', 'poor')
+        """
+        diff = abs(delta_ev - total_printable_ev)
+        if diff < 0.5:
+            return 'excellent'
+        elif diff < 1.0:
+            return 'good'
+        elif diff < 1.5:
+            return 'fair'
+        else:
+            return 'poor'
+    
     def clear_readings(self):
         """Clear stored highlight and shadow readings."""
         self.highlight_lux = None
