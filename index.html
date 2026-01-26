@@ -4800,6 +4800,32 @@
               />
             </div>
 
+            <!-- Algorithm Selection -->
+            <div class="control" style="margin-top: 15px">
+              <div class="control-label">
+                <span>ALGORITHM</span>
+              </div>
+              <select
+                class="settings-input"
+                id="splitAlgorithmSelect"
+                style="width: 100%"
+              >
+                <option value="heiland">Heiland Enhanced (Recommended)</option>
+                <option value="original">Original Fixed-Filter</option>
+                <option value="comparison">Compare Both Algorithms</option>
+              </select>
+              <div
+                class="label-sm"
+                style="
+                  margin-top: 4px;
+                  color: var(--text-secondary);
+                  font-size: 0.55rem;
+                "
+              >
+                Heiland: Dynamic filter selection based on contrast
+              </div>
+            </div>
+
             <!-- Highlight Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
               <div class="label-sm">HIGHLIGHT AREA</div>
@@ -18305,6 +18331,18 @@
           const hardFilter =
             document.getElementById("splitHardFilterSelect")?.value || "";
 
+          // Get selected algorithm
+          const algorithmSelect = document.getElementById(
+            "splitAlgorithmSelect",
+          );
+          const algorithm = algorithmSelect ? algorithmSelect.value : "heiland";
+
+          // Determine which endpoint to use
+          let endpoint = "/light-meter-split-grade";
+          if (algorithm === "heiland") {
+            endpoint = "/light-meter-split-grade-heiland";
+          }
+
           // Build query parameters
           const params = new URLSearchParams({
             highlight: this.highlightLux,
@@ -18317,9 +18355,7 @@
           if (hardFilter) params.append("hard_filter", hardFilter);
 
           try {
-            const response = await fetch(
-              "/light-meter-split-grade?" + params.toString(),
-            );
+            const response = await fetch(endpoint + "?" + params.toString());
             const data = await response.json();
 
             if (data.status === "success" && data.result) {
@@ -18654,10 +18690,25 @@
          * Get current paper ID based on brand and type selection
          */
         getCurrentPaperId() {
+          // Map UI paper types to enhanced paper database IDs
           if (this.paperBrand === "ilford") {
-            return `ilford_${this.ilfordPaperType}`;
+            // Map UI paper types to database IDs
+            const uiToDbMap = {
+              mg4_rc: "ilford_mg_iv", // Multigrade IV RC Deluxe
+              warmtone: "ilford_mg_iv", // Use MG IV as fallback for Warmtone
+              cooltone: "ilford_mg_iv", // Use MG IV as fallback for Cooltone
+              portfolio: "ilford_mg_iv", // Use MG IV as fallback for Portfolio
+            };
+            return uiToDbMap[this.ilfordPaperType] || "ilford_mg_iv";
           } else {
-            return `foma_${this.fomaPaperType}`;
+            // FOMA paper types map directly
+            if (this.fomaPaperType === "fomaspeed") {
+              return "foma_fomaspeed";
+            } else if (this.fomaPaperType === "fomatone") {
+              return "foma_fomatone";
+            } else {
+              return "foma_fomaspeed"; // Default
+            }
           }
         }
 
@@ -18700,17 +18751,14 @@
          * Get human-readable paper name for display
          */
         getCurrentPaperName() {
+          // Enhanced paper names from paper database
           const paperNames = {
-            ilford_mg4_rc: "Ilford MG IV RC",
-            ilford_warmtone: "Ilford Warmtone",
-            ilford_cooltone: "Ilford Cooltone",
-            ilford_portfolio: "Ilford Portfolio",
-            foma_fomaspeed: "FOMA FOMASPEED",
-            foma_fomatone: "FOMA FOMATONE",
+            ilford_mg_iv: "Ilford Multigrade IV RC",
+            foma_fomaspeed: "FOMA FOMASPEED Variant III",
+            foma_fomatone: "FOMA FOMATONE MG Classic",
           };
-          return (
-            paperNames[this.getCurrentPaperId()] || this.getCurrentPaperId()
-          );
+          const paperId = this.getCurrentPaperId();
+          return paperNames[paperId] || paperId;
         }
 
         /**

@@ -873,6 +873,75 @@ class HTTPServer:
             }, 500)
             await self._sendall(conn, response)
     
+    async def _handle_light_meter_split_grade_heiland(self, conn, params):
+        """
+        Handle /light-meter-split-grade-heiland endpoint - calculate Heiland-like split-grade.
+        
+        Query params:
+            highlight: Highlight lux reading
+            shadow: Shadow lux reading
+            calibration: Calibration constant (lux·s)
+            system: Filter system ('ilford', 'foma_fomaspeed', 'foma_fomatone')
+        
+        Returns Heiland-like split-grade calculation with dynamic filter selection.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            highlight_lux = float(params.get('highlight', 0))
+            shadow_lux = float(params.get('shadow', 0))
+            calibration = float(params.get('calibration', self.light_meter.default_calibration))
+            system = params.get('system', self.light_meter.filter_system)
+            
+            if highlight_lux <= 0 or shadow_lux <= 0:
+                response = self._json_response({
+                    "error": "Invalid lux readings (must be positive)",
+                    "highlight_lux": highlight_lux,
+                    "shadow_lux": shadow_lux
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            # Calculate Heiland-like split-grade
+            result = self.light_meter.calculate_split_grade_heiland(
+                highlight_lux=highlight_lux,
+                shadow_lux=shadow_lux,
+                calibration=calibration,
+                system=system
+            )
+            
+            if result is None:
+                response = self._json_response({
+                    "error": "Failed to calculate Heiland split-grade",
+                    "highlight_lux": highlight_lux,
+                    "shadow_lux": shadow_lux
+                }, 500)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response({
+                "status": "success",
+                "result": result,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Heiland split-grade calculation error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
     async def _handle_light_meter_calibrate(self, conn, params):
         """
         Handle /light-meter-calibrate endpoint - set calibration.
@@ -1113,6 +1182,8 @@ class HTTPServer:
                 await self._handle_light_meter_contrast(conn, params)
             elif path == '/light-meter-split-grade':
                 await self._handle_light_meter_split_grade(conn, params)
+            elif path == '/light-meter-split-grade-heiland':
+                await self._handle_light_meter_split_grade_heiland(conn, params)
             elif path == '/light-meter-calibrate':
                 await self._handle_light_meter_calibrate(conn, params)
             elif path == '/light-meter-config':
@@ -1193,3 +1264,4 @@ class HTTPServer:
             except Exception as e:
                 print(f"Server loop error: {e}")
                 await asyncio.sleep_ms(100)
+

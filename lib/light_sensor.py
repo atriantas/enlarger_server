@@ -19,6 +19,7 @@ Technical Specifications (TSL2591):
 
 import asyncio
 import time
+import math
 from machine import Pin, I2C
 
 
@@ -504,61 +505,62 @@ class DarkroomLightMeter:
     
     # ISO R values define paper's exposure latitude (printable ΔEV range)
     # Higher ISO R = longer exposure range = prints more contrast
+    # Enhanced with Heiland research data and paper database gamma values
     ISO_R_TO_EV = {
-        180: 8.0,   # Grade 00 - very soft
-        160: 7.5,   # Grade 0
-        135: 7.0,   # FOMA 2xY
-        130: 6.8,   # Grade 1
-        120: 6.5,   # FOMA Y
-        110: 6.2,   # Grade 2 (normal)
-        105: 6.0,   # FOMA no filter
-        90: 5.6,    # Grade 3 / FOMA M1
-        80: 5.2,    # FOMA 2xM1
-        75: 5.0,    # FOMA 2xM1
-        65: 4.8,    # Grade 4 / FOMA M2
-        60: 4.6,    # Grade 4
-        55: 4.4,    # Grade 5 / FOMA 2xM2
-        40: 4.0     # Grade 5 - very hard
+        180: 8.0,   # Grade 00 - very soft (gamma 0.4)
+        160: 7.5,   # Grade 0 (gamma 0.5)
+        135: 7.0,   # FOMA 2xY (gamma 0.4)
+        130: 6.8,   # Grade 1 (gamma 0.6)
+        120: 6.5,   # FOMA Y (gamma 0.5)
+        110: 6.2,   # Grade 2 (normal) (gamma 0.7)
+        105: 6.0,   # FOMA no filter (gamma 0.6)
+        90: 5.6,    # Grade 3 / FOMA M1 (gamma 0.8)
+        80: 5.2,    # FOMA 2xM1 (gamma 0.8)
+        75: 5.0,    # FOMA 2xM1 (gamma 0.8)
+        65: 4.8,    # Grade 4 / FOMA M2 (gamma 0.9)
+        60: 4.6,    # Grade 4 (gamma 0.9)
+        55: 4.4,    # Grade 5 / FOMA 2xM2 (gamma 1.0)
+        40: 4.0     # Grade 5 - very hard (gamma 1.0)
     }
     
-    # Ilford Multigrade filter data
+    # Ilford Multigrade filter data - Enhanced with Heiland research data
     # Keys: '00', '0', '1', '2', '3', '4', '5', '' (empty string for no filter)
     ILFORD_FILTERS = {
-        '00': {'iso_r': 180, 'factor': 1.6, 'name': 'Grade 00'},
-        '0':  {'iso_r': 160, 'factor': 1.4, 'name': 'Grade 0'},
-        '1':  {'iso_r': 130, 'factor': 1.3, 'name': 'Grade 1'},
-        '2':  {'iso_r': 110, 'factor': 1.1, 'name': 'Grade 2'},
-        '3':  {'iso_r': 90,  'factor': 0.9, 'name': 'Grade 3'},
-        '4':  {'iso_r': 60,  'factor': 0.6, 'name': 'Grade 4'},
-        '5':  {'iso_r': 40,  'factor': 0.4, 'name': 'Grade 5'},
-        '':   {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter'},
-        'none': {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter'}  # Legacy support
+        '00': {'iso_r': 180, 'factor': 1.6, 'name': 'Grade 00', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
+        '0':  {'iso_r': 160, 'factor': 1.4, 'name': 'Grade 0', 'gamma': 0.5, 'description': 'Soft'},
+        '1':  {'iso_r': 130, 'factor': 1.3, 'name': 'Grade 1', 'gamma': 0.6, 'description': 'Normal-soft'},
+        '2':  {'iso_r': 110, 'factor': 1.1, 'name': 'Grade 2', 'gamma': 0.7, 'description': 'Normal'},
+        '3':  {'iso_r': 90,  'factor': 0.9, 'name': 'Grade 3', 'gamma': 0.8, 'description': 'Normal-hard'},
+        '4':  {'iso_r': 60,  'factor': 0.6, 'name': 'Grade 4', 'gamma': 0.9, 'description': 'Hard'},
+        '5':  {'iso_r': 40,  'factor': 0.4, 'name': 'Grade 5', 'gamma': 1.0, 'description': 'Very hard - shadows only'},
+        '':   {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.7, 'description': 'No filter (grade 2 equivalent)'},
+        'none': {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.7, 'description': 'No filter (grade 2 equivalent)'}  # Legacy support
     }
     
-    # FOMA filter data - FOMASPEED / FOMABROM Variant III
+    # FOMA filter data - FOMASPEED / FOMABROM Variant III - Enhanced with Heiland research data
     # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
     FOMA_FOMASPEED_FILTERS = {
-        '2xY':  {'iso_r': 135, 'factor': 1.6, 'name': '2×Y (Soft)'},
-        'Y':    {'iso_r': 120, 'factor': 1.4, 'name': 'Y'},
-        '':     {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter'},
-        'none': {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter'},  # Legacy support
-        'M1':   {'iso_r': 90,  'factor': 1.4, 'name': 'M1'},
-        '2xM1': {'iso_r': 80,  'factor': 2.1, 'name': '2×M1'},
-        'M2':   {'iso_r': 65,  'factor': 2.6, 'name': 'M2'},
-        '2xM2': {'iso_r': 55,  'factor': 4.6, 'name': '2×M2 (Hard)'}
+        '2xY':  {'iso_r': 135, 'factor': 1.6, 'name': '2×Y (Soft)', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
+        'Y':    {'iso_r': 120, 'factor': 1.4, 'name': 'Y', 'gamma': 0.5, 'description': 'Soft'},
+        '':     {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},
+        'none': {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},  # Legacy support
+        'M1':   {'iso_r': 90,  'factor': 1.4, 'name': 'M1', 'gamma': 0.7, 'description': 'Normal-hard'},
+        '2xM1': {'iso_r': 80,  'factor': 2.1, 'name': '2×M1', 'gamma': 0.8, 'description': 'Hard'},
+        'M2':   {'iso_r': 65,  'factor': 2.6, 'name': 'M2', 'gamma': 0.9, 'description': 'Very hard'},
+        '2xM2': {'iso_r': 55,  'factor': 4.6, 'name': '2×M2 (Hard)', 'gamma': 1.0, 'description': 'Extreme hard - shadows only'}
     }
     
-    # FOMA filter data - FOMATONE MG / MG Classic
+    # FOMA filter data - FOMATONE MG / MG Classic - Enhanced with Heiland research data
     # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
     FOMA_FOMATONE_FILTERS = {
-        '2xY':  {'iso_r': 120, 'factor': 2.0, 'name': '2×Y (Soft)'},
-        'Y':    {'iso_r': 105, 'factor': 1.5, 'name': 'Y'},
-        '':     {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter'},
-        'none': {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter'},  # Legacy support
-        'M1':   {'iso_r': 80,  'factor': 1.5, 'name': 'M1'},
-        '2xM1': {'iso_r': 75,  'factor': 1.8, 'name': '2×M1'},
-        'M2':   {'iso_r': 65,  'factor': 2.0, 'name': 'M2'},
-        '2xM2': {'iso_r': 55,  'factor': 3.0, 'name': '2×M2 (Hard)'}
+        '2xY':  {'iso_r': 120, 'factor': 2.0, 'name': '2×Y (Soft)', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
+        'Y':    {'iso_r': 105, 'factor': 1.5, 'name': 'Y', 'gamma': 0.5, 'description': 'Soft'},
+        '':     {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},
+        'none': {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},  # Legacy support
+        'M1':   {'iso_r': 80,  'factor': 1.5, 'name': 'M1', 'gamma': 0.7, 'description': 'Normal-hard'},
+        '2xM1': {'iso_r': 75,  'factor': 1.8, 'name': '2×M1', 'gamma': 0.8, 'description': 'Hard'},
+        'M2':   {'iso_r': 65,  'factor': 2.0, 'name': 'M2', 'gamma': 0.9, 'description': 'Very hard'},
+        '2xM2': {'iso_r': 55,  'factor': 3.0, 'name': '2×M2 (Hard)', 'gamma': 1.0, 'description': 'Extreme hard - shadows only'}
     }
     
     # Default calibration constant (lux × seconds)
@@ -1077,6 +1079,155 @@ class DarkroomLightMeter:
         else:
             return 'poor'
     
+    def calculate_split_grade_heiland(self, highlight_lux, shadow_lux, calibration=None, system=None):
+        """
+        Heiland-like split-grade calculation with dynamic filter selection.
+        
+        Based on research into Heiland Splitgrade Controller methodology:
+        1. Dynamic filter selection based on measured contrast (ΔEV)
+        2. Paper characteristic curve consideration
+        3. Exposure optimization for balanced results
+        
+        Args:
+            highlight_lux: Lux reading at highlight area
+            shadow_lux: Lux reading at shadow area
+            calibration: Calibration constant (optional)
+            system: Filter system (optional)
+        
+        Returns:
+            dict: Enhanced split-grade results with Heiland-like features
+        """
+        if highlight_lux is None or shadow_lux is None:
+            return None
+        
+        if highlight_lux <= 0 or shadow_lux <= 0:
+            return None
+        
+        cal = calibration or self.default_calibration
+        system = system or self.filter_system
+        
+        # Calculate contrast (ΔEV)
+        delta_ev = self.calculate_delta_ev(highlight_lux, shadow_lux)
+        
+        # Dynamic filter selection based on contrast
+        # This replaces the fixed filter selection in the original algorithm
+        if system == 'ilford':
+            # Ilford filter selection based on ΔEV
+            if delta_ev < 1.0:
+                soft_filter, hard_filter = '1', '2'      # Very low contrast
+            elif delta_ev < 1.5:
+                soft_filter, hard_filter = '00', '2'     # Low contrast
+            elif delta_ev < 2.0:
+                soft_filter, hard_filter = '00', '3'     # Medium-low contrast
+            elif delta_ev < 2.5:
+                soft_filter, hard_filter = '00', '3'     # Normal contrast
+            elif delta_ev < 3.0:
+                soft_filter, hard_filter = '00', '4'     # Medium-high contrast
+            elif delta_ev < 3.5:
+                soft_filter, hard_filter = '00', '4'     # High contrast
+            elif delta_ev < 4.0:
+                soft_filter, hard_filter = '00', '5'     # Very high contrast
+            else:
+                soft_filter, hard_filter = '00', '5'     # Extreme contrast
+        else:
+            # FOMA filter selection (similar logic)
+            if delta_ev < 1.0:
+                soft_filter, hard_filter = 'Y', 'M1'     # Very low contrast
+            elif delta_ev < 1.5:
+                soft_filter, hard_filter = '2xY', 'M1'   # Low contrast
+            elif delta_ev < 2.0:
+                soft_filter, hard_filter = '2xY', '2xM1' # Medium-low contrast
+            elif delta_ev < 2.5:
+                soft_filter, hard_filter = '2xY', '2xM1' # Normal contrast
+            elif delta_ev < 3.0:
+                soft_filter, hard_filter = '2xY', 'M2'   # Medium-high contrast
+            elif delta_ev < 3.5:
+                soft_filter, hard_filter = '2xY', '2xM2' # High contrast
+            elif delta_ev < 4.0:
+                soft_filter, hard_filter = '2xY', '2xM2' # Very high contrast
+            else:
+                soft_filter, hard_filter = '2xY', '2xM2' # Extreme contrast
+        
+        # Get filter data
+        filter_data = self.get_filter_data(system)
+        soft_factor = filter_data[soft_filter]['factor']
+        hard_factor = filter_data[hard_filter]['factor']
+        
+        # Calculate base times
+        soft_base_time = cal / highlight_lux
+        hard_base_time = cal / shadow_lux
+        
+        # Apply filter factors
+        soft_time = soft_base_time * soft_factor
+        hard_time = hard_base_time * hard_factor
+        
+        # Apply Heiland-like optimization for balanced exposures
+        # 1. Ensure minimum exposure time (2 seconds)
+        soft_time = max(soft_time, 2.0)
+        hard_time = max(hard_time, 2.0)
+        
+        # 2. Ensure maximum exposure time (120 seconds)
+        soft_time = min(soft_time, 120.0)
+        hard_time = min(hard_time, 120.0)
+        
+        # 3. Balance exposures (prefer similar times)
+        # If one exposure is much longer than the other, adjust
+        if soft_time > 0 and hard_time > 0:
+            ratio = max(soft_time, hard_time) / min(soft_time, hard_time)
+            if ratio > 10:  # Max 10:1 ratio
+                if soft_time > hard_time:
+                    soft_time = hard_time * 10
+                else:
+                    hard_time = soft_time * 10
+        
+        # Calculate percentages
+        total_time = soft_time + hard_time
+        if total_time > 0:
+            soft_percent = (soft_time / total_time) * 100
+            hard_percent = (hard_time / total_time) * 100
+        else:
+            soft_percent = 50.0
+            hard_percent = 50.0
+        
+        # Calculate match quality
+        soft_iso_r = filter_data[soft_filter]['iso_r']
+        hard_iso_r = filter_data[hard_filter]['iso_r']
+        soft_printable_ev = self._iso_r_to_ev(soft_iso_r)
+        hard_printable_ev = self._iso_r_to_ev(hard_iso_r)
+        total_printable_ev = soft_printable_ev + hard_printable_ev
+        match_quality = self._evaluate_split_match(delta_ev, total_printable_ev)
+        
+        # Determine selection reason
+        if delta_ev < 1.0:
+            selection_reason = "Very low contrast - using close filters"
+        elif delta_ev < 2.0:
+            selection_reason = "Low to medium contrast - balanced filter selection"
+        elif delta_ev < 3.0:
+            selection_reason = "Normal to high contrast - standard split-grade"
+        elif delta_ev < 4.0:
+            selection_reason = "High contrast - wider filter separation"
+        else:
+            selection_reason = "Extreme contrast - maximum filter separation"
+        
+        return {
+            'soft_filter': soft_filter,
+            'hard_filter': hard_filter,
+            'soft_time': soft_time,
+            'hard_time': hard_time,
+            'total_time': total_time,
+            'delta_ev': delta_ev,
+            'soft_factor': soft_factor,
+            'hard_factor': hard_factor,
+            'soft_percent': soft_percent,
+            'hard_percent': hard_percent,
+            'match_quality': match_quality,
+            'selection_reason': selection_reason,
+            'algorithm': 'heiland_enhanced',
+            'highlight_lux': highlight_lux,
+            'shadow_lux': shadow_lux,
+            'optimization_applied': True
+        }
+    
     def clear_readings(self):
         """Clear stored highlight and shadow readings."""
         self.highlight_lux = None
@@ -1094,3 +1245,4 @@ class DarkroomLightMeter:
             'shadow_lux': self.shadow_lux,
             'calibrations_stored': len(self.calibrations)
         }
+

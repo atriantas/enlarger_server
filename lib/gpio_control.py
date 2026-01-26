@@ -122,3 +122,4 @@ class GPIOControl:
         if pin in RELAY_PINS:
             return RELAY_PINS[pin]["name"]
         return "Unknown"
+

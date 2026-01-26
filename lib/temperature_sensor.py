@@ -123,3 +123,4 @@ class TemperatureSensor:
             "error": self.last_error,
             "pin": self.pin_num
         }
+

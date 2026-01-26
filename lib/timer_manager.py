@@ -346,3 +346,4 @@ class TimerManager:
     def is_heating_enabled(self):
         """Check if heating control is enabled."""
         return self.heating_enabled
+
