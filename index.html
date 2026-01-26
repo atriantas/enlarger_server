@@ -10350,7 +10350,7 @@
          * - Custom: Not stored here, uses instance.customFactors object with all 7 grades
          */
         static FILTER_FACTORS = {
-          Ilford: { "00": 1.0, 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.2, 5: 1.5 },
+          Ilford: { "00": 2.5, 0: 2.5, 1: 2.5, 2: 2.5, 3: 2.5, 4: 5.0, 5: 5.0 },
           Kodak: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.1, 4: 1.3, 5: 1.6 },
           FOMA: { "00": 1.6, 0: 1.4, 1: 1.0, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
           // FOMA paper-specific factors (will override base FOMA when selected)
@@ -13425,17 +13425,18 @@
             ilford: {
               name: "Ilford Multigrade",
               filters: {
-                "00": { iso: 130, factor: 1.0 },
-                0: { iso: 120, factor: 1.0 },
-                1: { iso: 110, factor: 1.0 },
-                1.5: { iso: 105, factor: 1.0 },
-                2: { iso: 100, factor: 1.0 },
-                2.5: { iso: 95, factor: 1.0 },
-                3: { iso: 90, factor: 1.0 },
-                3.5: { iso: 85, factor: 1.1 },
-                4: { iso: 80, factor: 1.2 },
-                4.5: { iso: 75, factor: 1.35 },
-                5: { iso: 70, factor: 1.5 },
+                none: { iso: 100, factor: 1.0 },
+                "00": { iso: 130, factor: 2.5 },
+                0: { iso: 120, factor: 2.5 },
+                1: { iso: 110, factor: 2.5 },
+                1.5: { iso: 105, factor: 2.5 },
+                2: { iso: 100, factor: 2.5 },
+                2.5: { iso: 95, factor: 2.5 },
+                3: { iso: 90, factor: 2.5 },
+                3.5: { iso: 85, factor: 3.75 },
+                4: { iso: 80, factor: 5.0 },
+                4.5: { iso: 75, factor: 5.0 },
+                5: { iso: 70, factor: 5.0 },
               },
             },
             // NEW: Kodak Polycontrast (12 grades: 00, 0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
@@ -13740,9 +13741,9 @@
           let options = [];
           if (this.currentBrand === "FOMA") {
             options = [
+              { value: "none", text: "No filter" },
               { value: "2xY", text: "2×Y" },
               { value: "Y", text: "Y" },
-              { value: "none", text: "No filter" },
               { value: "M1", text: "M1" },
               { value: "2xM1", text: "2×M1" },
               { value: "M2", text: "M2" },
@@ -13750,6 +13751,7 @@
             ];
           } else if (this.currentBrand === "Ilford") {
             options = [
+              { value: "none", text: "No filter" },
               { value: "00", text: "Grade 00" },
               { value: "0", text: "Grade 0" },
               { value: "1", text: "Grade 1" },
