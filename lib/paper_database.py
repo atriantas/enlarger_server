@@ -856,81 +856,7 @@ PAPER_DATABASE = {
     }
 },
     
-    # Legacy paper IDs for backward compatibility
-    'ilford_mg_iv': {
-        'manufacturer': 'Ilford',
-        'paper_type': 'Multigrade IV RC (Legacy)',
-        'base_iso_p': 500,
-        'dmin': 0.06,
-        'dmax': 2.05,
-        'exposure_latitude': 1.5,
-        'filters': {
-            '00': {'factor': 2.5, 'iso_r': 180, 'description': 'Very soft'},
-            '0': {'factor': 2.5, 'iso_r': 160, 'description': 'Soft'},
-            '1': {'factor': 2.5, 'iso_r': 120, 'description': 'Normal-soft'},
-            '2': {'factor': 2.5, 'iso_r': 100, 'description': 'Normal'},
-            '3': {'factor': 2.5, 'iso_r': 80, 'description': 'Hard'},
-            '4': {'factor': 5.0, 'iso_r': 65, 'description': 'Very hard'},
-            '5': {'factor': 5.0, 'iso_r': 45, 'description': 'Ultra hard'}
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.25,
-            'straight_slope': 1.00,
-            'shoulder_slope': 0.20,
-            'logE_range': 1.2,
-            'speed_point': 0.6
-        }
-    },
-    
-    'ilford_warmtone': {
-        'manufacturer': 'Ilford',
-        'paper_type': 'Multigrade Warmtone FB (Legacy)',
-        'base_iso_p': 320,
-        'dmin': 0.08,
-        'dmax': 2.15,
-        'exposure_latitude': 1.3,
-        'filters': {
-            '00': {'factor': 2.5, 'iso_r': 180, 'description': 'Very soft'},
-            '0': {'factor': 2.5, 'iso_r': 160, 'description': 'Soft'},
-            '1': {'factor': 2.5, 'iso_r': 120, 'description': 'Normal-soft'},
-            '2': {'factor': 2.5, 'iso_r': 100, 'description': 'Normal'},
-            '3': {'factor': 2.5, 'iso_r': 80, 'description': 'Hard'},
-            '4': {'factor': 5.0, 'iso_r': 65, 'description': 'Very hard'},
-            '5': {'factor': 5.0, 'iso_r': 45, 'description': 'Ultra hard'}
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.22,
-            'straight_slope': 0.95,
-            'shoulder_slope': 0.18,
-            'logE_range': 1.1,
-            'speed_point': 0.6
-        }
-    },
-    
-    'foma_fomatone': {
-        'manufacturer': 'FOMA',
-        'paper_type': 'Fomatone MG (Legacy)',
-        'base_iso_p': 200,
-        'dmin': 0.07,
-        'dmax': 2.00,
-        'exposure_latitude': 1.4,
-        'filters': {
-            '2xY': {'factor': 1.8, 'iso_r': 140, 'description': 'Extra soft'},
-            'Y': {'factor': 1.4, 'iso_r': 140, 'description': 'Soft'},
-            'None': {'factor': 1.0, 'iso_r': 100, 'description': 'Special'},
-            'M1': {'factor': 1.4, 'iso_r': 140, 'description': 'Special'},
-            '2xM1': {'factor': 2.0, 'iso_r': 80, 'description': 'Normal'},
-            'M2': {'factor': 2.5, 'iso_r': 65, 'description': 'Hard'},
-            '2xM2': {'factor': 4.5, 'iso_r': 45, 'description': 'Ultra hard'}
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.20,
-            'straight_slope': 1.10,
-            'shoulder_slope': 0.15,
-            'logE_range': 1.0,
-            'speed_point': 0.6
-        }
-    }
+
 }
 
 # Filter selection rules based on contrast (ΔEV) measurements
@@ -1048,40 +974,6 @@ FILTER_SELECTION_RULES = {
     # Note: foma_fomapastel_mg uses different filter naming (includes 'None' filter)
     # For backward compatibility, we'll use the same rules as other FOMA papers
     'foma_fomapastel_mg': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'}
-    },
-    
-    # Legacy paper filter selection rules
-    'ilford_mg_iv': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    
-    'ilford_warmtone': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    
-    'foma_fomatone': {
         'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
         'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
         'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},

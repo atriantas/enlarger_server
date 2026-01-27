@@ -2046,6 +2046,20 @@
                     >
                       FOMATONE MG<br />Classic
                     </button>
+                    <button
+                      class="toggle-btn"
+                      data-paper="fomapastel_mg"
+                      id="btnFomapastelMG"
+                    >
+                      FOMAPASTEL<br />MG
+                    </button>
+                    <button
+                      class="toggle-btn"
+                      data-paper="fomatone_mg_classic_variant"
+                      id="btnFomatoneClassicVariant"
+                    >
+                      FOMATONE MG<br />Classic Variant
+                    </button>
                   </div>
                 </div>
                 <div class="info-box">
@@ -4484,10 +4498,19 @@
                   id="ilfordPaperType"
                   style="width: 100%"
                 >
-                  <option value="mg4_rc">Multigrade IV RC Deluxe</option>
-                  <option value="warmtone">Warmtone</option>
-                  <option value="cooltone">Cooltone</option>
-                  <option value="portfolio">Portfolio</option>
+                  <option value="cooltone">Multigrade RC Cooltone</option>
+                  <option value="portfolio">
+                    Multigrade IV RC Portfolio (Discontinued)
+                  </option>
+                  <option value="rc_deluxe_new">
+                    MULTIGRADE RC DELUXE (NEW)
+                  </option>
+                  <option value="rc_portfolio_new">
+                    MULTIGRADE RC PORTFOLIO (NEW)
+                  </option>
+                  <option value="fb_classic">Multigrade FB Classic</option>
+                  <option value="fb_warmtone">Multigrade FB Warmtone</option>
+                  <option value="fb_cooltone">Multigrade FB Cooltone</option>
                 </select>
               </div>
 
@@ -4496,22 +4519,20 @@
                 <div class="control-label">
                   <span>FOMA PAPER TYPE</span>
                 </div>
-                <div class="settings-group" style="margin-top: 5px">
-                  <button
-                    class="toggle-btn active"
-                    data-foma="fomaspeed"
-                    id="btnFomaSpeed2"
-                  >
-                    FOMASPEED
-                  </button>
-                  <button
-                    class="toggle-btn"
-                    data-foma="fomatone"
-                    id="btnFomaTone2"
-                  >
-                    FOMATONE
-                  </button>
-                </div>
+                <select
+                  class="settings-input"
+                  id="fomaPaperType"
+                  style="width: 100%"
+                >
+                  <option value="fomaspeed">FOMASPEED VARIANT</option>
+                  <option value="fomabrom">FOMABROM VARIANT</option>
+                  <option value="fomapastel_mg">
+                    FOMAPASTEL MG (Special FB Colored Base)
+                  </option>
+                  <option value="fomatone_mg_classic_variant">
+                    FOMATONE MG Classic (Warm Tone)
+                  </option>
+                </select>
               </div>
 
               <!-- Calibration Display -->
@@ -10398,6 +10419,24 @@
             4: 2.0,
             5: 3.0,
           },
+          FOMAPASTEL_MG: {
+            "2xY": 1.8,
+            Y: 1.4,
+            None: 1.0,
+            M1: 1.4,
+            "2xM1": 2.0,
+            M2: 2.5,
+            "2xM2": 4.5,
+          },
+          FOMATONE_MG_CLASSIC_VARIANT: {
+            "2xY": 2.0,
+            Y: 1.5,
+            None: 1.0,
+            M1: 1.5,
+            "2xM1": 1.8,
+            M2: 2.0,
+            "2xM2": 3.0,
+          },
           // Custom factors are stored in instance properties, not here
         };
 
@@ -10432,12 +10471,18 @@
           // FOMA paper type selection
           const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
           const fomaToneBtn = document.getElementById("btnFomaToneMG");
+          const fomaPastelBtn = document.getElementById("btnFomapastelMG");
+          const fomaClassicVariantBtn = document.getElementById(
+            "btnFomatoneClassicVariant",
+          );
 
           if (fomaSpeedBtn) {
             fomaSpeedBtn.addEventListener("click", () => {
               this.fomaPaperType = "fomaspeed";
               fomaSpeedBtn.classList.add("active");
               fomaToneBtn.classList.remove("active");
+              fomaPastelBtn?.classList?.remove("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
               this.calculate();
             });
           }
@@ -10447,6 +10492,30 @@
               this.fomaPaperType = "fomatonemg";
               fomaToneBtn.classList.add("active");
               fomaSpeedBtn.classList.remove("active");
+              fomaPastelBtn?.classList?.remove("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
+              this.calculate();
+            });
+          }
+
+          if (fomaPastelBtn) {
+            fomaPastelBtn.addEventListener("click", () => {
+              this.fomaPaperType = "fomapastel_mg";
+              fomaPastelBtn.classList.add("active");
+              fomaSpeedBtn.classList.remove("active");
+              fomaToneBtn.classList.remove("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
+              this.calculate();
+            });
+          }
+
+          if (fomaClassicVariantBtn) {
+            fomaClassicVariantBtn.addEventListener("click", () => {
+              this.fomaPaperType = "fomatone_mg_classic_variant";
+              fomaClassicVariantBtn.classList.add("active");
+              fomaSpeedBtn.classList.remove("active");
+              fomaToneBtn.classList.remove("active");
+              fomaPastelBtn?.classList?.remove("active");
               this.calculate();
             });
           }
@@ -10456,9 +10525,23 @@
             if (this.fomaPaperType === "fomaspeed") {
               fomaSpeedBtn.classList.add("active");
               fomaToneBtn.classList.remove("active");
-            } else {
+              fomaPastelBtn?.classList?.remove("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
+            } else if (this.fomaPaperType === "fomatonemg") {
               fomaSpeedBtn.classList.remove("active");
               fomaToneBtn.classList.add("active");
+              fomaPastelBtn?.classList?.remove("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
+            } else if (this.fomaPaperType === "fomapastel_mg") {
+              fomaSpeedBtn.classList.remove("active");
+              fomaToneBtn.classList.remove("active");
+              fomaPastelBtn?.classList?.add("active");
+              fomaClassicVariantBtn?.classList?.remove("active");
+            } else if (this.fomaPaperType === "fomatone_mg_classic_variant") {
+              fomaSpeedBtn.classList.remove("active");
+              fomaToneBtn.classList.remove("active");
+              fomaPastelBtn?.classList?.remove("active");
+              fomaClassicVariantBtn?.classList?.add("active");
             }
           }
 
@@ -13724,10 +13807,17 @@
           // Update button states
           this.btnFomaspeed.classList.remove("active");
           this.btnFomatonemg.classList.remove("active");
+          this.btnFomapastelMG?.classList?.remove("active");
+          this.btnFomatoneClassicVariant?.classList?.remove("active");
+
           if (paperType === "fomaspeed") {
             this.btnFomaspeed.classList.add("active");
-          } else {
+          } else if (paperType === "fomatonemg") {
             this.btnFomatonemg.classList.add("active");
+          } else if (paperType === "fomapastel_mg") {
+            this.btnFomapastelMG?.classList?.add("active");
+          } else if (paperType === "fomatone_mg_classic_variant") {
+            this.btnFomatoneClassicVariant?.classList?.add("active");
           }
 
           // Update calculations
@@ -17524,19 +17614,11 @@
             });
           }
 
-          // FOMA paper type buttons
-          const fomaSpeedBtn = document.getElementById("btnFomaSpeed2");
-          const fomaToneBtn = document.getElementById("btnFomaTone2");
-
-          if (fomaSpeedBtn) {
-            fomaSpeedBtn.addEventListener("click", () => {
-              this.setFomaPaperType("fomaspeed");
-            });
-          }
-
-          if (fomaToneBtn) {
-            fomaToneBtn.addEventListener("click", () => {
-              this.setFomaPaperType("fomatone");
+          // FOMA paper type dropdown
+          const fomaPaperSelect = document.getElementById("fomaPaperType");
+          if (fomaPaperSelect) {
+            fomaPaperSelect.addEventListener("change", () => {
+              this.setFomaPaperType(fomaPaperSelect.value);
             });
           }
 
@@ -17601,16 +17683,21 @@
          */
         setFomaPaperType(type) {
           this.fomaPaperType = type;
-          this.filterSystem =
-            type === "fomaspeed" ? "foma_fomaspeed" : "foma_fomatone";
 
-          // Update UI
-          document
-            .getElementById("btnFomaSpeed2")
-            ?.classList.toggle("active", type === "fomaspeed");
-          document
-            .getElementById("btnFomaTone2")
-            ?.classList.toggle("active", type === "fomatone");
+          // Map UI paper type to filter system
+          const fomaToFilterSystem = {
+            fomaspeed: "foma_fomaspeed",
+            fomabrom: "foma_fomabrom",
+            fomapastel_mg: "foma_fomapastel_mg",
+            fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
+          };
+          this.filterSystem = fomaToFilterSystem[type] || "foma_fomaspeed";
+
+          // Update dropdown selection
+          const fomaPaperSelect = document.getElementById("fomaPaperType");
+          if (fomaPaperSelect) {
+            fomaPaperSelect.value = type;
+          }
 
           // SYNC WITH SERVER - Critical for correct grade recommendations
           this.syncFilterSystemWithServer();
@@ -18694,21 +18781,24 @@
           if (this.paperBrand === "ilford") {
             // Map UI paper types to database IDs
             const uiToDbMap = {
-              mg4_rc: "ilford_mg_iv", // Multigrade IV RC Deluxe
-              warmtone: "ilford_mg_iv", // Use MG IV as fallback for Warmtone
-              cooltone: "ilford_mg_iv", // Use MG IV as fallback for Cooltone
-              portfolio: "ilford_mg_iv", // Use MG IV as fallback for Portfolio
+              cooltone: "ilford_cooltone", // Multigrade RC Cooltone
+              portfolio: "ilford_iv_rc_portfolio", // Multigrade IV RC Portfolio (Discontinued)
+              rc_deluxe_new: "ilford_multigrade_rc_deluxe_new", // MULTIGRADE RC DELUXE (NEW)
+              rc_portfolio_new: "ilford_multigrade_rc_portfolio_new", // MULTIGRADE RC PORTFOLIO (NEW)
+              fb_classic: "ilford_fb_classic", // Multigrade FB Classic
+              fb_warmtone: "ilford_fb_warmtone", // Multigrade FB Warmtone
+              fb_cooltone: "ilford_fb_cooltone", // Multigrade FB Cooltone
             };
-            return uiToDbMap[this.ilfordPaperType] || "ilford_mg_iv";
+            return uiToDbMap[this.ilfordPaperType] || "ilford_cooltone"; // Default to Cooltone
           } else {
             // FOMA paper types map directly
-            if (this.fomaPaperType === "fomaspeed") {
-              return "foma_fomaspeed";
-            } else if (this.fomaPaperType === "fomatone") {
-              return "foma_fomatone";
-            } else {
-              return "foma_fomaspeed"; // Default
-            }
+            const fomaMap = {
+              fomaspeed: "foma_fomaspeed",
+              fomabrom: "foma_fomabrom",
+              fomapastel_mg: "foma_fomapastel_mg",
+              fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
+            };
+            return fomaMap[this.fomaPaperType] || "foma_fomaspeed"; // Default
           }
         }
 
@@ -18754,8 +18844,19 @@
           // Enhanced paper names from paper database
           const paperNames = {
             ilford_mg_iv: "Ilford Multigrade IV RC",
+            ilford_cooltone: "Ilford Multigrade RC Cooltone",
+            ilford_iv_rc_portfolio: "Ilford Multigrade IV RC Portfolio",
+            ilford_multigrade_rc_deluxe_new: "Ilford Multigrade RC Deluxe NEW",
+            ilford_multigrade_rc_portfolio_new:
+              "Ilford Multigrade RC Portfolio NEW",
+            ilford_fb_classic: "Ilford Multigrade FB Classic",
+            ilford_fb_warmtone: "Ilford Multigrade FB Warmtone",
+            ilford_fb_cooltone: "Ilford Multigrade FB Cooltone",
             foma_fomaspeed: "FOMA FOMASPEED Variant III",
+            foma_fomabrom: "FOMA FOMABROM Variant III",
+            foma_fomapastel_mg: "FOMA FOMAPASTEL MG",
             foma_fomatone: "FOMA FOMATONE MG Classic",
+            fomatone_mg_classic_variant: "FOMA FOMATONE MG Classic Variant",
           };
           const paperId = this.getCurrentPaperId();
           return paperNames[paperId] || paperId;
