@@ -2018,48 +2018,83 @@
                 <div class="control-label">
                   <span>PAPER BRAND</span>
                 </div>
-                <select class="settings-input" id="contrastBrandSelect">
-                  <option value="FOMA">FOMA</option>
-                  <option value="Ilford">Ilford Multigrade</option>
-                  <option value="Kodak">Kodak Polycontrast</option>
-                </select>
+                <div class="settings-group" style="margin-top: 5px">
+                  <button
+                    class="toggle-btn active"
+                    data-brand="FOMA"
+                    id="btnContrastFoma"
+                  >
+                    FOMA
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    data-brand="Ilford"
+                    id="btnContrastIlford"
+                  >
+                    Ilford
+                  </button>
+                </div>
               </div>
 
               <div
                 class="exp-info"
                 style="grid-template-columns: 1fr 1fr; margin-top: 8px"
               >
-                <div class="info-box" id="paperTypeBox">
+                <!-- Paper Type Dropdowns -->
+                <div class="info-box">
                   <div class="label-sm">Paper Type</div>
-                  <div class="paper-selector" style="margin-top: 5px">
-                    <button
-                      class="toggle-btn active"
-                      data-paper="fomaspeed"
-                      id="btnFomaspeed"
+
+                  <!-- Ilford Paper Type (hidden by default) -->
+                  <div
+                    id="ilfordPaperSelector"
+                    class="control"
+                    style="display: none; margin-top: 5px"
+                  >
+                    <select
+                      class="settings-input"
+                      id="ilfordPaperType"
+                      style="width: 100%"
                     >
-                      FOMASPEED<br />Variant III
-                    </button>
-                    <button
-                      class="toggle-btn"
-                      data-paper="fomatonemg"
-                      id="btnFomatonemg"
+                      <option value="cooltone">Multigrade RC Cooltone</option>
+                      <option value="portfolio">
+                        Multigrade IV RC Portfolio (Discontinued)
+                      </option>
+                      <option value="rc_deluxe_new">
+                        MULTIGRADE RC DELUXE (NEW)
+                      </option>
+                      <option value="rc_portfolio_new">
+                        MULTIGRADE RC PORTFOLIO (NEW)
+                      </option>
+                      <option value="fb_classic">Multigrade FB Classic</option>
+                      <option value="fb_warmtone">
+                        Multigrade FB Warmtone
+                      </option>
+                      <option value="fb_cooltone">
+                        Multigrade FB Cooltone
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- FOMA Paper Type (visible when FOMA selected) -->
+                  <div
+                    id="fomaPaperSelector"
+                    class="control"
+                    style="margin-top: 5px"
+                  >
+                    <select
+                      class="settings-input"
+                      id="fomaPaperType"
+                      style="width: 100%"
                     >
-                      FOMATONE MG<br />Classic
-                    </button>
-                    <button
-                      class="toggle-btn"
-                      data-paper="fomapastel_mg"
-                      id="btnFomapastelMG"
-                    >
-                      FOMAPASTEL<br />MG
-                    </button>
-                    <button
-                      class="toggle-btn"
-                      data-paper="fomatone_mg_classic_variant"
-                      id="btnFomatoneClassicVariant"
-                    >
-                      FOMATONE MG<br />Classic Variant
-                    </button>
+                      <option value="fomaspeed">FOMASPEED VARIANT</option>
+                      <option value="fomabrom">FOMABROM VARIANT</option>
+                      <option value="fomapastel_mg">
+                        FOMAPASTEL MG (Special FB Colored Base)
+                      </option>
+                      <option value="fomatone_mg_classic_variant">
+                        FOMATONE MG Classic (Warm Tone)
+                      </option>
+                    </select>
                   </div>
                 </div>
                 <div class="info-box">
@@ -2265,12 +2300,22 @@
             <div class="control-label">
               <span>PAPER BRAND</span>
             </div>
-            <select class="settings-input" id="splitPaperBrand">
-              <option value="FOMA">FOMA</option>
-              <option value="Ilford">Ilford Multigrade</option>
-              <option value="Kodak">Kodak Polycontrast</option>
-              <option value="Custom">Custom Factors</option>
-            </select>
+            <div class="settings-group" style="margin-top: 5px">
+              <button
+                class="toggle-btn active"
+                data-brand="FOMA"
+                id="btnSplitFoma"
+              >
+                FOMA
+              </button>
+              <button
+                class="toggle-btn"
+                data-brand="Ilford"
+                id="btnSplitIlford"
+              >
+                Ilford
+              </button>
+            </div>
           </div>
 
           <!-- FOMA Paper Type Selection (hidden by default) -->
@@ -2278,151 +2323,44 @@
             <div class="control-label">
               <span>FOMA PAPER TYPE</span>
             </div>
-            <div class="paper-selector" style="margin-top: 5px">
-              <button
-                class="toggle-btn active"
-                data-foma-paper="fomaspeed"
-                id="btnFomaSpeed"
-              >
-                FOMASPEED<br />Variant III
-              </button>
-              <button
-                class="toggle-btn"
-                data-foma-paper="fomatonemg"
-                id="btnFomaToneMG"
-              >
-                FOMATONE MG<br />Classic
-              </button>
-            </div>
+            <select
+              class="settings-input"
+              id="splitFomaPaperType"
+              style="width: 100%; margin-top: 5px"
+            >
+              <option value="fomaspeed">FOMASPEED VARIANT</option>
+              <option value="fomabrom">FOMABROM VARIANT</option>
+              <option value="fomapastel_mg">
+                FOMAPASTEL MG (Special FB Colored Base)
+              </option>
+              <option value="fomatone_mg_classic_variant">
+                FOMATONE MG Classic (Warm Tone)
+              </option>
+            </select>
           </div>
 
-          <!-- Custom Filter Factors (hidden by default) -->
-          <div
-            class="control"
-            id="customFactorsSelection"
-            style="display: none"
-          >
+          <!-- Ilford Paper Type Selection (hidden by default) -->
+          <div class="control" id="ilfordPaperSelection" style="display: none">
             <div class="control-label">
-              <span>CUSTOM FILTER FACTORS</span>
+              <span>ILFORD PAPER TYPE</span>
             </div>
-            <div class="incremental-timer" style="margin-top: 8px">
-              <div
-                style="
-                  font-size: 0.65rem;
-                  color: var(--text-secondary);
-                  margin-bottom: 8px;
-                "
-              >
-                Enter filter factors for each grade (e.g., 1.0 = no change, 1.5
-                = 50% more time)
-              </div>
-              <div
-                class="settings-group"
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"
-              >
-                <div class="settings-item">
-                  <div class="settings-label">Grade 00</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor00"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 0</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor0"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 1</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor1"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 2</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor2"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 3</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor3"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 4</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor4"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Grade 5</div>
-                  <input
-                    type="number"
-                    class="settings-input"
-                    id="customFactor5"
-                    min="0.1"
-                    max="5"
-                    step="0.1"
-                    value="1.0"
-                    placeholder="1.0"
-                  />
-                </div>
-              </div>
-              <div
-                style="
-                  font-size: 0.65rem;
-                  color: var(--text-secondary);
-                  margin-top: 5px;
-                "
-              >
-                These values apply to both SOFT (Highlights) and HARD (Shadows)
-                filter selections
-              </div>
-            </div>
+            <select
+              class="settings-input"
+              id="splitIlfordPaperType"
+              style="width: 100%; margin-top: 5px"
+            >
+              <option value="cooltone">Multigrade RC Cooltone</option>
+              <option value="portfolio">
+                Multigrade IV RC Portfolio (Discontinued)
+              </option>
+              <option value="rc_deluxe_new">MULTIGRADE RC DELUXE (NEW)</option>
+              <option value="rc_portfolio_new">
+                MULTIGRADE RC PORTFOLIO (NEW)
+              </option>
+              <option value="fb_classic">Multigrade FB Classic</option>
+              <option value="fb_warmtone">Multigrade FB Warmtone</option>
+              <option value="fb_cooltone">Multigrade FB Cooltone</option>
+            </select>
           </div>
 
           <div class="control">
@@ -2498,7 +2436,6 @@
             <button class="settings-btn primary" id="sendToCalc">
               Send to CALC
             </button>
-            <button class="settings-btn" id="resetSplit">Reset</button>
           </div>
         </div>
 
@@ -10344,11 +10281,10 @@
        * paper brand, and filter selections.
        *
        * @property {number} baseTime - Base exposure time in seconds
-       * @property {string} paperBrand - Paper brand ('Ilford', 'Kodak', 'FOMA', 'Custom')
+       * @property {string} paperBrand - Paper brand ('Ilford', 'FOMA')
        * @property {string} fomaPaperType - FOMA paper type ('fomaspeed' or 'fomatonemg')
        * @property {string} softFilter - Soft filter number (e.g., '0', '4', '5')
        * @property {string} hardFilter - Hard filter number
-       * @property {Object} customFactors - Custom filter factors for all 7 grades (when brand = 'Custom')
        * @property {Object} splitPresets - Saved split-grade configurations
        * @property {string} currentSplitPreset - Currently loaded preset name
        */
@@ -10361,21 +10297,10 @@
           this.neutralTime = 10.0; // Test strip result
           this.paperBrand = "FOMA";
           this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
+          this.ilfordPaperType = "cooltone"; // cooltone, portfolio, etc.
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50; // Shadow burn percentage
-
-          // Custom filter factors (when paperBrand = "Custom")
-          // Object with all 7 grades: 00, 0, 1, 2, 3, 4, 5
-          this.customFactors = {
-            "00": 1.0,
-            0: 1.0,
-            1: 1.0,
-            2: 1.0,
-            3: 1.0,
-            4: 1.0,
-            5: 1.0,
-          };
 
           this.splitPresets = StorageManager.loadSplitPresets();
           this.currentSplitPreset = StorageManager.loadCurrentSplitPreset();
@@ -10391,14 +10316,78 @@
          * @description
          * Predefined filter factors for standard paper brands.
          * - Ilford: Standard Multigrade filter factors
-         * - Kodak: Polycontrast filter factors
          * - FOMA: Base factors (overridden by paper-specific when FOMA selected)
          * - FOMASPEED/FOMATONE: Paper-specific FOMA factors
-         * - Custom: Not stored here, uses instance.customFactors object with all 7 grades
          */
         static FILTER_FACTORS = {
+          // Ilford paper-specific factors
+          ILFORD_COOLTONE: {
+            "00": 2.5,
+            0: 2.5,
+            1: 2.5,
+            2: 2.5,
+            3: 2.5,
+            4: 5.0,
+            5: 5.0,
+          },
+          ILFORD_PORTFOLIO: {
+            "00": 2.5,
+            0: 2.5,
+            1: 2.5,
+            2: 2.5,
+            3: 2.5,
+            4: 5.0,
+            5: 5.0,
+          },
+          ILFORD_RC_DELUXE_NEW: {
+            "00": 2.08,
+            0: 2.08,
+            1: 2.08,
+            2: 2.08,
+            3: 2.08,
+            4: 2.27,
+            5: 2.27,
+          },
+          ILFORD_RC_PORTFOLIO_NEW: {
+            "00": 2.08,
+            0: 2.08,
+            1: 2.08,
+            2: 2.08,
+            3: 2.08,
+            4: 2.27,
+            5: 2.27,
+          },
+          ILFORD_FB_CLASSIC: {
+            "00": 2.17,
+            0: 2.17,
+            1: 2.17,
+            2: 2.17,
+            3: 2.17,
+            4: 2.38,
+            5: 2.38,
+          },
+          ILFORD_FB_WARMTONE: {
+            "00": 2.17,
+            0: 2.17,
+            1: 2.17,
+            2: 2.17,
+            3: 2.17,
+            4: 2.38,
+            5: 2.38,
+          }, // Assuming same as FB Classic
+          ILFORD_FB_COOLTONE: {
+            "00": 2.17,
+            0: 2.17,
+            1: 2.17,
+            2: 2.17,
+            3: 2.17,
+            4: 2.38,
+            5: 2.38,
+          }, // Assuming same as FB Classic
+
+          // Legacy Ilford entry for backward compatibility
           Ilford: { "00": 2.5, 0: 2.5, 1: 2.5, 2: 2.5, 3: 2.5, 4: 5.0, 5: 5.0 },
-          Kodak: { 0: 1.0, 1: 1.0, 2: 1.0, 3: 1.1, 4: 1.3, 5: 1.6 },
+
           FOMA: { "00": 1.6, 0: 1.4, 1: 1.0, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
           // FOMA paper-specific factors (will override base FOMA when selected)
           FOMASPEED: {
@@ -10420,7 +10409,7 @@
             5: 3.0,
           },
           FOMAPASTEL_MG: {
-            "2xY": 1.8,
+            "2xY": 1.5,
             Y: 1.4,
             None: 1.0,
             M1: 1.4,
@@ -10455,107 +10444,53 @@
             });
           }
 
-          // Paper brand selector
-          const paperSelect = document.getElementById("splitPaperBrand");
-          if (paperSelect) {
-            // Set initial value to match constructor default
-            paperSelect.value = this.paperBrand;
+          // Paper brand toggle buttons (replaces dropdown)
+          const btnSplitFoma = document.getElementById("btnSplitFoma");
+          const btnSplitIlford = document.getElementById("btnSplitIlford");
 
-            paperSelect.addEventListener("change", (e) => {
-              this.paperBrand = e.target.value;
-              this.updateBrandVisibility();
+          if (btnSplitFoma && btnSplitIlford) {
+            // Set initial active state
+            btnSplitFoma.classList.toggle("active", this.paperBrand === "FOMA");
+            btnSplitIlford.classList.toggle(
+              "active",
+              this.paperBrand === "Ilford",
+            );
+
+            btnSplitFoma.addEventListener("click", () => {
+              this.setPaperBrand("FOMA");
+            });
+
+            btnSplitIlford.addEventListener("click", () => {
+              this.setPaperBrand("Ilford");
+            });
+          }
+
+          // FOMA paper type dropdown (replaces toggle buttons)
+          const splitFomaPaperType =
+            document.getElementById("splitFomaPaperType");
+          if (splitFomaPaperType) {
+            // Set initial value
+            splitFomaPaperType.value = this.fomaPaperType;
+
+            splitFomaPaperType.addEventListener("change", (e) => {
+              this.fomaPaperType = e.target.value;
               this.calculate();
             });
           }
 
-          // FOMA paper type selection
-          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
-          const fomaToneBtn = document.getElementById("btnFomaToneMG");
-          const fomaPastelBtn = document.getElementById("btnFomapastelMG");
-          const fomaClassicVariantBtn = document.getElementById(
-            "btnFomatoneClassicVariant",
+          // Ilford paper type dropdown (new)
+          const splitIlfordPaperType = document.getElementById(
+            "splitIlfordPaperType",
           );
+          if (splitIlfordPaperType) {
+            // Set initial value (default Ilford paper type)
+            splitIlfordPaperType.value = this.ilfordPaperType;
 
-          if (fomaSpeedBtn) {
-            fomaSpeedBtn.addEventListener("click", () => {
-              this.fomaPaperType = "fomaspeed";
-              fomaSpeedBtn.classList.add("active");
-              fomaToneBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.remove("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
+            splitIlfordPaperType.addEventListener("change", (e) => {
+              this.ilfordPaperType = e.target.value;
               this.calculate();
             });
           }
-
-          if (fomaToneBtn) {
-            fomaToneBtn.addEventListener("click", () => {
-              this.fomaPaperType = "fomatonemg";
-              fomaToneBtn.classList.add("active");
-              fomaSpeedBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.remove("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
-              this.calculate();
-            });
-          }
-
-          if (fomaPastelBtn) {
-            fomaPastelBtn.addEventListener("click", () => {
-              this.fomaPaperType = "fomapastel_mg";
-              fomaPastelBtn.classList.add("active");
-              fomaSpeedBtn.classList.remove("active");
-              fomaToneBtn.classList.remove("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
-              this.calculate();
-            });
-          }
-
-          if (fomaClassicVariantBtn) {
-            fomaClassicVariantBtn.addEventListener("click", () => {
-              this.fomaPaperType = "fomatone_mg_classic_variant";
-              fomaClassicVariantBtn.classList.add("active");
-              fomaSpeedBtn.classList.remove("active");
-              fomaToneBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.remove("active");
-              this.calculate();
-            });
-          }
-
-          // Initialize FOMA paper type button states
-          if (fomaSpeedBtn && fomaToneBtn) {
-            if (this.fomaPaperType === "fomaspeed") {
-              fomaSpeedBtn.classList.add("active");
-              fomaToneBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.remove("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
-            } else if (this.fomaPaperType === "fomatonemg") {
-              fomaSpeedBtn.classList.remove("active");
-              fomaToneBtn.classList.add("active");
-              fomaPastelBtn?.classList?.remove("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
-            } else if (this.fomaPaperType === "fomapastel_mg") {
-              fomaSpeedBtn.classList.remove("active");
-              fomaToneBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.add("active");
-              fomaClassicVariantBtn?.classList?.remove("active");
-            } else if (this.fomaPaperType === "fomatone_mg_classic_variant") {
-              fomaSpeedBtn.classList.remove("active");
-              fomaToneBtn.classList.remove("active");
-              fomaPastelBtn?.classList?.remove("active");
-              fomaClassicVariantBtn?.classList?.add("active");
-            }
-          }
-
-          // Custom filter factor inputs (7 grades)
-          const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
-          gradeKeys.forEach((grade) => {
-            const input = document.getElementById(`customFactor${grade}`);
-            if (input) {
-              input.addEventListener("input", (e) => {
-                this.customFactors[grade] = parseFloat(e.target.value) || 1.0;
-                this.calculate();
-              });
-            }
-          });
 
           // Burn percentage slider
           const burnSlider = document.getElementById("burnPercentSlider");
@@ -10576,11 +10511,6 @@
           const sendBtn = document.getElementById("sendToCalc");
           if (sendBtn) {
             sendBtn.addEventListener("click", () => this.sendToCalc());
-          }
-
-          const resetBtn = document.getElementById("resetSplit");
-          if (resetBtn) {
-            resetBtn.addEventListener("click", () => this.reset());
           }
 
           // Preset save/load buttons
@@ -10645,23 +10575,41 @@
         }
 
         /**
+         * Set paper brand and update UI
+         */
+        setPaperBrand(brand) {
+          this.paperBrand = brand;
+
+          // Update toggle button states
+          const btnSplitFoma = document.getElementById("btnSplitFoma");
+          const btnSplitIlford = document.getElementById("btnSplitIlford");
+
+          if (btnSplitFoma && btnSplitIlford) {
+            btnSplitFoma.classList.toggle("active", brand === "FOMA");
+            btnSplitIlford.classList.toggle("active", brand === "Ilford");
+          }
+
+          // Update brand visibility
+          this.updateBrandVisibility();
+          this.calculate();
+        }
+
+        /**
          * Update visibility of brand-specific sections
          */
         updateBrandVisibility() {
           const fomaSection = document.getElementById("fomaPaperSelection");
-          const customSection = document.getElementById(
-            "customFactorsSelection",
-          );
+          const ilfordSection = document.getElementById("ilfordPaperSelection");
 
           if (this.paperBrand === "FOMA") {
             fomaSection.style.display = "block";
-            customSection.style.display = "none";
-          } else if (this.paperBrand === "Custom") {
-            fomaSection.style.display = "none";
-            customSection.style.display = "block";
+            if (ilfordSection) ilfordSection.style.display = "none";
+          } else if (this.paperBrand === "Ilford") {
+            if (fomaSection) fomaSection.style.display = "none";
+            if (ilfordSection) ilfordSection.style.display = "block";
           } else {
-            fomaSection.style.display = "none";
-            customSection.style.display = "none";
+            if (fomaSection) fomaSection.style.display = "none";
+            if (ilfordSection) ilfordSection.style.display = "none";
           }
 
           // Update filter labels based on brand
@@ -10697,24 +10645,6 @@
               4: "4",
               5: "5",
             },
-            Kodak: {
-              "00": "00",
-              0: "0",
-              1: "1",
-              2: "2",
-              3: "3",
-              4: "4",
-              5: "5",
-            },
-            Custom: {
-              "00": "00",
-              0: "0",
-              1: "1",
-              2: "2",
-              3: "3",
-              4: "4",
-              5: "5",
-            },
           };
 
           // Get labels for current brand
@@ -10741,38 +10671,88 @@
          * Then apply filter factors to each
          *
          * Filter factor selection:
-         * - Ilford/Kodak: Use predefined factors from FILTER_FACTORS
+         * - Ilford: Use predefined factors from FILTER_FACTORS
          * - FOMA: Use paper-specific factors (FOMASPEED or FOMATONE)
-         * - Custom: Use customFactors object with all 7 grades (00, 0, 1, 2, 3, 4, 5)
-         *   The selected softFilter and hardFilter keys are used to look up values
          */
         calculate() {
           let softFactor, hardFactor;
 
-          if (this.paperBrand === "Custom") {
-            // Use custom factors from the object (all 7 grades)
-            softFactor = this.customFactors[this.softFilter] || 1.0;
-            hardFactor = this.customFactors[this.hardFilter] || 1.0;
-          } else if (this.paperBrand === "FOMA") {
+          if (this.paperBrand === "FOMA") {
             // Use paper-specific FOMA factors
-            const fomaKey =
-              this.fomaPaperType === "fomaspeed" ? "FOMASPEED" : "FOMATONE";
-            softFactor =
-              SplitGradeCalculator.FILTER_FACTORS[fomaKey][this.softFilter] ||
-              1.0;
-            hardFactor =
-              SplitGradeCalculator.FILTER_FACTORS[fomaKey][this.hardFilter] ||
-              1.0;
+            let fomaKey;
+            if (
+              this.fomaPaperType === "fomaspeed" ||
+              this.fomaPaperType === "fomabrom"
+            ) {
+              fomaKey = "FOMASPEED";
+            } else if (this.fomaPaperType === "fomapastel_mg") {
+              fomaKey = "FOMAPASTEL_MG";
+            } else if (this.fomaPaperType === "fomatone_mg_classic_variant") {
+              fomaKey = "FOMATONE_MG_CLASSIC_VARIANT";
+            } else {
+              fomaKey = "FOMATONE"; // Fallback
+            }
+
+            // Get the factor object for this paper type
+            const factorObj = SplitGradeCalculator.FILTER_FACTORS[fomaKey];
+            if (!factorObj) {
+              softFactor = 1.0;
+              hardFactor = 1.0;
+            } else {
+              // Handle different key formats (Ilford numbers vs FOMA names)
+              let softKey = this.softFilter;
+              let hardKey = this.hardFilter;
+
+              // For FOMA papers using FOMA filter names, we need to map Ilford numbers to FOMA names
+              if (
+                fomaKey === "FOMAPASTEL_MG" ||
+                fomaKey === "FOMATONE_MG_CLASSIC_VARIANT"
+              ) {
+                // Map Ilford numbers to FOMA filter names
+                const ilfordToFomaMap = {
+                  "00": "2xY",
+                  0: "Y",
+                  1: "None",
+                  2: "M1",
+                  3: "2xM1",
+                  4: "M2",
+                  5: "2xM2",
+                };
+                softKey = ilfordToFomaMap[this.softFilter] || this.softFilter;
+                hardKey = ilfordToFomaMap[this.hardFilter] || this.hardFilter;
+              }
+
+              softFactor = factorObj[softKey] || 1.0;
+              hardFactor = factorObj[hardKey] || 1.0;
+            }
+          } else if (this.paperBrand === "Ilford") {
+            // Use paper-specific Ilford factors
+            let ilfordKey;
+            if (this.ilfordPaperType === "cooltone") {
+              ilfordKey = "ILFORD_COOLTONE";
+            } else if (this.ilfordPaperType === "portfolio") {
+              ilfordKey = "ILFORD_PORTFOLIO";
+            } else if (this.ilfordPaperType === "rc_deluxe_new") {
+              ilfordKey = "ILFORD_RC_DELUXE_NEW";
+            } else if (this.ilfordPaperType === "rc_portfolio_new") {
+              ilfordKey = "ILFORD_RC_PORTFOLIO_NEW";
+            } else if (this.ilfordPaperType === "fb_classic") {
+              ilfordKey = "ILFORD_FB_CLASSIC";
+            } else if (this.ilfordPaperType === "fb_warmtone") {
+              ilfordKey = "ILFORD_FB_WARMTONE";
+            } else if (this.ilfordPaperType === "fb_cooltone") {
+              ilfordKey = "ILFORD_FB_COOLTONE";
+            } else {
+              ilfordKey = "Ilford"; // Fallback to legacy entry
+            }
+
+            const factorObj = SplitGradeCalculator.FILTER_FACTORS[ilfordKey];
+            softFactor = factorObj ? factorObj[this.softFilter] || 1.0 : 1.0;
+            hardFactor = factorObj ? factorObj[this.hardFilter] || 1.0 : 1.0;
           } else {
-            // Use standard brand factors
-            softFactor =
-              SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
-                this.softFilter
-              ] || 1.0;
-            hardFactor =
-              SplitGradeCalculator.FILTER_FACTORS[this.paperBrand][
-                this.hardFilter
-              ] || 1.0;
+            // Fallback for any other brand (should not happen)
+            softFactor = 1.0;
+            hardFactor = 1.0;
           }
 
           // Calculate base times based on burn percentage
@@ -10836,7 +10816,6 @@
             burnPercent: this.burnPercent,
             softFactor: result.softFactor,
             hardFactor: result.hardFactor,
-            customFactors: { ...this.customFactors },
           };
 
           // Update CALC tab display
@@ -10914,25 +10893,21 @@
           this.neutralTime = 10.0;
           this.paperBrand = "Ilford";
           this.fomaPaperType = "fomaspeed";
+          this.ilfordPaperType = "cooltone";
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50;
 
-          // Reset custom factors to all 1.0
-          this.customFactors = {
-            "00": 1.0,
-            0: 1.0,
-            1: 1.0,
-            2: 1.0,
-            3: 1.0,
-            4: 1.0,
-            5: 1.0,
-          };
-
           // Update UI
           document.getElementById("neutralTimeSlider").value = 10.0;
           document.getElementById("neutralTimeValue").textContent = "10.0s";
-          document.getElementById("splitPaperBrand").value = "Ilford";
+
+          // Update paper brand toggle buttons
+          const btnSplitFoma = document.getElementById("btnSplitFoma");
+          const btnSplitIlford = document.getElementById("btnSplitIlford");
+          if (btnSplitFoma) btnSplitFoma.classList.remove("active");
+          if (btnSplitIlford) btnSplitIlford.classList.add("active");
+
           document.getElementById("burnPercentSlider").value = 50;
           document.getElementById("burnPercentValue").textContent = "50%";
 
@@ -10943,11 +10918,17 @@
             if (input) input.value = "1.0";
           });
 
-          // Reset FOMA paper buttons
-          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
-          const fomaToneBtn = document.getElementById("btnFomaToneMG");
-          if (fomaSpeedBtn) fomaSpeedBtn.classList.add("active");
-          if (fomaToneBtn) fomaToneBtn.classList.remove("active");
+          // Reset FOMA paper type dropdown
+          const splitFomaPaperType =
+            document.getElementById("splitFomaPaperType");
+          if (splitFomaPaperType) splitFomaPaperType.value = "fomaspeed";
+
+          // Reset Ilford paper type dropdown
+          const splitIlfordPaperType = document.getElementById(
+            "splitIlfordPaperType",
+          );
+          if (splitIlfordPaperType)
+            splitIlfordPaperType.value = this.ilfordPaperType;
 
           // Reset filter controls
           document
@@ -10988,10 +10969,10 @@
             neutralTime: this.neutralTime,
             paperBrand: this.paperBrand,
             fomaPaperType: this.fomaPaperType,
+            ilfordPaperType: this.ilfordPaperType, // Added: Save Ilford paper type
             softFilter: this.softFilter,
             hardFilter: this.hardFilter,
             burnPercent: this.burnPercent,
-            customFactors: { ...this.customFactors }, // Clone the object
             date: new Date().toISOString(),
           };
 
@@ -11026,67 +11007,42 @@
           this.neutralTime = preset.neutralTime || 10.0;
           this.paperBrand = preset.paperBrand || "Ilford";
           this.fomaPaperType = preset.fomaPaperType || "fomaspeed";
+          this.ilfordPaperType = preset.ilfordPaperType || "cooltone"; // Added: Load Ilford paper type with default
           this.softFilter = preset.softFilter || "00";
           this.hardFilter = preset.hardFilter || "5";
           this.burnPercent = preset.burnPercent || 50;
-
-          // Load custom factors with defaults for backward compatibility
-          if (preset.customFactors) {
-            this.customFactors = { ...preset.customFactors };
-            // Ensure all grades exist
-            const defaultFactors = {
-              "00": 1.0,
-              0: 1.0,
-              1: 1.0,
-              2: 1.0,
-              3: 1.0,
-              4: 1.0,
-              5: 1.0,
-            };
-            for (const grade in defaultFactors) {
-              if (!(grade in this.customFactors)) {
-                this.customFactors[grade] = defaultFactors[grade];
-              }
-            }
-          } else {
-            // Legacy preset with old format
-            this.customFactors = {
-              "00": preset.customSoftFactor || 1.0,
-              0: preset.customSoftFactor || 1.0,
-              1: preset.customSoftFactor || 1.0,
-              2: preset.customSoftFactor || 1.0,
-              3: preset.customSoftFactor || 1.0,
-              4: preset.customSoftFactor || 1.0,
-              5: preset.customHardFactor || 1.0,
-            };
-          }
 
           // Update UI
           document.getElementById("neutralTimeSlider").value = this.neutralTime;
           document.getElementById("neutralTimeValue").textContent =
             `${this.neutralTime.toFixed(1)}s`;
-          document.getElementById("splitPaperBrand").value = this.paperBrand;
+
+          // Update paper brand toggle buttons
+          const btnSplitFoma = document.getElementById("btnSplitFoma");
+          const btnSplitIlford = document.getElementById("btnSplitIlford");
+          if (btnSplitFoma && btnSplitIlford) {
+            btnSplitFoma.classList.toggle("active", this.paperBrand === "FOMA");
+            btnSplitIlford.classList.toggle(
+              "active",
+              this.paperBrand === "Ilford",
+            );
+          }
+
           document.getElementById("burnPercentSlider").value = this.burnPercent;
           document.getElementById("burnPercentValue").textContent =
             `${this.burnPercent}%`;
 
-          // Update custom factor inputs (all 7 grades)
-          const gradeKeys = ["00", "0", "1", "2", "3", "4", "5"];
-          gradeKeys.forEach((grade) => {
-            const input = document.getElementById(`customFactor${grade}`);
-            if (input) input.value = this.customFactors[grade];
-          });
+          // Update FOMA paper type dropdown
+          const splitFomaPaperType =
+            document.getElementById("splitFomaPaperType");
+          if (splitFomaPaperType) splitFomaPaperType.value = this.fomaPaperType;
 
-          // Update FOMA paper buttons
-          const fomaSpeedBtn = document.getElementById("btnFomaSpeed");
-          const fomaToneBtn = document.getElementById("btnFomaToneMG");
-          if (this.fomaPaperType === "fomaspeed") {
-            if (fomaSpeedBtn) fomaSpeedBtn.classList.add("active");
-            if (fomaToneBtn) fomaToneBtn.classList.remove("active");
-          } else {
-            if (fomaSpeedBtn) fomaSpeedBtn.classList.remove("active");
-            if (fomaToneBtn) fomaToneBtn.classList.add("active");
-          }
+          // Update Ilford paper type dropdown
+          const splitIlfordPaperType = document.getElementById(
+            "splitIlfordPaperType",
+          );
+          if (splitIlfordPaperType)
+            splitIlfordPaperType.value = this.ilfordPaperType;
 
           // Update filter controls
           document
@@ -11183,15 +11139,37 @@
 
             // Build additional info string
             let additionalInfo = "";
+
+            // Paper type display mappings
+            const fomaPaperNames = {
+              fomaspeed: "FOMASPEED",
+              fomabrom: "FOMABROM",
+              fomapastel_mg: "FOMAPASTEL MG",
+              fomatone_mg_classic_variant: "FOMATONE MG",
+            };
+
+            const ilfordPaperNames = {
+              cooltone: "RC Cooltone",
+              portfolio: "RC Portfolio",
+              rc_deluxe_new: "RC Deluxe",
+              rc_portfolio_new: "RC Portfolio New",
+              fb_classic: "FB Classic",
+              fb_warmtone: "FB Warmtone",
+              fb_cooltone: "FB Cooltone",
+            };
+
             if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
               const paperName =
-                preset.fomaPaperType === "fomaspeed" ? "FOMASPEED" : "FOMATONE";
+                fomaPaperNames[preset.fomaPaperType] || preset.fomaPaperType;
               additionalInfo = ` • ${paperName}`;
-            } else if (preset.paperBrand === "Custom" && preset.customFactors) {
-              // Show the specific factors for the selected filters
-              const softVal = preset.customFactors[preset.softFilter] || 1.0;
-              const hardVal = preset.customFactors[preset.hardFilter] || 1.0;
-              additionalInfo = ` • F${preset.softFilter}:${softVal}× F${preset.hardFilter}:${hardVal}×`;
+            } else if (
+              preset.paperBrand === "Ilford" &&
+              preset.ilfordPaperType
+            ) {
+              const paperName =
+                ilfordPaperNames[preset.ilfordPaperType] ||
+                preset.ilfordPaperType;
+              additionalInfo = ` • ${paperName}`;
             }
 
             itemDiv.innerHTML = `
@@ -13497,7 +13475,7 @@
           this.newPaperSizeCustom = 0.052; // Changed from 0.080
 
           // NEW: Contrast control variables
-          this.currentBrand = "FOMA"; // FOMA, Ilford, Kodak
+          this.currentBrand = "FOMA"; // FOMA, Ilford
           this.currentPaper = "fomaspeed";
           this.currentFilter = "none";
           this.filterFactor = 1.0;
@@ -13506,63 +13484,168 @@
 
           // Paper types data from contrast calculator
           this.paperTypes = {
+            // ===== FOMA PAPERS =====
+
+            // FOMASPEED VARIANT
             fomaspeed: {
-              name: "FOMASPEED Variant III / FOMABROM Variant III",
+              name: "FOMASPEED VARIANT",
               filters: {
+                none: { iso: 105, factor: 1.0 }, // Base ISO for no filter
                 "2xY": { iso: 135, factor: 1.6 },
                 Y: { iso: 120, factor: 1.4 },
-                none: { iso: 105, factor: 1.0 },
                 M1: { iso: 90, factor: 1.4 },
                 "2xM1": { iso: 80, factor: 2.1 },
                 M2: { iso: 65, factor: 2.6 },
                 "2xM2": { iso: 55, factor: 4.6 },
               },
             },
-            fomatonemg: {
-              name: "FOMATONE MG / FOMATONE MG Classic",
+
+            // FOMABROM VARIANT
+            fomabrom: {
+              name: "FOMABROM VARIANT",
               filters: {
+                none: { iso: 105, factor: 1.0 }, // Base ISO for no filter
+                "2xY": { iso: 135, factor: 1.6 },
+                Y: { iso: 120, factor: 1.4 },
+                M1: { iso: 90, factor: 1.4 },
+                "2xM1": { iso: 80, factor: 2.1 },
+                M2: { iso: 65, factor: 2.6 },
+                "2xM2": { iso: 55, factor: 4.6 },
+              },
+            },
+
+            // FOMAPASTEL MG (Special FB Colored Base)
+            fomapastel_mg: {
+              name: "FOMAPASTEL MG (Special FB Colored Base)",
+              filters: {
+                none: { iso: 105, factor: 1.0 }, // Base ISO for no filter
+                "2xY": { iso: 135, factor: 1.5 },
+                Y: { iso: 120, factor: 1.4 },
+                M1: { iso: 90, factor: 1.4 },
+                "2xM1": { iso: 80, factor: 2.0 },
+                M2: { iso: 65, factor: 2.5 },
+                "2xM2": { iso: 55, factor: 4.5 },
+              },
+            },
+
+            // FOMATONE MG Classic (Warm Tone)
+            fomatone_mg_classic_variant: {
+              name: "FOMATONE MG Classic (Warm Tone)",
+              filters: {
+                none: { iso: 105, factor: 1.0 }, // Base ISO for no filter
                 "2xY": { iso: 120, factor: 2.0 },
                 Y: { iso: 105, factor: 1.5 },
-                none: { iso: 90, factor: 1.0 },
                 M1: { iso: 80, factor: 1.5 },
                 "2xM1": { iso: 75, factor: 1.8 },
                 M2: { iso: 65, factor: 2.0 },
                 "2xM2": { iso: 55, factor: 3.0 },
               },
             },
-            // NEW: Ilford Multigrade (12 grades: 00, 0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
-            ilford: {
-              name: "Ilford Multigrade",
+
+            // ===== ILFORD PAPERS =====
+
+            // Multigrade RC Cooltone
+            cooltone: {
+              name: "Multigrade RC Cooltone",
               filters: {
-                none: { iso: 100, factor: 1.0 },
-                "00": { iso: 130, factor: 2.5 },
-                0: { iso: 120, factor: 2.5 },
-                1: { iso: 110, factor: 2.5 },
-                1.5: { iso: 105, factor: 2.5 },
+                none: { iso: 100, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 180, factor: 2.5 },
+                0: { iso: 160, factor: 2.5 },
+                1: { iso: 120, factor: 2.5 },
                 2: { iso: 100, factor: 2.5 },
-                2.5: { iso: 95, factor: 2.5 },
-                3: { iso: 90, factor: 2.5 },
-                3.5: { iso: 85, factor: 3.75 },
-                4: { iso: 80, factor: 5.0 },
-                4.5: { iso: 75, factor: 5.0 },
-                5: { iso: 70, factor: 5.0 },
+                3: { iso: 80, factor: 2.5 },
+                4: { iso: 60, factor: 5.0 },
+                5: { iso: 50, factor: 5.0 },
               },
             },
-            // NEW: Kodak Polycontrast (12 grades: 00, 0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
-            kodak: {
-              name: "Kodak Polycontrast",
+
+            // Multigrade IV RC Portfolio (Discontinued)
+            portfolio: {
+              name: "Multigrade IV RC Portfolio (Discontinued)",
               filters: {
-                "00": { iso: 125, factor: 1.0 },
-                0: { iso: 115, factor: 1.0 },
-                1: { iso: 105, factor: 1.0 },
-                1.5: { iso: 100, factor: 1.0 },
-                2: { iso: 95, factor: 1.0 },
-                2.5: { iso: 90, factor: 1.05 },
-                3: { iso: 85, factor: 1.1 },
-                3.5: { iso: 80, factor: 1.2 },
-                4: { iso: 75, factor: 1.3 },
-                4.5: { iso: 70, factor: 1.45 },
-                5: { iso: 65, factor: 1.6 },
+                none: { iso: 110, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 180, factor: 2.5 },
+                0: { iso: 160, factor: 2.5 },
+                1: { iso: 130, factor: 2.5 },
+                2: { iso: 110, factor: 2.5 },
+                3: { iso: 90, factor: 2.5 },
+                4: { iso: 60, factor: 5.0 },
+                5: { iso: 40, factor: 5.0 },
+              },
+            },
+
+            // MULTIGRADE RC DELUXE (NEW)
+            rc_deluxe_new: {
+              name: "MULTIGRADE RC DELUXE (NEW)",
+              filters: {
+                none: { iso: 90, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 160, factor: 2.08 },
+                0: { iso: 130, factor: 2.08 },
+                1: { iso: 110, factor: 2.08 },
+                2: { iso: 90, factor: 2.08 },
+                3: { iso: 70, factor: 2.08 },
+                4: { iso: 60, factor: 2.27 },
+                5: { iso: 50, factor: 2.27 },
+              },
+            },
+
+            // MULTIGRADE RC PORTFOLIO (NEW)
+            rc_portfolio_new: {
+              name: "MULTIGRADE RC PORTFOLIO (NEW)",
+              filters: {
+                none: { iso: 90, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 160, factor: 2.08 },
+                0: { iso: 130, factor: 2.08 },
+                1: { iso: 110, factor: 2.08 },
+                2: { iso: 90, factor: 2.08 },
+                3: { iso: 70, factor: 2.08 },
+                4: { iso: 60, factor: 2.27 },
+                5: { iso: 50, factor: 2.27 },
+              },
+            },
+
+            // Multigrade FB Classic
+            fb_classic: {
+              name: "Multigrade FB Classic",
+              filters: {
+                none: { iso: 95, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 170, factor: 2.17 },
+                0: { iso: 140, factor: 2.17 },
+                1: { iso: 110, factor: 2.17 },
+                2: { iso: 95, factor: 2.17 },
+                3: { iso: 80, factor: 2.17 },
+                4: { iso: 60, factor: 2.38 },
+                5: { iso: 50, factor: 2.38 },
+              },
+            },
+
+            // Multigrade FB Warmtone
+            fb_warmtone: {
+              name: "Multigrade FB Warmtone",
+              filters: {
+                none: { iso: 110, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 170, factor: 2.0 },
+                0: { iso: 160, factor: 2.0 },
+                1: { iso: 130, factor: 2.0 },
+                2: { iso: 110, factor: 2.0 },
+                3: { iso: 90, factor: 2.0 },
+                4: { iso: 70, factor: 4.0 },
+                5: { iso: 50, factor: 4.0 },
+              },
+            },
+
+            // Multigrade FB Cooltone
+            fb_cooltone: {
+              name: "Multigrade FB Cooltone",
+              filters: {
+                none: { iso: 100, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 180, factor: 2.36 },
+                0: { iso: 160, factor: 2.36 },
+                1: { iso: 130, factor: 2.36 },
+                2: { iso: 100, factor: 2.36 },
+                3: { iso: 80, factor: 2.36 },
+                4: { iso: 60, factor: 2.62 },
+                5: { iso: 50, factor: 2.62 },
               },
             },
           };
@@ -13643,8 +13726,14 @@
             document.getElementById("setNewCustomPaper");
 
           // NEW: Get contrast control elements
-          this.btnFomaspeed = document.getElementById("btnFomaspeed");
-          this.btnFomatonemg = document.getElementById("btnFomatonemg");
+          this.btnContrastFoma = document.getElementById("btnContrastFoma");
+          this.btnContrastIlford = document.getElementById("btnContrastIlford");
+          this.ilfordPaperSelector = document.getElementById(
+            "ilfordPaperSelector",
+          );
+          this.fomaPaperSelector = document.getElementById("fomaPaperSelector");
+          this.ilfordPaperType = document.getElementById("ilfordPaperType");
+          this.fomaPaperType = document.getElementById("fomaPaperType");
           this.contrastFilterSelect = document.getElementById(
             "contrastFilterSelect",
           );
@@ -13657,6 +13746,7 @@
           this.customBankFactorDisplay = document.getElementById(
             "customBankFactorDisplay",
           );
+          this.isoRBox = document.getElementById("isoRBox");
 
           // Set initial values
           this.originalCoarseHeight = 30;
@@ -13755,26 +13845,23 @@
           });
 
           // NEW: Add event listeners for contrast controls
-          this.contrastBrandSelect = document.getElementById(
-            "contrastBrandSelect",
-          );
-          this.paperTypeBox = document.getElementById("paperTypeBox");
-          this.isoRBox = document.getElementById("isoRBox");
-
-          this.contrastBrandSelect.addEventListener("change", (e) => {
-            this.currentBrand = e.target.value;
-            this.updateBrandUI();
-            this.updateFilterOptions();
-            this.updateCalculations();
-            this.updateDisplay();
+          // Paper brand toggle buttons
+          this.btnContrastFoma.addEventListener("click", () => {
+            this.setPaperBrand("FOMA");
+          });
+          this.btnContrastIlford.addEventListener("click", () => {
+            this.setPaperBrand("Ilford");
           });
 
-          this.btnFomaspeed.addEventListener("click", () =>
-            this.selectPaper("fomaspeed"),
-          );
-          this.btnFomatonemg.addEventListener("click", () =>
-            this.selectPaper("fomatonemg"),
-          );
+          // Paper type dropdowns
+          this.ilfordPaperType.addEventListener("change", () => {
+            this.setIlfordPaperType(this.ilfordPaperType.value);
+          });
+          this.fomaPaperType.addEventListener("change", () => {
+            this.setFomaPaperType(this.fomaPaperType.value);
+          });
+
+          // Contrast filter dropdown
           this.contrastFilterSelect.addEventListener("change", () => {
             this.currentFilter = this.contrastFilterSelect.value;
             this.updateCalculations();
@@ -13788,39 +13875,75 @@
         }
 
         /**
-         * @method selectPaper
-         * @description Selects paper type for contrast filter calculations.
-         * Updates button states and recalculates exposure with new paper's filter data.
-         * @param {string} paperType - 'fomaspeed' or 'fomatonemg'
+         * @method setPaperBrand
+         * @description Sets the paper brand and updates UI accordingly.
+         * Updates toggle button states, shows/hides paper type dropdowns, and updates filter options.
+         * @param {string} brand - 'FOMA' or 'Ilford'
+         * @returns {void}
+         * @fires updateBrandUI - Updates UI visibility
+         * @fires updateFilterOptions - Updates filter dropdown
+         * @fires updateCalculations - Recalculates with new brand
+         * @fires updateDisplay - Updates UI
+         * @example
+         * this.setPaperBrand('Ilford'); // Switch to Ilford brand
+         */
+        setPaperBrand(brand) {
+          this.currentBrand = brand;
+
+          // Update toggle button states
+          this.btnContrastFoma.classList.toggle("active", brand === "FOMA");
+          this.btnContrastIlford.classList.toggle("active", brand === "Ilford");
+
+          // Set default paper type for the selected brand
+          if (brand === "FOMA") {
+            this.currentPaper = "fomaspeed";
+            if (this.fomaPaperType) {
+              this.fomaPaperType.value = "fomaspeed";
+            }
+          } else if (brand === "Ilford") {
+            this.currentPaper = "cooltone";
+            if (this.ilfordPaperType) {
+              this.ilfordPaperType.value = "cooltone";
+            }
+          }
+
+          // Update UI
+          this.updateBrandUI();
+          this.updateFilterOptions();
+          this.updateCalculations();
+          this.updateDisplay();
+        }
+
+        /**
+         * @method setIlfordPaperType
+         * @description Sets the Ilford paper type from dropdown selection.
+         * Updates current paper and recalculates exposure.
+         * @param {string} type - Ilford paper type (e.g., 'cooltone', 'fb_classic')
          * @returns {void}
          * @fires updateCalculations - Recalculates with new paper
          * @fires updateDisplay - Updates UI
          * @example
-         * this.selectPaper('fomaspeed'); // Use FOMASPEED paper filters
+         * this.setIlfordPaperType('fb_classic'); // Use Multigrade FB Classic
          */
-        selectPaper(paperType) {
-          // Only allow paper selection for FOMA brand
-          if (this.currentBrand !== "FOMA") return;
+        setIlfordPaperType(type) {
+          this.currentPaper = type;
+          this.updateCalculations();
+          this.updateDisplay();
+        }
 
-          this.currentPaper = paperType;
-
-          // Update button states
-          this.btnFomaspeed.classList.remove("active");
-          this.btnFomatonemg.classList.remove("active");
-          this.btnFomapastelMG?.classList?.remove("active");
-          this.btnFomatoneClassicVariant?.classList?.remove("active");
-
-          if (paperType === "fomaspeed") {
-            this.btnFomaspeed.classList.add("active");
-          } else if (paperType === "fomatonemg") {
-            this.btnFomatonemg.classList.add("active");
-          } else if (paperType === "fomapastel_mg") {
-            this.btnFomapastelMG?.classList?.add("active");
-          } else if (paperType === "fomatone_mg_classic_variant") {
-            this.btnFomatoneClassicVariant?.classList?.add("active");
-          }
-
-          // Update calculations
+        /**
+         * @method setFomaPaperType
+         * @description Sets the FOMA paper type from dropdown selection.
+         * Updates current paper and recalculates exposure.
+         * @param {string} type - FOMA paper type (e.g., 'fomaspeed', 'fomabrom')
+         * @returns {void}
+         * @fires updateCalculations - Recalculates with new paper
+         * @fires updateDisplay - Updates UI
+         * @example
+         * this.setFomaPaperType('fomaspeed'); // Use FOMASPEED VARIANT
+         */
+        setFomaPaperType(type) {
+          this.currentPaper = type;
           this.updateCalculations();
           this.updateDisplay();
         }
@@ -13828,17 +13951,23 @@
         /**
          * @method updateBrandUI
          * @description Updates UI visibility based on selected brand.
-         * Shows/hides FOMA paper type buttons and ISO R display.
+         * Shows/hides paper type dropdowns and ISO R display.
          * @returns {void}
          * @fires Element.style.display - Shows/hides UI elements
          */
         updateBrandUI() {
-          // Show/hide FOMA paper type buttons
+          // Show/hide paper type dropdowns based on brand
           if (this.currentBrand === "FOMA") {
-            this.paperTypeBox.style.display = "block";
+            this.ilfordPaperSelector.style.display = "none";
+            this.fomaPaperSelector.style.display = "block";
+            this.isoRBox.style.display = "block";
+          } else if (this.currentBrand === "Ilford") {
+            this.ilfordPaperSelector.style.display = "block";
+            this.fomaPaperSelector.style.display = "none";
             this.isoRBox.style.display = "block";
           } else {
-            this.paperTypeBox.style.display = "none";
+            this.ilfordPaperSelector.style.display = "none";
+            this.fomaPaperSelector.style.display = "none";
             this.isoRBox.style.display = "none";
           }
         }
@@ -13871,27 +14000,9 @@
               { value: "00", text: "Grade 00" },
               { value: "0", text: "Grade 0" },
               { value: "1", text: "Grade 1" },
-              { value: "1.5", text: "Grade 1.5" },
               { value: "2", text: "Grade 2" },
-              { value: "2.5", text: "Grade 2.5" },
               { value: "3", text: "Grade 3" },
-              { value: "3.5", text: "Grade 3.5" },
               { value: "4", text: "Grade 4" },
-              { value: "4.5", text: "Grade 4.5" },
-              { value: "5", text: "Grade 5" },
-            ];
-          } else if (this.currentBrand === "Kodak") {
-            options = [
-              { value: "00", text: "Grade 00" },
-              { value: "0", text: "Grade 0" },
-              { value: "1", text: "Grade 1" },
-              { value: "1.5", text: "Grade 1.5" },
-              { value: "2", text: "Grade 2" },
-              { value: "2.5", text: "Grade 2.5" },
-              { value: "3", text: "Grade 3" },
-              { value: "3.5", text: "Grade 3.5" },
-              { value: "4", text: "Grade 4" },
-              { value: "4.5", text: "Grade 4.5" },
               { value: "5", text: "Grade 5" },
             ];
           }
@@ -14075,16 +14186,9 @@
 
           // Filter factor comes from contrast control selection
           let filterData;
-          if (this.currentBrand === "FOMA") {
-            // Use FOMA paper-specific data
-            const paper = this.paperTypes[this.currentPaper];
-            filterData = paper?.filters?.[this.currentFilter];
-          } else {
-            // Use brand-specific data (Ilford or Kodak)
-            const brandKey = this.currentBrand.toLowerCase();
-            filterData =
-              this.paperTypes[brandKey]?.filters?.[this.currentFilter];
-          }
+          // Use paper-specific data for both FOMA and Ilford
+          const paper = this.paperTypes[this.currentPaper];
+          filterData = paper?.filters?.[this.currentFilter];
 
           if (filterData) {
             this.filterFactor = filterData.factor;
@@ -14138,22 +14242,13 @@
 
           // Update contrast control displays from selected paper/filter only
           let filterData;
-          if (this.currentBrand === "FOMA") {
-            // Use FOMA paper-specific data
-            const paper = this.paperTypes[this.currentPaper];
-            filterData = paper?.filters?.[this.currentFilter];
-          } else {
-            // Use brand-specific data (Ilford or Kodak)
-            const brandKey = this.currentBrand.toLowerCase();
-            filterData =
-              this.paperTypes[brandKey]?.filters?.[this.currentFilter];
-          }
+          // Use paper-specific data for both FOMA and Ilford
+          const paper = this.paperTypes[this.currentPaper];
+          filterData = paper?.filters?.[this.currentFilter];
 
           if (filterData) {
-            // Only show ISO R for FOMA
-            if (this.currentBrand === "FOMA") {
-              this.isoValueElement.textContent = filterData.iso;
-            }
+            // Show ISO R for both FOMA and Ilford
+            this.isoValueElement.textContent = filterData.iso;
             this.filterFactorValueElement.textContent = `${filterData.factor.toFixed(
               1,
             )}×`;
@@ -17426,7 +17521,7 @@
           this.filterSystem = "ilford";
           this.paperBrand = "ilford";
           this.fomaPaperType = "fomaspeed";
-          this.ilfordPaperType = "mg4_rc"; // Track Ilford paper type
+          this.ilfordPaperType = "cooltone"; // Track Ilford paper type (matches dropdown default)
 
           // Calibration profiles (lux × seconds per paper type)
           // Each paper type has its own calibration value
@@ -17806,17 +17901,11 @@
          * Ensures Contrast Analyzer uses correct ISO R values for recommendations
          */
         async syncFilterSystemWithServer() {
-          try {
-            const response = await fetch(
-              `/light-meter-config?filter_system=${this.filterSystem}`,
-            );
-            const data = await response.json();
-            if (data.status === "success") {
-              console.log(`Filter system synced: ${this.filterSystem}`);
-            }
-          } catch (error) {
-            console.error("Failed to sync filter system:", error);
-          }
+          // No server communication needed - all data is local
+          console.log(
+            `Filter system would sync: ${this.filterSystem} (local mode)`,
+          );
+          return Promise.resolve();
         }
 
         /**
@@ -18935,9 +19024,6 @@
         // Initialize countdown manager
         window.countdownManager = new CountdownManager();
 
-        // Initialize split-grade calculator
-        window.splitGradeCalculator = new SplitGradeCalculator();
-
         // Initialize timers
         timerManager.init();
 
@@ -19144,7 +19230,6 @@
               burnPercent: null,
               softFactor: null,
               hardFactor: null,
-              customFactors: null,
             };
             const display = document.getElementById("splitGradeDisplay");
             if (display) display.style.display = "none";
