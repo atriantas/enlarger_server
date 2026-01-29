@@ -4426,13 +4426,13 @@
               </div>
 
               <!-- Ilford Paper Type (visible when Ilford selected) -->
-              <div id="ilfordPaperSelector" class="control">
+              <div id="meterIlfordPaperSelector" class="control">
                 <div class="control-label">
                   <span>ILFORD PAPER TYPE</span>
                 </div>
                 <select
                   class="settings-input"
-                  id="ilfordPaperType"
+                  id="meterIlfordPaperType"
                   style="width: 100%"
                 >
                   <option value="cooltone">Multigrade RC Cooltone</option>
@@ -4452,13 +4452,17 @@
               </div>
 
               <!-- FOMA Paper Type (hidden by default) -->
-              <div id="fomaPaperSelector" class="control" style="display: none">
+              <div
+                id="meterFomaPaperSelector"
+                class="control"
+                style="display: none"
+              >
                 <div class="control-label">
                   <span>FOMA PAPER TYPE</span>
                 </div>
                 <select
                   class="settings-input"
-                  id="fomaPaperType"
+                  id="meterFomaPaperType"
                   style="width: 100%"
                 >
                   <option value="fomaspeed">FOMASPEED VARIANT</option>
@@ -17518,10 +17522,21 @@
           this.currentMode = "exposure";
 
           // Filter system: 'ilford', 'foma_fomaspeed', 'foma_fomatone'
-          this.filterSystem = "ilford";
           this.paperBrand = "ilford";
           this.fomaPaperType = "fomaspeed";
           this.ilfordPaperType = "cooltone"; // Track Ilford paper type (matches dropdown default)
+          // Map Ilford paper type to filter system (consistent with FOMA)
+          const ilfordToFilterSystem = {
+            cooltone: "ilford_cooltone",
+            portfolio: "ilford_iv_rc_portfolio",
+            rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
+            rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
+            fb_classic: "ilford_fb_classic",
+            fb_warmtone: "ilford_fb_warmtone",
+            fb_cooltone: "ilford_fb_cooltone",
+          };
+          this.filterSystem =
+            ilfordToFilterSystem[this.ilfordPaperType] || "ilford";
 
           // Calibration profiles (lux × seconds per paper type)
           // Each paper type has its own calibration value
@@ -17606,6 +17621,9 @@
 
           // Paper/filter system selection
           this.bindPaperSelection();
+
+          // Initialize paper brand UI (sets default to ilford)
+          this.setPaperBrand("ilford");
 
           // Exposure mode controls
           this.bindExposureModeControls();
@@ -17702,7 +17720,9 @@
           }
 
           // Ilford paper type dropdown
-          const ilfordPaperSelect = document.getElementById("ilfordPaperType");
+          const ilfordPaperSelect = document.getElementById(
+            "meterIlfordPaperType",
+          );
           if (ilfordPaperSelect) {
             ilfordPaperSelect.addEventListener("change", () => {
               this.setIlfordPaperType(ilfordPaperSelect.value);
@@ -17710,7 +17730,7 @@
           }
 
           // FOMA paper type dropdown
-          const fomaPaperSelect = document.getElementById("fomaPaperType");
+          const fomaPaperSelect = document.getElementById("meterFomaPaperType");
           if (fomaPaperSelect) {
             fomaPaperSelect.addEventListener("change", () => {
               this.setFomaPaperType(fomaPaperSelect.value);
@@ -17727,6 +17747,21 @@
         setIlfordPaperType(type) {
           this.ilfordPaperType = type;
 
+          // Map Ilford paper type to filter system (consistent with FOMA)
+          const ilfordToFilterSystem = {
+            cooltone: "ilford_cooltone",
+            portfolio: "ilford_iv_rc_portfolio",
+            rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
+            rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
+            fb_classic: "ilford_fb_classic",
+            fb_warmtone: "ilford_fb_warmtone",
+            fb_cooltone: "ilford_fb_cooltone",
+          };
+          this.filterSystem = ilfordToFilterSystem[type] || "ilford";
+
+          // SYNC WITH SERVER - Critical for correct grade recommendations
+          this.syncFilterSystemWithServer();
+
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
@@ -17736,6 +17771,7 @@
          * Set paper brand
          */
         setPaperBrand(brand) {
+          console.log(`setPaperBrand called with brand: ${brand}`);
           this.paperBrand = brand;
 
           // Update UI
@@ -17746,20 +17782,61 @@
             .getElementById("btnMeterFoma")
             ?.classList.toggle("active", brand === "foma");
 
-          // Show/hide FOMA paper type selector
-          document.getElementById("ilfordPaperSelector").style.display =
-            brand === "ilford" ? "block" : "none";
-          document.getElementById("fomaPaperSelector").style.display =
-            brand === "foma" ? "block" : "none";
+          // Show/hide paper type selectors
+          const ilfordSelector = document.getElementById(
+            "meterIlfordPaperSelector",
+          );
+          const fomaSelector = document.getElementById(
+            "meterFomaPaperSelector",
+          );
+          console.log(
+            `ilfordSelector found: ${!!ilfordSelector}, fomaSelector found: ${!!fomaSelector}`,
+          );
+          if (ilfordSelector) {
+            const displayValue = brand === "ilford" ? "block" : "none";
+            console.log(`Setting ilfordSelector display to: ${displayValue}`);
+            ilfordSelector.style.display = displayValue;
+          }
+          if (fomaSelector) {
+            const displayValue = brand === "foma" ? "block" : "none";
+            console.log(`Setting fomaSelector display to: ${displayValue}`);
+            fomaSelector.style.display = displayValue;
+          }
 
-          // Update filter system
+          // Update paper type dropdown values and filter system
           if (brand === "ilford") {
-            this.filterSystem = "ilford";
-          } else {
+            const ilfordSelect = document.getElementById(
+              "meterIlfordPaperType",
+            );
+            if (ilfordSelect) {
+              ilfordSelect.value = this.ilfordPaperType;
+            }
+            // Map Ilford paper type to filter system (consistent with FOMA)
+            const ilfordToFilterSystem = {
+              cooltone: "ilford_cooltone",
+              portfolio: "ilford_iv_rc_portfolio",
+              rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
+              rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
+              fb_classic: "ilford_fb_classic",
+              fb_warmtone: "ilford_fb_warmtone",
+              fb_cooltone: "ilford_fb_cooltone",
+            };
             this.filterSystem =
-              this.fomaPaperType === "fomaspeed"
-                ? "foma_fomaspeed"
-                : "foma_fomatone";
+              ilfordToFilterSystem[this.ilfordPaperType] || "ilford";
+          } else {
+            const fomaSelect = document.getElementById("meterFomaPaperType");
+            if (fomaSelect) {
+              fomaSelect.value = this.fomaPaperType;
+            }
+            // Map FOMA paper type to filter system (same logic as setFomaPaperType)
+            const fomaToFilterSystem = {
+              fomaspeed: "foma_fomaspeed",
+              fomabrom: "foma_fomabrom",
+              fomapastel_mg: "foma_fomapastel_mg",
+              fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
+            };
+            this.filterSystem =
+              fomaToFilterSystem[this.fomaPaperType] || "foma_fomaspeed";
           }
 
           // SYNC WITH SERVER - Critical for correct grade recommendations
@@ -17789,7 +17866,7 @@
           this.filterSystem = fomaToFilterSystem[type] || "foma_fomaspeed";
 
           // Update dropdown selection
-          const fomaPaperSelect = document.getElementById("fomaPaperType");
+          const fomaPaperSelect = document.getElementById("meterFomaPaperType");
           if (fomaPaperSelect) {
             fomaPaperSelect.value = type;
           }
@@ -17886,7 +17963,7 @@
          * Get filter data for current system
          */
         getFilterData() {
-          if (this.filterSystem === "ilford") {
+          if (this.filterSystem.startsWith("ilford")) {
             return this.ILFORD_FILTERS;
           } else if (this.filterSystem === "foma_fomaspeed") {
             return this.FOMA_FOMASPEED_FILTERS;

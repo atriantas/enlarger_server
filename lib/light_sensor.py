@@ -21,6 +21,7 @@ import asyncio
 import time
 import math
 from machine import Pin, I2C
+from lib.paper_database import get_filter_selection, get_filter_data, validate_exposure_times
 
 
 class TSL2591:
@@ -1088,6 +1089,8 @@ class DarkroomLightMeter:
         2. Paper characteristic curve consideration
         3. Exposure optimization for balanced results
         
+        Uses unified filter selection logic from paper_database.py for consistency.
+        
         Args:
             highlight_lux: Lux reading at highlight area
             shadow_lux: Lux reading at shadow area
@@ -1109,47 +1112,28 @@ class DarkroomLightMeter:
         # Calculate contrast (ΔEV)
         delta_ev = self.calculate_delta_ev(highlight_lux, shadow_lux)
         
-        # Dynamic filter selection based on contrast
-        # This replaces the fixed filter selection in the original algorithm
-        if system == 'ilford':
-            # Ilford filter selection based on ΔEV
-            if delta_ev < 1.0:
-                soft_filter, hard_filter = '1', '2'      # Very low contrast
-            elif delta_ev < 1.5:
-                soft_filter, hard_filter = '00', '2'     # Low contrast
-            elif delta_ev < 2.0:
-                soft_filter, hard_filter = '00', '3'     # Medium-low contrast
-            elif delta_ev < 2.5:
-                soft_filter, hard_filter = '00', '3'     # Normal contrast
-            elif delta_ev < 3.0:
-                soft_filter, hard_filter = '00', '4'     # Medium-high contrast
-            elif delta_ev < 3.5:
-                soft_filter, hard_filter = '00', '4'     # High contrast
-            elif delta_ev < 4.0:
-                soft_filter, hard_filter = '00', '5'     # Very high contrast
-            else:
-                soft_filter, hard_filter = '00', '5'     # Extreme contrast
-        else:
-            # FOMA filter selection (similar logic)
-            if delta_ev < 1.0:
-                soft_filter, hard_filter = 'Y', 'M1'     # Very low contrast
-            elif delta_ev < 1.5:
-                soft_filter, hard_filter = '2xY', 'M1'   # Low contrast
-            elif delta_ev < 2.0:
-                soft_filter, hard_filter = '2xY', '2xM1' # Medium-low contrast
-            elif delta_ev < 2.5:
-                soft_filter, hard_filter = '2xY', '2xM1' # Normal contrast
-            elif delta_ev < 3.0:
-                soft_filter, hard_filter = '2xY', 'M2'   # Medium-high contrast
-            elif delta_ev < 3.5:
-                soft_filter, hard_filter = '2xY', '2xM2' # High contrast
-            elif delta_ev < 4.0:
-                soft_filter, hard_filter = '2xY', '2xM2' # Very high contrast
-            else:
-                soft_filter, hard_filter = '2xY', '2xM2' # Extreme contrast
+        # Use unified filter selection logic from paper_database.py
+        # This ensures consistency with the enhanced algorithm
+        filter_selection = get_filter_selection(delta_ev, system)
+        soft_filter = filter_selection['soft_filter']
+        hard_filter = filter_selection['hard_filter']
+        selection_reason = filter_selection['description']
+        contrast_level = filter_selection['contrast_level']
         
-        # Get filter data
+        # Get filter data using the appropriate method
+        # First try to get paper-specific data, fall back to system data
         filter_data = self.get_filter_data(system)
+        
+        # Check if filters exist in the system data
+        if soft_filter not in filter_data:
+            # Fallback to default filters for the system
+            if system.startswith('ilford'):
+                soft_filter = '00'
+                hard_filter = '5'
+            else:
+                soft_filter = '2xY'
+                hard_filter = '2xM2'
+        
         soft_factor = filter_data[soft_filter]['factor']
         hard_factor = filter_data[hard_filter]['factor']
         
@@ -1161,35 +1145,22 @@ class DarkroomLightMeter:
         soft_time = soft_base_time * soft_factor
         hard_time = hard_base_time * hard_factor
         
-        # Apply Heiland-like optimization for balanced exposures
-        # 1. Ensure minimum exposure time (2 seconds)
-        soft_time = max(soft_time, 2.0)
-        hard_time = max(hard_time, 2.0)
-        
-        # 2. Ensure maximum exposure time (120 seconds)
-        soft_time = min(soft_time, 120.0)
-        hard_time = min(hard_time, 120.0)
-        
-        # 3. Balance exposures (prefer similar times)
-        # If one exposure is much longer than the other, adjust
-        if soft_time > 0 and hard_time > 0:
-            ratio = max(soft_time, hard_time) / min(soft_time, hard_time)
-            if ratio > 10:  # Max 10:1 ratio
-                if soft_time > hard_time:
-                    soft_time = hard_time * 10
-                else:
-                    hard_time = soft_time * 10
+        # Apply unified optimization using validate_exposure_times
+        # This ensures consistency with the enhanced algorithm
+        soft_time_opt, hard_time_opt, optimization_applied = validate_exposure_times(
+            soft_time, hard_time, None  # paper_id not needed for basic optimization
+        )
         
         # Calculate percentages
-        total_time = soft_time + hard_time
+        total_time = soft_time_opt + hard_time_opt
         if total_time > 0:
-            soft_percent = (soft_time / total_time) * 100
-            hard_percent = (hard_time / total_time) * 100
+            soft_percent = (soft_time_opt / total_time) * 100
+            hard_percent = (hard_time_opt / total_time) * 100
         else:
             soft_percent = 50.0
             hard_percent = 50.0
         
-        # Calculate match quality
+        # Calculate match quality using unified method
         soft_iso_r = filter_data[soft_filter]['iso_r']
         hard_iso_r = filter_data[hard_filter]['iso_r']
         soft_printable_ev = self._iso_r_to_ev(soft_iso_r)
@@ -1197,23 +1168,11 @@ class DarkroomLightMeter:
         total_printable_ev = soft_printable_ev + hard_printable_ev
         match_quality = self._evaluate_split_match(delta_ev, total_printable_ev)
         
-        # Determine selection reason
-        if delta_ev < 1.0:
-            selection_reason = "Very low contrast - using close filters"
-        elif delta_ev < 2.0:
-            selection_reason = "Low to medium contrast - balanced filter selection"
-        elif delta_ev < 3.0:
-            selection_reason = "Normal to high contrast - standard split-grade"
-        elif delta_ev < 4.0:
-            selection_reason = "High contrast - wider filter separation"
-        else:
-            selection_reason = "Extreme contrast - maximum filter separation"
-        
         return {
             'soft_filter': soft_filter,
             'hard_filter': hard_filter,
-            'soft_time': soft_time,
-            'hard_time': hard_time,
+            'soft_time': soft_time_opt,
+            'hard_time': hard_time_opt,
             'total_time': total_time,
             'delta_ev': delta_ev,
             'soft_factor': soft_factor,
@@ -1222,10 +1181,12 @@ class DarkroomLightMeter:
             'hard_percent': hard_percent,
             'match_quality': match_quality,
             'selection_reason': selection_reason,
-            'algorithm': 'heiland_enhanced',
+            'contrast_level': contrast_level,
+            'algorithm': 'heiland_unified',
             'highlight_lux': highlight_lux,
             'shadow_lux': shadow_lux,
-            'optimization_applied': True
+            'optimization_applied': optimization_applied,
+            'system': system
         }
     
     def clear_readings(self):
