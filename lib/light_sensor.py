@@ -524,46 +524,6 @@ class DarkroomLightMeter:
         40: 4.0     # Grade 5 - very hard (gamma 1.0)
     }
     
-    # Ilford Multigrade filter data - Enhanced with Heiland research data
-    # Keys: '00', '0', '1', '2', '3', '4', '5', '' (empty string for no filter)
-    ILFORD_FILTERS = {
-        '00': {'iso_r': 180, 'factor': 1.6, 'name': 'Grade 00', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
-        '0':  {'iso_r': 160, 'factor': 1.4, 'name': 'Grade 0', 'gamma': 0.5, 'description': 'Soft'},
-        '1':  {'iso_r': 130, 'factor': 1.3, 'name': 'Grade 1', 'gamma': 0.6, 'description': 'Normal-soft'},
-        '2':  {'iso_r': 110, 'factor': 1.1, 'name': 'Grade 2', 'gamma': 0.7, 'description': 'Normal'},
-        '3':  {'iso_r': 90,  'factor': 0.9, 'name': 'Grade 3', 'gamma': 0.8, 'description': 'Normal-hard'},
-        '4':  {'iso_r': 60,  'factor': 0.6, 'name': 'Grade 4', 'gamma': 0.9, 'description': 'Hard'},
-        '5':  {'iso_r': 40,  'factor': 0.4, 'name': 'Grade 5', 'gamma': 1.0, 'description': 'Very hard - shadows only'},
-        '':   {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.7, 'description': 'No filter (grade 2 equivalent)'},
-        'none': {'iso_r': 110, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.7, 'description': 'No filter (grade 2 equivalent)'}  # Legacy support
-    }
-    
-    # FOMA filter data - FOMASPEED / FOMABROM Variant III - Enhanced with Heiland research data
-    # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
-    FOMA_FOMASPEED_FILTERS = {
-        '2xY':  {'iso_r': 135, 'factor': 1.6, 'name': '2×Y (Soft)', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
-        'Y':    {'iso_r': 120, 'factor': 1.4, 'name': 'Y', 'gamma': 0.5, 'description': 'Soft'},
-        '':     {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},
-        'none': {'iso_r': 105, 'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},  # Legacy support
-        'M1':   {'iso_r': 90,  'factor': 1.4, 'name': 'M1', 'gamma': 0.7, 'description': 'Normal-hard'},
-        '2xM1': {'iso_r': 80,  'factor': 2.1, 'name': '2×M1', 'gamma': 0.8, 'description': 'Hard'},
-        'M2':   {'iso_r': 65,  'factor': 2.6, 'name': 'M2', 'gamma': 0.9, 'description': 'Very hard'},
-        '2xM2': {'iso_r': 55,  'factor': 4.6, 'name': '2×M2 (Hard)', 'gamma': 1.0, 'description': 'Extreme hard - shadows only'}
-    }
-    
-    # FOMA filter data - FOMATONE MG / MG Classic - Enhanced with Heiland research data
-    # Keys: '2xY', 'Y', '', 'M1', '2xM1', 'M2', '2xM2'
-    FOMA_FOMATONE_FILTERS = {
-        '2xY':  {'iso_r': 120, 'factor': 2.0, 'name': '2×Y (Soft)', 'gamma': 0.4, 'description': 'Very soft - highlights only'},
-        'Y':    {'iso_r': 105, 'factor': 1.5, 'name': 'Y', 'gamma': 0.5, 'description': 'Soft'},
-        '':     {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},
-        'none': {'iso_r': 90,  'factor': 1.0, 'name': 'No Filter', 'gamma': 0.6, 'description': 'No filter (normal contrast)'},  # Legacy support
-        'M1':   {'iso_r': 80,  'factor': 1.5, 'name': 'M1', 'gamma': 0.7, 'description': 'Normal-hard'},
-        '2xM1': {'iso_r': 75,  'factor': 1.8, 'name': '2×M1', 'gamma': 0.8, 'description': 'Hard'},
-        'M2':   {'iso_r': 65,  'factor': 2.0, 'name': 'M2', 'gamma': 0.9, 'description': 'Very hard'},
-        '2xM2': {'iso_r': 55,  'factor': 3.0, 'name': '2×M2 (Hard)', 'gamma': 1.0, 'description': 'Extreme hard - shadows only'}
-    }
-    
     # Default calibration constant (lux × seconds)
     # This should be calibrated per paper type
     DEFAULT_CALIBRATION = 1000.0
@@ -587,16 +547,37 @@ class DarkroomLightMeter:
         self.calibrations = {}
         self.default_calibration = self.DEFAULT_CALIBRATION
         
-        # Filter system selection
+        # Current paper selection (server-side state)
+        self.current_paper_id = 'ilford_cooltone'  # Default paper from paper_database
+        
+        # Legacy filter system for backward compatibility (deprecated)
         self.filter_system = 'ilford'  # 'ilford', 'foma_fomaspeed', 'foma_fomatone'
         
         # Stored readings for contrast calculation
         self.highlight_lux = None
         self.shadow_lux = None
     
+    def set_current_paper(self, paper_id):
+        """
+        Set the current paper selection.
+        
+        Args:
+            paper_id: Paper identifier from paper_database (e.g., 'ilford_cooltone')
+        """
+        from lib.paper_database import get_paper_data
+        paper_data = get_paper_data(paper_id)
+        if paper_data:
+            self.current_paper_id = paper_id
+        else:
+            raise ValueError(f"Invalid paper_id: {paper_id}")
+    
+    def get_current_paper(self):
+        """Get the current paper ID."""
+        return self.current_paper_id
+    
     def set_filter_system(self, system):
         """
-        Set the active filter system.
+        Set the active filter system (legacy method for backward compatibility).
         
         Args:
             system: 'ilford', 'foma_fomaspeed', or 'foma_fomatone'
@@ -606,19 +587,6 @@ class DarkroomLightMeter:
             self.filter_system = system
         else:
             raise ValueError(f"Invalid filter system. Use: {valid_systems}")
-    
-    def get_filter_data(self, system=None):
-        """Get filter data for current or specified system."""
-        system = system or self.filter_system
-        
-        if system == 'ilford':
-            return self.ILFORD_FILTERS
-        elif system == 'foma_fomaspeed':
-            return self.FOMA_FOMASPEED_FILTERS
-        elif system == 'foma_fomatone':
-            return self.FOMA_FOMATONE_FILTERS
-        else:
-            return self.ILFORD_FILTERS
     
     def set_calibration(self, paper_id, calibration_constant):
         """
@@ -648,11 +616,11 @@ class DarkroomLightMeter:
         """
         return await self.sensor.read_averaged_lux_async(samples=samples)
     
-    def calculate_exposure_time(self, lux, calibration=None, filter_grade=None):
+    def calculate_exposure_time(self, lux, calibration=None, filter_grade=None, paper_id=None):
         """
         Calculate exposure time from lux reading.
         
-        Formula: time = calibration_constant / lux
+        Formula: time = calibration_constant / lux × filter_factor
         
         Args:
             lux: Measured illuminance in lux
@@ -660,6 +628,7 @@ class DarkroomLightMeter:
             filter_grade: Filter grade for factor adjustment (optional)
                          Can be '', 'none', '00', '0', '1', '2', '3', '4', '5',
                          '2xY', 'Y', 'M1', '2xM1', 'M2', '2xM2'
+            paper_id: Paper identifier to use (defaults to current_paper_id)
         
         Returns:
             float: Exposure time in seconds
@@ -675,9 +644,15 @@ class DarkroomLightMeter:
         # Apply filter factor if specified
         # Empty string or 'none' means no filter (factor = 1.0)
         if filter_grade is not None and filter_grade != '' and filter_grade != 'none':
-            filter_data = self.get_filter_data()
-            if filter_grade in filter_data:
-                factor = filter_data[filter_grade]['factor']
+            from lib.paper_database import get_filter_data
+            
+            # Use specified paper_id or current paper
+            pid = paper_id or self.current_paper_id
+            
+            # Get filter data from paper database
+            filter_data = get_filter_data(pid, filter_grade)
+            if filter_data:
+                factor = filter_data['factor']
                 base_time *= factor
         
         return base_time
@@ -709,7 +684,7 @@ class DarkroomLightMeter:
         
         return delta_ev
     
-    def recommend_filter_grade(self, delta_ev, system=None):
+    def recommend_filter_grade(self, delta_ev, system=None, paper_id=None):
         """
         Recommend filter grade based on measured contrast.
         
@@ -718,7 +693,8 @@ class DarkroomLightMeter:
         
         Args:
             delta_ev: Measured contrast range (EV stops)
-            system: Filter system ('ilford', 'foma_fomaspeed', 'foma_fomatone')
+            system: Filter system (deprecated, use paper_id instead)
+            paper_id: Paper identifier to use (defaults to current_paper_id)
         
         Returns:
             dict: {
@@ -732,17 +708,33 @@ class DarkroomLightMeter:
         if delta_ev is None:
             return None
         
-        filter_data = self.get_filter_data(system)
+        from lib.paper_database import get_paper_data, get_available_filters
+        
+        # Use specified paper_id or current paper
+        pid = paper_id or self.current_paper_id
+        paper_data = get_paper_data(pid)
+        
+        if not paper_data:
+            return None
         
         best_match = None
         best_diff = float('inf')
         
-        for grade, data in filter_data.items():
+        # Get available filters for this paper
+        available_filters = get_available_filters(pid)
+        
+        for grade in available_filters:
             # Skip "no filter" options when recommending a filter grade
             if grade == '' or grade == 'none':
                 continue
             
-            iso_r = data['iso_r']
+            from lib.paper_database import get_filter_data
+            filter_data = get_filter_data(pid, grade)
+            
+            if not filter_data:
+                continue
+            
+            iso_r = filter_data['iso_r']
             
             # Convert ISO R to printable EV range via interpolation
             printable_ev = self._iso_r_to_ev(iso_r)
@@ -756,7 +748,7 @@ class DarkroomLightMeter:
                 best_match = {
                     'grade': grade,
                     'iso_r': iso_r,
-                    'factor': data['factor'],
+                    'factor': filter_data['factor'],
                     'printable_ev': printable_ev
                 }
         
@@ -788,9 +780,9 @@ class DarkroomLightMeter:
         # Below minimum
         return sorted_pairs[-1][1]
     
-    def calculate_split_grade(self, highlight_lux, shadow_lux, calibration=None, system=None):
+    def calculate_split_grade(self, highlight_lux, shadow_lux, calibration=None, system=None, paper_id=None):
         """
-        Calculate split-grade exposure times.
+        Calculate split-grade exposure times (legacy method - uses fixed filters).
         
         Split-grade printing uses two exposures:
         1. Soft filter (controls highlights) - based on highlight lux
@@ -800,7 +792,8 @@ class DarkroomLightMeter:
             highlight_lux: Lux reading at highlight area
             shadow_lux: Lux reading at shadow area
             calibration: Calibration constant (optional)
-            system: Filter system (optional)
+            system: Filter system (deprecated, use paper_id instead)
+            paper_id: Paper identifier to use (defaults to current_paper_id)
         
         Returns:
             dict: {
@@ -820,23 +813,36 @@ class DarkroomLightMeter:
         if highlight_lux <= 0 or shadow_lux <= 0:
             return None
         
-        cal = calibration or self.default_calibration
-        system = system or self.filter_system
-        filter_data = self.get_filter_data(system)
+        from lib.paper_database import get_filter_data, get_paper_data
         
-        # Determine soft and hard filters based on system
-        if system == 'ilford':
+        cal = calibration or self.default_calibration
+        
+        # Use specified paper_id or current paper
+        pid = paper_id or self.current_paper_id
+        paper_data = get_paper_data(pid)
+        
+        if not paper_data:
+            return None
+        
+        # Determine soft and hard filters based on paper manufacturer
+        manufacturer = paper_data.get('manufacturer', 'Ilford').lower()
+        
+        if 'ilford' in manufacturer:
             soft_filter = '00'
             hard_filter = '5'
-        elif system == 'foma_fomaspeed':
-            soft_filter = '2xY'
-            hard_filter = '2xM2'
-        else:  # foma_fomatone
+        else:  # FOMA
             soft_filter = '2xY'
             hard_filter = '2xM2'
         
-        soft_factor = filter_data[soft_filter]['factor']
-        hard_factor = filter_data[hard_filter]['factor']
+        # Get filter data from paper database
+        soft_filter_data = get_filter_data(pid, soft_filter)
+        hard_filter_data = get_filter_data(pid, hard_filter)
+        
+        if not soft_filter_data or not hard_filter_data:
+            return None
+        
+        soft_factor = soft_filter_data['factor']
+        hard_factor = hard_filter_data['factor']
         
         # Calculate base times from lux readings
         # Soft exposure: targets highlight tone (near paper white)
@@ -888,9 +894,12 @@ class DarkroomLightMeter:
             self.shadow_lux = result['lux']
         return result
     
-    def get_contrast_analysis(self):
+    def get_contrast_analysis(self, paper_id=None):
         """
         Get contrast analysis from stored highlight/shadow readings.
+        
+        Args:
+            paper_id: Paper identifier to use (defaults to current_paper_id)
         
         Returns:
             dict: Full analysis including ΔEV, recommended grade,
@@ -903,9 +912,12 @@ class DarkroomLightMeter:
                 'shadow_lux': self.shadow_lux
             }
         
+        # Use specified paper_id or current paper
+        pid = paper_id or self.current_paper_id
+        
         delta_ev = self.calculate_delta_ev(self.highlight_lux, self.shadow_lux)
-        recommended = self.recommend_filter_grade(delta_ev)
-        split_grade = self.calculate_split_grade(self.highlight_lux, self.shadow_lux)
+        recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
+        split_grade = self.calculate_split_grade(self.highlight_lux, self.shadow_lux, paper_id=pid)
         
         return {
             'highlight_lux': self.highlight_lux,
@@ -1114,15 +1126,20 @@ class DarkroomLightMeter:
         
         # Use unified filter selection logic from paper_database.py
         # This ensures consistency with the enhanced algorithm
+        from lib.paper_database import get_paper_data, get_available_filters
+        
         filter_selection = get_filter_selection(delta_ev, system)
         soft_filter = filter_selection['soft_filter']
         hard_filter = filter_selection['hard_filter']
         selection_reason = filter_selection['description']
         contrast_level = filter_selection['contrast_level']
         
-        # Get filter data using the appropriate method
-        # First try to get paper-specific data, fall back to system data
-        filter_data = self.get_filter_data(system)
+        # Get filter data from paper_database (not a method, it's a module function)
+        paper_data = get_paper_data(system)
+        if not paper_data:
+            return None
+        
+        filter_data = paper_data.get('filters', {})
         
         # Check if filters exist in the system data
         if soft_filter not in filter_data:
@@ -1133,6 +1150,9 @@ class DarkroomLightMeter:
             else:
                 soft_filter = '2xY'
                 hard_filter = '2xM2'
+        
+        if soft_filter not in filter_data or hard_filter not in filter_data:
+            return None
         
         soft_factor = filter_data[soft_filter]['factor']
         hard_factor = filter_data[hard_filter]['factor']

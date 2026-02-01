@@ -597,6 +597,145 @@ class HTTPServer:
             }, 500)
             await self._sendall(conn, response)
     
+    async def _handle_papers(self, conn, params):
+        """
+        Handle /papers endpoint - get list of available papers and their metadata.
+        
+        Returns:
+            papers: List of paper objects with id, display_name, manufacturer, and filters
+        """
+        try:
+            from lib.paper_database import get_paper_list, get_paper_data, get_paper_display_name
+            
+            papers = []
+            for paper_id in get_paper_list():
+                paper_data = get_paper_data(paper_id)
+                if paper_data:
+                    manufacturer = paper_data.get('manufacturer', '')
+                    
+                    # Build filter metadata for UI use
+                    # Only send what the client actually needs (factor and name)
+                    # to keep response size manageable for MicroPython
+                    filters = {}
+                    for grade, data in paper_data.get('filters', {}).items():
+                        if grade in ('', 'none'):
+                            name = 'No Filter'
+                        elif 'ilford' in manufacturer.lower():
+                            name = f"Grade {grade}"
+                        else:
+                            foma_names = {
+                                '2xY': '2xY (Soft)',
+                                'Y': 'Y',
+                                'M1': 'M1',
+                                '2xM1': '2xM1',
+                                'M2': 'M2',
+                                '2xM2': '2xM2 (Hard)'
+                            }
+                            name = foma_names.get(grade, grade)
+                        
+                        # Only include factor and name - client doesn't need iso_r, gamma, description
+                        filters[grade] = {
+                            'factor': data.get('factor', 1.0),
+                            'name': name
+                        }
+                    
+                    # Only include essential fields to minimize response size for MicroPython
+                    papers.append({
+                        'id': paper_id,
+                        'display_name': get_paper_display_name(paper_id),
+                        'filters': filters
+                    })
+            
+            # Build response with minimal data
+            print(f"Built papers list with {len(papers)} papers")
+            
+            # Try to serialize JSON - might fail if too large for MicroPython
+            try:
+                import gc
+                gc.collect()  # Free memory before JSON serialization
+                
+                response_data = {
+                    "status": "success",
+                    "papers": papers,
+                    "count": len(papers)
+                }
+                response = self._json_response(response_data)
+                await self._sendall(conn, response)
+                
+            except MemoryError:
+                print("ERROR: Out of memory while building /papers response")
+                response = self._json_response({
+                    "error": "Response too large - memory error"
+                }, 500)
+                await self._sendall(conn, response)
+            
+        except Exception as e:
+            print(f"ERROR in _handle_papers: {e}")
+            response = self._json_response({
+                "error": f"Failed to get papers: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_light_meter_paper(self, conn, params):
+        """
+        Handle /light-meter-paper endpoint - get/set current paper selection.
+        
+        GET: Returns current paper ID
+        Query params for GET:
+            (none)
+        
+        Query params for SET:
+            paper_id: Paper identifier from paper_database (e.g., 'ilford_cooltone')
+        
+        Returns current paper information.
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            paper_id = params.get('paper_id')
+            
+            if paper_id:
+                # SET paper
+                self.light_meter.set_current_paper(paper_id)
+            
+            # GET current paper
+            from lib.paper_database import get_paper_data, get_paper_display_name
+            current_paper_id = self.light_meter.get_current_paper()
+            paper_data = get_paper_data(current_paper_id)
+            
+            if not paper_data:
+                response = self._json_response({
+                    "error": f"Invalid current paper: {current_paper_id}"
+                }, 500)
+                await self._sendall(conn, response)
+                return
+            
+            response = self._json_response({
+                "status": "success",
+                "paper_id": current_paper_id,
+                "display_name": get_paper_display_name(current_paper_id),
+                "manufacturer": paper_data['manufacturer'],
+                "paper_type": paper_data.get('paper_type', ''),
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid paper_id: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to get/set paper: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
     async def _handle_light_meter(self, conn, params):
         """
         Handle /light-meter endpoint - take a light measurement.
@@ -605,6 +744,7 @@ class HTTPServer:
             samples: Number of samples to average (default: 5)
             calibration: Calibration constant for exposure calc (optional)
             filter: Filter grade for exposure calc (optional)
+            paper_id: Paper ID to use for filter factors (optional, defaults to current paper)
         
         Returns lux reading and calculated exposure time.
         """
@@ -619,6 +759,7 @@ class HTTPServer:
             samples = int(params.get('samples', 5))
             calibration = params.get('calibration')
             filter_grade = params.get('filter')
+            paper_id = params.get('paper_id')
             
             if calibration:
                 calibration = float(calibration)
@@ -634,12 +775,17 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
             
-            # Calculate exposure time
+            # Calculate exposure time using current or specified paper
             exposure_time = self.light_meter.calculate_exposure_time(
                 result['lux'],
                 calibration=calibration,
-                filter_grade=filter_grade
+                filter_grade=filter_grade,
+                paper_id=paper_id
             )
+            
+            # Get current paper info
+            from lib.paper_database import get_paper_display_name
+            current_paper_id = paper_id or self.light_meter.get_current_paper()
             
             response = self._json_response({
                 "status": "success",
@@ -650,6 +796,8 @@ class HTTPServer:
                 "variance": result.get('variance'),
                 "exposure_time": exposure_time,
                 "filter": filter_grade,
+                "paper_id": current_paper_id,
+                "paper_name": get_paper_display_name(current_paper_id),
                 "calibration": calibration or self.light_meter.default_calibration,
                 "timestamp": time.ticks_ms()
             })
@@ -758,6 +906,9 @@ class HTTPServer:
         """
         Handle /light-meter-contrast endpoint - get contrast analysis.
         
+        Query params:
+            paper_id: Paper ID to use for analysis (optional, defaults to current paper)
+        
         Returns ΔEV, recommended filter grade, and split-grade calculations
         based on stored highlight and shadow readings.
         """
@@ -769,7 +920,9 @@ class HTTPServer:
             return
         
         try:
-            analysis = self.light_meter.get_contrast_analysis()
+            paper_id = params.get('paper_id')
+            
+            analysis = self.light_meter.get_contrast_analysis(paper_id=paper_id)
             
             if 'error' in analysis:
                 response = self._json_response({
@@ -780,6 +933,10 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
             
+            # Get current paper info
+            from lib.paper_database import get_paper_display_name
+            current_paper_id = paper_id or self.light_meter.get_current_paper()
+            
             response = self._json_response({
                 "status": "success",
                 "highlight_lux": analysis['highlight_lux'],
@@ -787,7 +944,8 @@ class HTTPServer:
                 "delta_ev": analysis['delta_ev'],
                 "recommended_grade": analysis['recommended_grade'],
                 "split_grade": analysis['split_grade'],
-                "filter_system": self.light_meter.filter_system,
+                "paper_id": current_paper_id,
+                "paper_name": get_paper_display_name(current_paper_id),
                 "timestamp": time.ticks_ms()
             })
             await self._sendall(conn, response)
@@ -806,11 +964,8 @@ class HTTPServer:
             highlight: Highlight lux reading
             shadow: Shadow lux reading
             calibration: Calibration constant (lux·s)
-            system: Filter system ('ilford', 'foma_fomaspeed', 'foma_fomatone', 
-                    'foma_fomapastel_mg', 'fomatone_mg_classic_variant',
-                    'ilford_cooltone', 'ilford_multigrade_rc_deluxe_new',
-                    'ilford_multigrade_rc_portfolio_new', 'ilford_fb_classic',
-                    'ilford_fb_warmtone', 'ilford_fb_cooltone')
+            paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
+            system: (deprecated) Legacy filter system parameter
             soft_filter: User-selected soft filter (optional)
             hard_filter: User-selected hard filter (optional)
         
@@ -827,7 +982,12 @@ class HTTPServer:
             highlight_lux = float(params.get('highlight', 0))
             shadow_lux = float(params.get('shadow', 0))
             calibration = float(params.get('calibration', self.light_meter.default_calibration))
-            system = params.get('system', self.light_meter.filter_system)
+            
+            # Accept paper_id (new) or system (legacy fallback)
+            paper_id = params.get('paper_id')
+            if not paper_id:
+                paper_id = params.get('system', self.light_meter.current_paper_id or self.light_meter.filter_system)
+            
             soft_filter = params.get('soft_filter')
             hard_filter = params.get('hard_filter')
             
@@ -847,7 +1007,7 @@ class HTTPServer:
                 soft_filter=soft_filter,
                 hard_filter=hard_filter,
                 calibration=calibration,
-                system=system
+                system=paper_id  # Pass paper_id as system parameter
             )
             
             if result is None:
@@ -885,11 +1045,8 @@ class HTTPServer:
             highlight: Highlight lux reading
             shadow: Shadow lux reading
             calibration: Calibration constant (lux·s)
-            system: Filter system ('ilford', 'foma_fomaspeed', 'foma_fomatone', 
-                    'foma_fomapastel_mg', 'fomatone_mg_classic_variant',
-                    'ilford_cooltone', 'ilford_multigrade_rc_deluxe_new',
-                    'ilford_multigrade_rc_portfolio_new', 'ilford_fb_classic',
-                    'ilford_fb_warmtone', 'ilford_fb_cooltone')
+            paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
+            system: (deprecated) Legacy filter system parameter
         
         Returns Heiland-like split-grade calculation with dynamic filter selection.
         """
@@ -904,7 +1061,12 @@ class HTTPServer:
             highlight_lux = float(params.get('highlight', 0))
             shadow_lux = float(params.get('shadow', 0))
             calibration = float(params.get('calibration', self.light_meter.default_calibration))
-            system = params.get('system', self.light_meter.filter_system)
+            
+            # Accept paper_id (new) or system (legacy fallback)
+            paper_id = params.get('paper_id')
+            if not paper_id:
+                # Fallback to system for backward compatibility
+                paper_id = params.get('system', self.light_meter.current_paper_id or self.light_meter.filter_system)
             
             if highlight_lux <= 0 or shadow_lux <= 0:
                 response = self._json_response({
@@ -915,12 +1077,12 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
             
-            # Calculate Heiland-like split-grade
+            # Calculate Heiland-like split-grade with paper_id
             result = self.light_meter.calculate_split_grade_heiland(
                 highlight_lux=highlight_lux,
                 shadow_lux=shadow_lux,
                 calibration=calibration,
-                system=system
+                system=paper_id  # Pass paper_id as system parameter for now
             )
             
             if result is None:
@@ -1018,7 +1180,8 @@ class HTTPServer:
         Handle /light-meter-config endpoint - configure light meter.
         
         Query params:
-            filter_system: 'ilford', 'foma_fomaspeed', or 'foma_fomatone'
+            paper_id: Paper/filter system ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
+            filter_system: (deprecated) Legacy filter system parameter - use paper_id instead
             gain: 'low', 'med', 'high', 'max', or 'auto'
             integration: 100, 200, 300, 400, 500, or 600 (ms)
             clear: 'true' to clear stored highlight/shadow readings
@@ -1031,6 +1194,7 @@ class HTTPServer:
             return
         
         try:
+            paper_id = params.get('paper_id', '').strip().lower()
             filter_system = params.get('filter_system', '').strip().lower()
             gain = params.get('gain', '').strip().lower()
             integration = params.get('integration', '').strip()
@@ -1038,8 +1202,23 @@ class HTTPServer:
             
             changes = []
             
-            # Set filter system
-            if filter_system:
+            # Set paper (paper_id takes precedence over legacy filter_system)
+            if paper_id:
+                from lib.paper_database import get_paper_data
+                try:
+                    paper_data = get_paper_data(paper_id)
+                    self.light_meter.set_current_paper(paper_id)
+                    changes.append(f"paper_id={paper_id}")
+                except (KeyError, ValueError):
+                    from lib.paper_database import get_paper_list
+                    valid_papers = get_paper_list()
+                    response = self._json_response({
+                        "error": f"Invalid paper_id. Use: {valid_papers}"
+                    }, 400)
+                    await self._sendall(conn, response)
+                    return
+            elif filter_system:
+                # Legacy fallback: support old filter_system param for backward compatibility
                 valid_systems = [
                     'ilford', 'foma_fomaspeed', 'foma_fomatone',
                     'foma_fomapastel_mg', 'fomatone_mg_classic_variant',
@@ -1050,10 +1229,10 @@ class HTTPServer:
                 ]
                 if filter_system in valid_systems:
                     self.light_meter.set_filter_system(filter_system)
-                    changes.append(f"filter_system={filter_system}")
+                    changes.append(f"filter_system={filter_system} (legacy)")
                 else:
                     response = self._json_response({
-                        "error": f"Invalid filter system. Use: {valid_systems}"
+                        "error": f"Invalid filter_system. Use paper_id param instead. Valid: {valid_systems}"
                     }, 400)
                     await self._sendall(conn, response)
                     return
@@ -1187,6 +1366,10 @@ class HTTPServer:
                 await self._handle_wifi_ap_force(conn, params)
             elif path == '/wifi-clear':
                 await self._handle_wifi_clear(conn, params)
+            elif path == '/papers':
+                await self._handle_papers(conn, params)
+            elif path == '/light-meter-paper':
+                await self._handle_light_meter_paper(conn, params)
             elif path == '/light-meter':
                 await self._handle_light_meter(conn, params)
             elif path == '/light-meter-highlight':

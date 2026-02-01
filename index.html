@@ -17521,22 +17521,15 @@
           // Mode: 'exposure', 'contrast', or 'split'
           this.currentMode = "exposure";
 
-          // Filter system: 'ilford', 'foma_fomaspeed', 'foma_fomatone'
+          // Paper selection: stored as paper_id (e.g., 'ilford_cooltone')
+          this.currentPaperId = "ilford_cooltone"; // Default paper
+          this.papersList = []; // Will be fetched from server
+
+          // Legacy support for old UI
           this.paperBrand = "ilford";
           this.fomaPaperType = "fomaspeed";
-          this.ilfordPaperType = "cooltone"; // Track Ilford paper type (matches dropdown default)
-          // Map Ilford paper type to filter system (consistent with FOMA)
-          const ilfordToFilterSystem = {
-            cooltone: "ilford_cooltone",
-            portfolio: "ilford_iv_rc_portfolio",
-            rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
-            rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
-            fb_classic: "ilford_fb_classic",
-            fb_warmtone: "ilford_fb_warmtone",
-            fb_cooltone: "ilford_fb_cooltone",
-          };
-          this.filterSystem =
-            ilfordToFilterSystem[this.ilfordPaperType] || "ilford";
+          this.ilfordPaperType = "cooltone";
+          this.filterSystem = "ilford_cooltone";
 
           // Calibration profiles (lux × seconds per paper type)
           // Each paper type has its own calibration value
@@ -17557,57 +17550,8 @@
           this.recommendedGrade = null;
           this.splitGradeResult = null;
 
-          // Ilford Multigrade filter data
-          this.ILFORD_FILTERS = {
-            "00": { iso_r: 180, factor: 1.6, name: "Grade 00" },
-            0: { iso_r: 160, factor: 1.4, name: "Grade 0" },
-            1: { iso_r: 130, factor: 1.3, name: "Grade 1" },
-            2: { iso_r: 110, factor: 1.1, name: "Grade 2" },
-            3: { iso_r: 90, factor: 0.9, name: "Grade 3" },
-            4: { iso_r: 60, factor: 0.6, name: "Grade 4" },
-            5: { iso_r: 40, factor: 0.4, name: "Grade 5" },
-            "": { iso_r: 110, factor: 1.0, name: "No Filter" },
-          };
-
-          // FOMA FOMASPEED / FOMABROM Variant III
-          this.FOMA_FOMASPEED_FILTERS = {
-            "2xY": { iso_r: 135, factor: 1.6, name: "2×Y (Soft)" },
-            Y: { iso_r: 120, factor: 1.4, name: "Y" },
-            "": { iso_r: 105, factor: 1.0, name: "No Filter" },
-            M1: { iso_r: 90, factor: 1.4, name: "M1" },
-            "2xM1": { iso_r: 80, factor: 2.1, name: "2×M1" },
-            M2: { iso_r: 65, factor: 2.6, name: "M2" },
-            "2xM2": { iso_r: 55, factor: 4.6, name: "2×M2 (Hard)" },
-          };
-
-          // FOMA FOMATONE MG / MG Classic
-          this.FOMA_FOMATONE_FILTERS = {
-            "2xY": { iso_r: 120, factor: 2.0, name: "2×Y (Soft)" },
-            Y: { iso_r: 105, factor: 1.5, name: "Y" },
-            "": { iso_r: 90, factor: 1.0, name: "No Filter" },
-            M1: { iso_r: 80, factor: 1.5, name: "M1" },
-            "2xM1": { iso_r: 75, factor: 1.8, name: "2×M1" },
-            M2: { iso_r: 65, factor: 2.0, name: "M2" },
-            "2xM2": { iso_r: 55, factor: 3.0, name: "2×M2 (Hard)" },
-          };
-
-          // ISO R to EV mapping (exposure latitude)
-          this.ISO_R_TO_EV = {
-            180: 8.0,
-            160: 7.5,
-            135: 7.0,
-            130: 6.8,
-            120: 6.5,
-            110: 6.2,
-            105: 6.0,
-            90: 5.6,
-            80: 5.2,
-            75: 5.0,
-            65: 4.8,
-            60: 4.6,
-            55: 4.4,
-            40: 4.0,
-          };
+          // Filter data will be fetched from server (no local copies)
+          this.filtersCache = {}; // Cache filters per paper to reduce server calls
 
           this.init();
         }
@@ -17615,7 +17559,10 @@
         /**
          * Initialize light meter UI and event listeners
          */
-        init() {
+        async init() {
+          // Fetch papers list from server first
+          await this.fetchPapersFromServer();
+
           // Mode selection
           this.bindModeSelection();
 
@@ -17646,8 +17593,8 @@
           // Update calibration display
           this.updateCalibrationDisplay();
 
-          // Sync filter system with server on init (default: ilford)
-          this.syncFilterSystemWithServer();
+          // Sync current paper selection with server
+          await this.syncPaperWithServer();
 
           console.log("LightMeterManager initialized");
         }
@@ -17737,27 +17684,82 @@
             });
           }
 
-          // Update filter grade dropdown based on paper brand
-          this.updateFilterDropdown();
+          // Note: updateFilterDropdown will be called by setPaperBrand during init
         }
 
         /**
-         * Set Ilford paper type (from dropdown)
+         * Populate paper type dropdowns from papersList (dynamically from server)
+         * This replaces hardcoded values with data from paper_database
          */
-        setIlfordPaperType(type) {
-          this.ilfordPaperType = type;
+        populatePaperTypeDropdowns() {
+          if (!this.papersList || this.papersList.length === 0) {
+            console.warn("populatePaperTypeDropdowns: papersList is empty");
+            return;
+          }
 
-          // Map Ilford paper type to filter system (consistent with FOMA)
-          const ilfordToFilterSystem = {
-            cooltone: "ilford_cooltone",
-            portfolio: "ilford_iv_rc_portfolio",
-            rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
-            rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
-            fb_classic: "ilford_fb_classic",
-            fb_warmtone: "ilford_fb_warmtone",
-            fb_cooltone: "ilford_fb_cooltone",
+          // Group papers by manufacturer
+          const ilfordPapers = this.papersList.filter((p) =>
+            p.id.startsWith("ilford"),
+          );
+          const fomaPapers = this.papersList.filter((p) =>
+            p.id.startsWith("foma"),
+          );
+
+          // Create mapping of paper_id to display name for Ilford
+          const ilfordSelect = document.getElementById("meterIlfordPaperType");
+          if (ilfordSelect && ilfordPapers.length > 0) {
+            ilfordSelect.innerHTML = "";
+            ilfordPapers.forEach((paper) => {
+              const option = document.createElement("option");
+              option.value = paper.id; // Use paper_id directly as value
+              option.textContent = paper.display_name;
+              ilfordSelect.appendChild(option);
+            });
+            // Set to first paper or previously selected
+            ilfordSelect.value = this.currentPaperId || ilfordPapers[0].id;
+          }
+
+          // Create mapping of paper_id to display name for FOMA
+          const fomaSelect = document.getElementById("meterFomaPaperType");
+          if (fomaSelect && fomaPapers.length > 0) {
+            fomaSelect.innerHTML = "";
+            fomaPapers.forEach((paper) => {
+              const option = document.createElement("option");
+              option.value = paper.id; // Use paper_id directly as value
+              option.textContent = paper.display_name;
+              fomaSelect.appendChild(option);
+            });
+            // Set to first paper or previously selected
+            fomaSelect.value = this.currentPaperId || fomaPapers[0].id;
+          }
+
+          console.log(
+            `Populated Ilford dropdown with ${ilfordPapers.length} papers, FOMA with ${fomaPapers.length} papers`,
+          );
+        }
+
+        /**
+         * Set Ilford paper type (from dropdown) - now takes paper_id directly
+         */
+        setIlfordPaperType(paperId) {
+          // Direct paper_id from dropdown
+          this.currentPaperId = paperId;
+          console.log(`setIlfordPaperType: Set to ${paperId}`);
+
+          // Extract the suffix for UI state tracking
+          const ilfordPrefixes = {
+            ilford_cooltone: "cooltone",
+            ilford_iv_rc_portfolio: "portfolio",
+            ilford_multigrade_rc_deluxe_new: "rc_deluxe_new",
+            ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
+            ilford_fb_classic: "fb_classic",
+            ilford_fb_warmtone: "fb_warmtone",
+            ilford_fb_cooltone: "fb_cooltone",
           };
-          this.filterSystem = ilfordToFilterSystem[type] || "ilford";
+          this.ilfordPaperType = ilfordPrefixes[paperId] || "cooltone";
+
+          // Update filter dropdowns with grades for this paper
+          this.updateFilterDropdown();
 
           // SYNC WITH SERVER - Critical for correct grade recommendations
           this.syncFilterSystemWithServer();
@@ -17782,7 +17784,7 @@
             .getElementById("btnMeterFoma")
             ?.classList.toggle("active", brand === "foma");
 
-          // Show/hide paper type selectors
+          // Show/hide paper type selectors and populate them from paper database
           const ilfordSelector = document.getElementById(
             "meterIlfordPaperSelector",
           );
@@ -17803,79 +17805,51 @@
             fomaSelector.style.display = displayValue;
           }
 
-          // Update paper type dropdown values and filter system
+          // Populate paper type dropdowns from papersList (dynamically from database)
+          this.populatePaperTypeDropdowns();
+
+          // Set appropriate paper based on brand
           if (brand === "ilford") {
+            // Get the currently selected Ilford paper from dropdown
             const ilfordSelect = document.getElementById(
               "meterIlfordPaperType",
             );
             if (ilfordSelect) {
-              ilfordSelect.value = this.ilfordPaperType;
+              const paperId = ilfordSelect.value || "ilford_cooltone";
+              this.setIlfordPaperType(paperId);
             }
-            // Map Ilford paper type to filter system (consistent with FOMA)
-            const ilfordToFilterSystem = {
-              cooltone: "ilford_cooltone",
-              portfolio: "ilford_iv_rc_portfolio",
-              rc_deluxe_new: "ilford_multigrade_rc_deluxe_new",
-              rc_portfolio_new: "ilford_multigrade_rc_portfolio_new",
-              fb_classic: "ilford_fb_classic",
-              fb_warmtone: "ilford_fb_warmtone",
-              fb_cooltone: "ilford_fb_cooltone",
-            };
-            this.filterSystem =
-              ilfordToFilterSystem[this.ilfordPaperType] || "ilford";
           } else {
+            // Get the currently selected FOMA paper from dropdown
             const fomaSelect = document.getElementById("meterFomaPaperType");
             if (fomaSelect) {
-              fomaSelect.value = this.fomaPaperType;
+              const paperId = fomaSelect.value || "foma_fomaspeed";
+              this.setFomaPaperType(paperId);
             }
-            // Map FOMA paper type to filter system (same logic as setFomaPaperType)
-            const fomaToFilterSystem = {
-              fomaspeed: "foma_fomaspeed",
-              fomabrom: "foma_fomabrom",
-              fomapastel_mg: "foma_fomapastel_mg",
-              fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
-            };
-            this.filterSystem =
-              fomaToFilterSystem[this.fomaPaperType] || "foma_fomaspeed";
           }
-
-          // SYNC WITH SERVER - Critical for correct grade recommendations
-          this.syncFilterSystemWithServer();
-
-          // Update filter dropdown
-          this.updateFilterDropdown();
-
-          // Load calibration for new paper and update display
-          this.loadCalibrationForCurrentPaper();
-          this.updateCalibrationDisplay();
         }
 
         /**
-         * Set FOMA paper type
+         * Set FOMA paper type (from dropdown) - now takes paper_id directly
          */
-        setFomaPaperType(type) {
-          this.fomaPaperType = type;
+        setFomaPaperType(paperId) {
+          // Direct paper_id from dropdown
+          this.currentPaperId = paperId;
+          console.log(`setFomaPaperType: Set to ${paperId}`);
 
-          // Map UI paper type to filter system
-          const fomaToFilterSystem = {
-            fomaspeed: "foma_fomaspeed",
-            fomabrom: "foma_fomabrom",
-            fomapastel_mg: "foma_fomapastel_mg",
+          // Extract the suffix for UI state tracking
+          const fomaPrefixes = {
+            foma_fomaspeed: "fomaspeed",
+            foma_fomabrom: "fomabrom",
+            foma_fomapastel_mg: "fomapastel_mg",
             fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
           };
-          this.filterSystem = fomaToFilterSystem[type] || "foma_fomaspeed";
+          this.fomaPaperType = fomaPrefixes[paperId] || "fomaspeed";
 
-          // Update dropdown selection
-          const fomaPaperSelect = document.getElementById("meterFomaPaperType");
-          if (fomaPaperSelect) {
-            fomaPaperSelect.value = type;
-          }
+          // Update filter dropdowns with grades for this paper
+          this.updateFilterDropdown();
 
           // SYNC WITH SERVER - Critical for correct grade recommendations
           this.syncFilterSystemWithServer();
-
-          // Update filter dropdown
-          this.updateFilterDropdown();
 
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
@@ -17886,14 +17860,21 @@
          * Update filter grade dropdown based on current paper brand
          */
         updateFilterDropdown() {
+          console.log("updateFilterDropdown called");
           const dropdown = document.getElementById("exposureFilterGrade");
-          if (!dropdown) return;
+          if (!dropdown) {
+            console.warn("exposureFilterGrade dropdown not found");
+            return;
+          }
 
           // Clear existing options
           dropdown.innerHTML = "";
 
           // Add appropriate options based on filter system
           const filters = this.getFilterData();
+          console.log(
+            `updateFilterDropdown: got ${Object.keys(filters).length} filters`,
+          );
 
           // Add "No Filter" option first
           const noneOption = document.createElement("option");
@@ -17905,8 +17886,11 @@
           Object.entries(filters).forEach(([grade, data]) => {
             if (grade !== "") {
               const option = document.createElement("option");
+              const factor =
+                data && typeof data.factor === "number" ? data.factor : 1.0;
+              const name = (data && data.name) || grade;
               option.value = grade;
-              option.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              option.textContent = `${name} (×${factor.toFixed(1)})`;
               if (grade === "2") option.selected = true; // Default to grade 2
               dropdown.appendChild(option);
             }
@@ -17946,43 +17930,144 @@
           // Add filter options to both dropdowns
           Object.entries(filters).forEach(([grade, data]) => {
             if (grade !== "") {
+              const factor =
+                data && typeof data.factor === "number" ? data.factor : 1.0;
+              const name = (data && data.name) || grade;
+
               const softOption = document.createElement("option");
               softOption.value = grade;
-              softOption.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              softOption.textContent = `${name} (×${factor.toFixed(1)})`;
               softDropdown.appendChild(softOption);
 
               const hardOption = document.createElement("option");
               hardOption.value = grade;
-              hardOption.textContent = `${data.name} (×${data.factor.toFixed(1)})`;
+              hardOption.textContent = `${name} (×${factor.toFixed(1)})`;
               hardDropdown.appendChild(hardOption);
             }
           });
         }
 
         /**
-         * Get filter data for current system
+         * Get filter data for current paper (from server metadata)
          */
         getFilterData() {
-          if (this.filterSystem.startsWith("ilford")) {
-            return this.ILFORD_FILTERS;
-          } else if (this.filterSystem === "foma_fomaspeed") {
-            return this.FOMA_FOMASPEED_FILTERS;
-          } else {
-            return this.FOMA_FOMATONE_FILTERS;
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          console.log(`getFilterData: looking for paper_id=${paperId}`);
+          console.log(
+            `getFilterData: papersList has ${this.papersList.length} papers`,
+          );
+
+          const paper = this.papersList.find((p) => p.id === paperId);
+          console.log(`getFilterData: found paper=${!!paper}`);
+
+          if (paper && paper.filters) {
+            console.log(
+              `getFilterData: returning ${Object.keys(paper.filters).length} filters`,
+            );
+            return paper.filters;
+          }
+
+          console.warn(
+            `getFilterData: No filters found for paper_id=${paperId}`,
+          );
+          return {};
+        }
+
+        /**
+         * Fetch papers list from server
+         */
+        async fetchPapersFromServer() {
+          try {
+            const response = await fetch("/papers");
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            // Log raw response for debugging
+            const responseText = await response.text();
+            console.log(
+              "Raw /papers response length:",
+              responseText.length,
+              "bytes",
+            );
+            console.log("First 200 chars:", responseText.substring(0, 200));
+            console.log(
+              "Last 200 chars:",
+              responseText.substring(responseText.length - 200),
+            );
+
+            const data = JSON.parse(responseText);
+
+            if (data.status === "success" && data.papers) {
+              this.papersList = data.papers;
+              console.log(`Fetched ${data.count} papers from server`);
+
+              // Cache papers in localStorage for offline fallback
+              localStorage.setItem("papers_cache", JSON.stringify(data.papers));
+            } else if (data.error) {
+              console.error("Server returned error:", data.error);
+            }
+          } catch (error) {
+            console.error("Failed to fetch papers from server:", error);
+
+            // Try loading from cache
+            const cached = localStorage.getItem("papers_cache");
+            if (cached) {
+              const cachedPapers = JSON.parse(cached);
+              const hasFilterData =
+                Array.isArray(cachedPapers) &&
+                cachedPapers.some((p) => {
+                  const filters = p && p.filters;
+                  if (!filters || typeof filters !== "object") return false;
+                  const firstKey = Object.keys(filters)[0];
+                  return (
+                    firstKey &&
+                    filters[firstKey] &&
+                    typeof filters[firstKey].factor === "number"
+                  );
+                });
+
+              if (hasFilterData) {
+                this.papersList = cachedPapers;
+                console.log("Using cached papers list");
+              } else {
+                console.error("Cached papers list is outdated; ignoring cache");
+                localStorage.removeItem("papers_cache");
+              }
+            } else {
+              console.error("No cached papers available");
+            }
           }
         }
 
         /**
-         * Sync filter system with server
-         * Called when paper brand or FOMA paper type changes
-         * Ensures Contrast Analyzer uses correct ISO R values for recommendations
+         * Sync current paper selection with server
+         * Sends current paper_id to server so it uses correct paper for calculations
+         */
+        async syncPaperWithServer() {
+          try {
+            const response = await fetch(
+              `/light-meter-paper?paper_id=${encodeURIComponent(this.currentPaperId)}`,
+            );
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+
+            if (data.status === "success") {
+              console.log(`Synced paper with server: ${data.display_name}`);
+            }
+          } catch (error) {
+            console.error("Failed to sync paper with server:", error);
+          }
+        }
+
+        /**
+         * Sync filter system with server (legacy method for backward compatibility)
+         * Now calls syncPaperWithServer instead
          */
         async syncFilterSystemWithServer() {
-          // No server communication needed - all data is local
-          console.log(
-            `Filter system would sync: ${this.filterSystem} (local mode)`,
-          );
-          return Promise.resolve();
+          return this.syncPaperWithServer();
         }
 
         /**
@@ -18241,12 +18326,13 @@
           const integration = document.getElementById(
             "sensorIntegrationSelect",
           ).value;
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
 
           try {
             const params = new URLSearchParams();
+            if (paperId) params.append("paper_id", paperId);
             if (gain) params.append("gain", gain);
             if (integration) params.append("integration", integration);
-            params.append("filter_system", this.filterSystem);
 
             const response = await fetch(
               "/light-meter-config?" + params.toString(),
@@ -18570,13 +18656,17 @@
             return;
           }
 
-          // Get paper selection from PAPER & FILTER SETUP
-          const paperBrand = this.paperBrand; // 'ilford' or 'foma'
-          const fomaPaperType = this.fomaPaperType; // 'fomaspeed' or 'fomatone'
-          const system = this.filterSystem; // 'ilford', 'foma_fomaspeed', or 'foma_fomatone'
+          // Get current paper_id from selection
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
 
           // Get calibration for current paper
           const calibration = this.calibration;
+
+          console.log("Split-grade calculation starting...");
+          console.log("Current paper ID:", paperId);
+          console.log("Calibration:", calibration);
+          console.log("Highlight lux:", this.highlightLux);
+          console.log("Shadow lux:", this.shadowLux);
 
           // Get selected filters (from dropdowns or use empty for auto-select)
           const softFilter =
@@ -18596,23 +18686,41 @@
             endpoint = "/light-meter-split-grade-heiland";
           }
 
-          // Build query parameters
+          // Build query parameters with paper_id
           const params = new URLSearchParams({
             highlight: this.highlightLux,
             shadow: this.shadowLux,
             calibration: calibration,
-            system: system,
+            paper_id: paperId,
           });
 
           if (softFilter) params.append("soft_filter", softFilter);
           if (hardFilter) params.append("hard_filter", hardFilter);
 
+          console.log("Calling split-grade endpoint:", endpoint);
+          console.log("Parameters:", params.toString());
+          console.log(
+            "Highlight:",
+            this.highlightLux,
+            "Shadow:",
+            this.shadowLux,
+            "PaperID:",
+            paperId,
+          );
+
           try {
             const response = await fetch(endpoint + "?" + params.toString());
-            const data = await response.json();
+            console.log("Response status:", response.status);
+
+            const responseText = await response.text();
+            console.log("Response text:", responseText);
+
+            const data = JSON.parse(responseText);
+            console.log("Parsed data:", data);
 
             if (data.status === "success" && data.result) {
               const result = data.result;
+              console.log("Split-grade result:", result);
 
               // Validate result has required fields
               if (
@@ -18620,6 +18728,7 @@
                 !result.hard_time ||
                 !result.total_time
               ) {
+                console.error("Missing required fields in result:", result);
                 this.showFeedback("Invalid result from server", "error");
                 return;
               }
@@ -18627,8 +18736,7 @@
               this.splitGradeResult = result;
 
               // Store paper info for sending to CALC
-              this.splitGradeResult.paperBrand = paperBrand;
-              this.splitGradeResult.fomaPaperType = fomaPaperType;
+              this.splitGradeResult.paperId = paperId;
               this.splitGradeResult.neutralTime = result.total_time;
 
               // Update displays with absolute exposure times
@@ -18689,12 +18797,14 @@
 
               playBeep(1000, 0.3, 0.3);
             } else {
+              console.error("Server returned non-success response:", data);
               this.showFeedback(
                 "Calculation error: " + (data.error || "Unknown"),
                 "error",
               );
             }
           } catch (error) {
+            console.error("Split-grade calculation error:", error);
             this.showFeedback("Connection error: " + error.message, "error");
           }
         }

@@ -736,7 +736,7 @@ PAPER_DATABASE = {
 # FOMAPASTEL MG - Verified Technical Data Script
 # Based on Foma Technical Information 04/25
 'foma_fomapastel_mg': {
-    'manufacturer': 'Foma',
+    'manufacturer': 'FOMA',
     'paper_type': 'FOMAPASTEL MG (Special FB Colored Base)',
     'base_iso_p': 200,          # Verified for Special/No Filter grade 
     'dmin': 0.20,               # Variable depending on base color (CMY/RGB) 
@@ -797,7 +797,7 @@ PAPER_DATABASE = {
 
 # FOMATONE MG Classic - Updated with Foma Variant Filter Data
 'fomatone_mg_classic_variant': {
-    'manufacturer': 'Foma',
+    'manufacturer': 'FOMA',
     'paper_type': 'FOMATONE MG Classic (Warm Tone)',
     'base_iso_p': 20,           # Low speed, primarily for contact/long exposure
     'dmin': 0.10,               # Cream-colored base tone
