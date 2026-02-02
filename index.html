@@ -4698,21 +4698,76 @@
               </div>
             </div>
 
-            <!-- Guidance Message -->
+            <!-- Paper & Filter Characteristics (Enhanced Analysis) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">PAPER CHARACTERISTICS</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Printable EV:</span>
+                  <span style="font-weight: bold" id="printableEV">-- EV</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Gamma (Tone Curve):</span>
+                  <span style="font-weight: bold" id="paperGamma">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Contrast Index:</span>
+                  <span style="font-weight: bold" id="contrastIndex">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Density Range:</span>
+                  <span style="font-weight: bold" id="densityRange"
+                    >-- (Dmin-Dmax)</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Analysis Reasoning -->
             <div
               class="info-box"
               style="
-                margin-top: 15px;
+                margin-top: 10px;
                 background: rgba(50, 150, 255, 0.1);
                 border-color: rgba(50, 150, 255, 0.3);
               "
             >
-              <div class="label-sm" style="color: #6699ff; text-align: center">
+              <div class="label-sm" style="color: #6699ff">
+                ANALYSIS REASONING
+              </div>
+              <div
+                class="label-sm"
+                style="font-size: 0.85rem; margin-top: 5px"
+                id="analysisReasoning"
+              >
+                --
+              </div>
+            </div>
+
+            <!-- Guidance Message -->
+            <div
+              class="info-box"
+              style="
+                margin-top: 10px;
+                background: rgba(100, 200, 100, 0.1);
+                border-color: rgba(100, 200, 100, 0.3);
+              "
+            >
+              <div class="label-sm" style="color: #66cc66; text-align: center">
                 NEXT STEP
               </div>
-              <div class="label-sm" style="text-align: center; margin-top: 5px">
-                Use EXPOSURE METER mode with the recommended grade filter to
-                determine exposure time.
+              <div
+                class="label-sm"
+                style="text-align: center; margin-top: 5px; font-size: 0.9rem"
+              >
+                Use EXPOSURE METER mode with recommended grade to determine
+                exposure time.
               </div>
             </div>
 
@@ -18629,10 +18684,38 @@
                 data.delta_ev.toFixed(1) + " EV";
 
               if (data.recommended_grade) {
+                const grade = data.recommended_grade;
+
                 document.getElementById("recommendedGrade").textContent =
-                  data.recommended_grade.grade;
+                  grade.grade;
                 document.getElementById("matchQuality").textContent =
-                  data.recommended_grade.match_quality;
+                  grade.match_quality.charAt(0).toUpperCase() +
+                  grade.match_quality.slice(1);
+
+                // Enhanced display: Paper characteristics
+                document.getElementById("printableEV").textContent =
+                  (grade.printable_ev || 0).toFixed(1) + " EV";
+
+                document.getElementById("paperGamma").textContent = (
+                  grade.gamma || 0.7
+                ).toFixed(2);
+
+                document.getElementById("contrastIndex").textContent = (
+                  grade.contrast_index || 1.0
+                ).toFixed(2);
+
+                const dmin = grade.dmin || 0.05;
+                const dmax = grade.dmax || 2.0;
+                document.getElementById("densityRange").textContent =
+                  `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
+
+                // Analysis reasoning
+                const reasoning =
+                  grade.reasoning || `Grade ${grade.grade} recommended`;
+                document.getElementById("analysisReasoning").textContent =
+                  reasoning;
+
+                console.log("Enhanced analysis data:", grade);
               }
 
               playBeep(1000, 0.3, 0.3);
@@ -18659,6 +18742,14 @@
           document.getElementById("deltaEVDisplay").textContent = "--";
           document.getElementById("recommendedGrade").textContent = "--";
           document.getElementById("matchQuality").textContent = "--";
+
+          // Clear enhanced characteristics
+          document.getElementById("printableEV").textContent = "-- EV";
+          document.getElementById("paperGamma").textContent = "--";
+          document.getElementById("contrastIndex").textContent = "--";
+          document.getElementById("densityRange").textContent =
+            "-- (Dmin-Dmax)";
+          document.getElementById("analysisReasoning").textContent = "--";
 
           // Disable buttons
           document.getElementById("analyzeContrastBtn").disabled = true;

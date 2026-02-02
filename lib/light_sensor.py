@@ -688,8 +688,12 @@ class DarkroomLightMeter:
         """
         Recommend filter grade based on measured contrast.
         
+        ENHANCED ALGORITHM: Uses paper's actual Dmin/Dmax characteristics
+        for accurate printable EV calculation, supplemented by contrast_index
+        and gamma values per filter grade.
+        
         Matches the negative's contrast range to a filter grade
-        whose ISO R provides appropriate paper exposure latitude.
+        whose exposure latitude best accommodates that contrast.
         
         Args:
             delta_ev: Measured contrast range (EV stops)
@@ -698,11 +702,16 @@ class DarkroomLightMeter:
         
         Returns:
             dict: {
-                'grade': str,           # Recommended filter grade
-                'iso_r': int,           # ISO R value
-                'factor': float,        # Exposure factor
-                'printable_ev': float,  # Paper's exposure range
-                'match_quality': str    # 'exact', 'close', 'approximate'
+                'grade': str,                # Recommended filter grade
+                'iso_r': int,                # ISO R value
+                'factor': float,             # Exposure factor
+                'printable_ev': float,       # Paper's exposure range (EV)
+                'dmin': float,               # Paper minimum density
+                'dmax': float,               # Paper maximum density
+                'contrast_index': float,     # Grade-specific contrast
+                'gamma': float,              # Tone curve slope
+                'match_quality': str,        # 'exact', 'close', 'approximate'
+                'reasoning': str             # Why this grade was selected
             }
         """
         if delta_ev is None:
@@ -734,34 +743,211 @@ class DarkroomLightMeter:
             if not filter_data:
                 continue
             
-            iso_r = filter_data['iso_r']
-            
-            # Convert ISO R to printable EV range via interpolation
-            printable_ev = self._iso_r_to_ev(iso_r)
+            # ENHANCED: Use paper's actual Dmin/Dmax with filter-specific adjustments
+            printable_ev = self._calculate_printable_ev_enhanced(
+                paper_data, 
+                filter_data, 
+                grade
+            )
             
             # Match paper's printable EV to measured scene contrast
-            # Higher ISO R = more paper latitude = handles more contrast
+            # The algorithm seeks the grade whose latitude best matches the scene contrast
             diff = abs(printable_ev - abs(delta_ev))
             
             if diff < best_diff:
                 best_diff = diff
                 best_match = {
                     'grade': grade,
-                    'iso_r': iso_r,
+                    'iso_r': filter_data['iso_r'],
                     'factor': filter_data['factor'],
-                    'printable_ev': printable_ev
+                    'printable_ev': printable_ev,
+                    'dmin': paper_data.get('dmin', 0.05),
+                    'dmax': paper_data.get('dmax', 2.0),
+                    'dmin_effect': filter_data.get('dmin_effect', paper_data.get('dmin', 0.05)),
+                    'dmax_effect': filter_data.get('dmax_effect', paper_data.get('dmax', 2.0)),
+                    'contrast_index': filter_data.get('contrast_index', 1.0),
+                    'gamma': filter_data.get('gamma', 0.7),
+                    'exposure_latitude': paper_data.get('exposure_latitude', 1.5)
                 }
         
         if best_match:
-            # Determine match quality
-            if best_diff < 0.2:
+            # Determine match quality with tighter thresholds
+            scene_ev = abs(delta_ev)
+            paper_ev = best_match['printable_ev']
+            
+            if best_diff < 0.15:
                 best_match['match_quality'] = 'exact'
-            elif best_diff < 0.5:
+                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV matches paper latitude {paper_ev:.1f} EV perfectly"
+            elif best_diff < 0.4:
                 best_match['match_quality'] = 'close'
+                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV closely matches paper latitude {paper_ev:.1f} EV"
+            elif best_diff < 0.7:
+                best_match['match_quality'] = 'acceptable'
+                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV acceptable for paper latitude {paper_ev:.1f} EV (slight tone adjustment needed)"
             else:
                 best_match['match_quality'] = 'approximate'
+                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV requires compromise with paper latitude {paper_ev:.1f} EV"
         
         return best_match
+    
+    def _calculate_printable_ev_enhanced(self, paper_data, filter_data, grade):
+        """
+        Calculate printable EV (exposure latitude) from paper's Dmin/Dmax characteristics.
+        
+        ENHANCED ALGORITHM with toe/shoulder slope compensation:
+        
+        The printable EV is the range of logarithmic exposures that produces tones
+        between Dmin (white) and Dmax (black). For each filter grade, this range
+        is affected by:
+        
+        1. Base Dmin/Dmax (paper base characteristics)
+        2. Tone curve regions:
+           - Toe region (shadows): low slope → compression → reduced printable EV
+           - Straight region (midtones): high slope → good separation → full printable EV
+           - Shoulder region (highlights): low slope → compression → reduced printable EV
+        3. Gamma (overall curve slope) - filter-specific tone curve
+        4. Contrast Index - filter's relative hardness
+        
+        Regional Printable EV Calculation:
+            Each region contributes differently based on its slope:
+            - Toe: logE_range × toe_slope × 3.32 = EV_toe
+            - Straight: logE_range × straight_slope × 3.32 = EV_straight
+            - Shoulder: logE_range × shoulder_slope × 3.32 = EV_shoulder
+            
+        Weighting by tone curve region:
+            For a normal curve, the regions are proportioned:
+            - Toe: ~15-20% of tonal range
+            - Straight: ~60-70% of tonal range
+            - Shoulder: ~15-20% of tonal range
+            
+        Effective Printable EV:
+            EV_effective = (EV_toe × 0.15) + (EV_straight × 0.70) + (EV_shoulder × 0.15)
+            
+        Filter adjustment:
+            Soft grades (gamma < 0.7): increase shoulder contribution (preserve highlights)
+            Hard grades (gamma > 1.0): increase toe contribution (preserve shadows)
+        
+        Args:
+            paper_data: Paper database entry with dmin, dmax, characteristic_curve
+            filter_data: Filter entry with gamma, contrast_index, dmin_effect, dmax_effect
+            grade: Filter grade (for context)
+        
+        Returns:
+            float: Printable EV range (stops)
+        """
+        import math
+        
+        # Get paper base characteristics
+        dmin = paper_data.get('dmin', 0.05)
+        dmax = paper_data.get('dmax', 2.0)
+        
+        # Get filter-specific density effects (adjusted by filter grade)
+        dmin_effect = filter_data.get('dmin_effect', dmin)
+        dmax_effect = filter_data.get('dmax_effect', dmax)
+        
+        # Get tone curve characteristics
+        gamma = filter_data.get('gamma', 0.7)  # Typical range 0.4-1.6
+        contrast_index = filter_data.get('contrast_index', 1.0)
+        
+        # Get characteristic curve data
+        curve_data = paper_data.get('characteristic_curve', {})
+        toe_slope = curve_data.get('toe_slope', 0.30)
+        straight_slope = curve_data.get('straight_slope', 0.80)
+        shoulder_slope = curve_data.get('shoulder_slope', 0.18)
+        logE_range = curve_data.get('logE_range', 1.8)
+        
+        # Calculate effective density range
+        density_range = dmax_effect - dmin_effect
+        
+        if density_range <= 0:
+            # Fallback: use ISO R mapping if density range invalid
+            iso_r = filter_data.get('iso_r', 100)
+            return self._iso_r_to_ev(iso_r)
+        
+        # ===== METHOD 1: Direct density-gamma relationship =====
+        try:
+            ev_from_density = math.log2(density_range / gamma)
+        except (ValueError, ZeroDivisionError):
+            ev_from_density = 6.0
+        
+        # ===== METHOD 2: Characteristic curve with toe/shoulder compensation =====
+        # Calculate EV contribution from each curve region
+        # Convert slopes to EV contributions (multiply by logE_range × 3.32)
+        
+        ev_toe = toe_slope * logE_range * 3.32
+        ev_straight = straight_slope * logE_range * 3.32
+        ev_shoulder = shoulder_slope * logE_range * 3.32
+        
+        # Base region weighting for normal curves
+        # Shadows (toe): ~15%, Midtones (straight): ~70%, Highlights (shoulder): ~15%
+        weight_toe_base = 0.15
+        weight_straight_base = 0.70
+        weight_shoulder_base = 0.15
+        
+        # ===== Adjust region weights based on filter gamma =====
+        # Soft grades (low gamma): boost shoulder to preserve highlights
+        # Hard grades (high gamma): boost toe to preserve shadows
+        
+        gamma_normalized = gamma / 0.8  # Normalize to "normal" grade (0.8)
+        
+        if gamma < 0.7:  # Soft grades
+            # Reduce toe weight, increase shoulder weight (preserve highlights)
+            adjustment = (0.7 - gamma) * 0.2  # Up to 0.2 adjustment
+            weight_toe_base -= adjustment * 0.5
+            weight_shoulder_base += adjustment
+        elif gamma > 1.0:  # Hard grades
+            # Reduce shoulder weight, increase toe weight (preserve shadows)
+            adjustment = (gamma - 1.0) * 0.25  # Up to 0.25 adjustment
+            weight_toe_base += adjustment
+            weight_shoulder_base -= adjustment * 0.5
+        
+        # Normalize weights to sum to 1.0
+        total_weight = weight_toe_base + weight_straight_base + weight_shoulder_base
+        weight_toe = weight_toe_base / total_weight
+        weight_straight = weight_straight_base / total_weight
+        weight_shoulder = weight_shoulder_base / total_weight
+        
+        # Calculate regional printable EV
+        # But apply compression penalty for toe/shoulder (they have lower slope)
+        # Compression factor: relates slope to straight_slope
+        toe_compression = toe_slope / max(straight_slope, 0.01)  # Can be < 1.0
+        shoulder_compression = shoulder_slope / max(straight_slope, 0.01)  # Can be < 1.0
+        
+        # Apply compression: low slopes contribute less to printable range
+        ev_toe_adjusted = ev_toe * toe_compression
+        ev_shoulder_adjusted = ev_shoulder * shoulder_compression
+        
+        # Weighted average considering regional compression
+        ev_from_logE = (ev_toe_adjusted * weight_toe) + \
+                       (ev_straight * weight_straight) + \
+                       (ev_shoulder_adjusted * weight_shoulder)
+        
+        # ===== Blend both methods =====
+        # Weight based on contrast index
+        # CI < 1.0: soft (trust logE more)
+        # CI ≈ 1.0: normal (balanced)
+        # CI > 1.0: hard (trust density more)
+        
+        weight_density = contrast_index
+        weight_logE = 2.0 - contrast_index
+        
+        total_weight = weight_density + weight_logE
+        weight_density /= total_weight
+        weight_logE /= total_weight
+        
+        # Weighted average of both methods
+        printable_ev = (ev_from_density * weight_density) + (ev_from_logE * weight_logE)
+        
+        # ===== Apply exposure latitude factor =====
+        # Wider latitude = can handle more contrast
+        exposure_latitude = paper_data.get('exposure_latitude', 1.5)
+        printable_ev = printable_ev * (exposure_latitude / 1.5)  # Normalize to 1.5 baseline
+        
+        # ===== Clamp to reasonable range =====
+        # Typical papers: 2.0 to 8.5 EV
+        printable_ev = max(2.0, min(printable_ev, 8.5))
+        
+        return printable_ev
     
     def _iso_r_to_ev(self, iso_r):
         """Interpolate EV from ISO R value."""
