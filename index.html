@@ -17882,18 +17882,15 @@
           noneOption.textContent = "None (no filter)";
           dropdown.appendChild(noneOption);
 
-          // Add filter options
-          Object.entries(filters).forEach(([grade, data]) => {
-            if (grade !== "") {
-              const option = document.createElement("option");
-              const factor =
-                data && typeof data.factor === "number" ? data.factor : 1.0;
-              const name = (data && data.name) || grade;
-              option.value = grade;
-              option.textContent = `${name} (×${factor.toFixed(1)})`;
-              if (grade === "2") option.selected = true; // Default to grade 2
-              dropdown.appendChild(option);
-            }
+          // Add filter options in paper-specific order
+          this.getOrderedFilterEntries(filters).forEach(([grade, data]) => {
+            const option = document.createElement("option");
+            const factor =
+              data && typeof data.factor === "number" ? data.factor : 1.0;
+            const name = (data && data.name) || grade;
+            option.value = grade;
+            option.textContent = `${name} (×${factor.toFixed(1)})`;
+            dropdown.appendChild(option);
           });
 
           // Also update split-grade filter dropdowns
@@ -17927,24 +17924,56 @@
           // Add appropriate options based on filter system
           const filters = this.getFilterData();
 
-          // Add filter options to both dropdowns
-          Object.entries(filters).forEach(([grade, data]) => {
-            if (grade !== "") {
-              const factor =
-                data && typeof data.factor === "number" ? data.factor : 1.0;
-              const name = (data && data.name) || grade;
+          // Add filter options to both dropdowns in paper-specific order
+          this.getOrderedFilterEntries(filters).forEach(([grade, data]) => {
+            const factor =
+              data && typeof data.factor === "number" ? data.factor : 1.0;
+            const name = (data && data.name) || grade;
 
-              const softOption = document.createElement("option");
-              softOption.value = grade;
-              softOption.textContent = `${name} (×${factor.toFixed(1)})`;
-              softDropdown.appendChild(softOption);
+            const softOption = document.createElement("option");
+            softOption.value = grade;
+            softOption.textContent = `${name} (×${factor.toFixed(1)})`;
+            softDropdown.appendChild(softOption);
 
-              const hardOption = document.createElement("option");
-              hardOption.value = grade;
-              hardOption.textContent = `${name} (×${factor.toFixed(1)})`;
-              hardDropdown.appendChild(hardOption);
+            const hardOption = document.createElement("option");
+            hardOption.value = grade;
+            hardOption.textContent = `${name} (×${factor.toFixed(1)})`;
+            hardDropdown.appendChild(hardOption);
+          });
+        }
+
+        /**
+         * Get ordered filter entries based on paper type
+         */
+        getOrderedFilterEntries(filters) {
+          if (!filters || typeof filters !== "object") return [];
+
+          const keys = Object.keys(filters).filter(
+            (grade) => grade !== "" && grade !== "none",
+          );
+
+          const ilfordOrder = ["00", "0", "1", "2", "3", "4", "5"];
+          const fomaOrder = ["2xY", "Y", "M1", "2xM1", "M2", "2xM2"];
+
+          const hasIlford = ilfordOrder.some((grade) => keys.includes(grade));
+          const hasFoma = fomaOrder.some((grade) => keys.includes(grade));
+
+          const order = hasIlford ? ilfordOrder : hasFoma ? fomaOrder : keys;
+          const ordered = [];
+
+          order.forEach((grade) => {
+            if (filters[grade]) {
+              ordered.push([grade, filters[grade]]);
             }
           });
+
+          keys.forEach((grade) => {
+            if (!order.includes(grade) && filters[grade]) {
+              ordered.push([grade, filters[grade]]);
+            }
+          });
+
+          return ordered;
         }
 
         /**
