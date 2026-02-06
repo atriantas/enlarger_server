@@ -1080,16 +1080,149 @@ class DarkroomLightMeter:
             self.shadow_lux = result['lux']
         return result
     
-    def get_contrast_analysis(self, paper_id=None):
+    def _calculate_optimal_exposure_times(
+        self,
+        highlight_lux,
+        shadow_lux,
+        recommended_grade,
+        paper_data,
+        calibration=None,
+        intent="balanced",
+        highlight_offset=0.0,
+        shadow_offset=0.0,
+    ):
+        """
+        Calculate optimal exposure times for highlight and shadow placement.
+        
+        Uses measured lux and recommended grade to suggest exposure times
+        that achieve optimal tonal distribution on the paper.
+        
+        Args:
+            highlight_lux: Measured lux at highlight area
+            shadow_lux: Measured lux at shadow area
+            recommended_grade: Output from recommend_filter_grade() (includes grade, filter_factor, etc.)
+            paper_data: Paper characteristics from database
+            calibration: Optional calibration constant (uses default if None)
+        
+        Returns:
+            dict: {
+                'highlight_time': Time for highlight placement (seconds),
+                'shadow_time': Time for shadow placement (seconds),
+                'suggested_time': Recommended compromise time (seconds),
+                'exposure_ratio': max(t_h, t_s) / min(t_h, t_s),
+                'strategy': 'balanced' or 'compromise',
+                'paper_latitude': From paper data,
+                'latitude_ratio': Paper's exposure latitude as ratio,
+                'notes': Explanation of strategy choice
+            }
+        """
+        cal = calibration or self.default_calibration
+
+        # Normalize intent
+        intent = intent or "balanced"
+        if intent not in ("balanced", "highlight-priority", "shadow-priority"):
+            intent = "balanced"
+
+        # Clamp offsets to reasonable range (EV)
+        try:
+            highlight_offset = float(highlight_offset)
+        except (ValueError, TypeError):
+            highlight_offset = 0.0
+        try:
+            shadow_offset = float(shadow_offset)
+        except (ValueError, TypeError):
+            shadow_offset = 0.0
+
+        highlight_offset = max(-1.0, min(1.0, highlight_offset))
+        shadow_offset = max(-1.0, min(1.0, shadow_offset))
+        
+        # Get filter factor from recommended grade
+        grade = recommended_grade.get('grade', '2')
+        filter_factor = recommended_grade.get('filter_factor', 1.0)
+        
+        # Calculate exposure times based on lux readings
+        # t_highlight targets highlight placement (Dmin + 0.1)
+        # t_shadow targets shadow placement (Dmax - 0.1)
+        t_highlight = (cal / highlight_lux) * filter_factor
+        t_shadow = (cal / shadow_lux) * filter_factor
+
+        # Apply EV offsets (positive = more exposure, negative = less)
+        t_highlight *= 2 ** highlight_offset
+        t_shadow *= 2 ** shadow_offset
+        
+        # Calculate exposure ratio
+        max_time = max(t_highlight, t_shadow)
+        min_time = min(t_highlight, t_shadow)
+        exposure_ratio = max_time / min_time if min_time > 0 else 1.0
+        
+        # Get paper latitude (exposure tolerance range)
+        exposure_latitude = paper_data.get('exposure_latitude', 1.5)
+        latitude_ratio = exposure_latitude  # Direct ratio
+        
+        # Determine strategy based on whether exposure ratio fits paper latitude
+        # If ratio ≤ 80% of latitude, both exposures fit → balanced approach
+        # Otherwise → compromise between them
+        if exposure_ratio <= (latitude_ratio * 0.8):
+            strategy = 'balanced'
+            # For balanced: average, adjusted by intent
+            if intent == "highlight-priority":
+                suggested_time = (t_highlight * 0.6) + (t_shadow * 0.4)
+            elif intent == "shadow-priority":
+                suggested_time = (t_highlight * 0.4) + (t_shadow * 0.6)
+            else:
+                suggested_time = (t_highlight + t_shadow) / 2.0
+            notes = (
+                "Scene contrast fits paper latitude. "
+                f"Intent: {intent.replace('-', ' ')}. "
+                f"Use {suggested_time:.2f}s for tonal distribution."
+            )
+        else:
+            strategy = 'compromise'
+            # For compromise: bias based on intent
+            if intent == "highlight-priority":
+                suggested_time = (t_highlight * 0.65) + (t_shadow * 0.35)
+            elif intent == "shadow-priority":
+                suggested_time = (t_highlight * 0.35) + (t_shadow * 0.65)
+            else:
+                suggested_time = (t_highlight * 0.4) + (t_shadow * 0.6)
+            notes = (
+                f"Scene contrast exceeds paper latitude ({exposure_ratio:.1f}:1 > {latitude_ratio:.1f}:1). "
+                f"Intent: {intent.replace('-', ' ')}. "
+                f"Compromise time: {suggested_time:.2f}s."
+            )
+        
+        return {
+            'highlight_time': round(t_highlight, 2),
+            'shadow_time': round(t_shadow, 2),
+            'suggested_time': round(suggested_time, 2),
+            'exposure_ratio': round(exposure_ratio, 2),
+            'strategy': strategy,
+            'paper_latitude': exposure_latitude,
+            'latitude_ratio': round(latitude_ratio, 2),
+            'notes': notes,
+            'intent': intent,
+            'highlight_offset': round(highlight_offset, 2),
+            'shadow_offset': round(shadow_offset, 2)
+        }
+    
+    def get_contrast_analysis(
+        self,
+        paper_id=None,
+        calibration=None,
+        intent="balanced",
+        highlight_offset=0.0,
+        shadow_offset=0.0,
+    ):
         """
         Get contrast analysis from stored highlight/shadow readings.
         
         Args:
             paper_id: Paper identifier to use (defaults to current_paper_id)
+            calibration: Optional calibration constant (uses paper-specific or default if None)
         
         Returns:
             dict: Full analysis including ΔEV, recommended grade,
-                  and split-grade calculations
+                  exposure times, and split-grade calculations
         """
         if self.highlight_lux is None or self.shadow_lux is None:
             return {
@@ -1105,12 +1238,33 @@ class DarkroomLightMeter:
         recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
         split_grade = self.calculate_split_grade(self.highlight_lux, self.shadow_lux, paper_id=pid)
         
+        # Get paper data for exposure time calculations
+        from lib.paper_database import get_paper_data
+        paper_data = get_paper_data(pid)
+        
+        # Calculate optimal exposure times
+        exposure_times = None
+        if paper_data and recommended:
+            # Use provided calibration, or fall back to paper-specific/default
+            cal = calibration if calibration else self.get_calibration(pid)
+            exposure_times = self._calculate_optimal_exposure_times(
+                self.highlight_lux,
+                self.shadow_lux,
+                recommended,
+                paper_data,
+                calibration=cal,
+                intent=intent,
+                highlight_offset=highlight_offset,
+                shadow_offset=shadow_offset,
+            )
+        
         return {
             'highlight_lux': self.highlight_lux,
             'shadow_lux': self.shadow_lux,
             'delta_ev': delta_ev,
             'recommended_grade': recommended,
-            'split_grade': split_grade
+            'split_grade': split_grade,
+            'exposure_times': exposure_times
         }
     
     def calculate_split_grade_enhanced(self, highlight_lux, shadow_lux, 

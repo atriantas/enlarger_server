@@ -614,8 +614,8 @@ class HTTPServer:
                     manufacturer = paper_data.get('manufacturer', '')
                     
                     # Build filter metadata for UI use
-                    # Only send what the client actually needs (factor and name)
-                    # to keep response size manageable for MicroPython
+                    # Include factor, iso_r, and gamma for client calculations
+                    # while keeping response size manageable for MicroPython
                     filters = {}
                     for grade, data in paper_data.get('filters', {}).items():
                         if grade in ('', 'none'):
@@ -633,10 +633,11 @@ class HTTPServer:
                             }
                             name = foma_names.get(grade, grade)
                         
-                        # Only include factor and name - client doesn't need iso_r, gamma, description
                         filters[grade] = {
                             'factor': data.get('factor', 1.0),
-                            'name': name
+                            'name': name,
+                            'iso_r': data.get('iso_r'),
+                            'gamma': data.get('gamma')
                         }
                     
                     # Only include essential fields to minimize response size for MicroPython
@@ -908,6 +909,7 @@ class HTTPServer:
         
         Query params:
             paper_id: Paper ID to use for analysis (optional, defaults to current paper)
+            calibration: Calibration constant from client (optional, uses server-side if not provided)
         
         Returns ΔEV, recommended filter grade, and split-grade calculations
         based on stored highlight and shadow readings.
@@ -922,7 +924,26 @@ class HTTPServer:
         try:
             paper_id = params.get('paper_id')
             
-            analysis = self.light_meter.get_contrast_analysis(paper_id=paper_id)
+            # Get calibration from request (takes priority over server-side)
+            calibration_str = params.get('calibration')
+            calibration = None
+            if calibration_str:
+                try:
+                    calibration = float(calibration_str)
+                except (ValueError, TypeError):
+                    pass
+            # Fine tuning parameters
+            intent = params.get('intent', 'balanced')
+            highlight_offset = params.get('highlight_offset', 0)
+            shadow_offset = params.get('shadow_offset', 0)
+
+            analysis = self.light_meter.get_contrast_analysis(
+                paper_id=paper_id,
+                calibration=calibration,
+                intent=intent,
+                highlight_offset=highlight_offset,
+                shadow_offset=shadow_offset,
+            )
             
             if 'error' in analysis:
                 response = self._json_response({
@@ -944,6 +965,7 @@ class HTTPServer:
                 "delta_ev": analysis['delta_ev'],
                 "recommended_grade": analysis['recommended_grade'],
                 "split_grade": analysis['split_grade'],
+                "exposure_times": analysis.get('exposure_times'),
                 "paper_id": current_paper_id,
                 "paper_name": get_paper_display_name(current_paper_id),
                 "timestamp": time.ticks_ms()

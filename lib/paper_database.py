@@ -12,7 +12,171 @@ manufacturer documentation from Ilford and FOMA.
 # Note: Some values are estimated based on current implementation and will be
 # updated with actual manufacturer data from documentation
 
-PAPER_DATABASE = {   
+PAPER_DATABASE = {
+# Ilford MULTIGRADE RC DELUXE (NEW) - Based on Ilford documentation
+    'ilford_multigrade_rc_deluxe_new': {
+        'manufacturer': 'Ilford',
+        'paper_type': 'MULTIGRADE RC DELUXE (NEW)', # 
+        'base_iso_p': 500,  # Speed without filter 
+        'dmin': 0.05,       # More neutral base tone 
+        'dmax': 2.15,       # Improved maximum density for deeper blacks 
+        'exposure_latitude': 1.6, # Derived from the straighter linear region 
+        'filters': {
+            '00': {
+                'factor': 2.08,  # Ratio of speed 500 vs 200 
+                'iso_r': 160,   # From ISO Range table 
+                'gamma': 0.48,  # Derived from visual slope of NEW curve 
+                'contrast_index': 0.8,
+                'dmin_effect': 0.05,
+                'dmax_effect': 2.00,
+                'description': 'Very soft - neutral highlights'
+            },
+            '0': {
+                'factor': 2.08,  # Speed is 200 for grades 00-3.5 
+                'iso_r': 130,   # 
+                'gamma': 0.58,  # Slightly harder midtones than IV 
+                'contrast_index': 0.9,
+                'dmin_effect': 0.05,
+                'dmax_effect': 2.05,
+                'description': 'Soft'
+            },
+            '1': {
+                'factor': 2.08,  # 
+                'iso_r': 110,   # 
+                'gamma': 0.68,  # 
+                'contrast_index': 1.0,
+                'dmin_effect': 0.06,
+                'dmax_effect': 2.10,
+                'description': 'Normal-soft'
+            },
+            '2': {
+                'factor': 2.08,  # Reference speed for filters 00-3.5 
+                'iso_r': 90,    # 
+                'gamma': 0.85,  # Harder mid-grade contrast slope 
+                'contrast_index': 1.1,
+                'dmin_effect': 0.07,
+                'dmax_effect': 2.15,
+                'description': 'Normal'
+            },
+            '3': {
+                'factor': 2.08,  # 
+                'iso_r': 70,    # 
+                'gamma': 1.05,  # 
+                'contrast_index': 1.2,
+                'dmin_effect': 0.08,
+                'dmax_effect': 2.15,
+                'description': 'Normal-hard'
+            },
+            '4': {
+                'factor': 2.27,  # Speed drops from 500 to 100 
+                'iso_r': 60,    # 
+                'gamma': 1.35,  # 
+                'contrast_index': 1.4,
+                'dmin_effect': 0.09,
+                'dmax_effect': 2.15,
+                'description': 'Hard'
+            },
+            '5': {
+                'factor': 2.27,  # Speed is 100 for grades 4-5 
+                'iso_r': 50,    # 
+                'gamma': 1.65,  # Most uniform response in high grades 
+                'contrast_index': 1.5,
+                'dmin_effect': 0.10,
+                'dmax_effect': 2.15,
+                'description': 'Very hard - neutral shadows'
+            }
+        },
+        'characteristic_curve': {
+            'toe_slope': 0.32,       # Observed defined transition on NEW curves 
+            'straight_slope': 0.85,  # Straighter midtone slope 
+            'shoulder_slope': 0.15,  # Slightly faster compression near Dmax 
+            'logE_range': 1.6,       # Max range for Grade 00 (ISO R 160) 
+            'speed_point': 0.6       # ISO standard measurement point 
+        }
+    },
+
+# Ilford MULTIGRADE RC PORTFOLIO (NEW) - Based on Ilford documentation
+    'ilford_multigrade_rc_portfolio_new': {
+        'manufacturer': 'Ilford',
+        'paper_type': 'MULTIGRADE RC PORTFOLIO (NEW)', # 
+        'base_iso_p': 500,  # Speed without filter 
+        'dmin': 0.05,       # Neutral base tone 
+        'dmax': 2.15,       # Increased Dmax for deeper blacks 
+        'exposure_latitude': 1.6, # Straighter curve allows slightly more linear latitude 
+        'filters': {
+            '00': {
+                'factor': 2.08,  # Speed 200 vs Base 500 (500/200) 
+                'iso_r': 160,   # ISO Range from datasheet 
+                'gamma': 0.48,  # Derived from visual slope of NEW curve 00 
+                'contrast_index': 0.8,
+                'dmin_effect': 0.05,
+                'dmax_effect': 2.05, # Higher Dmax allows for deeper blacks even on soft grades
+                'description': 'Very soft - neutral highlights'
+            },
+            '0': {
+                'factor': 2.08,  # 
+                'iso_r': 130,   # 
+                'gamma': 0.58,  # 
+                'contrast_index': 0.9,
+                'dmin_effect': 0.05,
+                'dmax_effect': 2.10,
+                'description': 'Soft'
+            },
+            '1': {
+                'factor': 2.08,  # 
+                'iso_r': 110,   # 
+                'gamma': 0.68,  # 
+                'contrast_index': 1.0,
+                'dmin_effect': 0.06,
+                'dmax_effect': 2.15,
+                'description': 'Normal-soft'
+            },
+            '2': {
+                'factor': 2.08,  # Reference speed for filters 00-3.5 
+                'iso_r': 90,    # 
+                'gamma': 0.85,  # "Straighter" curve slope for mid-grades 
+                'contrast_index': 1.1,
+                'dmin_effect': 0.07,
+                'dmax_effect': 2.15,
+                'description': 'Normal'
+            },
+            '3': {
+                'factor': 2.08,  # 
+                'iso_r': 70,    # 
+                'gamma': 1.05,  # 
+                'contrast_index': 1.2,
+                'dmin_effect': 0.08,
+                'dmax_effect': 2.15,
+                'description': 'Normal-hard'
+            },
+            '4': {
+                'factor': 2.27,  # Speed drops to 100 for filters 4-5 (500/100) 
+                'iso_r': 60,    # 
+                'gamma': 1.35,  # 
+                'contrast_index': 1.4,
+                'dmin_effect': 0.09,
+                'dmax_effect': 2.15,
+                'description': 'Hard'
+            },
+            '5': {
+                'factor': 2.27,  # 
+                'iso_r': 50,    # 
+                'gamma': 1.65,  # Steepest slope on NEW curves 
+                'contrast_index': 1.5,
+                'dmin_effect': 0.10,
+                'dmax_effect': 2.15,
+                'description': 'Very hard - neutral shadows'
+            }
+        },
+        'characteristic_curve': {
+            'toe_slope': 0.32,       # More defined transition on NEW emulsion 
+            'straight_slope': 0.85,  # Grade 2 midtone slope 
+            'shoulder_slope': 0.15,  # Faster compression near higher Dmax 
+            'logE_range': 1.6,       # Max range for Grade 00 (160/100) 
+            'speed_point': 0.6       # Industry standard density above Dmin 
+        }
+    },
+
 # Ilford Multigrade Cooltone - Based on Ilford documentation
     'ilford_cooltone': {
         'manufacturer': 'Ilford',
@@ -95,253 +259,7 @@ PAPER_DATABASE = {
         }
     },
 
-    # Ilford Multigrade IV RC Portfolio - Based on Ilford documentation
-    'ilford_iv_rc_portfolio': {
-        'manufacturer': 'Ilford',
-        'paper_type': 'Multigrade IV RC Portfolio (Discontinued)',
-        'base_iso_p': 500,  # Speed without filter 
-        'dmin': 0.05,       # Cool/Neutral base tone 
-        'dmax': 2.05,       # Plateau observed at approx 2.0 on curves [cite: 54]
-        'exposure_latitude': 1.5, # Standard industry estimate for RC papers
-        'filters': {
-            '00': {
-                'factor': 2.5,  # Speed 200 vs Base 500 [cite: 43, 136]
-                'iso_r': 180,   # From ISO Range table 
-                'gamma': 0.45,  # Derived from low-contrast curve slope
-                'contrast_index': 0.8,
-                'dmin_effect': 0.05,
-                'dmax_effect': 1.95, # Visible compression on lower grades
-                'description': 'Extra Soft'
-            },
-            '0': {
-                'factor': 2.5,  # [cite: 43, 136]
-                'iso_r': 160,   # 
-                'gamma': 0.55,
-                'contrast_index': 0.9,
-                'dmin_effect': 0.05,
-                'dmax_effect': 1.98,
-                'description': 'Soft'
-            },
-            '1': {
-                'factor': 2.5,  # [cite: 43, 136]
-                'iso_r': 130,   # 
-                'gamma': 0.65,
-                'contrast_index': 1.0,
-                'dmin_effect': 0.06,
-                'dmax_effect': 2.00,
-                'description': 'Normal-soft'
-            },
-            '2': {
-                'factor': 2.5,  # Reference speed for filters 0-3 [cite: 43, 136]
-                'iso_r': 110,   # 
-                'gamma': 0.80,  # Standard contrast slope for mid-grades
-                'contrast_index': 1.1,
-                'dmin_effect': 0.07,
-                'dmax_effect': 2.05,
-                'description': 'Normal'
-            },
-            '3': {
-                'factor': 2.5,  # [cite: 43, 136]
-                'iso_r': 90,    # 
-                'gamma': 1.00,
-                'contrast_index': 1.2,
-                'dmin_effect': 0.08,
-                'dmax_effect': 2.05,
-                'description': 'Normal-hard'
-            },
-            '4': {
-                'factor': 5.0,  # Speed drops to 100 [cite: 43, 136]
-                'iso_r': 60,    # 
-                'gamma': 1.30,
-                'contrast_index': 1.4,
-                'dmin_effect': 0.09,
-                'dmax_effect': 2.05,
-                'description': 'Hard'
-            },
-            '5': {
-                'factor': 5.0,  # Speed drops to 100 [cite: 43, 136]
-                'iso_r': 40,    # 
-                'gamma': 1.60,  # Steepest curve slope observed
-                'contrast_index': 1.5,
-                'dmin_effect': 0.10,
-                'dmax_effect': 2.05,
-                'description': 'Very Hard'
-            }
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.30,       # Initial transition region
-            'straight_slope': 0.80,  # Grade 2 midtone slope
-            'shoulder_slope': 0.18,  # Compression near Dmax plateau
-            'logE_range': 1.8,       # Max range for Grade 00 (180/100) 
-            'speed_point': 0.6       # ISO standard density point above Dmin [cite: 34]
-        }
-    },
-
-    # Ilford MULTIGRADE RC DELUXE (NEW) - Based on Ilford documentation
-    'ilford_multigrade_rc_deluxe_new': {
-        'manufacturer': 'Ilford',
-        'paper_type': 'MULTIGRADE RC DELUXE (NEW)', # 
-        'base_iso_p': 500,  # Speed without filter 
-        'dmin': 0.05,       # More neutral base tone 
-        'dmax': 2.15,       # Improved maximum density for deeper blacks 
-        'exposure_latitude': 1.6, # Derived from the straighter linear region 
-        'filters': {
-            '00': {
-                'factor': 2.08,  # Ratio of speed 500 vs 200 
-                'iso_r': 160,   # From ISO Range table 
-                'gamma': 0.48,  # Derived from visual slope of NEW curve 
-                'contrast_index': 0.8,
-                'dmin_effect': 0.05,
-                'dmax_effect': 2.00,
-                'description': 'Very soft - neutral highlights'
-            },
-            '0': {
-                'factor': 2.08,  # Speed is 200 for grades 00-3.5 
-                'iso_r': 130,   # 
-                'gamma': 0.58,  # Slightly harder midtones than IV 
-                'contrast_index': 0.9,
-                'dmin_effect': 0.05,
-                'dmax_effect': 2.05,
-                'description': 'Soft'
-            },
-            '1': {
-                'factor': 2.08,  # 
-                'iso_r': 110,   # 
-                'gamma': 0.68,  # 
-                'contrast_index': 1.0,
-                'dmin_effect': 0.06,
-                'dmax_effect': 2.10,
-                'description': 'Normal-soft'
-            },
-            '2': {
-                'factor': 2.08,  # Reference speed for filters 00-3.5 
-                'iso_r': 90,    # 
-                'gamma': 0.85,  # Harder mid-grade contrast slope 
-                'contrast_index': 1.1,
-                'dmin_effect': 0.07,
-                'dmax_effect': 2.15,
-                'description': 'Normal'
-            },
-            '3': {
-                'factor': 2.08,  # 
-                'iso_r': 70,    # 
-                'gamma': 1.05,  # 
-                'contrast_index': 1.2,
-                'dmin_effect': 0.08,
-                'dmax_effect': 2.15,
-                'description': 'Normal-hard'
-            },
-            '4': {
-                'factor': 2.27,  # Speed drops from 500 to 100 
-                'iso_r': 60,    # 
-                'gamma': 1.35,  # 
-                'contrast_index': 1.4,
-                'dmin_effect': 0.09,
-                'dmax_effect': 2.15,
-                'description': 'Hard'
-            },
-            '5': {
-                'factor': 2.27,  # Speed is 100 for grades 4-5 
-                'iso_r': 50,    # 
-                'gamma': 1.65,  # Most uniform response in high grades 
-                'contrast_index': 1.5,
-                'dmin_effect': 0.10,
-                'dmax_effect': 2.15,
-                'description': 'Very hard - neutral shadows'
-            }
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.32,       # Observed defined transition on NEW curves 
-            'straight_slope': 0.85,  # Straighter midtone slope 
-            'shoulder_slope': 0.15,  # Slightly faster compression near Dmax 
-            'logE_range': 1.6,       # Max range for Grade 00 (ISO R 160) 
-            'speed_point': 0.6       # ISO standard measurement point 
-        }
-    },
-
-    # Ilford MULTIGRADE RC PORTFOLIO (NEW) - Based on Ilford documentation
-    'ilford_multigrade_rc_portfolio_new': {
-        'manufacturer': 'Ilford',
-        'paper_type': 'MULTIGRADE RC PORTFOLIO (NEW)', # 
-        'base_iso_p': 500,  # Speed without filter 
-        'dmin': 0.05,       # Neutral base tone 
-        'dmax': 2.15,       # Increased Dmax for deeper blacks 
-        'exposure_latitude': 1.6, # Straighter curve allows slightly more linear latitude 
-        'filters': {
-            '00': {
-                'factor': 2.08,  # Speed 200 vs Base 500 (500/200) 
-                'iso_r': 160,   # ISO Range from datasheet 
-                'gamma': 0.48,  # Derived from visual slope of NEW curve 00 
-                'contrast_index': 0.8,
-                'dmin_effect': 0.05,
-                'dmax_effect': 2.05, # Higher Dmax allows for deeper blacks even on soft grades
-                'description': 'Very soft - neutral highlights'
-            },
-            '0': {
-                'factor': 2.08,  # 
-                'iso_r': 130,   # 
-                'gamma': 0.58,  # 
-                'contrast_index': 0.9,
-                'dmin_effect': 0.05,
-                'dmax_effect': 2.10,
-                'description': 'Soft'
-            },
-            '1': {
-                'factor': 2.08,  # 
-                'iso_r': 110,   # 
-                'gamma': 0.68,  # 
-                'contrast_index': 1.0,
-                'dmin_effect': 0.06,
-                'dmax_effect': 2.15,
-                'description': 'Normal-soft'
-            },
-            '2': {
-                'factor': 2.08,  # Reference speed for filters 00-3.5 
-                'iso_r': 90,    # 
-                'gamma': 0.85,  # "Straighter" curve slope for mid-grades 
-                'contrast_index': 1.1,
-                'dmin_effect': 0.07,
-                'dmax_effect': 2.15,
-                'description': 'Normal'
-            },
-            '3': {
-                'factor': 2.08,  # 
-                'iso_r': 70,    # 
-                'gamma': 1.05,  # 
-                'contrast_index': 1.2,
-                'dmin_effect': 0.08,
-                'dmax_effect': 2.15,
-                'description': 'Normal-hard'
-            },
-            '4': {
-                'factor': 2.27,  # Speed drops to 100 for filters 4-5 (500/100) 
-                'iso_r': 60,    # 
-                'gamma': 1.35,  # 
-                'contrast_index': 1.4,
-                'dmin_effect': 0.09,
-                'dmax_effect': 2.15,
-                'description': 'Hard'
-            },
-            '5': {
-                'factor': 2.27,  # 
-                'iso_r': 50,    # 
-                'gamma': 1.65,  # Steepest slope on NEW curves 
-                'contrast_index': 1.5,
-                'dmin_effect': 0.10,
-                'dmax_effect': 2.15,
-                'description': 'Very hard - neutral shadows'
-            }
-        },
-        'characteristic_curve': {
-            'toe_slope': 0.32,       # More defined transition on NEW emulsion 
-            'straight_slope': 0.85,  # Grade 2 midtone slope 
-            'shoulder_slope': 0.15,  # Faster compression near higher Dmax 
-            'logE_range': 1.6,       # Max range for Grade 00 (160/100) 
-            'speed_point': 0.6       # Industry standard density above Dmin 
-        }
-    },
-
-    # Ilford Multigrade FB Classic - Based on Ilford documentation
+# Ilford Multigrade FB Classic - Based on Ilford documentation
     'ilford_fb_classic': {
         'manufacturer': 'Ilford', #[cite: 616]
         'paper_type': 'Multigrade FB Classic', #[cite: 618, 619]
@@ -423,7 +341,89 @@ PAPER_DATABASE = {
         }
     },
 
-    # Ilford Multigrade FB Warmtone - Based on Ilford documentation
+# Ilford Multigrade FB Cooltone - Based on Ilford documentation
+    'ilford_fb_cooltone': {
+        'manufacturer': 'Ilford', # [cite: 130]
+        'paper_type': 'Multigrade FB Cooltone', # [cite: 133]
+        'base_iso_p': 590,  # Speed without filter 
+        'dmin': 0.05,       # Cool white base tint 
+        'dmax': 2.05,       # Plateau observed on characteristic curves 
+        'exposure_latitude': 1.4, # Calculated from Grade 2 linear region 
+        'filters': {
+            '00': {
+                'factor': 2.36,  # Reference speed 250 for filters 00-3 
+                'iso_r': 130,   # From ISO Range table [cite: 175]
+                'gamma': 0.45,  # Calculated slope for Grade 00 
+                'contrast_index': 0.8,
+                'dmin_effect': 0.05,
+                'dmax_effect': 1.95, # Observed slight compression in lower grades 
+                'description': 'Very soft - cool highlights'
+            },
+            '0': {
+                'factor': 2.36,
+                'iso_r': 115,   # [cite: 175]
+                'gamma': 0.55,
+                'contrast_index': 0.9,
+                'dmin_effect': 0.05,
+                'dmax_effect': 2.00,
+                'description': 'Soft'
+            },
+            '1': {
+                'factor': 2.36,
+                'iso_r': 100,   # [cite: 175]
+                'gamma': 0.65,
+                'contrast_index': 1.0,
+                'dmin_effect': 0.06,
+                'dmax_effect': 2.05,
+                'description': 'Normal-soft'
+            },
+            '2': {
+                'factor': 2.36,  # Reference speed 250 
+                'iso_r': 85,    # [cite: 175]
+                'gamma': 0.85,  # Standard cool contrast slope 
+                'contrast_index': 1.1,
+                'dmin_effect': 0.07,
+                'dmax_effect': 2.05,
+                'description': 'Normal'
+            },
+            '3': {
+                'factor': 2.36,
+                'iso_r': 70,    # [cite: 175]
+                'gamma': 1.10,
+                'contrast_index': 1.2,
+                'dmin_effect': 0.08,
+                'dmax_effect': 2.05,
+                'description': 'Normal-hard'
+            },
+            '4': {
+                'factor': 2.62,  # Speed adjustment (ISO 250 to 225) 
+                'iso_r': 55,    # [cite: 175]
+                'gamma': 1.40,  # 
+                'contrast_index': 1.4,
+                'dmin_effect': 0.09,
+                'dmax_effect': 2.05,
+                'description': 'Hard'
+            },
+            '5': {
+                'factor': 2.62,  # 
+                'iso_r': 50,    # [cite: 175]
+                'gamma': 1.70,  # Steepest curve slope 
+                'contrast_index': 1.6,
+                'dmin_effect': 0.10,
+                'dmax_effect': 2.05,
+                'description': 'Very hard - cool shadows'
+            }
+        },
+        'characteristic_curve': {
+            'toe_slope': 0.35,       # Observed transition on curves 
+            'straight_slope': 0.85,  # Grade 2 midtone slope 
+            'shoulder_slope': 0.12,  # Compression near Dmax 
+            'logE_range': 1.3,       # Max range for Grade 00 based on ISO R [cite: 175]
+            'speed_point': 0.6       # Standard speed measurement point
+        }
+    },
+
+# Ilford Multigrade FB Warmtone - Based on Ilford documentation
     'ilford_fb_warmtone': {
         'manufacturer': 'Ilford',
         'paper_type': 'Multigrade FB Warmtone',
@@ -505,85 +505,85 @@ PAPER_DATABASE = {
         }
     },
 
-    # Ilford Multigrade FB Cooltone - Based on Ilford documentation
-    'ilford_fb_cooltone': {
-        'manufacturer': 'Ilford', # [cite: 130]
-        'paper_type': 'Multigrade FB Cooltone', # [cite: 133]
-        'base_iso_p': 590,  # Speed without filter 
-        'dmin': 0.05,       # Cool white base tint 
-        'dmax': 2.05,       # Plateau observed on characteristic curves 
-        'exposure_latitude': 1.4, # Calculated from Grade 2 linear region 
+# Ilford Multigrade IV RC Portfolio - Based on Ilford documentation
+    'ilford_iv_rc_portfolio': {
+        'manufacturer': 'Ilford',
+        'paper_type': 'Multigrade IV RC Portfolio (Discontinued)',
+        'base_iso_p': 500,  # Speed without filter 
+        'dmin': 0.05,       # Cool/Neutral base tone 
+        'dmax': 2.05,       # Plateau observed at approx 2.0 on curves [cite: 54]
+        'exposure_latitude': 1.5, # Standard industry estimate for RC papers
         'filters': {
             '00': {
-                'factor': 2.36,  # Reference speed 250 for filters 00-3 
-                'iso_r': 130,   # From ISO Range table [cite: 175]
-                'gamma': 0.45,  # Calculated slope for Grade 00 
+                'factor': 2.5,  # Speed 200 vs Base 500 [cite: 43, 136]
+                'iso_r': 180,   # From ISO Range table 
+                'gamma': 0.45,  # Derived from low-contrast curve slope
                 'contrast_index': 0.8,
                 'dmin_effect': 0.05,
-                'dmax_effect': 1.95, # Observed slight compression in lower grades 
-                'description': 'Very soft - cool highlights'
+                'dmax_effect': 1.95, # Visible compression on lower grades
+                'description': 'Extra Soft'
             },
             '0': {
-                'factor': 2.36,
-                'iso_r': 115,   # [cite: 175]
+                'factor': 2.5,  # [cite: 43, 136]
+                'iso_r': 160,   # 
                 'gamma': 0.55,
                 'contrast_index': 0.9,
                 'dmin_effect': 0.05,
-                'dmax_effect': 2.00,
+                'dmax_effect': 1.98,
                 'description': 'Soft'
             },
             '1': {
-                'factor': 2.36,
-                'iso_r': 100,   # [cite: 175]
+                'factor': 2.5,  # [cite: 43, 136]
+                'iso_r': 130,   # 
                 'gamma': 0.65,
                 'contrast_index': 1.0,
                 'dmin_effect': 0.06,
-                'dmax_effect': 2.05,
+                'dmax_effect': 2.00,
                 'description': 'Normal-soft'
             },
             '2': {
-                'factor': 2.36,  # Reference speed 250 
-                'iso_r': 85,    # [cite: 175]
-                'gamma': 0.85,  # Standard cool contrast slope 
+                'factor': 2.5,  # Reference speed for filters 0-3 [cite: 43, 136]
+                'iso_r': 110,   # 
+                'gamma': 0.80,  # Standard contrast slope for mid-grades
                 'contrast_index': 1.1,
                 'dmin_effect': 0.07,
                 'dmax_effect': 2.05,
                 'description': 'Normal'
             },
             '3': {
-                'factor': 2.36,
-                'iso_r': 70,    # [cite: 175]
-                'gamma': 1.10,
+                'factor': 2.5,  # [cite: 43, 136]
+                'iso_r': 90,    # 
+                'gamma': 1.00,
                 'contrast_index': 1.2,
                 'dmin_effect': 0.08,
                 'dmax_effect': 2.05,
                 'description': 'Normal-hard'
             },
             '4': {
-                'factor': 2.62,  # Speed adjustment (ISO 250 to 225) 
-                'iso_r': 55,    # [cite: 175]
-                'gamma': 1.40,  # 
+                'factor': 5.0,  # Speed drops to 100 [cite: 43, 136]
+                'iso_r': 60,    # 
+                'gamma': 1.30,
                 'contrast_index': 1.4,
                 'dmin_effect': 0.09,
                 'dmax_effect': 2.05,
                 'description': 'Hard'
             },
             '5': {
-                'factor': 2.62,  # 
-                'iso_r': 50,    # [cite: 175]
-                'gamma': 1.70,  # Steepest curve slope 
-                'contrast_index': 1.6,
+                'factor': 5.0,  # Speed drops to 100 [cite: 43, 136]
+                'iso_r': 40,    # 
+                'gamma': 1.60,  # Steepest curve slope observed
+                'contrast_index': 1.5,
                 'dmin_effect': 0.10,
                 'dmax_effect': 2.05,
-                'description': 'Very hard - cool shadows'
+                'description': 'Very Hard'
             }
         },
         'characteristic_curve': {
-            'toe_slope': 0.35,       # Observed transition on curves 
-            'straight_slope': 0.85,  # Grade 2 midtone slope 
-            'shoulder_slope': 0.12,  # Compression near Dmax 
-            'logE_range': 1.3,       # Max range for Grade 00 based on ISO R [cite: 175]
-            'speed_point': 0.6       # Standard speed measurement point
+            'toe_slope': 0.30,       # Initial transition region
+            'straight_slope': 0.80,  # Grade 2 midtone slope
+            'shoulder_slope': 0.18,  # Compression near Dmax plateau
+            'logE_range': 1.8,       # Max range for Grade 00 (180/100) 
+            'speed_point': 0.6       # ISO standard density point above Dmin [cite: 34]
         }
     },
     
@@ -859,33 +859,26 @@ PAPER_DATABASE = {
 
 }
 
+# Explicit paper order for UI lists
+PAPER_ORDER = [
+    'ilford_multigrade_rc_deluxe_new',
+    'ilford_multigrade_rc_portfolio_new',
+    'ilford_cooltone',
+    'ilford_fb_classic',
+    'ilford_fb_cooltone',
+    'ilford_fb_warmtone',
+    'ilford_iv_rc_portfolio',
+    'foma_fomaspeed',
+    'foma_fomabrom',
+    'fomatone_mg_classic_variant',
+    'foma_fomapastel_mg'
+]
+
 # Filter selection rules based on contrast (ΔEV) measurements
 # Based on Heiland methodology research
 FILTER_SELECTION_RULES = {
     # Ilford papers (standard Ilford filter system)
     'ilford': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford Cooltone RC
-    'ilford_cooltone': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford Portfolio (discontinued)
-    'ilford_iv_rc_portfolio': {
         'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
         'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
         'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
@@ -906,7 +899,7 @@ FILTER_SELECTION_RULES = {
         'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
         'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
     },
-    # Ilford Multigrade RC Portfolio (NEW)
+        # Ilford Multigrade RC Portfolio (NEW)
     'ilford_multigrade_rc_portfolio_new': {
         'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
         'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
@@ -917,7 +910,18 @@ FILTER_SELECTION_RULES = {
         'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
         'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
     },
-    # Ilford FB Classic
+    # Ilford Cooltone RC
+    'ilford_cooltone': {
+        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
+        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
+        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
+        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
+        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
+        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
+        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
+        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
+    },
+        # Ilford FB Classic
     'ilford_fb_classic': {
         'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
         'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
@@ -941,6 +945,17 @@ FILTER_SELECTION_RULES = {
     },
     # Ilford FB Cooltone
     'ilford_fb_cooltone': {
+        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
+        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
+        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
+        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
+        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
+        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
+        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
+        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
+    },
+    # Ilford Portfolio (discontinued)
+    'ilford_iv_rc_portfolio': {
         'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
         'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
         'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
@@ -1129,7 +1144,11 @@ def get_paper_list():
     Returns:
         list: List of paper identifiers
     """
-    return list(PAPER_DATABASE.keys())
+    ordered = [paper_id for paper_id in PAPER_ORDER if paper_id in PAPER_DATABASE]
+    for paper_id in PAPER_DATABASE.keys():
+        if paper_id not in ordered:
+            ordered.append(paper_id)
+    return ordered
 
 def get_paper_display_name(paper_id):
     """

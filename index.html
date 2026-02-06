@@ -4434,21 +4434,7 @@
                   class="settings-input"
                   id="meterIlfordPaperType"
                   style="width: 100%"
-                >
-                  <option value="cooltone">Multigrade RC Cooltone</option>
-                  <option value="portfolio">
-                    Multigrade IV RC Portfolio (Discontinued)
-                  </option>
-                  <option value="rc_deluxe_new">
-                    MULTIGRADE RC DELUXE (NEW)
-                  </option>
-                  <option value="rc_portfolio_new">
-                    MULTIGRADE RC PORTFOLIO (NEW)
-                  </option>
-                  <option value="fb_classic">Multigrade FB Classic</option>
-                  <option value="fb_warmtone">Multigrade FB Warmtone</option>
-                  <option value="fb_cooltone">Multigrade FB Cooltone</option>
-                </select>
+                ></select>
               </div>
 
               <!-- FOMA Paper Type (hidden by default) -->
@@ -4464,16 +4450,7 @@
                   class="settings-input"
                   id="meterFomaPaperType"
                   style="width: 100%"
-                >
-                  <option value="fomaspeed">FOMASPEED VARIANT</option>
-                  <option value="fomabrom">FOMABROM VARIANT</option>
-                  <option value="fomapastel_mg">
-                    FOMAPASTEL MG (Special FB Colored Base)
-                  </option>
-                  <option value="fomatone_mg_classic_variant">
-                    FOMATONE MG Classic (Warm Tone)
-                  </option>
-                </select>
+                ></select>
               </div>
 
               <!-- Calibration Display -->
@@ -4750,6 +4727,130 @@
               </div>
             </div>
 
+            <!-- Fine Tuning Controls -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">FINE TUNING</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Intent:</span>
+                  <select
+                    id="contrastIntent"
+                    class="settings-input"
+                    style="width: 55%"
+                  >
+                    <option value="balanced">Balanced</option>
+                    <option value="highlight-priority">
+                      Highlight Priority
+                    </option>
+                    <option value="shadow-priority">Shadow Priority</option>
+                  </select>
+                </div>
+              </div>
+              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Highlight Offset:</span>
+                  <span style="font-weight: bold" id="highlightOffsetValue"
+                    >0.00 EV</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-0.5"
+                  max="0.5"
+                  step="0.05"
+                  value="0"
+                  class="slider"
+                  id="highlightOffsetSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Shadow Offset:</span>
+                  <span style="font-weight: bold" id="shadowOffsetValue"
+                    >0.00 EV</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-0.5"
+                  max="0.5"
+                  step="0.05"
+                  value="0"
+                  class="slider"
+                  id="shadowOffsetSlider"
+                />
+              </div>
+            </div>
+
+            <!-- Optimal Exposure Times -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">OPTIMAL EXPOSURE TIMES</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Highlight Time (best whites):</span>
+                  <span style="font-weight: bold" id="highlightExposureTime"
+                    >-- sec</span
+                  >
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Shadow Time (best blacks):</span>
+                  <span style="font-weight: bold" id="shadowExposureTime"
+                    >-- sec</span
+                  >
+                </div>
+              </div>
+              <div
+                class="label-sm"
+                style="
+                  font-size: 0.85rem;
+                  margin-top: 5px;
+                  padding-top: 5px;
+                  border-top: 1px solid rgba(100, 200, 100, 0.3);
+                "
+              >
+                <div style="display: flex; justify-content: space-between">
+                  <span>Suggested Time (compromise):</span>
+                  <span
+                    style="font-weight: bold; font-size: 1.1rem"
+                    id="suggestedExposureTime"
+                    >-- sec</span
+                  >
+                </div>
+              </div>
+              <div
+                class="label-sm"
+                style="font-size: 0.75rem; margin-top: 5px; color: #999"
+              >
+                <div style="display: flex; justify-content: space-between">
+                  <span
+                    >Strategy:
+                    <span style="font-weight: bold" id="exposureStrategy"
+                      >--</span
+                    ></span
+                  >
+                  <span
+                    >(Ratio:
+                    <span style="font-weight: bold" id="exposureRatio">--</span
+                    >)</span
+                  >
+                </div>
+              </div>
+              <div
+                class="label-sm"
+                style="
+                  font-size: 0.8rem;
+                  margin-top: 5px;
+                  font-style: italic;
+                  color: #aaa;
+                "
+                id="exposureNote"
+              >
+                --
+              </div>
+            </div>
+
             <!-- Guidance Message -->
             <div
               class="info-box"
@@ -4766,8 +4867,8 @@
                 class="label-sm"
                 style="text-align: center; margin-top: 5px; font-size: 0.9rem"
               >
-                Use EXPOSURE METER mode with recommended grade to determine
-                exposure time.
+                Use suggested time above for exposure. Adjust based on test
+                prints.
               </div>
             </div>
 
@@ -4775,6 +4876,9 @@
             <div class="settings-btn-group" style="margin-top: 15px">
               <button class="settings-btn" id="analyzeContrastBtn" disabled>
                 Analyze Contrast
+              </button>
+              <button class="settings-btn" id="sendContrastToCalc" disabled>
+                Send Suggested Time to CALC
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -17577,7 +17681,7 @@
           this.currentMode = "exposure";
 
           // Paper selection: stored as paper_id (e.g., 'ilford_cooltone')
-          this.currentPaperId = "ilford_cooltone"; // Default paper
+          this.currentPaperId = ""; // Set after papers list is loaded
           this.papersList = []; // Will be fetched from server
 
           // Legacy support for old UI
@@ -17604,6 +17708,7 @@
           this.deltaEV = null;
           this.recommendedGrade = null;
           this.splitGradeResult = null;
+          this.contrastSuggestedTime = null;
 
           // Filter data will be fetched from server (no local copies)
           this.filtersCache = {}; // Cache filters per paper to reduce server calls
@@ -17770,8 +17875,15 @@
               option.textContent = paper.display_name;
               ilfordSelect.appendChild(option);
             });
-            // Set to first paper or previously selected
-            ilfordSelect.value = this.currentPaperId || ilfordPapers[0].id;
+            // Set to previously selected if it exists, otherwise first in list
+            if (
+              this.currentPaperId &&
+              ilfordPapers.some((paper) => paper.id === this.currentPaperId)
+            ) {
+              ilfordSelect.value = this.currentPaperId;
+            } else {
+              ilfordSelect.value = ilfordPapers[0].id;
+            }
           }
 
           // Create mapping of paper_id to display name for FOMA
@@ -17784,8 +17896,15 @@
               option.textContent = paper.display_name;
               fomaSelect.appendChild(option);
             });
-            // Set to first paper or previously selected
-            fomaSelect.value = this.currentPaperId || fomaPapers[0].id;
+            // Set to previously selected if it exists, otherwise first in list
+            if (
+              this.currentPaperId &&
+              fomaPapers.some((paper) => paper.id === this.currentPaperId)
+            ) {
+              fomaSelect.value = this.currentPaperId;
+            } else {
+              fomaSelect.value = fomaPapers[0].id;
+            }
           }
 
           console.log(
@@ -17870,15 +17989,19 @@
               "meterIlfordPaperType",
             );
             if (ilfordSelect) {
-              const paperId = ilfordSelect.value || "ilford_cooltone";
-              this.setIlfordPaperType(paperId);
+              const paperId = ilfordSelect.value;
+              if (paperId) {
+                this.setIlfordPaperType(paperId);
+              }
             }
           } else {
             // Get the currently selected FOMA paper from dropdown
             const fomaSelect = document.getElementById("meterFomaPaperType");
             if (fomaSelect) {
-              const paperId = fomaSelect.value || "foma_fomaspeed";
-              this.setFomaPaperType(paperId);
+              const paperId = fomaSelect.value;
+              if (paperId) {
+                this.setFomaPaperType(paperId);
+              }
             }
           }
         }
@@ -18085,42 +18208,11 @@
             if (data.status === "success" && data.papers) {
               this.papersList = data.papers;
               console.log(`Fetched ${data.count} papers from server`);
-
-              // Cache papers in localStorage for offline fallback
-              localStorage.setItem("papers_cache", JSON.stringify(data.papers));
             } else if (data.error) {
               console.error("Server returned error:", data.error);
             }
           } catch (error) {
             console.error("Failed to fetch papers from server:", error);
-
-            // Try loading from cache
-            const cached = localStorage.getItem("papers_cache");
-            if (cached) {
-              const cachedPapers = JSON.parse(cached);
-              const hasFilterData =
-                Array.isArray(cachedPapers) &&
-                cachedPapers.some((p) => {
-                  const filters = p && p.filters;
-                  if (!filters || typeof filters !== "object") return false;
-                  const firstKey = Object.keys(filters)[0];
-                  return (
-                    firstKey &&
-                    filters[firstKey] &&
-                    typeof filters[firstKey].factor === "number"
-                  );
-                });
-
-              if (hasFilterData) {
-                this.papersList = cachedPapers;
-                console.log("Using cached papers list");
-              } else {
-                console.error("Cached papers list is outdated; ignoring cache");
-                localStorage.removeItem("papers_cache");
-              }
-            } else {
-              console.error("No cached papers available");
-            }
           }
         }
 
@@ -18203,6 +18295,31 @@
             });
           }
 
+          // Fine tuning sliders
+          const highlightOffsetSlider = document.getElementById(
+            "highlightOffsetSlider",
+          );
+          const highlightOffsetValue = document.getElementById(
+            "highlightOffsetValue",
+          );
+          if (highlightOffsetSlider && highlightOffsetValue) {
+            highlightOffsetSlider.addEventListener("input", () => {
+              highlightOffsetValue.textContent =
+                parseFloat(highlightOffsetSlider.value).toFixed(2) + " EV";
+            });
+          }
+
+          const shadowOffsetSlider =
+            document.getElementById("shadowOffsetSlider");
+          const shadowOffsetValue =
+            document.getElementById("shadowOffsetValue");
+          if (shadowOffsetSlider && shadowOffsetValue) {
+            shadowOffsetSlider.addEventListener("input", () => {
+              shadowOffsetValue.textContent =
+                parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
+            });
+          }
+
           // Highlight measure button
           const highlightBtn = document.getElementById("measureHighlightBtn");
           if (highlightBtn) {
@@ -18223,6 +18340,14 @@
           const analyzeBtn = document.getElementById("analyzeContrastBtn");
           if (analyzeBtn) {
             analyzeBtn.addEventListener("click", () => this.analyzeContrast());
+          }
+
+          // Send suggested time to CALC button
+          const sendContrastBtn = document.getElementById("sendContrastToCalc");
+          if (sendContrastBtn) {
+            sendContrastBtn.addEventListener("click", () =>
+              this.sendContrastToCalc(),
+            );
           }
 
           // Clear button
@@ -18672,7 +18797,26 @@
           }
 
           try {
-            const response = await fetch("/light-meter-contrast");
+            // Get current calibration and paper ID
+            const paperId = this.currentPaperId || this.getCurrentPaperId();
+            const calibration = this.calibration || 1000.0;
+
+            // Fine tuning controls
+            const intent =
+              document.getElementById("contrastIntent")?.value || "balanced";
+            const highlightOffset = parseFloat(
+              document.getElementById("highlightOffsetSlider")?.value || "0",
+            );
+            const shadowOffset = parseFloat(
+              document.getElementById("shadowOffsetSlider")?.value || "0",
+            );
+
+            // Send calibration along with the request
+            const response = await fetch(
+              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}&intent=${encodeURIComponent(
+                intent,
+              )}&highlight_offset=${highlightOffset}&shadow_offset=${shadowOffset}`,
+            );
             const data = await response.json();
 
             if (data.status === "success") {
@@ -18718,6 +18862,50 @@
                 console.log("Enhanced analysis data:", grade);
               }
 
+              // Display exposure times (NEW)
+              if (data.exposure_times) {
+                const times = data.exposure_times;
+                this.contrastSuggestedTime = times.suggested_time;
+                document.getElementById("highlightExposureTime").textContent =
+                  times.highlight_time + " sec";
+                document.getElementById("shadowExposureTime").textContent =
+                  times.shadow_time + " sec";
+                document.getElementById("suggestedExposureTime").textContent =
+                  times.suggested_time + " sec";
+                document.getElementById("exposureStrategy").textContent =
+                  times.strategy.charAt(0).toUpperCase() +
+                  times.strategy.slice(1);
+                document.getElementById("exposureRatio").textContent =
+                  times.exposure_ratio + ":1";
+                document.getElementById("exposureNote").textContent =
+                  times.notes;
+
+                const sendContrastBtn =
+                  document.getElementById("sendContrastToCalc");
+                if (sendContrastBtn) {
+                  sendContrastBtn.disabled = false;
+                }
+
+                console.log("Exposure times calculated:", times);
+              } else {
+                this.contrastSuggestedTime = null;
+                // Clear exposure time displays if not available
+                document.getElementById("highlightExposureTime").textContent =
+                  "-- sec";
+                document.getElementById("shadowExposureTime").textContent =
+                  "-- sec";
+                document.getElementById("suggestedExposureTime").textContent =
+                  "-- sec";
+                document.getElementById("exposureStrategy").textContent = "--";
+                document.getElementById("exposureRatio").textContent = "--";
+                document.getElementById("exposureNote").textContent = "--";
+                const sendContrastBtn =
+                  document.getElementById("sendContrastToCalc");
+                if (sendContrastBtn) {
+                  sendContrastBtn.disabled = true;
+                }
+              }
+
               playBeep(1000, 0.3, 0.3);
             } else {
               this.showFeedback("Analysis error: " + data.error, "error");
@@ -18735,6 +18923,7 @@
           this.shadowLux = null;
           this.deltaEV = null;
           this.recommendedGrade = null;
+          this.contrastSuggestedTime = null;
 
           // Clear displays
           document.getElementById("highlightLux").textContent = "-- lux";
@@ -18751,6 +18940,43 @@
             "-- (Dmin-Dmax)";
           document.getElementById("analysisReasoning").textContent = "--";
 
+          // Clear exposure time displays (NEW)
+          document.getElementById("highlightExposureTime").textContent =
+            "-- sec";
+          document.getElementById("shadowExposureTime").textContent = "-- sec";
+          document.getElementById("suggestedExposureTime").textContent =
+            "-- sec";
+          document.getElementById("exposureStrategy").textContent = "--";
+          document.getElementById("exposureRatio").textContent = "--";
+          document.getElementById("exposureNote").textContent = "--";
+
+          const sendContrastBtn = document.getElementById("sendContrastToCalc");
+          if (sendContrastBtn) {
+            sendContrastBtn.disabled = true;
+          }
+
+          // Reset fine tuning controls
+          const intentSelect = document.getElementById("contrastIntent");
+          if (intentSelect) intentSelect.value = "balanced";
+          const highlightOffsetSlider = document.getElementById(
+            "highlightOffsetSlider",
+          );
+          const highlightOffsetValue = document.getElementById(
+            "highlightOffsetValue",
+          );
+          if (highlightOffsetSlider && highlightOffsetValue) {
+            highlightOffsetSlider.value = "0";
+            highlightOffsetValue.textContent = "0.00 EV";
+          }
+          const shadowOffsetSlider =
+            document.getElementById("shadowOffsetSlider");
+          const shadowOffsetValue =
+            document.getElementById("shadowOffsetValue");
+          if (shadowOffsetSlider && shadowOffsetValue) {
+            shadowOffsetSlider.value = "0";
+            shadowOffsetValue.textContent = "0.00 EV";
+          }
+
           // Disable buttons
           document.getElementById("analyzeContrastBtn").disabled = true;
 
@@ -18760,6 +18986,19 @@
           } catch (e) {}
 
           this.showFeedback("Contrast readings cleared", "success");
+        }
+
+        /**
+         * Send contrast analyzer suggested time to CALC tab
+         */
+        sendContrastToCalc() {
+          const time = this.contrastSuggestedTime;
+          if (!time || time <= 0) {
+            this.showFeedback("No suggested time available", "error");
+            return;
+          }
+
+          this.sendTimeToCalc(time, "Contrast Analyzer Suggested");
         }
 
         /**
@@ -19082,6 +19321,9 @@
           this.saveCalibration();
           this.updateCalibrationDisplay();
 
+          // Send to server immediately
+          this.sendCalibrationToServer(calibration);
+
           this.showFeedback(
             `Calibration calculated: ${calibration.toFixed(0)} lux·s`,
             "success",
@@ -19118,8 +19360,9 @@
          */
         async sendCalibrationToServer(value) {
           try {
+            const paperId = this.currentPaperId || this.getCurrentPaperId();
             await fetch(
-              `/light-meter-calibrate?constant=${value}&set_default=true`,
+              `/light-meter-calibrate?constant=${value}&paper_id=${paperId}`,
             );
           } catch (e) {
             console.warn("Could not send calibration to server:", e);
@@ -19173,29 +19416,30 @@
          * Get current paper ID based on brand and type selection
          */
         getCurrentPaperId() {
-          // Map UI paper types to enhanced paper database IDs
-          if (this.paperBrand === "ilford") {
-            // Map UI paper types to database IDs
-            const uiToDbMap = {
-              cooltone: "ilford_cooltone", // Multigrade RC Cooltone
-              portfolio: "ilford_iv_rc_portfolio", // Multigrade IV RC Portfolio (Discontinued)
-              rc_deluxe_new: "ilford_multigrade_rc_deluxe_new", // MULTIGRADE RC DELUXE (NEW)
-              rc_portfolio_new: "ilford_multigrade_rc_portfolio_new", // MULTIGRADE RC PORTFOLIO (NEW)
-              fb_classic: "ilford_fb_classic", // Multigrade FB Classic
-              fb_warmtone: "ilford_fb_warmtone", // Multigrade FB Warmtone
-              fb_cooltone: "ilford_fb_cooltone", // Multigrade FB Cooltone
-            };
-            return uiToDbMap[this.ilfordPaperType] || "ilford_cooltone"; // Default to Cooltone
-          } else {
-            // FOMA paper types map directly
-            const fomaMap = {
-              fomaspeed: "foma_fomaspeed",
-              fomabrom: "foma_fomabrom",
-              fomapastel_mg: "foma_fomapastel_mg",
-              fomatone_mg_classic_variant: "fomatone_mg_classic_variant",
-            };
-            return fomaMap[this.fomaPaperType] || "foma_fomaspeed"; // Default
+          if (this.currentPaperId) {
+            return this.currentPaperId;
           }
+
+          const papers = Array.isArray(this.papersList) ? this.papersList : [];
+          if (papers.length === 0) {
+            return "";
+          }
+
+          if (this.paperBrand === "ilford") {
+            const ilfordPaper = papers.find((paper) =>
+              paper.id.startsWith("ilford"),
+            );
+            return ilfordPaper ? ilfordPaper.id : papers[0].id;
+          }
+
+          if (this.paperBrand === "foma") {
+            const fomaPaper = papers.find((paper) =>
+              paper.id.startsWith("foma"),
+            );
+            return fomaPaper ? fomaPaper.id : papers[0].id;
+          }
+
+          return papers[0].id;
         }
 
         /**
@@ -19237,25 +19481,16 @@
          * Get human-readable paper name for display
          */
         getCurrentPaperName() {
-          // Enhanced paper names from paper database
-          const paperNames = {
-            ilford_mg_iv: "Ilford Multigrade IV RC",
-            ilford_cooltone: "Ilford Multigrade RC Cooltone",
-            ilford_iv_rc_portfolio: "Ilford Multigrade IV RC Portfolio",
-            ilford_multigrade_rc_deluxe_new: "Ilford Multigrade RC Deluxe NEW",
-            ilford_multigrade_rc_portfolio_new:
-              "Ilford Multigrade RC Portfolio NEW",
-            ilford_fb_classic: "Ilford Multigrade FB Classic",
-            ilford_fb_warmtone: "Ilford Multigrade FB Warmtone",
-            ilford_fb_cooltone: "Ilford Multigrade FB Cooltone",
-            foma_fomaspeed: "FOMA FOMASPEED Variant III",
-            foma_fomabrom: "FOMA FOMABROM Variant III",
-            foma_fomapastel_mg: "FOMA FOMAPASTEL MG",
-            foma_fomatone: "FOMA FOMATONE MG Classic",
-            fomatone_mg_classic_variant: "FOMA FOMATONE MG Classic Variant",
-          };
           const paperId = this.getCurrentPaperId();
-          return paperNames[paperId] || paperId;
+          const paper = Array.isArray(this.papersList)
+            ? this.papersList.find((p) => p.id === paperId)
+            : null;
+
+          if (paper && paper.display_name) {
+            return paper.display_name;
+          }
+
+          return paperId || "";
         }
 
         /**
