@@ -1,212 +1,331 @@
-# Darkroom Timer System - AI Coding Agent Instructions
+# Darkroom Timer - Raspberry Pi Pico 2 W
 
-## Project Overview
+> **Project**: Professional darkroom timer with split-grade exposure calculation, chemical management, and relay control.  
+> **Hardware**: Raspberry Pi Pico 2 W | **Runtime**: MicroPython v1.27.0  
+> **Branch**: `Back_Up` | **Repository**: `atriantas/enlarger_server`
 
-This is a **professional darkroom timer system** consisting of a Raspberry Pi Flask server controlling relay hardware and a sophisticated single-page HTML/JavaScript client application. The system controls 4 GPIO relays for darkroom equipment (enlarger, safelight, ventilation, white light) with precise timing for photographic printing.
+## System Architecture
 
-## Architecture
+**Full Stack**: Pico 2 W hosts async HTTP server + GPIO relay control + temp/light sensing. Single-page HTML/JS client provides multi-tab UI for timer, Heiland-inspired split-grade calculations, relay control, and logging.
 
-### Two-Component System
+```
+┌─ Pico 2 W (192.168.4.1:80 or darkroom.local) ──┐
+│  boot.py (async event loop)                     │
+│  ├─ HTTPServer (socket-based, CORS)             │
+│  │   ├─ /light-meter-split-grade-heiland        │
+│  │   │   (dynamic filter selection by ΔEV)      │
+│  │   └─ 20+ endpoints (relay, timer, temp, etc) │
+│  ├─ GPIOControl (4 relays: GP14-17, active-LOW) │
+│  ├─ TimerManager (scheduled, sync'd timers)     │
+│  ├─ TemperatureSensor (DS1820 on GP18)          │
+│  ├─ LightMeter (TSL2591X I²C GP0/1)             │
+│  ├─ WiFiAP (192.168.4.1, SSID: DarkroomTimer)   │
+│  └─ WiFiSTA (saves to wifi_config.json)         │
+└──────────────────────────────────────────────────┘
+         ▲ HTTP/JSON ▲ Async await on response
+         │            │
+   ┌─────▼────────────▼─────┐
+   │  Browser/Mobile Client  │
+   │  index.html (~610KB)    │
+   │  • 8 tabs (CALC, SPLIT, │
+   │    CHART, FSTOP, TIMER, │
+   │    RELAY, CHEMICAL, etc)│
+   │  • Drift-corrected UI   │
+   │    timers, full app     │
+   │    state in appState    │
+   └────────────────────────┘
+```
 
-1. **Flask Server** (`Raspberry_Server_v3.0.3.py`) - Python backend on Raspberry Pi
+### Key Architecture Decisions
 
-   - Runs on port 5000, listens on `0.0.0.0`
-   - Controls RPi.GPIO pins: 25 (Enlarger), 17 (Safelight), 27 (Ventilation), 22 (White Light)
-   - Active-LOW relay logic: `GPIO.HIGH` = OFF, `GPIO.LOW` = ON
-   - Serves the HTML file at root `/` if present in same directory
-   - Full CORS enabled for cross-origin browser access
+1. **Async-First Design**: All I/O uses `asyncio` to prevent blocking.
+2. **Memory Optimization**: HTML served in 512-byte chunks, `gc.collect()` in loops, no urllib.parse.
+3. **WiFi Dual-Mode**: AP starts immediately for instant access; STA attempts connection with 5s timeout.
+4. **Timer Synchronization**: Server returns `start_at` timestamp (150ms future); client uses as countdown origin.
+5. **Active-LOW Hardware**: `GPIO.value(0)` = Relay ON, `GPIO.value(1)` = Relay OFF.
+6. **Heiland-Inspired Split-Grade**: Dynamic filter selection based on measured contrast (ΔEV), not fixed filter pairs.
 
-2. **Web Client** (`Darkroom_Tools_v3.0.3.html`) - ~10,800 line single-file application
-   - Pure vanilla JavaScript, no frameworks
-   - CSS custom properties for theming (dark/light/day schemes)
-   - LocalStorage-based state persistence
-   - Modular class-based architecture despite being single-file
+## Essential Files
 
-### File Versioning Pattern
+| File                       | Purpose                    | Key Details                                        |
+| -------------------------- | -------------------------- | -------------------------------------------------- |
+| boot.py                    | Main entry point           | Async event loop, WiFi dual-mode, init order       |
+| lib/gpio_control.py        | Relay control              | Active-LOW (0=ON, 1=OFF), pins GP14-17             |
+| lib/http_server.py         | REST API server            | Socket-based, CORS, 512-byte chunks, 20+ endpoints |
+| lib/timer_manager.py       | Async timer orchestration  | Scheduled start w/ `start_at` sync                 |
+| lib/temperature_sensor.py  | DS1820 temp sensor         | 750ms conversion, async read                       |
+| lib/light_sensor.py        | TSL2591X light meter       | I²C lux sensor, exposure calc (legacy)             |
+| lib/splitgrade_enhanced.py | **Heiland-like algorithm** | Dynamic filter selection, ΔEV-based                |
+| lib/paper_database.py      | **Paper/filter database**  | Ilford/FOMA papers, ISO R, gamma, filter factors   |
+| lib/wifi_ap.py             | WiFi hotspot               | SSID: DarkroomTimer, 192.168.4.1:80                |
+| lib/wifi_sta.py            | WiFi router                | Credentials in wifi_config.json                    |
+| index.html                 | Client SPA                 | 8 tabs, single appState store                      |
 
-Multiple numbered server files exist (`Raspberry_Server_3.py`, `_5.py`, etc.) representing development iterations. **Current production version is `Raspberry_Server_v3.0.3.py`** which pairs with `Darkroom_Tools_v3.0.3.html`. Always work with matching version numbers.
+### File Initialization Order (Critical)
 
-## GPIO & Relay Control
+1. GPIOControl (safety)
+2. TemperatureSensor (optional)
+3. LightSensor (optional)
+4. TimerManager
+5. WiFiAP (immediate access)
+6. WiFiSTA (persistent)
+7. HTTPServer (last)
 
-### Pin Mapping (BCM Mode)
+## GPIO Pin Mapping (Active-LOW)
 
 ```python
 RELAY_PINS = {
-    25: {"name": "Enlarger Timer", "state": False},
-    17: {"name": "Safelight", "state": False},
-    27: {"name": "Ventilation", "state": False},
-    22: {"name": "White Light", "state": False}
+    14: "Enlarger Timer",
+    15: "Safelight",
+    16: "Heating Element",
+    17: "White Light"
 }
 ```
 
-### Critical Hardware Pattern
-
-Relays are **active-LOW**: Set `GPIO.HIGH` to turn relay OFF, `GPIO.LOW` to turn it ON. The `set_relay_state(pin, state)` function handles this inversion. Never write GPIO values directly.
+**I²C**: SDA GP0, SCL GP1 (TSL2591X)  
+**1-Wire**: Data GP18 (DS1820, 4.7kΩ pull-up)
 
 ## API Endpoints
 
-### Production API (v3.0.3)
+**Core Functionality**:
 
-- `GET /ping` - Connection test, returns `{"status": "ok"}`
-- `GET /relay?gpio=25&state=on` - Control single relay (state: `on`|`off`)
-- `GET /timer?gpio=25&duration=5.0` - Timed relay activation (max 3600s)
-- `GET /status` - Get all relay states
-- `GET /all?state=on` - Control all relays simultaneously
-- `GET /shutdown` - Graceful system shutdown (3s delay)
-- `GET /reboot` - System reboot (3s delay)
+- `GET /ping` - Connection test
+- `GET /relay?gpio=14&state=on` - Control relay
+- `GET /timer?gpio=14&duration=10.5` - Timed activation (returns start_at)
+- `GET /status` - All relay states + active timers
+- `GET /temperature` - Current temperature
 
-**All endpoints support OPTIONS for CORS preflight**. Query parameters use GPIO pin numbers, not relay numbers.
+**Light Meter & Split-Grade** (TSL2591X on I²C GP0/1):
 
-## Client-Side Architecture
+- `GET /light-meter?samples=5` - Lux measurement
+- `GET /light-meter-highlight` - Store highlight reading
+- `GET /light-meter-shadow` - Store shadow reading
+- `GET /light-meter-contrast` - Calculate ΔEV from stored readings
+- `GET /light-meter-split-grade` - **Legacy** fixed-filter algorithm (00 & 5)
+- `GET /light-meter-split-grade-heiland` - **Enhanced** dynamic filter selection (ΔEV-based)
+  - Params: `paper_id` (e.g., `ilford_mg_iv`, `foma_fomaspeed`)
+  - Returns: `soft_filter`, `hard_filter`, `soft_time`, `hard_time`, `delta_ev`, `optimization_note`
+- `GET /light-meter-calibrate?calibration=1000` - Set calibration constant
 
-### Key Design Patterns
+**WiFi Management**:
 
-1. **Manager Classes** - Each major feature has a dedicated manager class:
+- `GET /wifi-status` - Current WiFi state
+- `POST /wifi-config` - Save STA credentials
+- `GET /wifi-ap-force` - Force AP-only mode
+- `GET /wifi-clear` - Clear saved credentials
 
-   - `TimerManager` - Four simultaneous f-stop timers with decimal precision
-   - `RelayManager` - Handles server communication and relay state
-   - `IncrementalTimer` - Dodge/burn calculator with step progression
-   - `FStopTestGenerator` - Test strip generation with base/step calculations
-   - `CountdownManager` - Visual countdown before exposure starts
+## Split-Grade Algorithm Evolution
 
-2. **CSS Consolidation** - Heavy use of CSS variable theming and class reuse:
+### Legacy Algorithm (lib/light_sensor.py)
 
-   ```css
-   :root {
-     --bg, --text, --accent, --panel, --border, --slider-track
-   }
-   body.light-scheme { /* overrides */ }
-   body.day-scheme { /* overrides */ }
-   ```
+- Fixed filter pairs: Ilford 00 & 5, FOMA 2xY & 2xM2
+- Linear exposure model: `time = calibration / lux × filter_factor`
+- **Limitation**: Unrealistic exposures for non-extreme contrast ranges
 
-   Many classes consolidated (e.g., `.shelf-life-item` replaces 15+ similar classes).
+### Heiland-Inspired Algorithm (lib/splitgrade_enhanced.py)
 
-3. **State Persistence** - Extensive LocalStorage usage:
+- **Dynamic filter selection** based on measured ΔEV (contrast range):
+  ```python
+  ΔEV = abs(log₂(shadow_lux / highlight_lux))
+  ```
+- **Filter selection logic** (Ilford example):
+  - ΔEV < 1.0 → filters 1 & 2 (very low contrast)
+  - ΔEV 1.5-2.0 → filters 00 & 3 (medium-low)
+  - ΔEV 2.5-3.0 → filters 00 & 4 (medium-high)
+  - ΔEV > 3.0 → filters 00 & 5 (high contrast)
+- **Paper database integration**: Uses ISO R values, gamma, filter factors from manufacturer data
+- **Optimization**: Balances soft/hard exposure times to minimize tonal placement error
 
-   - All timer settings, profiles, presets, chemical trackers
-   - Collapsible section states per data-id attribute
-   - Relay server IP/port configuration
-   - User preferences (sound, auto-trigger, color scheme)
+### Paper Database Structure (lib/paper_database.py)
 
-4. **No Build Step** - Entire client is deployable as single HTML file. All CSS and JavaScript inline.
-
-### Relay Integration Pattern
-
-The client connects to the server via user-configured IP/port (default `192.168.1.100:5000`):
-
-```javascript
-// In RelayManager class
-async sendRequest(endpoint, params = {}) {
-  const url = `http://${this.ip}:${this.port}/${endpoint}?${new URLSearchParams(params)}`;
-  const response = await fetch(url);
-  return await response.json();
+```python
+PAPER_DATABASE = {
+    'ilford_mg_iv': {
+        'manufacturer': 'Ilford',
+        'base_iso_p': 500,  # Speed without filter
+        'dmin': 0.06, 'dmax': 2.15,
+        'filters': {
+            '00': {'factor': 2.5, 'iso_r': 180, 'gamma': 0.45, ...},
+            '5': {'factor': 3.0, 'iso_r': 40, 'gamma': 1.2, ...},
+            # ... grades 0-4
+        }
+    },
+    'foma_fomaspeed': { ... }  # FOMA Variant system
 }
-
-// Triggering exposure
-await this.sendRequest("timer", { gpio: 25, duration: 5.5 });
 ```
 
-**Auto-trigger**: When enabled, timers automatically trigger GPIO 25 (enlarger) on start. Timer controllers call `window.relayManager.triggerTimerRelay(duration)`.
+**Key Functions**:
 
-### Client Tools (HTML Tabs)
+- `get_filter_selection(delta_ev, system='ilford')` - Returns optimal filter pair for ΔEV
+- `get_paper_data(paper_id)` - Returns full paper characteristics
+- `validate_exposure_times(soft_time, hard_time)` - Checks min/max practical limits
 
-- **CALC**: Exposure calculator with `IncrementalTimer`, `CountdownManager`, and `AudioService`. Updates `appState.ui.timerStatus` and, when auto-trigger is enabled, calls `window.relayManager.triggerTimerRelay(appState.calculator.thisExposureTime)` after countdown.
-- **TEST (F-Stop Test Strip)**: `FStopTestStripGenerator` supports cumulative/incremental methods, countdown, and `autoAdvance`. Uses `DEFAULT_SETTINGS.testBaseTime*` and `appState.settings.stopDenominator`. Triggers enlarger via `RelayManager` when configured.
-- **TIMER**: Four independent `Timer` instances (`Dev`, `Stop`, `Fix`, `Flo`) with `isRunning/isEnabled` state, default times from `DEFAULT_TIMER_TIMES`, and optional auto-chain (`autoStart`). Beep patterns use `AudioService` presets.
-- **CONTROL (Relay)**: `RelayManager` manages server IP/port, connection tests, and relay actions. UI IDs: `relayServerIP`, `relayServerPort`, `testRelayConnection`, `relayStatus`, `autoTriggerRelay`, `testTimerRelay`, `testTimerSeconds`, `allRelaysOn`, `allRelaysOff`. Relay map: 1→GPIO25 (Enlarger), 2→GPIO17 (Safelight), 3→GPIO27 (Ventilation), 4→GPIO22 (White Light). `safelightAutoOff` turns safelight off while enlarger is on, restores afterward.
-- **CHEMICAL**: `ChemicalManager` handles mix calculator, presets, developer capacity (paper-area based), and shelf-life tracking. Uses storage keys `STORAGE_KEYS.CHEMICAL_PRESETS`, `CAPACITY_TRACKER`, `SHELF_LIFE`. Helpers like `getChemicalName()` support custom naming.
-- **CHART**: `updateChart()` renders an f-stop table based on current base time and stop settings via `formatStop`, `calculateTime`, and settings limits.
-- **SETTINGS**: `SettingsManager` persists preferences: sound toggles, `autoStart`, color scheme, countdown options (`countdownDelay`, `countdownBeep`, `countdownPattern`), test strip `autoAdvance`, and `safelightAutoOff`.
+## Critical Patterns & Constraints
 
-### Key Client Identifiers
+### Timer Synchronization
 
-- **Storage keys**: `STORAGE_KEYS` object defines `SETTINGS`, `PROFILES`, `CURRENT_PROFILE`, `COLOR_SCHEME`, `CHEMICAL_PRESETS`, `CAPACITY_TRACKER`, `SHELF_LIFE`, `CUSTOM_FILTER_BANKS`, `SESSION_VALUES`.
-- **Defaults**: `DEFAULT_SETTINGS` includes countdown and auto-advance fields; `DEFAULT_TIMER_TIMES` holds seconds for `Dev/Stop/Fix/Flo`.
-- **Element ID patterns**: Timers use `display<name>`, `btn<name>`, and `timer<name>` (e.g., `displayDev`, `btnDev`). Relay tab uses IDs listed above; ensure event handlers read/write via `RelayManager`.
+Server calculates `start_at` (current + 150ms); client uses as countdown origin to compensate for latency.
 
-### Integration Flows
+### MicroPython v1.27.0 Constraints
 
-- **Exposure flow**: CALC countdown → `AudioService` beeps → `RelayManager.sendRequest('timer', { gpio: 25, duration })` → server toggles GPIO 25 active-low → client status updates.
-- **Safelight flow**: When enlarger turns ON, `RelayManager.handleSafelightAutoOff()` ensures GPIO17 OFF; on completion, restores previous safelight state.
-- **Persistence flow**: UI changes → `SettingsManager.saveGlobalSettings()` → `StorageManager.saveSettings()` → `appState.settings` synced → render functions update.
+- No urllib.parse - custom URL decoding
+- Memory: ~200KB free; use 512-byte chunks, `gc.collect()` in loops
+- Async mandatory: `asyncio.create_task()`, never `time.sleep()`
+- Active-LOW: `Pin.value(0)` = ON
+- Error handling: Wrap socket ops in try/except
+
+### WiFi Dual-Mode Failover
+
+AP first (instant access), then try STA (5s timeout). mDNS hostname set BEFORE WLAN init.
+
+### Browser State Management
+
+Single source of truth: `appState` object. All settings via managers (StorageManager, SettingsManager).
+
+### Light Meter Integration
+
+TSL2591X on I²C GP0/1. Calibration: `calibration_constant = measured_lux × correct_time`.
+
+**Workflow**:
+
+1. Measure highlight area → `/light-meter-highlight`
+2. Measure shadow area → `/light-meter-shadow`
+3. Calculate split-grade → `/light-meter-split-grade-heiland?paper_id=ilford_mg_iv`
+4. Server returns: `{soft_filter, hard_filter, soft_time, hard_time, delta_ev}`
+
+**Split-Grade Exposure**:
+
+1. Expose with **soft filter** for `soft_time` (controls highlights)
+2. Expose with **hard filter** for `hard_time` (controls shadows)
+3. Filters chosen dynamically based on scene contrast (ΔEV)
 
 ## Development Workflow
 
-### Testing the Server
+### Testing Split-Grade Algorithm (Without Hardware)
 
 ```bash
-# On Raspberry Pi
-python3 Raspberry_Server_v3.0.3.py
-
-# Access from browser
-http://<pi-ip>:5000/
-http://<pi-ip>:5000/ping
+# Run standalone tests with sample data
+python3 test_heiland_algorithm.py
+python3 test_split_grade.py
+python3 test_full_implementation.py
 ```
 
-Server logs show:
+These simulate the algorithm with various contrast scenarios without requiring Pico hardware.
 
-- Local IP and hostname
-- All configured GPIO pins
-- CORS status
-- Available endpoints
-
-### Testing Without Hardware
-
-For development without Raspberry Pi, comment out GPIO imports and mock the GPIO module. The HTML client works standalone with server unavailable (relay features disabled).
-
-### Python Dependencies
+### Deploy to Pico
 
 ```bash
-pip3 install Flask RPi.GPIO
+pip3 install adafruit-ampy
+export AMPY_PORT=/dev/tty.usbmodem1101
+ampy put boot.py
+ampy put index.html
+ampy mkdir lib
+ampy put lib/*.py lib/
 ```
 
-No other dependencies required. Server uses only Python stdlib + Flask + GPIO.
+### Monitor Console
 
-## Critical Conventions
+```bash
+screen /dev/tty.usbmodem1101 115200
+```
 
-1. **GPIO Safety**: Server always calls `cleanup_gpio()` on exit via `atexit.register()` to reset pins to safe state (all OFF).
+### Test Connection
 
-2. **Threading**: Timer operations use daemon threads to prevent blocking. Active timers tracked in `active_timers` dict for cancellation.
+```bash
+curl http://192.168.4.1/ping
+curl "http://192.168.4.1/timer?gpio=14&duration=5.0"
+```
 
-3. **CORS Headers**: Server adds CORS headers to ALL responses via `@app.after_request` decorator. Never remove CORS handling.
+## Common Modifications
 
-4. **Timer Precision**: Client uses `Date.now()` for millisecond accuracy, not `setInterval`. Critical for photographic timing.
+### Adding HTTP Endpoint
 
-5. **CSS Custom Properties**: When editing styles, modify CSS variables in `:root` and theme classes, not individual component styles.
+1. Add async handler in `HTTPServer` class (e.g., `async def _handle_new_endpoint(self, conn, params)`)
+2. Add route check in `_handle_request()` with path matching
+3. Parse params with `_parse_query_string()` (custom - no urllib.parse)
+4. Return JSON via `_json_response(data, status=200)`
+5. Include `_cors_headers()` in response
 
-6. **LocalStorage Keys**: Use descriptive prefixed keys (e.g., `darkroomTimer_profiles`, `relayManager_ip`). Always handle missing keys gracefully.
+**Example Pattern** (from lib/http_server.py:880):
 
-## Common Tasks
+```python
+async def _handle_light_meter_split_grade_heiland(self, conn, params):
+    paper_id = params.get('paper_id', ['ilford_mg_iv'])[0]
+    result = calculate_split_grade_enhanced(
+        self.light_meter.highlight_lux,
+        self.light_meter.shadow_lux,
+        paper_id=paper_id,
+        calibration=self.light_meter.calibration
+    )
+    conn.send(self._json_response(result))
+```
 
-### Adding New Relay Endpoint
+### Modifying Paper Database
 
-1. Add route to `Raspberry_Server_v3.0.3.py` with OPTIONS support
-2. Update `RelayManager` in HTML to add corresponding method
-3. Update server's root endpoint `/` documentation
+Edit `lib/paper_database.py`:
 
-### Adding Timer Feature
+- Add new paper entry to `PAPER_DATABASE` dict
+- Include: `manufacturer`, `base_iso_p`, `dmin`, `dmax`, `filters`
+- Each filter needs: `factor`, `iso_r`, `gamma`, `contrast_index`
+- Update `FILTER_SELECTION_ILFORD` or `FILTER_SELECTION_FOMA` for dynamic selection logic
+- Reference manufacturer docs in comments (see existing `[cite: XXX]` format)
 
-1. Create or extend manager class in HTML `<script>` section
-2. Add UI elements with appropriate classes (reuse existing styles)
-3. Bind event listeners in manager's `init()` method
-4. Persist state via LocalStorage if needed
-5. Call `window.relayManager.triggerTimerRelay()` if auto-trigger needed
+### Testing Workflow
 
-### Changing GPIO Pins
+1. **Algorithm changes**: Test with `test_heiland_algorithm.py` (no hardware)
+2. **Integration**: Test with `test_full_implementation.py` (imports real modules)
+3. **Deployment**: Upload to Pico, test via curl/browser
+4. **Validation**: Check console output for errors, verify exposures are realistic (2-30s range)
 
-Update `RELAY_PINS` dict in server. **Must also update any hardcoded references in HTML** (e.g., enlarger = GPIO 25 assumptions in relay manager).
+### Adding Relay Pin
 
-### Style Changes
+Update `RELAY_PINS` dict in gpio_control.py. Active-LOW required.
 
-Prefer modifying CSS variables over component styles. If adding new components, reuse consolidated classes (`.shelf-life-item`, `.settings-btn`, etc.) to maintain consistency.
+### Changing WiFi Defaults
 
-## Testing Checklist
+Edit wifi_ap.py: SSID, password, channel.
 
-- [ ] Server starts and logs local IP correctly
-- [ ] `/ping` endpoint responds
-- [ ] Relay control toggles GPIO pins (verify with multimeter or LED)
-- [ ] Client connects and shows "Connected successfully!"
-- [ ] Timer countdown plays sound and triggers relay
-- [ ] All relays turn OFF on server shutdown
-- [ ] Settings persist across page reloads
-- [ ] Test in all three color schemes (dark/light/day)
+## Troubleshooting
+
+| Issue                         | Solution                                                   |
+| ----------------------------- | ---------------------------------------------------------- |
+| Pico won't boot               | Reflash MicroPython UF2, check console                     |
+| WiFi not visible              | Verify MicroPython v1.27.0+, check AP logs                 |
+| HTML slow/timeout             | Normal - 610KB file, 512-byte chunks; wait 10-15s          |
+| Relay stuck ON                | Check active-LOW: value(0)=ON                              |
+| OSError EAGAIN                | Socket buffer full; retry with asyncio.sleep_ms(10)        |
+| Memory errors                 | Increase gc.collect() frequency                            |
+| Timer desync                  | Client must use server `start_at`                          |
+| Unrealistic split-grade times | Use Heiland endpoint, check paper_id, verify calibration   |
+| Filter selection wrong        | Check ΔEV calculation, verify paper database filter ranges |
+
+## Documentation & Research
+
+**Plans Directory** (`/plans`): Contains comprehensive research and implementation docs:
+
+- `final_splitgrade_research_summary.md` - Overview of Heiland methodology vs. current impl
+- `heiland_splitgrade_research.md` - Detailed Heiland algorithm research
+- `splitgrade_comparison_analysis.md` - Algorithm comparison & gap analysis
+- `manufacturer_data_research_plan.md` - Ilford/FOMA data extraction plan
+- Other planning docs for UI transformation & implementation strategies
+
+**Key Insights**:
+
+- Current `lib/light_sensor.py` uses fixed filters (unrealistic for most contrasts)
+- Enhanced `lib/splitgrade_enhanced.py` implements dynamic filter selection
+- Paper database sourced from manufacturer PDFs (see `[cite: XXX]` references)
+- ΔEV-based filter selection mimics Heiland Splitgrade Controller behavior
+
+## Client-Side Architecture
+
+**Key Classes**: StorageManager, SettingsManager, Timer, ChemicalManager, ExposureLogManager, RelayManager, FStopTestStripGenerator, SplitGradeCalculator.
+
+**State Management**: All state in `appState` object. Read from appState, write via managers.
+
+**API Integration**: Fetch to `/` endpoints. Server returns `start_at` for sync.
+
+**UI**: 8 tabs (CALC, SPLIT, CHART, FSTOP-TEST, TIMER, RELAY, CHEMICAL, LOGS, SETTINGS). Single-page app with collapsible menu.
+
+---
+
+**Last Updated**: 2026-02-01 | MicroPython v1.27.0
