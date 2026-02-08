@@ -16,6 +16,7 @@ Set before WiFi activation - accessible at darkroom.local
 import asyncio
 import gc
 import time
+from machine import Pin
 
 # Import modules from lib folder
 from lib.gpio_control import GPIOControl
@@ -37,6 +38,7 @@ except ImportError:
 AP_GRACE_PERIOD = 5  # Seconds to wait before disabling AP after STA connects
 LIGHT_METER_SDA_PIN = 0  # GP0 for I2C SDA
 LIGHT_METER_SCL_PIN = 1  # GP1 for I2C SCL
+AUTORUN_BLOCK_PIN = 6  # GP6, pull to GND to skip autorun
 
 
 class DarkroomTimer:
@@ -225,8 +227,19 @@ class DarkroomTimer:
         print("Cleanup complete")
 
 
+def _autorun_blocked():
+    try:
+        pin = Pin(AUTORUN_BLOCK_PIN, Pin.IN, Pin.PULL_UP)
+        return pin.value() == 0
+    except Exception:
+        return False
+
+
 def main():
     """Main entry point."""
+    if _autorun_blocked():
+        return
+
     app = DarkroomTimer()
     
     try:

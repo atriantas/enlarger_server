@@ -684,7 +684,14 @@ class DarkroomLightMeter:
         
         return delta_ev
     
-    def recommend_filter_grade(self, delta_ev, system=None, paper_id=None):
+    def recommend_filter_grade(
+        self,
+        delta_ev,
+        system=None,
+        paper_id=None,
+        dmin_override=None,
+        dmax_override=None,
+    ):
         """
         Recommend filter grade based on measured contrast.
         
@@ -726,6 +733,29 @@ class DarkroomLightMeter:
         if not paper_data:
             return None
         
+        # Apply Dmin/Dmax overrides when provided
+        try:
+            dmin_override = float(dmin_override) if dmin_override is not None else None
+        except (ValueError, TypeError):
+            dmin_override = None
+        try:
+            dmax_override = float(dmax_override) if dmax_override is not None else None
+        except (ValueError, TypeError):
+            dmax_override = None
+
+        base_dmin = paper_data.get('dmin', 0.05)
+        base_dmax = paper_data.get('dmax', 2.0)
+        effective_dmin = dmin_override if dmin_override is not None else base_dmin
+        effective_dmax = dmax_override if dmax_override is not None else base_dmax
+
+        if effective_dmax <= effective_dmin:
+            effective_dmin = paper_data.get('dmin', 0.05)
+            effective_dmax = paper_data.get('dmax', 2.0)
+
+        paper_data_effective = dict(paper_data)
+        paper_data_effective['dmin'] = effective_dmin
+        paper_data_effective['dmax'] = effective_dmax
+
         best_match = None
         best_diff = float('inf')
         
@@ -744,9 +774,21 @@ class DarkroomLightMeter:
                 continue
             
             # ENHANCED: Use paper's actual Dmin/Dmax with filter-specific adjustments
+            filter_data_effective = dict(filter_data)
+            dmin_effect_base = filter_data.get('dmin_effect', base_dmin)
+            dmax_effect_base = filter_data.get('dmax_effect', base_dmax)
+
+            # If overrides are provided, shift filter effects by the same delta
+            if dmin_override is not None:
+                dmin_delta = dmin_effect_base - base_dmin
+                filter_data_effective['dmin_effect'] = effective_dmin + dmin_delta
+            if dmax_override is not None:
+                dmax_delta = dmax_effect_base - base_dmax
+                filter_data_effective['dmax_effect'] = effective_dmax + dmax_delta
+
             printable_ev = self._calculate_printable_ev_enhanced(
-                paper_data, 
-                filter_data, 
+                paper_data_effective, 
+                filter_data_effective, 
                 grade
             )
             
@@ -761,10 +803,10 @@ class DarkroomLightMeter:
                     'iso_r': filter_data['iso_r'],
                     'factor': filter_data['factor'],
                     'printable_ev': printable_ev,
-                    'dmin': paper_data.get('dmin', 0.05),
-                    'dmax': paper_data.get('dmax', 2.0),
-                    'dmin_effect': filter_data.get('dmin_effect', paper_data.get('dmin', 0.05)),
-                    'dmax_effect': filter_data.get('dmax_effect', paper_data.get('dmax', 2.0)),
+                    'dmin': paper_data_effective.get('dmin', 0.05),
+                    'dmax': paper_data_effective.get('dmax', 2.0),
+                    'dmin_effect': filter_data_effective.get('dmin_effect', paper_data_effective.get('dmin', 0.05)),
+                    'dmax_effect': filter_data_effective.get('dmax_effect', paper_data_effective.get('dmax', 2.0)),
                     'contrast_index': filter_data.get('contrast_index', 1.0),
                     'gamma': filter_data.get('gamma', 0.7),
                     'exposure_latitude': paper_data.get('exposure_latitude', 1.5)
@@ -1138,7 +1180,10 @@ class DarkroomLightMeter:
         
         # Get filter factor from recommended grade
         grade = recommended_grade.get('grade', '2')
-        filter_factor = recommended_grade.get('filter_factor', 1.0)
+        filter_factor = recommended_grade.get(
+            'factor',
+            recommended_grade.get('filter_factor', 1.0)
+        )
         
         # Calculate exposure times based on lux readings
         # t_highlight targets highlight placement (Dmin + 0.1)
@@ -1154,15 +1199,18 @@ class DarkroomLightMeter:
         max_time = max(t_highlight, t_shadow)
         min_time = min(t_highlight, t_shadow)
         exposure_ratio = max_time / min_time if min_time > 0 else 1.0
-        
-        # Get paper latitude (exposure tolerance range)
+
+        # Get paper latitude in EV (log exposure range)
         exposure_latitude = paper_data.get('exposure_latitude', 1.5)
-        latitude_ratio = exposure_latitude  # Direct ratio
-        
+
+        # Compare in EV space to match contrast calculations
+        import math
+        exposure_ratio_ev = math.log2(exposure_ratio) if exposure_ratio > 0 else 0.0
+
         # Determine strategy based on whether exposure ratio fits paper latitude
-        # If ratio ≤ 80% of latitude, both exposures fit → balanced approach
-        # Otherwise → compromise between them
-        if exposure_ratio <= (latitude_ratio * 0.8):
+        # If EV ratio ≤ 80% of latitude, both exposures fit -> balanced approach
+        # Otherwise -> compromise between them
+        if exposure_ratio_ev <= (exposure_latitude * 0.8):
             strategy = 'balanced'
             # For balanced: average, adjusted by intent
             if intent == "highlight-priority":
@@ -1186,7 +1234,7 @@ class DarkroomLightMeter:
             else:
                 suggested_time = (t_highlight * 0.4) + (t_shadow * 0.6)
             notes = (
-                f"Scene contrast exceeds paper latitude ({exposure_ratio:.1f}:1 > {latitude_ratio:.1f}:1). "
+                f"Scene contrast exceeds paper latitude ({exposure_ratio_ev:.2f} EV > {exposure_latitude:.2f} EV). "
                 f"Intent: {intent.replace('-', ' ')}. "
                 f"Compromise time: {suggested_time:.2f}s."
             )
@@ -1198,7 +1246,7 @@ class DarkroomLightMeter:
             'exposure_ratio': round(exposure_ratio, 2),
             'strategy': strategy,
             'paper_latitude': exposure_latitude,
-            'latitude_ratio': round(latitude_ratio, 2),
+            'latitude_ratio': round(exposure_latitude, 2),
             'notes': notes,
             'intent': intent,
             'highlight_offset': round(highlight_offset, 2),
@@ -1212,6 +1260,8 @@ class DarkroomLightMeter:
         intent="balanced",
         highlight_offset=0.0,
         shadow_offset=0.0,
+        dmin_override=None,
+        dmax_override=None,
     ):
         """
         Get contrast analysis from stored highlight/shadow readings.
@@ -1235,7 +1285,12 @@ class DarkroomLightMeter:
         pid = paper_id or self.current_paper_id
         
         delta_ev = self.calculate_delta_ev(self.highlight_lux, self.shadow_lux)
-        recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
+        recommended = self.recommend_filter_grade(
+            delta_ev,
+            paper_id=pid,
+            dmin_override=dmin_override,
+            dmax_override=dmax_override,
+        )
         split_grade = self.calculate_split_grade(self.highlight_lux, self.shadow_lux, paper_id=pid)
         
         # Get paper data for exposure time calculations

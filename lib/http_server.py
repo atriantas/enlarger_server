@@ -937,12 +937,17 @@ class HTTPServer:
             highlight_offset = params.get('highlight_offset', 0)
             shadow_offset = params.get('shadow_offset', 0)
 
+            dmin_override = params.get('dmin_override')
+            dmax_override = params.get('dmax_override')
+
             analysis = self.light_meter.get_contrast_analysis(
                 paper_id=paper_id,
                 calibration=calibration,
                 intent=intent,
                 highlight_offset=highlight_offset,
                 shadow_offset=shadow_offset,
+                dmin_override=dmin_override,
+                dmax_override=dmax_override,
             )
             
             if 'error' in analysis:

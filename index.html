@@ -4782,6 +4782,52 @@
               </div>
             </div>
 
+            <!-- Paper Density Overrides (Advanced) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">PAPER DENSITY OVERRIDES (ADVANCED)</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Dmin Override:</span>
+                  <span style="font-weight: bold" id="dminOverrideValue">0.05</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.00"
+                  max="0.25"
+                  step="0.01"
+                  value="0.05"
+                  class="slider"
+                  id="dminOverrideSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Dmax Override:</span>
+                  <span style="font-weight: bold" id="dmaxOverrideValue">2.00</span>
+                </div>
+                <input
+                  type="range"
+                  min="1.60"
+                  max="2.40"
+                  step="0.01"
+                  value="2.00"
+                  class="slider"
+                  id="dmaxOverrideSlider"
+                />
+              </div>
+              <div class="settings-btn-group" style="margin-top: 8px">
+                <button class="settings-btn" id="resetDensityOverrides">
+                  Reset Density Overrides
+                </button>
+              </div>
+              <div
+                class="label-sm"
+                style="font-size: 0.75rem; margin-top: 6px; color: #999"
+              >
+                Overrides apply only to contrast analysis for the selected paper.
+              </div>
+            </div>
+
             <!-- Optimal Exposure Times -->
             <div class="info-box" style="margin-top: 10px">
               <div class="label-sm">OPTIMAL EXPOSURE TIMES</div>
@@ -4831,7 +4877,7 @@
                     ></span
                   >
                   <span
-                    >(Ratio:
+                    >(EV span:
                     <span style="font-weight: bold" id="exposureRatio">--</span
                     >)</span
                   >
@@ -5396,6 +5442,9 @@
         TEST_TRANSFER_DESTINATION: "darkroom_timer_test_transfer_destination",
         // Light meter calibrations (per paper type)
         LIGHT_METER_CALIBRATIONS: "darkroom_timer_light_meter_calibrations",
+        // Light meter paper density overrides (per paper type)
+        LIGHT_METER_DENSITY_OVERRIDES:
+          "darkroom_timer_light_meter_density_overrides",
         // Logging tool storage keys
         TEMP_SESSIONS: "darkroom_timer_temp_sessions",
         PERMANENT_SESSIONS: "darkroom_timer_permanent_sessions",
@@ -17695,6 +17744,10 @@
           this.calibrations = this.loadAllCalibrations();
           this.calibration = this.getCalibrationForCurrentPaper();
 
+          // Paper density overrides (Dmin/Dmax) per paper type
+          this.densityOverrides = this.loadAllDensityOverrides();
+          this.densityOverrideActive = false;
+
           // Sensor status
           this.sensorConnected = false;
           this.lastLux = null;
@@ -17941,6 +17994,9 @@
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
+
+          // Apply density overrides for new paper
+          this.applyDensityOverridesToUI();
         }
 
         /**
@@ -18032,6 +18088,9 @@
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
+
+          // Apply density overrides for new paper
+          this.applyDensityOverridesToUI();
         }
 
         /**
@@ -18317,6 +18376,46 @@
             shadowOffsetSlider.addEventListener("input", () => {
               shadowOffsetValue.textContent =
                 parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
+            });
+          }
+
+          // Density override sliders
+          const dminSlider = document.getElementById("dminOverrideSlider");
+          const dminValue = document.getElementById("dminOverrideValue");
+          if (dminSlider && dminValue) {
+            dminSlider.addEventListener("input", () => {
+              dminValue.textContent = Number(dminSlider.value).toFixed(2);
+              const dmaxSlider = document.getElementById("dmaxOverrideSlider");
+              const dmax = dmaxSlider ? Number(dmaxSlider.value) : 2.0;
+              this.setDensityOverrideForCurrentPaper(
+                Number(dminSlider.value),
+                dmax,
+              );
+            });
+          }
+
+          const dmaxSlider = document.getElementById("dmaxOverrideSlider");
+          const dmaxValue = document.getElementById("dmaxOverrideValue");
+          if (dmaxSlider && dmaxValue) {
+            dmaxSlider.addEventListener("input", () => {
+              dmaxValue.textContent = Number(dmaxSlider.value).toFixed(2);
+              const dminSlider = document.getElementById("dminOverrideSlider");
+              const dmin = dminSlider ? Number(dminSlider.value) : 0.05;
+              this.setDensityOverrideForCurrentPaper(
+                dmin,
+                Number(dmaxSlider.value),
+              );
+            });
+          }
+
+          const resetDensityBtn = document.getElementById(
+            "resetDensityOverrides",
+          );
+          if (resetDensityBtn) {
+            resetDensityBtn.addEventListener("click", () => {
+              this.clearDensityOverrideForCurrentPaper();
+              this.applyDensityOverridesToUI();
+              this.showFeedback("Density overrides reset", "success");
             });
           }
 
@@ -18811,12 +18910,20 @@
               document.getElementById("shadowOffsetSlider")?.value || "0",
             );
 
+            const densityOverride = this.getDensityOverrideForCurrentPaper();
+            const dminOverride = densityOverride ? densityOverride.dmin : null;
+            const dmaxOverride = densityOverride ? densityOverride.dmax : null;
+
             // Send calibration along with the request
-            const response = await fetch(
-              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}&intent=${encodeURIComponent(
-                intent,
-              )}&highlight_offset=${highlightOffset}&shadow_offset=${shadowOffset}`,
-            );
+            const baseParams =
+              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}` +
+              `&intent=${encodeURIComponent(intent)}` +
+              `&highlight_offset=${highlightOffset}&shadow_offset=${shadowOffset}`;
+            const densityParams =
+              dminOverride !== null && dmaxOverride !== null
+                ? `&dmin_override=${dminOverride}&dmax_override=${dmaxOverride}`
+                : "";
+            const response = await fetch(baseParams + densityParams);
             const data = await response.json();
 
             if (data.status === "success") {
@@ -18875,8 +18982,13 @@
                 document.getElementById("exposureStrategy").textContent =
                   times.strategy.charAt(0).toUpperCase() +
                   times.strategy.slice(1);
+                const ratioValue = Math.max(
+                  1,
+                  parseFloat(times.exposure_ratio || 1),
+                );
+                const ratioEv = Math.log2(ratioValue);
                 document.getElementById("exposureRatio").textContent =
-                  times.exposure_ratio + ":1";
+                  ratioEv.toFixed(2) + " EV";
                 document.getElementById("exposureNote").textContent =
                   times.notes;
 
@@ -19410,6 +19522,91 @@
             foma_fomaspeed: 1000,
             foma_fomatone: 1000,
           };
+        }
+
+        /**
+         * Load density overrides from localStorage
+         */
+        loadAllDensityOverrides() {
+          const stored = localStorage.getItem(
+            STORAGE_KEYS.LIGHT_METER_DENSITY_OVERRIDES,
+          );
+          if (stored) {
+            try {
+              return JSON.parse(stored);
+            } catch (e) {
+              console.warn("Could not parse density overrides; ignoring");
+            }
+          }
+          return {};
+        }
+
+        /**
+         * Save density overrides to localStorage
+         */
+        saveAllDensityOverrides(overrides = null) {
+          const data = overrides || this.densityOverrides;
+          localStorage.setItem(
+            STORAGE_KEYS.LIGHT_METER_DENSITY_OVERRIDES,
+            JSON.stringify(data),
+          );
+        }
+
+        /**
+         * Get density override for current paper
+         */
+        getDensityOverrideForCurrentPaper() {
+          const paperId = this.getCurrentPaperId();
+          return this.densityOverrides[paperId] || null;
+        }
+
+        /**
+         * Save density override for current paper
+         */
+        setDensityOverrideForCurrentPaper(dmin, dmax) {
+          const paperId = this.getCurrentPaperId();
+          this.densityOverrides[paperId] = {
+            dmin: dmin,
+            dmax: dmax,
+          };
+          this.saveAllDensityOverrides();
+          this.densityOverrideActive = true;
+        }
+
+        /**
+         * Clear density override for current paper
+         */
+        clearDensityOverrideForCurrentPaper() {
+          const paperId = this.getCurrentPaperId();
+          if (this.densityOverrides[paperId]) {
+            delete this.densityOverrides[paperId];
+            this.saveAllDensityOverrides();
+          }
+          this.densityOverrideActive = false;
+        }
+
+        /**
+         * Apply density override values to UI sliders
+         */
+        applyDensityOverridesToUI() {
+          const override = this.getDensityOverrideForCurrentPaper();
+          const dminSlider = document.getElementById("dminOverrideSlider");
+          const dmaxSlider = document.getElementById("dmaxOverrideSlider");
+          const dminValue = document.getElementById("dminOverrideValue");
+          const dmaxValue = document.getElementById("dmaxOverrideValue");
+
+          const defaultDmin = 0.05;
+          const defaultDmax = 2.0;
+
+          const dmin = override ? override.dmin : defaultDmin;
+          const dmax = override ? override.dmax : defaultDmax;
+
+          if (dminSlider) dminSlider.value = dmin;
+          if (dmaxSlider) dmaxSlider.value = dmax;
+          if (dminValue) dminValue.textContent = Number(dmin).toFixed(2);
+          if (dmaxValue) dmaxValue.textContent = Number(dmax).toFixed(2);
+
+          this.densityOverrideActive = !!override;
         }
 
         /**
