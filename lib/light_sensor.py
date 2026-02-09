@@ -689,18 +689,12 @@ class DarkroomLightMeter:
         delta_ev,
         system=None,
         paper_id=None,
-        dmin_override=None,
-        dmax_override=None,
     ):
         """
         Recommend filter grade based on measured contrast.
         
-        ENHANCED ALGORITHM: Uses paper's actual Dmin/Dmax characteristics
-        for accurate printable EV calculation, supplemented by contrast_index
-        and gamma values per filter grade.
-        
-        Matches the negative's contrast range to a filter grade
-        whose exposure latitude best accommodates that contrast.
+        ISO R METHOD: Convert measured contrast to ISO Range (R) and
+        match to the closest filter ISO R value for the selected paper.
         
         Args:
             delta_ev: Measured contrast range (EV stops)
@@ -712,19 +706,14 @@ class DarkroomLightMeter:
                 'grade': str,                # Recommended filter grade
                 'iso_r': int,                # ISO R value
                 'factor': float,             # Exposure factor
-                'printable_ev': float,       # Paper's exposure range (EV)
-                'dmin': float,               # Paper minimum density
-                'dmax': float,               # Paper maximum density
-                'contrast_index': float,     # Grade-specific contrast
-                'gamma': float,              # Tone curve slope
-                'match_quality': str,        # 'exact', 'close', 'approximate'
+                'match_quality': str,        # 'exact', 'close', 'acceptable', 'approximate'
                 'reasoning': str             # Why this grade was selected
             }
         """
         if delta_ev is None:
             return None
         
-        from lib.paper_database import get_paper_data, get_available_filters
+        from lib.paper_database import get_paper_data, get_available_filters, get_filter_data
         
         # Use specified paper_id or current paper
         pid = paper_id or self.current_paper_id
@@ -732,33 +721,13 @@ class DarkroomLightMeter:
         
         if not paper_data:
             return None
-        
-        # Apply Dmin/Dmax overrides when provided
-        try:
-            dmin_override = float(dmin_override) if dmin_override is not None else None
-        except (ValueError, TypeError):
-            dmin_override = None
-        try:
-            dmax_override = float(dmax_override) if dmax_override is not None else None
-        except (ValueError, TypeError):
-            dmax_override = None
 
-        base_dmin = paper_data.get('dmin', 0.05)
-        base_dmax = paper_data.get('dmax', 2.0)
-        effective_dmin = dmin_override if dmin_override is not None else base_dmin
-        effective_dmax = dmax_override if dmax_override is not None else base_dmax
-
-        if effective_dmax <= effective_dmin:
-            effective_dmin = paper_data.get('dmin', 0.05)
-            effective_dmax = paper_data.get('dmax', 2.0)
-
-        paper_data_effective = dict(paper_data)
-        paper_data_effective['dmin'] = effective_dmin
-        paper_data_effective['dmax'] = effective_dmax
+        # ISO R target: delta_ev * 0.30 (log density) * 100
+        iso_r_target = abs(delta_ev) * 30.0
 
         best_match = None
         best_diff = float('inf')
-        
+
         # Get available filters for this paper
         available_filters = get_available_filters(pid)
         
@@ -766,230 +735,44 @@ class DarkroomLightMeter:
             # Skip "no filter" options when recommending a filter grade
             if grade == '' or grade == 'none':
                 continue
-            
-            from lib.paper_database import get_filter_data
+
             filter_data = get_filter_data(pid, grade)
-            
             if not filter_data:
                 continue
-            
-            # ENHANCED: Use paper's actual Dmin/Dmax with filter-specific adjustments
-            filter_data_effective = dict(filter_data)
-            dmin_effect_base = filter_data.get('dmin_effect', base_dmin)
-            dmax_effect_base = filter_data.get('dmax_effect', base_dmax)
 
-            # If overrides are provided, shift filter effects by the same delta
-            if dmin_override is not None:
-                dmin_delta = dmin_effect_base - base_dmin
-                filter_data_effective['dmin_effect'] = effective_dmin + dmin_delta
-            if dmax_override is not None:
-                dmax_delta = dmax_effect_base - base_dmax
-                filter_data_effective['dmax_effect'] = effective_dmax + dmax_delta
+            iso_r = filter_data.get('iso_r')
+            if iso_r is None:
+                continue
 
-            printable_ev = self._calculate_printable_ev_enhanced(
-                paper_data_effective, 
-                filter_data_effective, 
-                grade
-            )
-            
-            # Match paper's printable EV to measured scene contrast
-            # The algorithm seeks the grade whose latitude best matches the scene contrast
-            diff = abs(printable_ev - abs(delta_ev))
-            
+            diff = abs(iso_r_target - iso_r)
             if diff < best_diff:
                 best_diff = diff
                 best_match = {
                     'grade': grade,
-                    'iso_r': filter_data['iso_r'],
-                    'factor': filter_data['factor'],
-                    'printable_ev': printable_ev,
-                    'dmin': paper_data_effective.get('dmin', 0.05),
-                    'dmax': paper_data_effective.get('dmax', 2.0),
-                    'dmin_effect': filter_data_effective.get('dmin_effect', paper_data_effective.get('dmin', 0.05)),
-                    'dmax_effect': filter_data_effective.get('dmax_effect', paper_data_effective.get('dmax', 2.0)),
-                    'contrast_index': filter_data.get('contrast_index', 1.0),
-                    'gamma': filter_data.get('gamma', 0.7),
-                    'exposure_latitude': paper_data.get('exposure_latitude', 1.5)
+                    'iso_r': iso_r,
+                    'factor': filter_data.get('factor', 1.0)
                 }
-        
-        if best_match:
-            # Determine match quality with tighter thresholds
-            scene_ev = abs(delta_ev)
-            paper_ev = best_match['printable_ev']
-            
-            if best_diff < 0.15:
-                best_match['match_quality'] = 'exact'
-                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV matches paper latitude {paper_ev:.1f} EV perfectly"
-            elif best_diff < 0.4:
-                best_match['match_quality'] = 'close'
-                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV closely matches paper latitude {paper_ev:.1f} EV"
-            elif best_diff < 0.7:
-                best_match['match_quality'] = 'acceptable'
-                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV acceptable for paper latitude {paper_ev:.1f} EV (slight tone adjustment needed)"
-            else:
-                best_match['match_quality'] = 'approximate'
-                best_match['reasoning'] = f"Scene contrast {scene_ev:.1f} EV requires compromise with paper latitude {paper_ev:.1f} EV"
-        
+
+        if best_match is None:
+            return None
+
+        if best_diff <= 5:
+            match_quality = 'exact'
+        elif best_diff <= 15:
+            match_quality = 'close'
+        elif best_diff <= 30:
+            match_quality = 'acceptable'
+        else:
+            match_quality = 'approximate'
+
+        best_match['match_quality'] = match_quality
+        best_match['reasoning'] = (
+            f"ISO R target {iso_r_target:.0f} matches grade {best_match['grade']} "
+            f"(ISO R {best_match['iso_r']}) with a {best_diff:.0f} difference"
+        )
+
         return best_match
     
-    def _calculate_printable_ev_enhanced(self, paper_data, filter_data, grade):
-        """
-        Calculate printable EV (exposure latitude) from paper's Dmin/Dmax characteristics.
-        
-        ENHANCED ALGORITHM with toe/shoulder slope compensation:
-        
-        The printable EV is the range of logarithmic exposures that produces tones
-        between Dmin (white) and Dmax (black). For each filter grade, this range
-        is affected by:
-        
-        1. Base Dmin/Dmax (paper base characteristics)
-        2. Tone curve regions:
-           - Toe region (shadows): low slope → compression → reduced printable EV
-           - Straight region (midtones): high slope → good separation → full printable EV
-           - Shoulder region (highlights): low slope → compression → reduced printable EV
-        3. Gamma (overall curve slope) - filter-specific tone curve
-        4. Contrast Index - filter's relative hardness
-        
-        Regional Printable EV Calculation:
-            Each region contributes differently based on its slope:
-            - Toe: logE_range × toe_slope × 3.32 = EV_toe
-            - Straight: logE_range × straight_slope × 3.32 = EV_straight
-            - Shoulder: logE_range × shoulder_slope × 3.32 = EV_shoulder
-            
-        Weighting by tone curve region:
-            For a normal curve, the regions are proportioned:
-            - Toe: ~15-20% of tonal range
-            - Straight: ~60-70% of tonal range
-            - Shoulder: ~15-20% of tonal range
-            
-        Effective Printable EV:
-            EV_effective = (EV_toe × 0.15) + (EV_straight × 0.70) + (EV_shoulder × 0.15)
-            
-        Filter adjustment:
-            Soft grades (gamma < 0.7): increase shoulder contribution (preserve highlights)
-            Hard grades (gamma > 1.0): increase toe contribution (preserve shadows)
-        
-        Args:
-            paper_data: Paper database entry with dmin, dmax, characteristic_curve
-            filter_data: Filter entry with gamma, contrast_index, dmin_effect, dmax_effect
-            grade: Filter grade (for context)
-        
-        Returns:
-            float: Printable EV range (stops)
-        """
-        import math
-        
-        # Get paper base characteristics
-        dmin = paper_data.get('dmin', 0.05)
-        dmax = paper_data.get('dmax', 2.0)
-        
-        # Get filter-specific density effects (adjusted by filter grade)
-        dmin_effect = filter_data.get('dmin_effect', dmin)
-        dmax_effect = filter_data.get('dmax_effect', dmax)
-        
-        # Get tone curve characteristics
-        gamma = filter_data.get('gamma', 0.7)  # Typical range 0.4-1.6
-        contrast_index = filter_data.get('contrast_index', 1.0)
-        
-        # Get characteristic curve data
-        curve_data = paper_data.get('characteristic_curve', {})
-        toe_slope = curve_data.get('toe_slope', 0.30)
-        straight_slope = curve_data.get('straight_slope', 0.80)
-        shoulder_slope = curve_data.get('shoulder_slope', 0.18)
-        logE_range = curve_data.get('logE_range', 1.8)
-        
-        # Calculate effective density range
-        density_range = dmax_effect - dmin_effect
-        
-        if density_range <= 0:
-            # Fallback: use ISO R mapping if density range invalid
-            iso_r = filter_data.get('iso_r', 100)
-            return self._iso_r_to_ev(iso_r)
-        
-        # ===== METHOD 1: Direct density-gamma relationship =====
-        try:
-            ev_from_density = math.log2(density_range / gamma)
-        except (ValueError, ZeroDivisionError):
-            ev_from_density = 6.0
-        
-        # ===== METHOD 2: Characteristic curve with toe/shoulder compensation =====
-        # Calculate EV contribution from each curve region
-        # Convert slopes to EV contributions (multiply by logE_range × 3.32)
-        
-        ev_toe = toe_slope * logE_range * 3.32
-        ev_straight = straight_slope * logE_range * 3.32
-        ev_shoulder = shoulder_slope * logE_range * 3.32
-        
-        # Base region weighting for normal curves
-        # Shadows (toe): ~15%, Midtones (straight): ~70%, Highlights (shoulder): ~15%
-        weight_toe_base = 0.15
-        weight_straight_base = 0.70
-        weight_shoulder_base = 0.15
-        
-        # ===== Adjust region weights based on filter gamma =====
-        # Soft grades (low gamma): boost shoulder to preserve highlights
-        # Hard grades (high gamma): boost toe to preserve shadows
-        
-        gamma_normalized = gamma / 0.8  # Normalize to "normal" grade (0.8)
-        
-        if gamma < 0.7:  # Soft grades
-            # Reduce toe weight, increase shoulder weight (preserve highlights)
-            adjustment = (0.7 - gamma) * 0.2  # Up to 0.2 adjustment
-            weight_toe_base -= adjustment * 0.5
-            weight_shoulder_base += adjustment
-        elif gamma > 1.0:  # Hard grades
-            # Reduce shoulder weight, increase toe weight (preserve shadows)
-            adjustment = (gamma - 1.0) * 0.25  # Up to 0.25 adjustment
-            weight_toe_base += adjustment
-            weight_shoulder_base -= adjustment * 0.5
-        
-        # Normalize weights to sum to 1.0
-        total_weight = weight_toe_base + weight_straight_base + weight_shoulder_base
-        weight_toe = weight_toe_base / total_weight
-        weight_straight = weight_straight_base / total_weight
-        weight_shoulder = weight_shoulder_base / total_weight
-        
-        # Calculate regional printable EV
-        # But apply compression penalty for toe/shoulder (they have lower slope)
-        # Compression factor: relates slope to straight_slope
-        toe_compression = toe_slope / max(straight_slope, 0.01)  # Can be < 1.0
-        shoulder_compression = shoulder_slope / max(straight_slope, 0.01)  # Can be < 1.0
-        
-        # Apply compression: low slopes contribute less to printable range
-        ev_toe_adjusted = ev_toe * toe_compression
-        ev_shoulder_adjusted = ev_shoulder * shoulder_compression
-        
-        # Weighted average considering regional compression
-        ev_from_logE = (ev_toe_adjusted * weight_toe) + \
-                       (ev_straight * weight_straight) + \
-                       (ev_shoulder_adjusted * weight_shoulder)
-        
-        # ===== Blend both methods =====
-        # Weight based on contrast index
-        # CI < 1.0: soft (trust logE more)
-        # CI ≈ 1.0: normal (balanced)
-        # CI > 1.0: hard (trust density more)
-        
-        weight_density = contrast_index
-        weight_logE = 2.0 - contrast_index
-        
-        total_weight = weight_density + weight_logE
-        weight_density /= total_weight
-        weight_logE /= total_weight
-        
-        # Weighted average of both methods
-        printable_ev = (ev_from_density * weight_density) + (ev_from_logE * weight_logE)
-        
-        # ===== Apply exposure latitude factor =====
-        # Wider latitude = can handle more contrast
-        exposure_latitude = paper_data.get('exposure_latitude', 1.5)
-        printable_ev = printable_ev * (exposure_latitude / 1.5)  # Normalize to 1.5 baseline
-        
-        # ===== Clamp to reasonable range =====
-        # Typical papers: 2.0 to 8.5 EV
-        printable_ev = max(2.0, min(printable_ev, 8.5))
-        
-        return printable_ev
     
     def _iso_r_to_ev(self, iso_r):
         """Interpolate EV from ISO R value."""
@@ -1122,146 +905,65 @@ class DarkroomLightMeter:
             self.shadow_lux = result['lux']
         return result
     
-    def _calculate_optimal_exposure_times(
+    def _calculate_midpoint_exposure_time(
         self,
         highlight_lux,
         shadow_lux,
         recommended_grade,
-        paper_data,
         calibration=None,
-        intent="balanced",
-        highlight_offset=0.0,
-        shadow_offset=0.0,
     ):
         """
-        Calculate optimal exposure times for highlight and shadow placement.
-        
-        Uses measured lux and recommended grade to suggest exposure times
-        that achieve optimal tonal distribution on the paper.
-        
+        Calculate exposure time from the mid-point (gray) lux.
+
+        The midpoint lux is the geometric mean of highlight and shadow.
+        Exposure time follows the Exposure Meter formula and then applies
+        the recommended filter factor.
+
         Args:
             highlight_lux: Measured lux at highlight area
             shadow_lux: Measured lux at shadow area
-            recommended_grade: Output from recommend_filter_grade() (includes grade, filter_factor, etc.)
-            paper_data: Paper characteristics from database
+            recommended_grade: Output from recommend_filter_grade()
             calibration: Optional calibration constant (uses default if None)
-        
+
         Returns:
             dict: {
-                'highlight_time': Time for highlight placement (seconds),
-                'shadow_time': Time for shadow placement (seconds),
-                'suggested_time': Recommended compromise time (seconds),
-                'exposure_ratio': max(t_h, t_s) / min(t_h, t_s),
-                'strategy': 'balanced' or 'compromise',
-                'paper_latitude': From paper data,
-                'latitude_ratio': Paper's exposure latitude as ratio,
-                'notes': Explanation of strategy choice
+                'suggested_time': float,
+                'midpoint_lux': float,
+                'notes': str
             }
         """
+        if not highlight_lux or not shadow_lux:
+            return None
+
         cal = calibration or self.default_calibration
 
-        # Normalize intent
-        intent = intent or "balanced"
-        if intent not in ("balanced", "highlight-priority", "shadow-priority"):
-            intent = "balanced"
+        import math
+        lux_mid = math.sqrt(highlight_lux * shadow_lux)
+        if lux_mid <= 0:
+            return None
 
-        # Clamp offsets to reasonable range (EV)
-        try:
-            highlight_offset = float(highlight_offset)
-        except (ValueError, TypeError):
-            highlight_offset = 0.0
-        try:
-            shadow_offset = float(shadow_offset)
-        except (ValueError, TypeError):
-            shadow_offset = 0.0
-
-        highlight_offset = max(-1.0, min(1.0, highlight_offset))
-        shadow_offset = max(-1.0, min(1.0, shadow_offset))
-        
-        # Get filter factor from recommended grade
-        grade = recommended_grade.get('grade', '2')
         filter_factor = recommended_grade.get(
             'factor',
             recommended_grade.get('filter_factor', 1.0)
         )
-        
-        # Calculate exposure times based on lux readings
-        # t_highlight targets highlight placement (Dmin + 0.1)
-        # t_shadow targets shadow placement (Dmax - 0.1)
-        t_highlight = (cal / highlight_lux) * filter_factor
-        t_shadow = (cal / shadow_lux) * filter_factor
 
-        # Apply EV offsets (positive = more exposure, negative = less)
-        t_highlight *= 2 ** highlight_offset
-        t_shadow *= 2 ** shadow_offset
-        
-        # Calculate exposure ratio
-        max_time = max(t_highlight, t_shadow)
-        min_time = min(t_highlight, t_shadow)
-        exposure_ratio = max_time / min_time if min_time > 0 else 1.0
+        suggested_time = (cal / lux_mid) * filter_factor
 
-        # Get paper latitude in EV (log exposure range)
-        exposure_latitude = paper_data.get('exposure_latitude', 1.5)
+        notes = (
+            "Midpoint exposure based on highlight/shadow geometric mean, "
+            "using calibration constant and filter factor."
+        )
 
-        # Compare in EV space to match contrast calculations
-        import math
-        exposure_ratio_ev = math.log2(exposure_ratio) if exposure_ratio > 0 else 0.0
-
-        # Determine strategy based on whether exposure ratio fits paper latitude
-        # If EV ratio ≤ 80% of latitude, both exposures fit -> balanced approach
-        # Otherwise -> compromise between them
-        if exposure_ratio_ev <= (exposure_latitude * 0.8):
-            strategy = 'balanced'
-            # For balanced: average, adjusted by intent
-            if intent == "highlight-priority":
-                suggested_time = (t_highlight * 0.6) + (t_shadow * 0.4)
-            elif intent == "shadow-priority":
-                suggested_time = (t_highlight * 0.4) + (t_shadow * 0.6)
-            else:
-                suggested_time = (t_highlight + t_shadow) / 2.0
-            notes = (
-                "Scene contrast fits paper latitude. "
-                f"Intent: {intent.replace('-', ' ')}. "
-                f"Use {suggested_time:.2f}s for tonal distribution."
-            )
-        else:
-            strategy = 'compromise'
-            # For compromise: bias based on intent
-            if intent == "highlight-priority":
-                suggested_time = (t_highlight * 0.65) + (t_shadow * 0.35)
-            elif intent == "shadow-priority":
-                suggested_time = (t_highlight * 0.35) + (t_shadow * 0.65)
-            else:
-                suggested_time = (t_highlight * 0.4) + (t_shadow * 0.6)
-            notes = (
-                f"Scene contrast exceeds paper latitude ({exposure_ratio_ev:.2f} EV > {exposure_latitude:.2f} EV). "
-                f"Intent: {intent.replace('-', ' ')}. "
-                f"Compromise time: {suggested_time:.2f}s."
-            )
-        
         return {
-            'highlight_time': round(t_highlight, 2),
-            'shadow_time': round(t_shadow, 2),
             'suggested_time': round(suggested_time, 2),
-            'exposure_ratio': round(exposure_ratio, 2),
-            'strategy': strategy,
-            'paper_latitude': exposure_latitude,
-            'latitude_ratio': round(exposure_latitude, 2),
-            'notes': notes,
-            'intent': intent,
-            'highlight_offset': round(highlight_offset, 2),
-            'shadow_offset': round(shadow_offset, 2)
+            'midpoint_lux': round(lux_mid, 1),
+            'notes': notes
         }
     
     def get_contrast_analysis(
         self,
         paper_id=None,
         calibration=None,
-        intent="balanced",
-        highlight_offset=0.0,
-        shadow_offset=0.0,
-        dmin_override=None,
-        dmax_override=None,
     ):
         """
         Get contrast analysis from stored highlight/shadow readings.
@@ -1288,36 +990,33 @@ class DarkroomLightMeter:
         recommended = self.recommend_filter_grade(
             delta_ev,
             paper_id=pid,
-            dmin_override=dmin_override,
-            dmax_override=dmax_override,
         )
         split_grade = self.calculate_split_grade(self.highlight_lux, self.shadow_lux, paper_id=pid)
         
-        # Get paper data for exposure time calculations
-        from lib.paper_database import get_paper_data
-        paper_data = get_paper_data(pid)
-        
-        # Calculate optimal exposure times
+        # Calculate midpoint-based exposure time
         exposure_times = None
-        if paper_data and recommended:
+        if recommended:
             # Use provided calibration, or fall back to paper-specific/default
             cal = calibration if calibration else self.get_calibration(pid)
-            exposure_times = self._calculate_optimal_exposure_times(
+            exposure_times = self._calculate_midpoint_exposure_time(
                 self.highlight_lux,
                 self.shadow_lux,
                 recommended,
-                paper_data,
                 calibration=cal,
-                intent=intent,
-                highlight_offset=highlight_offset,
-                shadow_offset=shadow_offset,
             )
-        
+        recommended_response = None
+        if recommended:
+            recommended_response = {
+                'grade': recommended.get('grade'),
+                'match_quality': recommended.get('match_quality'),
+                'reasoning': recommended.get('reasoning')
+            }
+
         return {
             'highlight_lux': self.highlight_lux,
             'shadow_lux': self.shadow_lux,
             'delta_ev': delta_ev,
-            'recommended_grade': recommended,
+            'recommended_grade': recommended_response,
             'split_grade': split_grade,
             'exposure_times': exposure_times
         }

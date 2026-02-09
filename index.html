@@ -4675,36 +4675,6 @@
               </div>
             </div>
 
-            <!-- Paper & Filter Characteristics (Enhanced Analysis) -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">PAPER CHARACTERISTICS</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Printable EV:</span>
-                  <span style="font-weight: bold" id="printableEV">-- EV</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Gamma (Tone Curve):</span>
-                  <span style="font-weight: bold" id="paperGamma">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Contrast Index:</span>
-                  <span style="font-weight: bold" id="contrastIndex">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Density Range:</span>
-                  <span style="font-weight: bold" id="densityRange"
-                    >-- (Dmin-Dmax)</span
-                  >
-                </div>
-              </div>
-            </div>
 
             <!-- Analysis Reasoning -->
             <div
@@ -4727,126 +4697,9 @@
               </div>
             </div>
 
-            <!-- Fine Tuning Controls -->
+            <!-- Suggested Exposure Time -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">FINE TUNING</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Intent:</span>
-                  <select
-                    id="contrastIntent"
-                    class="settings-input"
-                    style="width: 55%"
-                  >
-                    <option value="balanced">Balanced</option>
-                    <option value="highlight-priority">
-                      Highlight Priority
-                    </option>
-                    <option value="shadow-priority">Shadow Priority</option>
-                  </select>
-                </div>
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Highlight Offset:</span>
-                  <span style="font-weight: bold" id="highlightOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="highlightOffsetSlider"
-                />
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Shadow Offset:</span>
-                  <span style="font-weight: bold" id="shadowOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="shadowOffsetSlider"
-                />
-              </div>
-            </div>
-
-            <!-- Paper Density Overrides (Advanced) -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">PAPER DENSITY OVERRIDES (ADVANCED)</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Dmin Override:</span>
-                  <span style="font-weight: bold" id="dminOverrideValue">0.05</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.00"
-                  max="0.25"
-                  step="0.01"
-                  value="0.05"
-                  class="slider"
-                  id="dminOverrideSlider"
-                />
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Dmax Override:</span>
-                  <span style="font-weight: bold" id="dmaxOverrideValue">2.00</span>
-                </div>
-                <input
-                  type="range"
-                  min="1.60"
-                  max="2.40"
-                  step="0.01"
-                  value="2.00"
-                  class="slider"
-                  id="dmaxOverrideSlider"
-                />
-              </div>
-              <div class="settings-btn-group" style="margin-top: 8px">
-                <button class="settings-btn" id="resetDensityOverrides">
-                  Reset Density Overrides
-                </button>
-              </div>
-              <div
-                class="label-sm"
-                style="font-size: 0.75rem; margin-top: 6px; color: #999"
-              >
-                Overrides apply only to contrast analysis for the selected paper.
-              </div>
-            </div>
-
-            <!-- Optimal Exposure Times -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">OPTIMAL EXPOSURE TIMES</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Highlight Time (best whites):</span>
-                  <span style="font-weight: bold" id="highlightExposureTime"
-                    >-- sec</span
-                  >
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Shadow Time (best blacks):</span>
-                  <span style="font-weight: bold" id="shadowExposureTime"
-                    >-- sec</span
-                  >
-                </div>
-              </div>
+              <div class="label-sm">SUGGESTED EXPOSURE TIME</div>
               <div
                 class="label-sm"
                 style="
@@ -4857,29 +4710,19 @@
                 "
               >
                 <div style="display: flex; justify-content: space-between">
-                  <span>Suggested Time (compromise):</span>
+                  <span>Midpoint Time:</span>
                   <span
                     style="font-weight: bold; font-size: 1.1rem"
                     id="suggestedExposureTime"
                     >-- sec</span
                   >
                 </div>
-              </div>
-              <div
-                class="label-sm"
-                style="font-size: 0.75rem; margin-top: 5px; color: #999"
-              >
-                <div style="display: flex; justify-content: space-between">
-                  <span
-                    >Strategy:
-                    <span style="font-weight: bold" id="exposureStrategy"
-                      >--</span
-                    ></span
-                  >
-                  <span
-                    >(EV span:
-                    <span style="font-weight: bold" id="exposureRatio">--</span
-                    >)</span
+                <div
+                  style="display: flex; justify-content: space-between; margin-top: 3px"
+                >
+                  <span>Midpoint Lux:</span>
+                  <span style="font-weight: bold" id="midpointLuxDisplay"
+                    >-- lux</span
                   >
                 </div>
               </div>
@@ -4967,32 +4810,6 @@
               />
             </div>
 
-            <!-- Algorithm Selection -->
-            <div class="control" style="margin-top: 15px">
-              <div class="control-label">
-                <span>ALGORITHM</span>
-              </div>
-              <select
-                class="settings-input"
-                id="splitAlgorithmSelect"
-                style="width: 100%"
-              >
-                <option value="heiland">Heiland Enhanced (Recommended)</option>
-                <option value="original">Original Fixed-Filter</option>
-                <option value="comparison">Compare Both Algorithms</option>
-              </select>
-              <div
-                class="label-sm"
-                style="
-                  margin-top: 4px;
-                  color: var(--text-secondary);
-                  font-size: 0.55rem;
-                "
-              >
-                Heiland: Dynamic filter selection based on contrast
-              </div>
-            </div>
-
             <!-- Highlight Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
               <div class="label-sm">HIGHLIGHT AREA</div>
@@ -5045,32 +4862,113 @@
               </div>
             </div>
 
-            <!-- Filter Selection -->
-            <div class="control" style="margin-top: 15px">
-              <div class="control-label">
-                <span>SOFT FILTER (Highlights)</span>
+            <!-- Paper & Filter Characteristics (Split-Grade) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">PAPER CHARACTERISTICS</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Printable EV:</span>
+                  <span style="font-weight: bold" id="splitPrintableEV">-- EV</span>
+                </div>
               </div>
-              <select
-                class="settings-input"
-                id="splitSoftFilterSelect"
-                style="width: 100%"
-              >
-                <option value="">Auto-Select</option>
-              </select>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Gamma (Tone Curve):</span>
+                  <span style="font-weight: bold" id="splitPaperGamma">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Contrast Index:</span>
+                  <span style="font-weight: bold" id="splitContrastIndex">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Density Range:</span>
+                  <span style="font-weight: bold" id="splitDensityRange">
+                    -- (Dmin-Dmax)
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div class="control" style="margin-top: 10px">
-              <div class="control-label">
-                <span>HARD FILTER (Shadows)</span>
+            <!-- Analysis Reasoning -->
+            <div
+              class="info-box"
+              style="
+                margin-top: 10px;
+                background: rgba(50, 150, 255, 0.1);
+                border-color: rgba(50, 150, 255, 0.3);
+              "
+            >
+              <div class="label-sm" style="color: #6699ff">
+                ANALYSIS REASONING
               </div>
-              <select
-                class="settings-input"
-                id="splitHardFilterSelect"
-                style="width: 100%"
+              <div
+                class="label-sm"
+                style="font-size: 0.85rem; margin-top: 5px"
+                id="splitAnalysisReasoning"
               >
-                <option value="">Auto-Select</option>
-              </select>
+                --
+              </div>
             </div>
+
+            <!-- Fine Tuning Controls -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">FINE TUNING</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Intent:</span>
+                  <select
+                    id="splitIntent"
+                    class="settings-input"
+                    style="width: 55%"
+                  >
+                    <option value="balanced">Balanced</option>
+                    <option value="highlight-priority">
+                      Highlight Priority
+                    </option>
+                    <option value="shadow-priority">Shadow Priority</option>
+                  </select>
+                </div>
+              </div>
+              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Highlight Offset:</span>
+                  <span style="font-weight: bold" id="splitHighlightOffsetValue"
+                    >0.00 EV</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-0.5"
+                  max="0.5"
+                  step="0.05"
+                  value="0"
+                  class="slider"
+                  id="splitHighlightOffsetSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Shadow Offset:</span>
+                  <span style="font-weight: bold" id="splitShadowOffsetValue"
+                    >0.00 EV</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-0.5"
+                  max="0.5"
+                  step="0.05"
+                  value="0"
+                  class="slider"
+                  id="splitShadowOffsetSlider"
+                />
+              </div>
+            </div>
+
 
             <!-- Exposure Times Results -->
             <div class="exp-info" style="margin-top: 15px">
@@ -5158,9 +5056,8 @@
               </div>
               <div class="label-sm" style="text-align: center; margin-top: 5px">
                 1. Measure highlight and shadow areas<br />
-                2. Select filters (or use auto-select)<br />
-                3. Click "Calculate Split-Grade"<br />
-                4. Send times to CALC tab for exposure
+                2. Click "Calculate Split-Grade"<br />
+                3. Send times to CALC tab for exposure
               </div>
             </div>
 
@@ -5442,9 +5339,6 @@
         TEST_TRANSFER_DESTINATION: "darkroom_timer_test_transfer_destination",
         // Light meter calibrations (per paper type)
         LIGHT_METER_CALIBRATIONS: "darkroom_timer_light_meter_calibrations",
-        // Light meter paper density overrides (per paper type)
-        LIGHT_METER_DENSITY_OVERRIDES:
-          "darkroom_timer_light_meter_density_overrides",
         // Logging tool storage keys
         TEMP_SESSIONS: "darkroom_timer_temp_sessions",
         PERMANENT_SESSIONS: "darkroom_timer_permanent_sessions",
@@ -17744,9 +17638,6 @@
           this.calibrations = this.loadAllCalibrations();
           this.calibration = this.getCalibrationForCurrentPaper();
 
-          // Paper density overrides (Dmin/Dmax) per paper type
-          this.densityOverrides = this.loadAllDensityOverrides();
-          this.densityOverrideActive = false;
 
           // Sensor status
           this.sensorConnected = false;
@@ -17995,8 +17886,6 @@
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
 
-          // Apply density overrides for new paper
-          this.applyDensityOverridesToUI();
         }
 
         /**
@@ -18089,8 +17978,6 @@
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
 
-          // Apply density overrides for new paper
-          this.applyDensityOverridesToUI();
         }
 
         /**
@@ -18130,53 +18017,6 @@
             dropdown.appendChild(option);
           });
 
-          // Also update split-grade filter dropdowns
-          this.updateSplitGradeFilterDropdowns();
-        }
-
-        /**
-         * Update split-grade filter dropdowns based on current paper brand
-         */
-        updateSplitGradeFilterDropdowns() {
-          const softDropdown = document.getElementById("splitSoftFilterSelect");
-          const hardDropdown = document.getElementById("splitHardFilterSelect");
-
-          if (!softDropdown || !hardDropdown) return;
-
-          // Clear existing options
-          softDropdown.innerHTML = "";
-          hardDropdown.innerHTML = "";
-
-          // Add "Auto-Select" option first
-          const autoOption = document.createElement("option");
-          autoOption.value = "";
-          autoOption.textContent = "Auto-Select";
-          softDropdown.appendChild(autoOption);
-
-          const autoOption2 = document.createElement("option");
-          autoOption2.value = "";
-          autoOption2.textContent = "Auto-Select";
-          hardDropdown.appendChild(autoOption2);
-
-          // Add appropriate options based on filter system
-          const filters = this.getFilterData();
-
-          // Add filter options to both dropdowns in paper-specific order
-          this.getOrderedFilterEntries(filters).forEach(([grade, data]) => {
-            const factor =
-              data && typeof data.factor === "number" ? data.factor : 1.0;
-            const name = (data && data.name) || grade;
-
-            const softOption = document.createElement("option");
-            softOption.value = grade;
-            softOption.textContent = `${name} (×${factor.toFixed(1)})`;
-            softDropdown.appendChild(softOption);
-
-            const hardOption = document.createElement("option");
-            hardOption.value = grade;
-            hardOption.textContent = `${name} (×${factor.toFixed(1)})`;
-            hardDropdown.appendChild(hardOption);
-          });
         }
 
         /**
@@ -18354,71 +18194,6 @@
             });
           }
 
-          // Fine tuning sliders
-          const highlightOffsetSlider = document.getElementById(
-            "highlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "highlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.addEventListener("input", () => {
-              highlightOffsetValue.textContent =
-                parseFloat(highlightOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
-          const shadowOffsetSlider =
-            document.getElementById("shadowOffsetSlider");
-          const shadowOffsetValue =
-            document.getElementById("shadowOffsetValue");
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.addEventListener("input", () => {
-              shadowOffsetValue.textContent =
-                parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
-          // Density override sliders
-          const dminSlider = document.getElementById("dminOverrideSlider");
-          const dminValue = document.getElementById("dminOverrideValue");
-          if (dminSlider && dminValue) {
-            dminSlider.addEventListener("input", () => {
-              dminValue.textContent = Number(dminSlider.value).toFixed(2);
-              const dmaxSlider = document.getElementById("dmaxOverrideSlider");
-              const dmax = dmaxSlider ? Number(dmaxSlider.value) : 2.0;
-              this.setDensityOverrideForCurrentPaper(
-                Number(dminSlider.value),
-                dmax,
-              );
-            });
-          }
-
-          const dmaxSlider = document.getElementById("dmaxOverrideSlider");
-          const dmaxValue = document.getElementById("dmaxOverrideValue");
-          if (dmaxSlider && dmaxValue) {
-            dmaxSlider.addEventListener("input", () => {
-              dmaxValue.textContent = Number(dmaxSlider.value).toFixed(2);
-              const dminSlider = document.getElementById("dminOverrideSlider");
-              const dmin = dminSlider ? Number(dminSlider.value) : 0.05;
-              this.setDensityOverrideForCurrentPaper(
-                dmin,
-                Number(dmaxSlider.value),
-              );
-            });
-          }
-
-          const resetDensityBtn = document.getElementById(
-            "resetDensityOverrides",
-          );
-          if (resetDensityBtn) {
-            resetDensityBtn.addEventListener("click", () => {
-              this.clearDensityOverrideForCurrentPaper();
-              this.applyDensityOverridesToUI();
-              this.showFeedback("Density overrides reset", "success");
-            });
-          }
-
           // Highlight measure button
           const highlightBtn = document.getElementById("measureHighlightBtn");
           if (highlightBtn) {
@@ -18471,6 +18246,34 @@
             });
           }
 
+          // Fine tuning sliders
+          const highlightOffsetSlider = document.getElementById(
+            "splitHighlightOffsetSlider",
+          );
+          const highlightOffsetValue = document.getElementById(
+            "splitHighlightOffsetValue",
+          );
+          if (highlightOffsetSlider && highlightOffsetValue) {
+            highlightOffsetSlider.addEventListener("input", () => {
+              highlightOffsetValue.textContent =
+                parseFloat(highlightOffsetSlider.value).toFixed(2) + " EV";
+            });
+          }
+
+          const shadowOffsetSlider = document.getElementById(
+            "splitShadowOffsetSlider",
+          );
+          const shadowOffsetValue = document.getElementById(
+            "splitShadowOffsetValue",
+          );
+          if (shadowOffsetSlider && shadowOffsetValue) {
+            shadowOffsetSlider.addEventListener("input", () => {
+              shadowOffsetValue.textContent =
+                parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
+            });
+          }
+
+
           // Highlight measure button
           const highlightBtn = document.getElementById(
             "splitMeasureHighlightBtn",
@@ -18487,32 +18290,6 @@
             shadowBtn.addEventListener("click", () =>
               this.measureShadow("split"),
             );
-          }
-
-          // Filter selection dropdowns
-          const softFilterSelect = document.getElementById(
-            "splitSoftFilterSelect",
-          );
-          const hardFilterSelect = document.getElementById(
-            "splitHardFilterSelect",
-          );
-
-          if (softFilterSelect) {
-            softFilterSelect.addEventListener("change", () => {
-              // Update filter display if we have results
-              if (this.splitGradeResult) {
-                this.updateSplitGradeDisplays(this.splitGradeResult);
-              }
-            });
-          }
-
-          if (hardFilterSelect) {
-            hardFilterSelect.addEventListener("change", () => {
-              // Update filter display if we have results
-              if (this.splitGradeResult) {
-                this.updateSplitGradeDisplays(this.splitGradeResult);
-              }
-            });
           }
 
           // Calculate button
@@ -18900,30 +18677,10 @@
             const paperId = this.currentPaperId || this.getCurrentPaperId();
             const calibration = this.calibration || 1000.0;
 
-            // Fine tuning controls
-            const intent =
-              document.getElementById("contrastIntent")?.value || "balanced";
-            const highlightOffset = parseFloat(
-              document.getElementById("highlightOffsetSlider")?.value || "0",
-            );
-            const shadowOffset = parseFloat(
-              document.getElementById("shadowOffsetSlider")?.value || "0",
-            );
-
-            const densityOverride = this.getDensityOverrideForCurrentPaper();
-            const dminOverride = densityOverride ? densityOverride.dmin : null;
-            const dmaxOverride = densityOverride ? densityOverride.dmax : null;
-
             // Send calibration along with the request
             const baseParams =
-              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}` +
-              `&intent=${encodeURIComponent(intent)}` +
-              `&highlight_offset=${highlightOffset}&shadow_offset=${shadowOffset}`;
-            const densityParams =
-              dminOverride !== null && dmaxOverride !== null
-                ? `&dmin_override=${dminOverride}&dmax_override=${dmaxOverride}`
-                : "";
-            const response = await fetch(baseParams + densityParams);
+              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}`;
+            const response = await fetch(baseParams);
             const data = await response.json();
 
             if (data.status === "success") {
@@ -18943,23 +18700,6 @@
                   grade.match_quality.charAt(0).toUpperCase() +
                   grade.match_quality.slice(1);
 
-                // Enhanced display: Paper characteristics
-                document.getElementById("printableEV").textContent =
-                  (grade.printable_ev || 0).toFixed(1) + " EV";
-
-                document.getElementById("paperGamma").textContent = (
-                  grade.gamma || 0.7
-                ).toFixed(2);
-
-                document.getElementById("contrastIndex").textContent = (
-                  grade.contrast_index || 1.0
-                ).toFixed(2);
-
-                const dmin = grade.dmin || 0.05;
-                const dmax = grade.dmax || 2.0;
-                document.getElementById("densityRange").textContent =
-                  `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
-
                 // Analysis reasoning
                 const reasoning =
                   grade.reasoning || `Grade ${grade.grade} recommended`;
@@ -18969,28 +18709,16 @@
                 console.log("Enhanced analysis data:", grade);
               }
 
-              // Display exposure times (NEW)
+              // Display exposure time (midpoint-based)
               if (data.exposure_times) {
                 const times = data.exposure_times;
                 this.contrastSuggestedTime = times.suggested_time;
-                document.getElementById("highlightExposureTime").textContent =
-                  times.highlight_time + " sec";
-                document.getElementById("shadowExposureTime").textContent =
-                  times.shadow_time + " sec";
                 document.getElementById("suggestedExposureTime").textContent =
                   times.suggested_time + " sec";
-                document.getElementById("exposureStrategy").textContent =
-                  times.strategy.charAt(0).toUpperCase() +
-                  times.strategy.slice(1);
-                const ratioValue = Math.max(
-                  1,
-                  parseFloat(times.exposure_ratio || 1),
-                );
-                const ratioEv = Math.log2(ratioValue);
-                document.getElementById("exposureRatio").textContent =
-                  ratioEv.toFixed(2) + " EV";
+                document.getElementById("midpointLuxDisplay").textContent =
+                  (times.midpoint_lux ?? "--") + " lux";
                 document.getElementById("exposureNote").textContent =
-                  times.notes;
+                  times.notes || "--";
 
                 const sendContrastBtn =
                   document.getElementById("sendContrastToCalc");
@@ -18998,18 +18726,14 @@
                   sendContrastBtn.disabled = false;
                 }
 
-                console.log("Exposure times calculated:", times);
+                console.log("Exposure time calculated:", times);
               } else {
                 this.contrastSuggestedTime = null;
                 // Clear exposure time displays if not available
-                document.getElementById("highlightExposureTime").textContent =
-                  "-- sec";
-                document.getElementById("shadowExposureTime").textContent =
-                  "-- sec";
                 document.getElementById("suggestedExposureTime").textContent =
                   "-- sec";
-                document.getElementById("exposureStrategy").textContent = "--";
-                document.getElementById("exposureRatio").textContent = "--";
+                document.getElementById("midpointLuxDisplay").textContent =
+                  "-- lux";
                 document.getElementById("exposureNote").textContent = "--";
                 const sendContrastBtn =
                   document.getElementById("sendContrastToCalc");
@@ -19044,49 +18768,17 @@
           document.getElementById("recommendedGrade").textContent = "--";
           document.getElementById("matchQuality").textContent = "--";
 
-          // Clear enhanced characteristics
-          document.getElementById("printableEV").textContent = "-- EV";
-          document.getElementById("paperGamma").textContent = "--";
-          document.getElementById("contrastIndex").textContent = "--";
-          document.getElementById("densityRange").textContent =
-            "-- (Dmin-Dmax)";
           document.getElementById("analysisReasoning").textContent = "--";
 
-          // Clear exposure time displays (NEW)
-          document.getElementById("highlightExposureTime").textContent =
-            "-- sec";
-          document.getElementById("shadowExposureTime").textContent = "-- sec";
+          // Clear exposure time displays
           document.getElementById("suggestedExposureTime").textContent =
             "-- sec";
-          document.getElementById("exposureStrategy").textContent = "--";
-          document.getElementById("exposureRatio").textContent = "--";
+          document.getElementById("midpointLuxDisplay").textContent = "-- lux";
           document.getElementById("exposureNote").textContent = "--";
 
           const sendContrastBtn = document.getElementById("sendContrastToCalc");
           if (sendContrastBtn) {
             sendContrastBtn.disabled = true;
-          }
-
-          // Reset fine tuning controls
-          const intentSelect = document.getElementById("contrastIntent");
-          if (intentSelect) intentSelect.value = "balanced";
-          const highlightOffsetSlider = document.getElementById(
-            "highlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "highlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.value = "0";
-            highlightOffsetValue.textContent = "0.00 EV";
-          }
-          const shadowOffsetSlider =
-            document.getElementById("shadowOffsetSlider");
-          const shadowOffsetValue =
-            document.getElementById("shadowOffsetValue");
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.value = "0";
-            shadowOffsetValue.textContent = "0.00 EV";
           }
 
           // Disable buttons
@@ -19139,23 +18831,17 @@
           console.log("Highlight lux:", this.highlightLux);
           console.log("Shadow lux:", this.shadowLux);
 
-          // Get selected filters (from dropdowns or use empty for auto-select)
-          const softFilter =
-            document.getElementById("splitSoftFilterSelect")?.value || "";
-          const hardFilter =
-            document.getElementById("splitHardFilterSelect")?.value || "";
+          const endpoint = "/light-meter-split-grade-heiland";
 
-          // Get selected algorithm
-          const algorithmSelect = document.getElementById(
-            "splitAlgorithmSelect",
+          const intent =
+            document.getElementById("splitIntent")?.value || "balanced";
+          const highlightOffset = parseFloat(
+            document.getElementById("splitHighlightOffsetSlider")?.value ||
+              "0",
           );
-          const algorithm = algorithmSelect ? algorithmSelect.value : "heiland";
-
-          // Determine which endpoint to use
-          let endpoint = "/light-meter-split-grade";
-          if (algorithm === "heiland") {
-            endpoint = "/light-meter-split-grade-heiland";
-          }
+          const shadowOffset = parseFloat(
+            document.getElementById("splitShadowOffsetSlider")?.value || "0",
+          );
 
           // Build query parameters with paper_id
           const params = new URLSearchParams({
@@ -19163,10 +18849,10 @@
             shadow: this.shadowLux,
             calibration: calibration,
             paper_id: paperId,
+            intent: intent,
+            highlight_offset: highlightOffset,
+            shadow_offset: shadowOffset,
           });
-
-          if (softFilter) params.append("soft_filter", softFilter);
-          if (hardFilter) params.append("hard_filter", hardFilter);
 
           console.log("Calling split-grade endpoint:", endpoint);
           console.log("Parameters:", params.toString());
@@ -19221,6 +18907,7 @@
               const matchNote = document.getElementById("splitMatchNote");
               if (
                 result.match_quality === "poor" &&
+                result.total_printable_ev &&
                 result.total_printable_ev > result.delta_ev + 2
               ) {
                 matchNote.textContent =
@@ -19237,10 +18924,36 @@
                 matchNote.textContent = "";
               }
 
+              document.getElementById("splitPrintableEV").textContent =
+                (result.total_printable_ev || 0).toFixed(1) + " EV";
+
+              document.getElementById("splitPaperGamma").textContent = (
+                result.paper_gamma || 0.7
+              ).toFixed(2);
+
+              document.getElementById("splitContrastIndex").textContent = (
+                result.paper_contrast_index || 1.0
+              ).toFixed(2);
+
+              const dmin = result.paper_dmin || 0.05;
+              const dmax = result.paper_dmax || 2.0;
+              document.getElementById("splitDensityRange").textContent =
+                `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
+
+              const reasoning = result.selection_reason
+                ? `${result.selection_reason} (Match: ${result.match_quality})`
+                : `Match: ${result.match_quality}`;
+              document.getElementById("splitAnalysisReasoning").textContent =
+                reasoning;
+
               // Calculate split-adjusted times
               const softAdj = result.soft_time * (result.soft_percent / 100);
               const hardAdj = result.hard_time * (result.hard_percent / 100);
               const totalAdj = softAdj + hardAdj;
+
+              result.soft_time_adjusted = softAdj;
+              result.hard_time_adjusted = hardAdj;
+              result.total_time_adjusted = totalAdj;
 
               // Soft exposure (split-adjusted)
               document.getElementById("splitSoftTime").textContent =
@@ -19294,6 +19007,12 @@
           document.getElementById("splitDeltaEV").textContent = "--";
           document.getElementById("splitMatchQuality").textContent = "--";
           document.getElementById("splitMatchNote").textContent = "--";
+          document.getElementById("splitPrintableEV").textContent = "-- EV";
+          document.getElementById("splitPaperGamma").textContent = "--";
+          document.getElementById("splitContrastIndex").textContent = "--";
+          document.getElementById("splitDensityRange").textContent =
+            "-- (Dmin-Dmax)";
+          document.getElementById("splitAnalysisReasoning").textContent = "--";
           document.getElementById("splitSoftTime").textContent = "--.--";
           document.getElementById("splitSoftFilterName").textContent = "--";
           document.getElementById("splitSoftPercent").textContent = "--%";
@@ -19302,11 +19021,29 @@
           document.getElementById("splitHardPercent").textContent = "--%";
           document.getElementById("splitTotalTime").textContent = "--.--";
 
-          // Reset filter dropdowns to auto-select
-          const softDropdown = document.getElementById("splitSoftFilterSelect");
-          const hardDropdown = document.getElementById("splitHardFilterSelect");
-          if (softDropdown) softDropdown.value = "";
-          if (hardDropdown) hardDropdown.value = "";
+          const intentSelect = document.getElementById("splitIntent");
+          if (intentSelect) intentSelect.value = "balanced";
+          const highlightOffsetSlider = document.getElementById(
+            "splitHighlightOffsetSlider",
+          );
+          const highlightOffsetValue = document.getElementById(
+            "splitHighlightOffsetValue",
+          );
+          if (highlightOffsetSlider && highlightOffsetValue) {
+            highlightOffsetSlider.value = "0";
+            highlightOffsetValue.textContent = "0.00 EV";
+          }
+          const shadowOffsetSlider = document.getElementById(
+            "splitShadowOffsetSlider",
+          );
+          const shadowOffsetValue = document.getElementById(
+            "splitShadowOffsetValue",
+          );
+          if (shadowOffsetSlider && shadowOffsetValue) {
+            shadowOffsetSlider.value = "0";
+            shadowOffsetValue.textContent = "0.00 EV";
+          }
+
 
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
@@ -19325,12 +19062,18 @@
          * Send soft exposure time to CALC tab
          */
         sendSoftToCalc() {
-          if (!this.splitGradeResult || !this.splitGradeResult.soft_time) {
+          if (!this.splitGradeResult) {
             this.showFeedback("No soft exposure time calculated", "error");
             return;
           }
 
-          const time = this.splitGradeResult.soft_time;
+          const time =
+            this.splitGradeResult.soft_time_adjusted ||
+            this.splitGradeResult.soft_time;
+          if (!time) {
+            this.showFeedback("No soft exposure time calculated", "error");
+            return;
+          }
           const filter = this.splitGradeResult.soft_filter;
           const source = `Split-Grade Soft (${filter})`;
 
@@ -19341,12 +19084,18 @@
          * Send hard exposure time to CALC tab
          */
         sendHardToCalc() {
-          if (!this.splitGradeResult || !this.splitGradeResult.hard_time) {
+          if (!this.splitGradeResult) {
             this.showFeedback("No hard exposure time calculated", "error");
             return;
           }
 
-          const time = this.splitGradeResult.hard_time;
+          const time =
+            this.splitGradeResult.hard_time_adjusted ||
+            this.splitGradeResult.hard_time;
+          if (!time) {
+            this.showFeedback("No hard exposure time calculated", "error");
+            return;
+          }
           const filter = this.splitGradeResult.hard_filter;
           const source = `Split-Grade Hard (${filter})`;
 
@@ -19524,90 +19273,6 @@
           };
         }
 
-        /**
-         * Load density overrides from localStorage
-         */
-        loadAllDensityOverrides() {
-          const stored = localStorage.getItem(
-            STORAGE_KEYS.LIGHT_METER_DENSITY_OVERRIDES,
-          );
-          if (stored) {
-            try {
-              return JSON.parse(stored);
-            } catch (e) {
-              console.warn("Could not parse density overrides; ignoring");
-            }
-          }
-          return {};
-        }
-
-        /**
-         * Save density overrides to localStorage
-         */
-        saveAllDensityOverrides(overrides = null) {
-          const data = overrides || this.densityOverrides;
-          localStorage.setItem(
-            STORAGE_KEYS.LIGHT_METER_DENSITY_OVERRIDES,
-            JSON.stringify(data),
-          );
-        }
-
-        /**
-         * Get density override for current paper
-         */
-        getDensityOverrideForCurrentPaper() {
-          const paperId = this.getCurrentPaperId();
-          return this.densityOverrides[paperId] || null;
-        }
-
-        /**
-         * Save density override for current paper
-         */
-        setDensityOverrideForCurrentPaper(dmin, dmax) {
-          const paperId = this.getCurrentPaperId();
-          this.densityOverrides[paperId] = {
-            dmin: dmin,
-            dmax: dmax,
-          };
-          this.saveAllDensityOverrides();
-          this.densityOverrideActive = true;
-        }
-
-        /**
-         * Clear density override for current paper
-         */
-        clearDensityOverrideForCurrentPaper() {
-          const paperId = this.getCurrentPaperId();
-          if (this.densityOverrides[paperId]) {
-            delete this.densityOverrides[paperId];
-            this.saveAllDensityOverrides();
-          }
-          this.densityOverrideActive = false;
-        }
-
-        /**
-         * Apply density override values to UI sliders
-         */
-        applyDensityOverridesToUI() {
-          const override = this.getDensityOverrideForCurrentPaper();
-          const dminSlider = document.getElementById("dminOverrideSlider");
-          const dmaxSlider = document.getElementById("dmaxOverrideSlider");
-          const dminValue = document.getElementById("dminOverrideValue");
-          const dmaxValue = document.getElementById("dmaxOverrideValue");
-
-          const defaultDmin = 0.05;
-          const defaultDmax = 2.0;
-
-          const dmin = override ? override.dmin : defaultDmin;
-          const dmax = override ? override.dmax : defaultDmax;
-
-          if (dminSlider) dminSlider.value = dmin;
-          if (dmaxSlider) dmaxSlider.value = dmax;
-          if (dminValue) dminValue.textContent = Number(dmin).toFixed(2);
-          if (dmaxValue) dmaxValue.textContent = Number(dmax).toFixed(2);
-
-          this.densityOverrideActive = !!override;
-        }
 
         /**
          * Get current paper ID based on brand and type selection
