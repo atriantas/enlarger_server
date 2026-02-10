@@ -1044,6 +1044,66 @@ class HTTPServer:
                 "error": f"Heiland split-grade calculation error: {e}"
             }, 500)
             await self._sendall(conn, response)
+
+    async def _handle_light_meter_virtual_proof(self, conn, params):
+        """
+        Handle /light-meter-virtual-proof endpoint - map lux to zones and preview density.
+
+        Query params:
+            lux: Lux reading for the sample
+            reference_lux: Optional reference lux (Zone V)
+            calibration: Calibration constant (optional)
+            paper_id: Paper ID to use for curves and filter data
+            filter: Filter grade for gamma selection (optional)
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+
+        try:
+            lux = float(params.get('lux', 0))
+            ref = params.get('reference_lux')
+            reference_lux = float(ref) if ref else None
+            calibration = params.get('calibration')
+            calibration = float(calibration) if calibration else None
+            paper_id = params.get('paper_id')
+            filter_grade = params.get('filter')
+
+            result = self.light_meter.calculate_virtual_proof_sample(
+                lux,
+                reference_lux=reference_lux,
+                paper_id=paper_id,
+                filter_grade=filter_grade,
+                calibration=calibration,
+            )
+
+            if result.get('error'):
+                response = self._json_response({
+                    "error": result['error']
+                }, 400)
+                await self._sendall(conn, response)
+                return
+
+            response = self._json_response({
+                "status": "success",
+                "result": result,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Virtual proof error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
     
     async def _handle_light_meter_calibrate(self, conn, params):
         """
@@ -1313,6 +1373,8 @@ class HTTPServer:
                 await self._handle_light_meter_contrast(conn, params)
             elif path == '/light-meter-split-grade-heiland':
                 await self._handle_light_meter_split_grade_heiland(conn, params)
+            elif path == '/light-meter-virtual-proof':
+                await self._handle_light_meter_virtual_proof(conn, params)
             elif path == '/light-meter-calibrate':
                 await self._handle_light_meter_calibrate(conn, params)
             elif path == '/light-meter-config':

@@ -656,6 +656,108 @@ class DarkroomLightMeter:
                 base_time *= factor
         
         return base_time
+
+    def calculate_virtual_proof_sample(
+        self,
+        lux,
+        reference_lux=None,
+        paper_id=None,
+        filter_grade=None,
+        calibration=None,
+    ):
+        if lux is None or lux <= 0:
+            return {"error": "Invalid lux"}
+
+        from lib.paper_database import get_paper_data, get_filter_data
+
+        pid = paper_id or self.current_paper_id
+        paper_data = get_paper_data(pid)
+        if not paper_data:
+            return {"error": f"Invalid paper_id: {pid}"}
+
+        curve = paper_data.get("characteristic_curve", {})
+        dmin = float(paper_data.get("dmin", 0.05))
+        dmax = float(paper_data.get("dmax", 2.0))
+
+        straight_slope = float(curve.get("straight_slope", 0.7))
+        filter_data = get_filter_data(pid, filter_grade) if filter_grade else None
+        if filter_data and filter_data.get("gamma"):
+            straight_slope = float(filter_data.get("gamma", straight_slope))
+
+        toe_slope = float(curve.get("toe_slope", 0.3))
+        shoulder_slope = float(curve.get("shoulder_slope", 0.15))
+        loge_range = float(curve.get("logE_range", 1.6))
+        speed_point = float(curve.get("speed_point", 0.6))
+
+        has_reference = reference_lux is not None and reference_lux > 0
+        if has_reference:
+            delta_ev = math.log2(lux / reference_lux)
+        else:
+            delta_ev = 0.0
+
+        zone = 5.0 - delta_ev if has_reference else 5.0
+        zone_clamped = max(0.0, min(10.0, zone))
+
+        loge = speed_point + (zone_clamped - 5.0) * 0.3
+        loge = max(0.0, min(loge_range, loge))
+
+        toe_end = loge_range * 0.25
+        shoulder_start = loge_range * 0.75
+        if toe_end <= 0:
+            toe_end = loge_range * 0.2
+        if shoulder_start <= toe_end:
+            shoulder_start = toe_end + (loge_range - toe_end) * 0.5
+
+        if loge <= toe_end:
+            density = dmin + toe_slope * loge
+        elif loge <= shoulder_start:
+            density = dmin + toe_slope * toe_end + straight_slope * (loge - toe_end)
+        else:
+            density = (
+                dmin
+                + toe_slope * toe_end
+                + straight_slope * (shoulder_start - toe_end)
+                + shoulder_slope * (loge - shoulder_start)
+            )
+
+        if density < dmin:
+            density = dmin
+        if density > dmax:
+            density = dmax
+
+        density_range = dmax - dmin
+        if density_range <= 0:
+            grayscale = 127
+        else:
+            normalized = (density - dmin) / density_range
+            grayscale = int(round(255 * (1.0 - normalized)))
+
+        if grayscale < 0:
+            grayscale = 0
+        if grayscale > 255:
+            grayscale = 255
+
+        clipped_white = density <= dmin + 0.04
+        clipped_black = density >= dmax - 0.01
+
+        return {
+            "paper_id": pid,
+            "filter_grade": filter_grade or "",
+            "lux": lux,
+            "reference_lux": reference_lux if has_reference else None,
+            "delta_ev": delta_ev,
+            "zone": zone,
+            "zone_clamped": zone_clamped,
+            "logE": loge,
+            "density": density,
+            "grayscale": grayscale,
+            "clipped_white": clipped_white,
+            "clipped_black": clipped_black,
+            "gamma": straight_slope,
+            "dmin": dmin,
+            "dmax": dmax,
+            "calibration": calibration or self.default_calibration,
+        }
     
     def calculate_delta_ev(self, highlight_lux, shadow_lux):
         """
