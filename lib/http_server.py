@@ -1010,19 +1010,12 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
 
-            intent = params.get('intent', 'balanced')
-            highlight_offset = params.get('highlight_offset', 0)
-            shadow_offset = params.get('shadow_offset', 0)
-            
             # Calculate Heiland-like split-grade with paper_id
             result = self.light_meter.calculate_split_grade_heiland(
                 highlight_lux=highlight_lux,
                 shadow_lux=shadow_lux,
                 calibration=calibration,
                 system=paper_id,  # Pass paper_id as system parameter for now
-                intent=intent,
-                highlight_offset=highlight_offset,
-                shadow_offset=shadow_offset,
             )
             
             if result is None:

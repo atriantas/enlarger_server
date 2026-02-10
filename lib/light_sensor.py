@@ -1192,9 +1192,6 @@ class DarkroomLightMeter:
         shadow_lux,
         calibration=None,
         system=None,
-        intent=None,
-        highlight_offset=0.0,
-        shadow_offset=0.0,
     ):
         """
         Heiland-like split-grade calculation with dynamic filter selection.
@@ -1274,19 +1271,6 @@ class DarkroomLightMeter:
             soft_time, hard_time, None  # paper_id not needed for basic optimization
         )
 
-        # Apply user offsets (in EV) for fine tuning, if provided
-        try:
-            highlight_offset = float(highlight_offset)
-        except (TypeError, ValueError):
-            highlight_offset = 0.0
-        try:
-            shadow_offset = float(shadow_offset)
-        except (TypeError, ValueError):
-            shadow_offset = 0.0
-
-        soft_time_opt *= 2 ** highlight_offset
-        hard_time_opt *= 2 ** shadow_offset
-        
         # Calculate percentages
         total_time = soft_time_opt + hard_time_opt
         if total_time > 0:
@@ -1322,9 +1306,6 @@ class DarkroomLightMeter:
             'highlight_lux': highlight_lux,
             'shadow_lux': shadow_lux,
             'optimization_applied': optimization_applied,
-            'intent': intent,
-            'highlight_offset': highlight_offset,
-            'shadow_offset': shadow_offset,
             'system': system
         }
     

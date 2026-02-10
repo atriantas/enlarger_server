@@ -4740,27 +4740,6 @@
               </div>
             </div>
 
-            <!-- Guidance Message -->
-            <div
-              class="info-box"
-              style="
-                margin-top: 10px;
-                background: rgba(100, 200, 100, 0.1);
-                border-color: rgba(100, 200, 100, 0.3);
-              "
-            >
-              <div class="label-sm" style="color: #66cc66; text-align: center">
-                NEXT STEP
-              </div>
-              <div
-                class="label-sm"
-                style="text-align: center; margin-top: 5px; font-size: 0.9rem"
-              >
-                Use suggested time above for exposure. Adjust based on test
-                prints.
-              </div>
-            </div>
-
             <!-- Action Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
               <button class="settings-btn" id="analyzeContrastBtn" disabled>
@@ -4914,62 +4893,6 @@
               </div>
             </div>
 
-            <!-- Fine Tuning Controls -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">FINE TUNING</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Intent:</span>
-                  <select
-                    id="splitIntent"
-                    class="settings-input"
-                    style="width: 55%"
-                  >
-                    <option value="balanced">Balanced</option>
-                    <option value="highlight-priority">
-                      Highlight Priority
-                    </option>
-                    <option value="shadow-priority">Shadow Priority</option>
-                  </select>
-                </div>
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Highlight Offset:</span>
-                  <span style="font-weight: bold" id="splitHighlightOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="splitHighlightOffsetSlider"
-                />
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Shadow Offset:</span>
-                  <span style="font-weight: bold" id="splitShadowOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="splitShadowOffsetSlider"
-                />
-              </div>
-            </div>
-
-
             <!-- Exposure Times Results -->
             <div class="exp-info" style="margin-top: 15px">
               <div
@@ -4991,14 +4914,6 @@
                   <span id="splitSoftFilterName">--</span> |
                   <span id="splitSoftPercent">--%</span>
                 </div>
-                <button
-                  class="settings-btn"
-                  id="sendSoftToCalc"
-                  style="margin-top: 5px; width: 100%"
-                  disabled
-                >
-                  → Send to CALC
-                </button>
               </div>
               <div
                 class="info-box"
@@ -5019,15 +4934,17 @@
                   <span id="splitHardFilterName">--</span> |
                   <span id="splitHardPercent">--%</span>
                 </div>
-                <button
-                  class="settings-btn"
-                  id="sendHardToCalc"
-                  style="margin-top: 5px; width: 100%"
-                  disabled
-                >
-                  → Send to CALC
-                </button>
               </div>
+            </div>
+
+            <div class="settings-btn-group" style="margin-top: 10px">
+              <button
+                class="settings-btn"
+                id="sendSplitBothToCalc"
+                disabled
+              >
+                → Send Both to CALC
+              </button>
             </div>
 
             <!-- Total Time -->
@@ -10394,6 +10311,65 @@
        * @property {Object} splitPresets - Saved split-grade configurations
        * @property {string} currentSplitPreset - Currently loaded preset name
        */
+      function applySplitGradeToCalc(splitData) {
+        if (!splitData) return;
+
+        const formatTime = (value) =>
+          Number.isFinite(value) ? value.toFixed(2) : "--";
+
+        appState.calculator.splitGrade = {
+          enabled: true,
+          neutralTime: splitData.neutralTime,
+          highlightsBase: splitData.highlightsBase,
+          shadowsBase: splitData.shadowsBase,
+          softTime: splitData.softTime,
+          hardTime: splitData.hardTime,
+          totalTime: splitData.totalTime,
+          softFilter: splitData.softFilter,
+          hardFilter: splitData.hardFilter,
+          paperBrand: splitData.paperBrand || null,
+          fomaPaperType: splitData.fomaPaperType || null,
+          burnPercent: splitData.burnPercent || null,
+          softFactor: splitData.softFactor || null,
+          hardFactor: splitData.hardFactor || null,
+        };
+
+        const display = document.getElementById("splitGradeDisplay");
+        const neutralDisplay = document.getElementById("splitNeutralDisplay");
+        const splitTimeDisplay = document.getElementById(
+          "splitTimeDisplayCalc",
+        );
+        const totalDisplay = document.getElementById("splitTotalDisplay");
+        const highlightsSpan = document.getElementById("highlightsTime");
+        const shadowsSpan = document.getElementById("shadowsTime");
+
+        if (display) display.style.display = "block";
+        if (neutralDisplay)
+          neutralDisplay.textContent = `${formatTime(splitData.neutralTime)}s`;
+        if (splitTimeDisplay)
+          splitTimeDisplay.textContent = `${formatTime(
+            splitData.highlightsBase,
+          )}s / ${formatTime(splitData.shadowsBase)}s`;
+        if (totalDisplay)
+          totalDisplay.textContent = `${formatTime(splitData.totalTime)}s`;
+        if (highlightsSpan)
+          highlightsSpan.textContent = `${formatTime(
+            splitData.softTime,
+          )}s (F${splitData.softFilter || "--"})`;
+        if (shadowsSpan)
+          shadowsSpan.textContent = `${formatTime(
+            splitData.hardTime,
+          )}s (F${splitData.hardFilter || "--"})`;
+
+        switchTab("calc");
+
+        const container = document.querySelector(".container");
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+      }
+
       class SplitGradeCalculator {
         /**
          * Creates a SplitGradeCalculator instance
@@ -10906,9 +10882,7 @@
         sendToCalc() {
           const result = this.calculate();
 
-          // Store in appState
-          appState.calculator.splitGrade = {
-            enabled: true,
+          applySplitGradeToCalc({
             neutralTime: this.neutralTime,
             highlightsBase: result.highlightsBase,
             shadowsBase: result.shadowsBase,
@@ -10922,35 +10896,7 @@
             burnPercent: this.burnPercent,
             softFactor: result.softFactor,
             hardFactor: result.hardFactor,
-          };
-
-          // Update CALC tab display
-          const display = document.getElementById("splitGradeDisplay");
-          const neutralDisplay = document.getElementById("splitNeutralDisplay");
-          const splitTimeDisplay = document.getElementById(
-            "splitTimeDisplayCalc",
-          );
-          const totalDisplay = document.getElementById("splitTotalDisplay");
-          const highlightsSpan = document.getElementById("highlightsTime");
-          const shadowsSpan = document.getElementById("shadowsTime");
-
-          if (display) display.style.display = "block";
-          if (neutralDisplay)
-            neutralDisplay.textContent = `${this.neutralTime.toFixed(2)}s`;
-          if (splitTimeDisplay)
-            splitTimeDisplay.textContent = `${result.highlightsBase.toFixed(
-              2,
-            )}s / ${result.shadowsBase.toFixed(2)}s`;
-          if (totalDisplay)
-            totalDisplay.textContent = `${result.totalTime.toFixed(2)}s`;
-          if (highlightsSpan)
-            highlightsSpan.textContent = `${result.softTime.toFixed(2)}s (F${
-              this.softFilter
-            })`;
-          if (shadowsSpan)
-            shadowsSpan.textContent = `${result.hardTime.toFixed(2)}s (F${
-              this.hardFilter
-            })`;
+          });
 
           // Log split-grade session
           if (window.exposureLogManager) {
@@ -10968,17 +10914,6 @@
               burnPercent: this.burnPercent,
             });
           }
-
-          // Switch to CALC tab
-          switchTab("calc");
-
-          // Scroll to top using container
-          const container = document.querySelector(".container");
-          if (container) {
-            container.scrollTop = 0;
-          }
-          // Also scroll window as fallback
-          window.scrollTo(0, 0);
 
           // Show feedback
           playBeep(800, 0.3, 0.3);
@@ -18246,34 +18181,6 @@
             });
           }
 
-          // Fine tuning sliders
-          const highlightOffsetSlider = document.getElementById(
-            "splitHighlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "splitHighlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.addEventListener("input", () => {
-              highlightOffsetValue.textContent =
-                parseFloat(highlightOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
-          const shadowOffsetSlider = document.getElementById(
-            "splitShadowOffsetSlider",
-          );
-          const shadowOffsetValue = document.getElementById(
-            "splitShadowOffsetValue",
-          );
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.addEventListener("input", () => {
-              shadowOffsetValue.textContent =
-                parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
-
           // Highlight measure button
           const highlightBtn = document.getElementById(
             "splitMeasureHighlightBtn",
@@ -18299,14 +18206,11 @@
           }
 
           // Send to CALC buttons
-          const sendSoftBtn = document.getElementById("sendSoftToCalc");
-          if (sendSoftBtn) {
-            sendSoftBtn.addEventListener("click", () => this.sendSoftToCalc());
-          }
-
-          const sendHardBtn = document.getElementById("sendHardToCalc");
-          if (sendHardBtn) {
-            sendHardBtn.addEventListener("click", () => this.sendHardToCalc());
+          const sendBothBtn = document.getElementById("sendSplitBothToCalc");
+          if (sendBothBtn) {
+            sendBothBtn.addEventListener("click", () =>
+              this.sendSplitBothToCalc(),
+            );
           }
 
           // Clear button
@@ -18833,25 +18737,12 @@
 
           const endpoint = "/light-meter-split-grade-heiland";
 
-          const intent =
-            document.getElementById("splitIntent")?.value || "balanced";
-          const highlightOffset = parseFloat(
-            document.getElementById("splitHighlightOffsetSlider")?.value ||
-              "0",
-          );
-          const shadowOffset = parseFloat(
-            document.getElementById("splitShadowOffsetSlider")?.value || "0",
-          );
-
           // Build query parameters with paper_id
           const params = new URLSearchParams({
             highlight: this.highlightLux,
             shadow: this.shadowLux,
             calibration: calibration,
             paper_id: paperId,
-            intent: intent,
-            highlight_offset: highlightOffset,
-            shadow_offset: shadowOffset,
           });
 
           console.log("Calling split-grade endpoint:", endpoint);
@@ -18975,9 +18866,8 @@
               document.getElementById("splitTotalTime").textContent =
                 totalAdj.toFixed(2) + "s";
 
-              // Enable send buttons
-              document.getElementById("sendSoftToCalc").disabled = false;
-              document.getElementById("sendHardToCalc").disabled = false;
+              // Enable send button
+              document.getElementById("sendSplitBothToCalc").disabled = false;
 
               playBeep(1000, 0.3, 0.3);
             } else {
@@ -19021,34 +18911,9 @@
           document.getElementById("splitHardPercent").textContent = "--%";
           document.getElementById("splitTotalTime").textContent = "--.--";
 
-          const intentSelect = document.getElementById("splitIntent");
-          if (intentSelect) intentSelect.value = "balanced";
-          const highlightOffsetSlider = document.getElementById(
-            "splitHighlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "splitHighlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.value = "0";
-            highlightOffsetValue.textContent = "0.00 EV";
-          }
-          const shadowOffsetSlider = document.getElementById(
-            "splitShadowOffsetSlider",
-          );
-          const shadowOffsetValue = document.getElementById(
-            "splitShadowOffsetValue",
-          );
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.value = "0";
-            shadowOffsetValue.textContent = "0.00 EV";
-          }
-
-
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
-          document.getElementById("sendSoftToCalc").disabled = true;
-          document.getElementById("sendHardToCalc").disabled = true;
+          document.getElementById("sendSplitBothToCalc").disabled = true;
 
           // Clear on server too
           try {
@@ -19059,47 +18924,51 @@
         }
 
         /**
-         * Send soft exposure time to CALC tab
+         * Send both split-grade times to CALC tab
          */
-        sendSoftToCalc() {
+        sendSplitBothToCalc() {
           if (!this.splitGradeResult) {
-            this.showFeedback("No soft exposure time calculated", "error");
+            this.showFeedback("No split-grade result available", "error");
             return;
           }
 
-          const time =
+          const softTime =
             this.splitGradeResult.soft_time_adjusted ||
             this.splitGradeResult.soft_time;
-          if (!time) {
-            this.showFeedback("No soft exposure time calculated", "error");
-            return;
-          }
-          const filter = this.splitGradeResult.soft_filter;
-          const source = `Split-Grade Soft (${filter})`;
-
-          this.sendTimeToCalc(time, source);
-        }
-
-        /**
-         * Send hard exposure time to CALC tab
-         */
-        sendHardToCalc() {
-          if (!this.splitGradeResult) {
-            this.showFeedback("No hard exposure time calculated", "error");
-            return;
-          }
-
-          const time =
+          const hardTime =
             this.splitGradeResult.hard_time_adjusted ||
             this.splitGradeResult.hard_time;
-          if (!time) {
-            this.showFeedback("No hard exposure time calculated", "error");
+
+          if (!softTime || !hardTime) {
+            this.showFeedback("Split-grade times are missing", "error");
             return;
           }
-          const filter = this.splitGradeResult.hard_filter;
-          const source = `Split-Grade Hard (${filter})`;
 
-          this.sendTimeToCalc(time, source);
+          const totalTime =
+            this.splitGradeResult.total_time_adjusted ||
+            this.splitGradeResult.total_time ||
+            softTime + hardTime;
+
+          applySplitGradeToCalc({
+            neutralTime: totalTime,
+            highlightsBase: softTime,
+            shadowsBase: hardTime,
+            softTime: softTime,
+            hardTime: hardTime,
+            totalTime: totalTime,
+            softFilter: this.splitGradeResult.soft_filter,
+            hardFilter: this.splitGradeResult.hard_filter,
+            softFactor: this.splitGradeResult.soft_factor,
+            hardFactor: this.splitGradeResult.hard_factor,
+          });
+
+          playBeep(800, 0.3, 0.3);
+          this.showFeedback(
+            `Split-grade sent: ${softTime.toFixed(2)}s + ${hardTime.toFixed(
+              2,
+            )}s = ${totalTime.toFixed(2)}s total`,
+            "success",
+          );
         }
 
         /**
