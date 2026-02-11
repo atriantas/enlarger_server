@@ -5150,6 +5150,9 @@
               <div class="label-sm">LAST SAMPLE</div>
               <div class="label-sm" id="proofLastLux">Lux: --</div>
               <div class="label-sm" id="proofLastZone">Zone: --</div>
+              <div class="label-sm" id="proofLastIsoR">ISO R: --</div>
+              <div class="label-sm" id="proofLastEvRange">EV Range: --</div>
+              <div class="label-sm" id="proofLastDensity">Density: --</div>
               <div class="label-sm" id="proofLastClipping">Clipping: --</div>
             </div>
 
@@ -18504,9 +18507,12 @@
             const option = document.createElement("option");
             const factor =
               data && typeof data.factor === "number" ? data.factor : 1.0;
+            const isoR =
+              data && typeof data.iso_r === "number" ? data.iso_r : null;
             const name = (data && data.name) || grade;
             option.value = grade;
-            option.textContent = `${name} (×${factor.toFixed(1)})`;
+            const isoLabel = isoR !== null ? `ISO R ${Math.round(isoR)}` : "ISO R --";
+            option.textContent = `${name} (${isoLabel}, ×${factor.toFixed(1)})`;
             dropdown.appendChild(option);
           });
 
@@ -18604,7 +18610,11 @@
           }
 
           if (result && typeof result.zone === "number") {
-            cell.title = `Zone ${result.zone.toFixed(1)}`;
+            const densityLabel =
+              result && typeof result.density === "number"
+                ? ` | D ${result.density.toFixed(2)}`
+                : "";
+            cell.title = `Zone ${result.zone.toFixed(1)}${densityLabel}`;
           } else if (hasSample) {
             cell.title = "Measured";
           } else {
@@ -18756,6 +18766,9 @@
 
           const luxDisplay = document.getElementById("proofLastLux");
           const zoneDisplay = document.getElementById("proofLastZone");
+          const isoDisplay = document.getElementById("proofLastIsoR");
+          const evDisplay = document.getElementById("proofLastEvRange");
+          const densityDisplay = document.getElementById("proofLastDensity");
           const clippingDisplay = document.getElementById("proofLastClipping");
 
           if (luxDisplay) {
@@ -18768,6 +18781,27 @@
               zoneDisplay.textContent = `Zone: ${result.zone.toFixed(1)}`;
             } else {
               zoneDisplay.textContent = "Zone: --";
+            }
+          }
+          if (isoDisplay) {
+            if (result && typeof result.iso_r === "number") {
+              isoDisplay.textContent = `ISO R: ${Math.round(result.iso_r)}`;
+            } else {
+              isoDisplay.textContent = "ISO R: --";
+            }
+          }
+          if (evDisplay) {
+            if (result && typeof result.printable_ev === "number") {
+              evDisplay.textContent = `EV Range: ${result.printable_ev.toFixed(1)}`;
+            } else {
+              evDisplay.textContent = "EV Range: --";
+            }
+          }
+          if (densityDisplay) {
+            if (result && typeof result.density === "number") {
+              densityDisplay.textContent = `Density: ${result.density.toFixed(2)}`;
+            } else {
+              densityDisplay.textContent = "Density: --";
             }
           }
           if (clippingDisplay) {
@@ -18820,9 +18854,15 @@
           this.configureProofGrid(this.proof.width, this.proof.height, false);
           const luxDisplay = document.getElementById("proofLastLux");
           const zoneDisplay = document.getElementById("proofLastZone");
+          const isoDisplay = document.getElementById("proofLastIsoR");
+          const evDisplay = document.getElementById("proofLastEvRange");
+          const densityDisplay = document.getElementById("proofLastDensity");
           const clippingDisplay = document.getElementById("proofLastClipping");
           if (luxDisplay) luxDisplay.textContent = "Lux: --";
           if (zoneDisplay) zoneDisplay.textContent = "Zone: --";
+          if (isoDisplay) isoDisplay.textContent = "ISO R: --";
+          if (evDisplay) evDisplay.textContent = "EV Range: --";
+          if (densityDisplay) densityDisplay.textContent = "Density: --";
           if (clippingDisplay) clippingDisplay.textContent = "Clipping: --";
         }
 

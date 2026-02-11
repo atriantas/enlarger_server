@@ -686,8 +686,43 @@ class DarkroomLightMeter:
 
         toe_slope = float(curve.get("toe_slope", 0.3))
         shoulder_slope = float(curve.get("shoulder_slope", 0.15))
-        loge_range = float(curve.get("logE_range", 1.6))
-        speed_point = float(curve.get("speed_point", 0.6))
+
+        iso_r = None
+        if filter_data and filter_data.get("iso_r"):
+            iso_r = float(filter_data.get("iso_r"))
+
+        if iso_r is None:
+            filters = paper_data.get("filters", {})
+            fallback = filters.get("2") if isinstance(filters, dict) else None
+            if fallback and fallback.get("iso_r"):
+                iso_r = float(fallback.get("iso_r"))
+            else:
+                for data in (filters or {}).values():
+                    if data and data.get("iso_r"):
+                        iso_r = float(data.get("iso_r"))
+                        break
+
+        if iso_r is None:
+            iso_r = 100.0
+
+        # REFACTORED: Prioritize logE_range from database, use ISO_R_TO_EV as fallback
+        log10_2 = math.log10(2.0)
+        loge_range = float(curve.get("logE_range", None))
+        source_of_loge_range = "database"  # Track which source we're using
+        
+        if loge_range is None or loge_range <= 0:
+            # Fallback: Use ISO_R_TO_EV lookup table if database doesn't have logE_range
+            printable_ev = float(self._iso_r_to_ev(iso_r))
+            loge_range = printable_ev * log10_2
+            source_of_loge_range = "iso_r_lookup_fallback"
+        else:
+            # Primary: Derive printable_ev from database logE_range
+            printable_ev = loge_range / log10_2
+        
+        # Safety: Ensure loge_range has a minimum value
+        if loge_range <= 0:
+            loge_range = 1.6
+            source_of_loge_range = "default_fallback"
 
         has_reference = reference_lux is not None and reference_lux > 0
         if has_reference:
@@ -698,7 +733,8 @@ class DarkroomLightMeter:
         zone = 5.0 - delta_ev if has_reference else 5.0
         zone_clamped = max(0.0, min(10.0, zone))
 
-        loge = speed_point + (zone_clamped - 5.0) * 0.3
+        loge_mid = loge_range * 0.5
+        loge = loge_mid - delta_ev * log10_2
         loge = max(0.0, min(loge_range, loge))
 
         toe_end = loge_range * 0.25
@@ -708,17 +744,26 @@ class DarkroomLightMeter:
         if shoulder_start <= toe_end:
             shoulder_start = toe_end + (loge_range - toe_end) * 0.5
 
-        if loge <= toe_end:
-            density = dmin + toe_slope * loge
-        elif loge <= shoulder_start:
-            density = dmin + toe_slope * toe_end + straight_slope * (loge - toe_end)
-        else:
-            density = (
+        def _curve_density(loge_value):
+            if loge_value <= toe_end:
+                return dmin + toe_slope * loge_value
+            if loge_value <= shoulder_start:
+                return dmin + toe_slope * toe_end + straight_slope * (loge_value - toe_end)
+            return (
                 dmin
                 + toe_slope * toe_end
                 + straight_slope * (shoulder_start - toe_end)
-                + shoulder_slope * (loge - shoulder_start)
+                + shoulder_slope * (loge_value - shoulder_start)
             )
+
+        density_raw = _curve_density(loge)
+        density_at_max = _curve_density(loge_range)
+        denom = density_at_max - dmin
+        if denom <= 0:
+            density = dmin
+        else:
+            scale = (dmax - dmin) / denom
+            density = dmin + (density_raw - dmin) * scale
 
         if density < dmin:
             density = dmin
@@ -749,6 +794,8 @@ class DarkroomLightMeter:
             "zone": zone,
             "zone_clamped": zone_clamped,
             "logE": loge,
+            "logE_mid": loge_mid,
+            "logE_range": loge_range,
             "density": density,
             "grayscale": grayscale,
             "clipped_white": clipped_white,
@@ -756,7 +803,10 @@ class DarkroomLightMeter:
             "gamma": straight_slope,
             "dmin": dmin,
             "dmax": dmax,
+            "iso_r": iso_r,
+            "printable_ev": printable_ev,
             "calibration": calibration or self.default_calibration,
+            "source_of_loge_range": source_of_loge_range,
         }
     
     def calculate_delta_ev(self, highlight_lux, shadow_lux):
@@ -892,6 +942,51 @@ class DarkroomLightMeter:
         
         # Below minimum
         return sorted_pairs[-1][1]
+    
+    def validate_paper_database_loge_range(self):
+        """
+        Validate that all papers in the database have logE_range defined.
+        Logs warnings if any papers are missing this critical field.
+        
+        Returns:
+            dict: {
+                'total_papers': int,
+                'papers_with_loge_range': int,
+                'missing_loge_range': list,
+                'all_valid': bool
+            }
+        """
+        from lib.paper_database import PAPER_DATABASE
+        
+        total = len(PAPER_DATABASE)
+        valid_count = 0
+        missing = []
+        
+        for paper_id, paper_data in PAPER_DATABASE.items():
+            curve = paper_data.get("characteristic_curve", {})
+            loge_range = curve.get("logE_range")
+            
+            if loge_range is None or loge_range <= 0:
+                missing.append(paper_id)
+            else:
+                valid_count += 1
+        
+        result = {
+            'total_papers': total,
+            'papers_with_loge_range': valid_count,
+            'missing_loge_range': missing,
+            'all_valid': len(missing) == 0
+        }
+        
+        if not result['all_valid']:
+            missing_str = ', '.join(missing)
+            import sys
+            print(
+                f"WARNING: {len(missing)} paper(s) missing logE_range: {missing_str}",
+                file=sys.stderr
+            )
+        
+        return result
     
     def calculate_split_grade(self, highlight_lux, shadow_lux, calibration=None, system=None, paper_id=None):
         """
