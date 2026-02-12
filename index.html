@@ -19300,6 +19300,7 @@
           this.proof.isScanning = false;
           if (!this.proof.scanAbort) {
             this.setProofScanStatus("Idle");
+            this.autoSelectMiddleGray();
           }
           this.updateProofStatus();
         }
@@ -19317,6 +19318,54 @@
           this.proof.isScanning = false;
           this.setProofScanStatus("Idle");
           this.updateProofStatus();
+        }
+
+        autoSelectMiddleGray() {
+          const validSamples = this.proof.samples.filter(
+            (lux) => lux !== null && lux > 0,
+          );
+
+          if (validSamples.length === 0) {
+            return;
+          }
+
+          // Calculate geometric mean (same as CONTRAST ANALYZER)
+          // Geometric mean = exp(mean(log(values)))
+          const geometricMean = Math.exp(
+            validSamples.reduce((sum, lux) => sum + Math.log(lux), 0) /
+              validSamples.length,
+          );
+
+          // Find the cell closest to the geometric mean (in log space for photographic accuracy)
+          let closestIndex = null;
+          let closestDistance = Infinity;
+
+          this.proof.samples.forEach((lux, index) => {
+            if (lux === null || lux <= 0) return;
+
+            // Distance in log space (EV space)
+            const distance = Math.abs(Math.log(lux) - Math.log(geometricMean));
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = index;
+            }
+          });
+
+          // Set the reference automatically
+          if (closestIndex !== null) {
+            this.proof.referenceIndex = closestIndex;
+            this.proof.referenceLux = this.proof.samples[closestIndex];
+            this.renderProofGrid();
+            this.recomputeProofResults();
+
+            this.showFeedback(
+              `Auto-selected Zone V reference: ${this.proof.referenceLux.toFixed(
+                1,
+              )} lux (geometric mean)`,
+              "success",
+            );
+            playBeep(1000, 0.3, 0.3);
+          }
         }
 
         /**
