@@ -4335,6 +4335,96 @@
             </div>
           </section>
 
+          <!-- METER SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="meter-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              METER SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="title-md">Virtual Proof Stability</div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Stability Detection</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityEnabled" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Beep On Stable</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityBeep" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Tolerance (%)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityTolerance"
+                    class="settings-input"
+                    min="0.5"
+                    max="10"
+                    step="0.1"
+                    value="2.5"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Min Stable Reads</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinStable"
+                    class="settings-input"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value="2"
+                  />
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Max Wait (ms)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMaxWait"
+                    class="settings-input"
+                    min="300"
+                    max="3000"
+                    step="50"
+                    value="900"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Min Delta (lux)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinDelta"
+                    class="settings-input"
+                    min="0.05"
+                    max="5"
+                    step="0.05"
+                    value="0.2"
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  font-size: 0.7rem;
+                  color: var(--text-secondary);
+                  margin-top: 10px;
+                "
+              >
+                Capture starts only after readings stabilize within tolerance.
+              </div>
+            </div>
+          </section>
+
           <div class="settings-section">
             <button class="settings-btn primary" id="saveGlobalSettings">
               Save All Settings
@@ -5122,6 +5212,7 @@
             <div class="info-box" style="margin-top: 10px">
               <div class="label-sm">SCAN PROGRESS</div>
               <div class="value-display" id="proofScanProgress">0/0</div>
+              <div class="label-sm" id="proofScanStatus">Idle</div>
               <div class="settings-btn-group" style="margin-top: 6px">
                 <button class="settings-btn" id="proofMeasureNextBtn">
                   Measure Next Cell
@@ -5467,6 +5558,12 @@
         autoAdvanceDelay: 1,
         safelightAutoOff: true, // Turn off safelight when enlarger is on
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
+        proofStabilityEnabled: true,
+        proofStabilityBeep: true,
+        proofStabilityTolerance: 2.5,
+        proofStabilityMinStable: 2,
+        proofStabilityMaxWait: 900,
+        proofStabilityMinDelta: 0.2,
         // Base time slider limits
         baseTimeMin: 0.4,
         baseTimeMax: 50,
@@ -8052,6 +8149,30 @@
             ),
             safelightAutoOff:
               document.getElementById("safelightAutoOff").checked, // NEW
+            proofStabilityEnabled: document.getElementById(
+              "proofStabilityEnabled",
+            )?.checked,
+            proofStabilityBeep: document.getElementById(
+              "proofStabilityBeep",
+            )?.checked,
+            proofStabilityTolerance: parseFloat(
+              document.getElementById("proofStabilityTolerance")?.value ||
+                DEFAULT_SETTINGS.proofStabilityTolerance,
+            ),
+            proofStabilityMinStable: parseInt(
+              document.getElementById("proofStabilityMinStable")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMinStable,
+              10,
+            ),
+            proofStabilityMaxWait: parseInt(
+              document.getElementById("proofStabilityMaxWait")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMaxWait,
+              10,
+            ),
+            proofStabilityMinDelta: parseFloat(
+              document.getElementById("proofStabilityMinDelta")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMinDelta,
+            ),
             // Base time slider limits
             baseTimeMin: parseFloat(
               document.getElementById("baseTimeMin")?.value || 0.4,
@@ -8260,6 +8381,25 @@
               updateChart();
             } catch (e) {}
           }).call(this);
+
+          if (window.lightMeterManager) {
+            const stability = window.lightMeterManager.proof.stability;
+            stability.enabled = this.settings.proofStabilityEnabled !== false;
+            stability.beepOnStable =
+              this.settings.proofStabilityBeep !== false;
+            stability.tolerancePct =
+              parseFloat(this.settings.proofStabilityTolerance) ||
+              DEFAULT_SETTINGS.proofStabilityTolerance;
+            stability.minStableCount =
+              parseInt(this.settings.proofStabilityMinStable, 10) ||
+              DEFAULT_SETTINGS.proofStabilityMinStable;
+            stability.maxWaitMs =
+              parseInt(this.settings.proofStabilityMaxWait, 10) ||
+              DEFAULT_SETTINGS.proofStabilityMaxWait;
+            stability.minDeltaLux =
+              parseFloat(this.settings.proofStabilityMinDelta) ||
+              DEFAULT_SETTINGS.proofStabilityMinDelta;
+          }
         }
 
         /**
@@ -12664,6 +12804,57 @@
         // NEW: Safelight auto-off setting
         document.getElementById("safelightAutoOff").checked =
           settingsManager.settings.safelightAutoOff !== false; // Default to true
+
+        // Virtual proof stability settings
+        const stabilityEnabled =
+          settingsManager.settings.proofStabilityEnabled !== false;
+        const stabilityBeep =
+          settingsManager.settings.proofStabilityBeep !== false;
+        const stabilityTolerance =
+          settingsManager.settings.proofStabilityTolerance ??
+          DEFAULT_SETTINGS.proofStabilityTolerance;
+        const stabilityMinStable =
+          settingsManager.settings.proofStabilityMinStable ??
+          DEFAULT_SETTINGS.proofStabilityMinStable;
+        const stabilityMaxWait =
+          settingsManager.settings.proofStabilityMaxWait ??
+          DEFAULT_SETTINGS.proofStabilityMaxWait;
+        const stabilityMinDelta =
+          settingsManager.settings.proofStabilityMinDelta ??
+          DEFAULT_SETTINGS.proofStabilityMinDelta;
+
+        const proofEnabledEl = document.getElementById(
+          "proofStabilityEnabled",
+        );
+        if (proofEnabledEl) proofEnabledEl.checked = stabilityEnabled;
+        const proofBeepEl = document.getElementById("proofStabilityBeep");
+        if (proofBeepEl) proofBeepEl.checked = stabilityBeep;
+        const proofToleranceEl = document.getElementById(
+          "proofStabilityTolerance",
+        );
+        if (proofToleranceEl) proofToleranceEl.value = stabilityTolerance;
+        const proofMinStableEl = document.getElementById(
+          "proofStabilityMinStable",
+        );
+        if (proofMinStableEl) proofMinStableEl.value = stabilityMinStable;
+        const proofMaxWaitEl = document.getElementById("proofStabilityMaxWait");
+        if (proofMaxWaitEl) proofMaxWaitEl.value = stabilityMaxWait;
+        const proofMinDeltaEl = document.getElementById("proofStabilityMinDelta");
+        if (proofMinDeltaEl) proofMinDeltaEl.value = stabilityMinDelta;
+
+        if (window.lightMeterManager) {
+          const stability = window.lightMeterManager.proof.stability;
+          stability.enabled = stabilityEnabled;
+          stability.beepOnStable = stabilityBeep;
+          stability.tolerancePct = parseFloat(stabilityTolerance) ||
+            DEFAULT_SETTINGS.proofStabilityTolerance;
+          stability.minStableCount = parseInt(stabilityMinStable, 10) ||
+            DEFAULT_SETTINGS.proofStabilityMinStable;
+          stability.maxWaitMs = parseInt(stabilityMaxWait, 10) ||
+            DEFAULT_SETTINGS.proofStabilityMaxWait;
+          stability.minDeltaLux = parseFloat(stabilityMinDelta) ||
+            DEFAULT_SETTINGS.proofStabilityMinDelta;
+        }
       }
 
       // Timer Manager
@@ -17777,6 +17968,14 @@
             isScanning: false,
             isMeasuring: false,
             scanAbort: false,
+            stability: {
+              enabled: true,
+              tolerancePct: 2.5,
+              minStableCount: 2,
+              maxWaitMs: 900,
+              minDeltaLux: 0.2,
+              beepOnStable: true,
+            },
           };
 
           // Filter data will be fetched from server (no local copies)
@@ -17812,6 +18011,9 @@
 
           // Virtual proof mode controls
           this.bindProofModeControls();
+
+          // Virtual proof settings controls
+          this.bindProofSettingsControls();
 
           // Calibration controls
           this.bindCalibrationControls();
@@ -18488,6 +18690,79 @@
           this.configureProofGrid(this.proof.width, this.proof.height, true);
         }
 
+        bindProofSettingsControls() {
+          const enabledToggle = document.getElementById(
+            "proofStabilityEnabled",
+          );
+          const beepToggle = document.getElementById("proofStabilityBeep");
+          const toleranceInput = document.getElementById(
+            "proofStabilityTolerance",
+          );
+          const minStableInput = document.getElementById(
+            "proofStabilityMinStable",
+          );
+          const maxWaitInput = document.getElementById("proofStabilityMaxWait");
+          const minDeltaInput = document.getElementById("proofStabilityMinDelta");
+
+          const stability = this.proof.stability || {};
+          if (enabledToggle) enabledToggle.checked = !!stability.enabled;
+          if (beepToggle) beepToggle.checked = !!stability.beepOnStable;
+          if (toleranceInput) {
+            toleranceInput.value = stability.tolerancePct ?? 2.5;
+          }
+          if (minStableInput) {
+            minStableInput.value = stability.minStableCount ?? 2;
+          }
+          if (maxWaitInput) {
+            maxWaitInput.value = stability.maxWaitMs ?? 900;
+          }
+          if (minDeltaInput) {
+            minDeltaInput.value = stability.minDeltaLux ?? 0.2;
+          }
+
+          const applySettings = () => {
+            if (enabledToggle) {
+              this.proof.stability.enabled = enabledToggle.checked;
+            }
+            if (beepToggle) {
+              this.proof.stability.beepOnStable = beepToggle.checked;
+            }
+            if (toleranceInput) {
+              const value = parseFloat(toleranceInput.value);
+              this.proof.stability.tolerancePct =
+                Number.isFinite(value) && value > 0 ? value : 2.5;
+            }
+            if (minStableInput) {
+              const value = parseInt(minStableInput.value, 10);
+              this.proof.stability.minStableCount =
+                Number.isFinite(value) && value > 0 ? value : 2;
+            }
+            if (maxWaitInput) {
+              const value = parseInt(maxWaitInput.value, 10);
+              this.proof.stability.maxWaitMs =
+                Number.isFinite(value) && value > 0 ? value : 900;
+            }
+            if (minDeltaInput) {
+              const value = parseFloat(minDeltaInput.value);
+              this.proof.stability.minDeltaLux =
+                Number.isFinite(value) && value > 0 ? value : 0.2;
+            }
+          };
+
+          [
+            enabledToggle,
+            beepToggle,
+            toleranceInput,
+            minStableInput,
+            maxWaitInput,
+            minDeltaInput,
+          ].forEach((element) => {
+            if (!element) return;
+            element.addEventListener("change", applySettings);
+            element.addEventListener("input", applySettings);
+          });
+        }
+
         updateProofFilterDropdown() {
           const dropdown = document.getElementById("proofFilterGrade");
           if (!dropdown) {
@@ -18554,6 +18829,7 @@
 
           this.renderProofGrid();
           this.updateProofStatus();
+          this.setProofScanStatus("Idle");
         }
 
         renderProofGrid() {
@@ -18656,6 +18932,88 @@
           }
         }
 
+        setProofScanStatus(message) {
+          const status = document.getElementById("proofScanStatus");
+          if (status) {
+            status.textContent = message;
+          }
+        }
+
+        async fetchProofLux(samples) {
+          const params = new URLSearchParams({
+            samples: samples,
+            calibration: this.calibration,
+          });
+
+          const response = await fetch("/light-meter?" + params.toString());
+          const data = await response.json();
+
+          if (data.status !== "success") {
+            const errorMessage = data.error || "Measurement error";
+            throw new Error(errorMessage);
+          }
+
+          return data;
+        }
+
+        async waitForProofStability() {
+          const stability = this.proof.stability || {};
+          const maxWaitMs = stability.maxWaitMs || 900;
+          const tolerancePct = stability.tolerancePct || 2.5;
+          const minStableCount = stability.minStableCount || 2;
+          const minDeltaLux = stability.minDeltaLux || 0.2;
+
+          const startTime = Date.now();
+          let lastLux = null;
+          let stableCount = 0;
+
+          this.setProofScanStatus("Hold still...");
+
+          while (Date.now() - startTime < maxWaitMs) {
+            if (this.proof.scanAbort) {
+              return { stable: false, lux: null, cancelled: true };
+            }
+
+            let currentLux = null;
+            try {
+              const data = await this.fetchProofLux(1);
+              currentLux = data.lux;
+            } catch (error) {
+              this.showFeedback("Stability error: " + error.message, "error");
+              return { stable: false, lux: null, cancelled: false };
+            }
+
+            if (!currentLux || currentLux <= 0) {
+              continue;
+            }
+
+            if (lastLux !== null) {
+              const tolerance = Math.max(
+                minDeltaLux,
+                Math.abs(lastLux) * (tolerancePct / 100),
+              );
+              if (Math.abs(currentLux - lastLux) <= tolerance) {
+                stableCount += 1;
+              } else {
+                stableCount = 0;
+              }
+            }
+
+            lastLux = currentLux;
+
+            if (stableCount >= minStableCount) {
+              this.setProofScanStatus("Stable");
+              if (stability.beepOnStable) {
+                playBeep(600, 0.1, 0.2);
+              }
+              return { stable: true, lux: currentLux, cancelled: false };
+            }
+          }
+
+          this.setProofScanStatus("Stability timeout");
+          return { stable: false, lux: lastLux, cancelled: false };
+        }
+
         async measureProofNext() {
           const total = this.proof.width * this.proof.height;
           if (this.proof.cursor >= total) {
@@ -18686,14 +19044,34 @@
 
           this.proof.isMeasuring = true;
 
-          try {
-            const params = new URLSearchParams({
-              samples: samples,
-              calibration: this.calibration,
-            });
+          const stability = this.proof.stability || {};
+          let stableLux = null;
+          if (stability.enabled) {
+            const stabilityResult = await this.waitForProofStability();
+            if (stabilityResult.cancelled) {
+              this.proof.isMeasuring = false;
+              this.updateProofStatus();
+              return false;
+            }
+            if (!stabilityResult.stable) {
+              this.showFeedback(
+                "Stability timeout. Hold still and try again.",
+                "error",
+              );
+              this.proof.isMeasuring = false;
+              this.updateProofStatus();
+              return false;
+            }
+            stableLux = stabilityResult.lux;
+          }
 
-            const response = await fetch("/light-meter?" + params.toString());
-            const data = await response.json();
+          try {
+            let data = null;
+            if (samples === 1 && stableLux !== null) {
+              data = { status: "success", lux: stableLux };
+            } else {
+              data = await this.fetchProofLux(samples);
+            }
 
             if (data.status === "success") {
               this.proof.samples[index] = data.lux;
@@ -18708,8 +19086,10 @@
                 this.updateProofGridCell(nextCursorIndex);
               }
               this.updateProofStatus();
-
-              playBeep(800, 0.3, 0.2);
+              if (!stability.enabled) {
+                playBeep(800, 0.3, 0.2);
+              }
+              this.setProofScanStatus("Captured");
               return true;
             } else {
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -18907,6 +19287,7 @@
 
           this.proof.isScanning = true;
           this.proof.scanAbort = false;
+          this.setProofScanStatus("Scanning...");
           this.updateProofStatus();
 
           while (this.proof.cursor < total && !this.proof.scanAbort) {
@@ -18917,6 +19298,9 @@
           }
 
           this.proof.isScanning = false;
+          if (!this.proof.scanAbort) {
+            this.setProofScanStatus("Idle");
+          }
           this.updateProofStatus();
         }
 
@@ -18931,6 +19315,7 @@
           }
 
           this.proof.isScanning = false;
+          this.setProofScanStatus("Idle");
           this.updateProofStatus();
         }
 
@@ -20074,6 +20459,12 @@
             { id: "settingTimerWarningBeep", evt: "change" },
             { id: "settingTimerEndBeep", evt: "change" },
             { id: "settingStopIncrement", evt: "change" },
+            { id: "proofStabilityEnabled", evt: "change" },
+            { id: "proofStabilityBeep", evt: "change" },
+            { id: "proofStabilityTolerance", evt: "input" },
+            { id: "proofStabilityMinStable", evt: "input" },
+            { id: "proofStabilityMaxWait", evt: "input" },
+            { id: "proofStabilityMinDelta", evt: "input" },
           ];
           toBind.forEach(({ id, evt }) => {
             const el = document.getElementById(id);
