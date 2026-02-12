@@ -681,8 +681,15 @@ class DarkroomLightMeter:
 
         straight_slope = float(curve.get("straight_slope", 0.7))
         filter_data = get_filter_data(pid, filter_grade) if filter_grade else None
-        if filter_data and filter_data.get("gamma"):
-            straight_slope = float(filter_data.get("gamma", straight_slope))
+        if filter_data:
+            # Use filter-specific density range if available
+            if filter_data.get("dmin_effect") is not None:
+                dmin = float(filter_data.get("dmin_effect"))
+            if filter_data.get("dmax_effect") is not None:
+                dmax = float(filter_data.get("dmax_effect"))
+            # Use filter-specific gamma if available
+            if filter_data.get("gamma"):
+                straight_slope = float(filter_data.get("gamma", straight_slope))
 
         toe_slope = float(curve.get("toe_slope", 0.3))
         shoulder_slope = float(curve.get("shoulder_slope", 0.15))
@@ -705,24 +712,17 @@ class DarkroomLightMeter:
         if iso_r is None:
             iso_r = 100.0
 
-        # REFACTORED: Prioritize logE_range from database, use ISO_R_TO_EV as fallback
+        # ISO R only: derive logE_range from filter ISO R (logE_range = ISO R / 100)
         log10_2 = math.log10(2.0)
-        loge_range = float(curve.get("logE_range", None))
-        source_of_loge_range = "database"  # Track which source we're using
-        
-        if loge_range is None or loge_range <= 0:
-            # Fallback: Use ISO_R_TO_EV lookup table if database doesn't have logE_range
-            printable_ev = float(self._iso_r_to_ev(iso_r))
-            loge_range = printable_ev * log10_2
-            source_of_loge_range = "iso_r_lookup_fallback"
-        else:
-            # Primary: Derive printable_ev from database logE_range
-            printable_ev = loge_range / log10_2
-        
+        loge_range = iso_r / 100.0
+        source_of_loge_range = "iso_r"
+
         # Safety: Ensure loge_range has a minimum value
         if loge_range <= 0:
             loge_range = 1.6
             source_of_loge_range = "default_fallback"
+
+        printable_ev = loge_range / log10_2
 
         has_reference = reference_lux is not None and reference_lux > 0
         if has_reference:
