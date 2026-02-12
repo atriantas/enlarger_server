@@ -679,7 +679,12 @@ class DarkroomLightMeter:
         dmin = float(paper_data.get("dmin", 0.05))
         dmax = float(paper_data.get("dmax", 2.0))
 
-        straight_slope = float(curve.get("straight_slope", 0.7))
+        # Get paper base slopes
+        base_straight_slope = float(curve.get("straight_slope", 0.7))
+        base_toe_slope = float(curve.get("toe_slope", 0.3))
+        base_shoulder_slope = float(curve.get("shoulder_slope", 0.15))
+        
+        straight_slope = base_straight_slope
         filter_data = get_filter_data(pid, filter_grade) if filter_grade else None
         if filter_data:
             # Use filter-specific density range if available
@@ -691,8 +696,10 @@ class DarkroomLightMeter:
             if filter_data.get("gamma"):
                 straight_slope = float(filter_data.get("gamma", straight_slope))
 
-        toe_slope = float(curve.get("toe_slope", 0.3))
-        shoulder_slope = float(curve.get("shoulder_slope", 0.15))
+        # Gamma-driven slope scaling: scale toe and shoulder by gamma ratio
+        gamma_ratio = straight_slope / base_straight_slope if base_straight_slope > 0 else 1.0
+        toe_slope = base_toe_slope * gamma_ratio
+        shoulder_slope = base_shoulder_slope * gamma_ratio
 
         iso_r = None
         if filter_data and filter_data.get("iso_r"):
