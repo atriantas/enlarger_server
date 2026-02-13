@@ -1436,6 +1436,14 @@
           box-shadow: inset 0 0 0 2px var(--warning);
         }
 
+        .proof-cell.proof-selected {
+          box-shadow: inset 0 0 0 3px #4A9EFF;
+        }
+
+        .proof-cell.proof-reference.proof-selected {
+          box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px #4A9EFF;
+        }
+
         .proof-cell.proof-clipped-white {
           outline: 2px solid #ccc;
         }
@@ -3990,6 +3998,56 @@
               </button>
               <button class="toggle-btn" data-scheme="light">Day</button>
               <button class="toggle-btn" data-scheme="day">Night</button>
+            </div>
+          </div>
+
+          <!-- Updates Section -->
+          <div class="settings-section">
+            <div class="title-md">Updates</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">
+              Check for new versions from GitHub and update automatically
+            </div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <div class="settings-label">Current Version</div>
+                <div
+                  id="currentAppVersion"
+                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                >
+                  Loading...
+                </div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-label">Latest Version</div>
+                <div
+                  id="latestAppVersion"
+                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                >
+                  Unknown
+                </div>
+              </div>
+            </div>
+            <div class="settings-group">
+              <div class="settings-item">
+                <button class="settings-btn primary" id="checkUpdatesBtn">
+                  Check for Updates
+                </button>
+              </div>
+              <div class="settings-item">
+                <div id="updateStatus" style="color: var(--text-secondary); font-size: 0.8rem; min-height: 20px;">
+                  Ready
+                </div>
+              </div>
+            </div>
+            <div id="updateProgress" style="display: none; margin-top: 8px;">
+              <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px;">Progress:</div>
+              <div style="width: 100%; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden;">
+                <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
+              </div>
+              <div id="updateProgressText" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">0%</div>
+            </div>
+            <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 8px;">
+              Note: Pico will restart automatically after a successful update
             </div>
           </div>
 
@@ -9932,6 +9990,199 @@
             setTimeout(() => {
               status.textContent = "";
             }, 3000);
+          }
+        }
+      }
+
+      /**
+       * UpdateStatusManager - Manages application updates from GitHub
+       *
+       * Handles version checking, update notifications, progress tracking,
+       * and automatic restart after successful updates
+       */
+      class UpdateStatusManager {
+        constructor() {
+          this.currentVersion = "0.0.0";
+          this.latestVersion = "0.0.0";
+          this.isChecking = false;
+          this.isUpdating = false;
+          this.init();
+        }
+
+        init() {
+          // Load version on startup
+          this.loadVersion();
+          this.updateVersionDisplay();
+
+          // Set up update button listener
+          const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
+          if (checkUpdatesBtn) {
+            checkUpdatesBtn.addEventListener("click", () => this.checkForUpdates());
+          }
+        }
+
+        loadVersion() {
+          // For now, version will come from server after first check
+          // This could also be stored in localStorage
+          try {
+            const stored = localStorage.getItem("appVersion");
+            if (stored) {
+              this.currentVersion = stored;
+            }
+          } catch (e) {
+            console.log("[UpdateStatusManager] Could not load version from localStorage");
+          }
+        }
+
+        saveVersion(version) {
+          try {
+            localStorage.setItem("appVersion", version);
+            this.currentVersion = version;
+          } catch (e) {
+            console.log("[UpdateStatusManager] Could not save version to localStorage");
+          }
+        }
+
+        updateVersionDisplay() {
+          const currentVersionEl = document.getElementById("currentAppVersion");
+          const latestVersionEl = document.getElementById("latestAppVersion");
+
+          if (currentVersionEl) {
+            currentVersionEl.textContent = this.currentVersion || "Unknown";
+          }
+          if (latestVersionEl) {
+            latestVersionEl.textContent = this.latestVersion || "Checking...";
+          }
+        }
+
+        setUpdateStatus(message, type = "info") {
+          const statusEl = document.getElementById("updateStatus");
+          if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.style.color = this.getStatusColor(type);
+          }
+        }
+
+        getStatusColor(type) {
+          const colors = {
+            info: "var(--text-secondary)",
+            success: "#4caf50",
+            error: "#f44336",
+            warning: "#ff9800",
+          };
+          return colors[type] || colors.info;
+        }
+
+        showProgress(show = true) {
+          const progressEl = document.getElementById("updateProgress");
+          if (progressEl) {
+            progressEl.style.display = show ? "block" : "none";
+          }
+        }
+
+        updateProgress(percentage) {
+          const progressBar = document.getElementById("updateProgressBar");
+          const progressText = document.getElementById("updateProgressText");
+
+          if (progressBar) {
+            progressBar.style.width = Math.min(100, Math.max(0, percentage)) + "%";
+          }
+          if (progressText) {
+            progressText.textContent = Math.round(percentage) + "%";
+          }
+        }
+
+        async checkForUpdates() {
+          if (this.isChecking || this.isUpdating) {
+            this.setUpdateStatus("Already checking/updating...", "warning");
+            return;
+          }
+
+          this.isChecking = true;
+          const btnEl = document.getElementById("checkUpdatesBtn");
+          if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = "Checking...";
+          }
+
+          this.setUpdateStatus("Checking for updates...", "info");
+          this.showProgress(false);
+
+          try {
+            const response = await fetch("/update-check", {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+              this.setUpdateStatus(`Error: ${result.error || "Unknown error"}`, "error");
+              console.error("[UpdateStatusManager] Update check failed:", result.error);
+              return;
+            }
+
+            // Update version display
+            this.latestVersion = result.latest_version || result.version || "Unknown";
+            this.updateVersionDisplay();
+
+            // Check if update available
+            if (!result.available) {
+              this.setUpdateStatus("Already on latest version", "success");
+              return;
+            }
+
+            // Update available
+            this.setUpdateStatus(`Update available: ${this.latestVersion}`, "success");
+            this.showProgress(true);
+            this.updateProgress(50);
+
+            // Download and install
+            this.setUpdateStatus("Downloading and installing update...", "info");
+            this.updateProgress(75);
+
+            // Update complete, display results
+            if (result.updated_files && result.updated_files.length > 0) {
+              this.setUpdateStatus(
+                `✓ Updated ${result.updated_files.length} files. Restarting...`,
+                "success"
+              );
+              this.updateProgress(100);
+
+              // Save new version
+              this.saveVersion(this.latestVersion);
+
+              // Wait before restart
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
+            } else if (result.failed_files && result.failed_files.length > 0) {
+              this.setUpdateStatus(
+                `⚠ Partial update: ${result.failed_files.length} files failed`,
+                "warning"
+              );
+              console.warn("[UpdateStatusManager] Failed files:", result.failed_files);
+            }
+          } catch (error) {
+            console.error("[UpdateStatusManager] Check failed:", error);
+            this.setUpdateStatus(
+              `Error: ${error.message || "Failed to check for updates"}`,
+              "error"
+            );
+          } finally {
+            this.isChecking = false;
+            const btnEl = document.getElementById("checkUpdatesBtn");
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.textContent = "Check for Updates";
+            }
+            this.showProgress(false);
           }
         }
       }
@@ -17993,6 +18244,7 @@
             referenceIndex: null,
             referenceLux: null,
             lastIndex: null,
+            selectedIndex: null,
             filterGrade: "2",
             isScanning: false,
             isMeasuring: false,
@@ -18686,8 +18938,8 @@
           if (setRefBtn) {
             setRefBtn.addEventListener("click", async () => {
               await this.stopProofScan();
-              if (this.proof.lastIndex !== null) {
-                this.setProofReference(this.proof.lastIndex);
+              if (this.proof.selectedIndex !== null) {
+                this.setProofReference(this.proof.selectedIndex);
               }
             });
           }
@@ -18845,6 +19097,7 @@
           this.proof.samples = Array(total).fill(null);
           this.proof.results = Array(total).fill(null);
           this.proof.lastIndex = null;
+          this.proof.selectedIndex = null;
 
           if (!keepReference) {
             this.proof.referenceIndex = null;
@@ -18877,7 +19130,7 @@
             cell.id = `proofCell-${i}`;
             cell.addEventListener("click", async () => {
               await this.stopProofScan();
-              this.setProofReference(i);
+              this.selectProofCell(i);
             });
             grid.appendChild(cell);
             this.updateProofGridCell(i);
@@ -18896,6 +19149,10 @@
           cell.classList.toggle(
             "proof-reference",
             index === this.proof.referenceIndex,
+          );
+          cell.classList.toggle(
+            "proof-selected",
+            index === this.proof.selectedIndex,
           );
           cell.classList.toggle(
             "proof-clipped-white",
@@ -18952,7 +19209,7 @@
 
           const setRefBtn = document.getElementById("proofSetReferenceBtn");
           if (setRefBtn) {
-            setRefBtn.disabled = this.proof.lastIndex === null;
+            setRefBtn.disabled = this.proof.selectedIndex === null;
           }
 
           const recomputeBtn = document.getElementById("proofRecomputeBtn");
@@ -19275,8 +19532,9 @@
           }
         }
 
-        updateProofSampleInfo(index, result) {
-          if (index !== this.proof.lastIndex) return;
+        updateProofSampleInfo(index, result, forceUpdate = false) {
+          // Only update if this is the last measured cell or explicitly forced
+          if (!forceUpdate && index !== this.proof.lastIndex) return;
 
           const luxDisplay = document.getElementById("proofLastLux");
           const zoneDisplay = document.getElementById("proofLastZone");
@@ -19350,6 +19608,31 @@
           this.updateProofHistogram();
         }
 
+        selectProofCell(index) {
+          const lux = this.proof.samples[index];
+          const result = this.proof.results[index];
+          
+          if (lux === null) {
+            this.showFeedback("This cell has not been measured yet", "error");
+            return;
+          }
+
+          // Update selected index and refresh UI
+          const previousSelected = this.proof.selectedIndex;
+          this.proof.selectedIndex = index;
+          
+          if (previousSelected !== null) {
+            this.updateProofGridCell(previousSelected);
+          }
+          this.updateProofGridCell(index);
+          
+          // Display cell info in LAST SAMPLE box
+          this.updateProofSampleInfo(index, result, true);
+          
+          // Update button state
+          this.updateProofStatus();
+        }
+
         setProofReference(index) {
           this.stopProofScan();
           const lux = this.proof.samples[index];
@@ -19358,8 +19641,17 @@
             return;
           }
 
+          // Clear previous selection when setting reference
+          const previousSelected = this.proof.selectedIndex;
+          this.proof.selectedIndex = null;
+
           this.proof.referenceIndex = index;
           this.proof.referenceLux = lux;
+
+          // Update previous selected cell if it exists
+          if (previousSelected !== null && previousSelected !== index) {
+            this.updateProofGridCell(previousSelected);
+          }
 
           this.renderProofGrid();
           this.recomputeProofResults();
@@ -21258,6 +21550,9 @@
 
         // Initialize exposure log manager
         window.exposureLogManager = new ExposureLogManager();
+
+        // Initialize update status manager
+        window.updateStatusManager = new UpdateStatusManager();
 
         // LOGS tab event listeners
         document.getElementById("exportCSV")?.addEventListener("click", () => {
