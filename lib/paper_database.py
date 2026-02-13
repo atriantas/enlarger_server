@@ -870,8 +870,8 @@ PAPER_ORDER = [
     'ilford_iv_rc_portfolio',
     'foma_fomaspeed',
     'foma_fomabrom',
-    'fomatone_mg_classic_variant',
-    'foma_fomapastel_mg'
+    'foma_fomapastel_mg',
+    'fomatone_mg_classic_variant'
 ]
 
 # Filter selection rules based on contrast (ΔEV) measurements

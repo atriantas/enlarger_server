@@ -932,17 +932,9 @@ class HTTPServer:
                     calibration = float(calibration_str)
                 except (ValueError, TypeError):
                     pass
-            # Fine tuning parameters
-            intent = params.get('intent', 'balanced')
-            highlight_offset = params.get('highlight_offset', 0)
-            shadow_offset = params.get('shadow_offset', 0)
-
             analysis = self.light_meter.get_contrast_analysis(
                 paper_id=paper_id,
                 calibration=calibration,
-                intent=intent,
-                highlight_offset=highlight_offset,
-                shadow_offset=shadow_offset,
             )
             
             if 'error' in analysis:
@@ -975,87 +967,6 @@ class HTTPServer:
         except Exception as e:
             response = self._json_response({
                 "error": f"Contrast analysis error: {e}"
-            }, 500)
-            await self._sendall(conn, response)
-    
-    async def _handle_light_meter_split_grade(self, conn, params):
-        """
-        Handle /light-meter-split-grade endpoint - calculate split-grade exposure times.
-        
-        Query params:
-            highlight: Highlight lux reading
-            shadow: Shadow lux reading
-            calibration: Calibration constant (lux·s)
-            paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
-            system: (deprecated) Legacy filter system parameter
-            soft_filter: User-selected soft filter (optional)
-            hard_filter: User-selected hard filter (optional)
-        
-        Returns split-grade calculation with absolute exposure times.
-        """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
-            return
-        
-        try:
-            highlight_lux = float(params.get('highlight', 0))
-            shadow_lux = float(params.get('shadow', 0))
-            calibration = float(params.get('calibration', self.light_meter.default_calibration))
-            
-            # Accept paper_id (new) or system (legacy fallback)
-            paper_id = params.get('paper_id')
-            if not paper_id:
-                paper_id = params.get('system', self.light_meter.current_paper_id or self.light_meter.filter_system)
-            
-            soft_filter = params.get('soft_filter')
-            hard_filter = params.get('hard_filter')
-            
-            if highlight_lux <= 0 or shadow_lux <= 0:
-                response = self._json_response({
-                    "error": "Invalid lux readings (must be positive)",
-                    "highlight_lux": highlight_lux,
-                    "shadow_lux": shadow_lux
-                }, 400)
-                await self._sendall(conn, response)
-                return
-            
-            # Calculate split-grade
-            result = self.light_meter.calculate_split_grade_enhanced(
-                highlight_lux=highlight_lux,
-                shadow_lux=shadow_lux,
-                soft_filter=soft_filter,
-                hard_filter=hard_filter,
-                calibration=calibration,
-                system=paper_id  # Pass paper_id as system parameter
-            )
-            
-            if result is None:
-                response = self._json_response({
-                    "error": "Failed to calculate split-grade",
-                    "highlight_lux": highlight_lux,
-                    "shadow_lux": shadow_lux
-                }, 500)
-                await self._sendall(conn, response)
-                return
-            
-            response = self._json_response({
-                "status": "success",
-                "result": result,
-                "timestamp": time.ticks_ms()
-            })
-            await self._sendall(conn, response)
-            
-        except ValueError as e:
-            response = self._json_response({
-                "error": f"Invalid parameters: {e}"
-            }, 400)
-            await self._sendall(conn, response)
-        except Exception as e:
-            response = self._json_response({
-                "error": f"Split-grade calculation error: {e}"
             }, 500)
             await self._sendall(conn, response)
     
@@ -1098,13 +1009,13 @@ class HTTPServer:
                 }, 400)
                 await self._sendall(conn, response)
                 return
-            
+
             # Calculate Heiland-like split-grade with paper_id
             result = self.light_meter.calculate_split_grade_heiland(
                 highlight_lux=highlight_lux,
                 shadow_lux=shadow_lux,
                 calibration=calibration,
-                system=paper_id  # Pass paper_id as system parameter for now
+                system=paper_id,  # Pass paper_id as system parameter for now
             )
             
             if result is None:
@@ -1131,6 +1042,66 @@ class HTTPServer:
         except Exception as e:
             response = self._json_response({
                 "error": f"Heiland split-grade calculation error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+
+    async def _handle_light_meter_virtual_proof(self, conn, params):
+        """
+        Handle /light-meter-virtual-proof endpoint - map lux to zones and preview density.
+
+        Query params:
+            lux: Lux reading for the sample
+            reference_lux: Optional reference lux (Zone V)
+            calibration: Calibration constant (optional)
+            paper_id: Paper ID to use for curves and filter data
+            filter: Filter grade for gamma selection (optional)
+        """
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+
+        try:
+            lux = float(params.get('lux', 0))
+            ref = params.get('reference_lux')
+            reference_lux = float(ref) if ref else None
+            calibration = params.get('calibration')
+            calibration = float(calibration) if calibration else None
+            paper_id = params.get('paper_id')
+            filter_grade = params.get('filter')
+
+            result = self.light_meter.calculate_virtual_proof_sample(
+                lux,
+                reference_lux=reference_lux,
+                paper_id=paper_id,
+                filter_grade=filter_grade,
+                calibration=calibration,
+            )
+
+            if result.get('error'):
+                response = self._json_response({
+                    "error": result['error']
+                }, 400)
+                await self._sendall(conn, response)
+                return
+
+            response = self._json_response({
+                "status": "success",
+                "result": result,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Virtual proof error: {e}"
             }, 500)
             await self._sendall(conn, response)
     
@@ -1400,10 +1371,10 @@ class HTTPServer:
                 await self._handle_light_meter_shadow(conn, params)
             elif path == '/light-meter-contrast':
                 await self._handle_light_meter_contrast(conn, params)
-            elif path == '/light-meter-split-grade':
-                await self._handle_light_meter_split_grade(conn, params)
             elif path == '/light-meter-split-grade-heiland':
                 await self._handle_light_meter_split_grade_heiland(conn, params)
+            elif path == '/light-meter-virtual-proof':
+                await self._handle_light_meter_virtual_proof(conn, params)
             elif path == '/light-meter-calibrate':
                 await self._handle_light_meter_calibrate(conn, params)
             elif path == '/light-meter-config':

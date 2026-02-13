@@ -1411,6 +1411,66 @@
         .segmented-control-container {
           gap: 6px;
         }
+
+        .proof-grid {
+          display: grid;
+          gap: 2px;
+          background: var(--border);
+          padding: 4px;
+          border-radius: 8px;
+        }
+
+        .proof-cell {
+          width: 100%;
+          aspect-ratio: 1 / 1;
+          background: #111;
+          border: 1px solid #000;
+          border-radius: 2px;
+        }
+
+        .proof-cell.proof-cursor {
+          outline: 2px solid var(--accent);
+        }
+
+        .proof-cell.proof-reference {
+          box-shadow: inset 0 0 0 2px var(--warning);
+        }
+
+        .proof-cell.proof-clipped-white {
+          outline: 2px solid #ccc;
+        }
+
+        .proof-cell.proof-clipped-black {
+          outline: 2px solid #111;
+        }
+
+        .proof-legend {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.6rem;
+          color: var(--text-secondary);
+          margin-top: 6px;
+        }
+
+        .proof-histogram {
+          margin-top: 8px;
+          background: #0b0b0b;
+          border: 1px solid #000;
+          border-radius: 8px;
+          padding: 6px;
+        }
+
+        .proof-histogram-label {
+          text-align: center;
+          margin-bottom: 4px;
+          color: var(--text-secondary);
+        }
+
+        .proof-histogram-canvas {
+          width: 100%;
+          height: 90px;
+          display: block;
+        }
       }
     </style>
   </head>
@@ -4295,6 +4355,96 @@
             </div>
           </section>
 
+          <!-- METER SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="meter-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              METER SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="title-md">Virtual Proof Stability</div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Stability Detection</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityEnabled" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Beep On Stable</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityBeep" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Tolerance (%)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityTolerance"
+                    class="settings-input"
+                    min="0.5"
+                    max="10"
+                    step="0.1"
+                    value="2.5"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Min Stable Reads</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinStable"
+                    class="settings-input"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value="2"
+                  />
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Max Wait (ms)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMaxWait"
+                    class="settings-input"
+                    min="300"
+                    max="3000"
+                    step="50"
+                    value="900"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Min Delta (lux)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinDelta"
+                    class="settings-input"
+                    min="0.05"
+                    max="5"
+                    step="0.05"
+                    value="0.2"
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  font-size: 0.7rem;
+                  color: var(--text-secondary);
+                  margin-top: 10px;
+                "
+              >
+                Capture starts only after readings stabilize within tolerance.
+              </div>
+            </div>
+          </section>
+
           <div class="settings-section">
             <button class="settings-btn primary" id="saveGlobalSettings">
               Save All Settings
@@ -4390,6 +4540,14 @@
                 aria-pressed="false"
               >
                 Split-Grade
+              </button>
+              <button
+                type="button"
+                class="segmented-btn"
+                data-mode="proof"
+                aria-pressed="false"
+              >
+                Virtual Proof
               </button>
             </div>
           </div>
@@ -4675,36 +4833,6 @@
               </div>
             </div>
 
-            <!-- Paper & Filter Characteristics (Enhanced Analysis) -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">PAPER CHARACTERISTICS</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Printable EV:</span>
-                  <span style="font-weight: bold" id="printableEV">-- EV</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Gamma (Tone Curve):</span>
-                  <span style="font-weight: bold" id="paperGamma">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Contrast Index:</span>
-                  <span style="font-weight: bold" id="contrastIndex">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Density Range:</span>
-                  <span style="font-weight: bold" id="densityRange"
-                    >-- (Dmin-Dmax)</span
-                  >
-                </div>
-              </div>
-            </div>
 
             <!-- Analysis Reasoning -->
             <div
@@ -4727,80 +4855,9 @@
               </div>
             </div>
 
-            <!-- Fine Tuning Controls -->
+            <!-- Suggested Exposure Time -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">FINE TUNING</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Intent:</span>
-                  <select
-                    id="contrastIntent"
-                    class="settings-input"
-                    style="width: 55%"
-                  >
-                    <option value="balanced">Balanced</option>
-                    <option value="highlight-priority">
-                      Highlight Priority
-                    </option>
-                    <option value="shadow-priority">Shadow Priority</option>
-                  </select>
-                </div>
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Highlight Offset:</span>
-                  <span style="font-weight: bold" id="highlightOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="highlightOffsetSlider"
-                />
-              </div>
-              <div class="label-sm" style="margin-top: 8px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Shadow Offset:</span>
-                  <span style="font-weight: bold" id="shadowOffsetValue"
-                    >0.00 EV</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="-0.5"
-                  max="0.5"
-                  step="0.05"
-                  value="0"
-                  class="slider"
-                  id="shadowOffsetSlider"
-                />
-              </div>
-            </div>
-
-            <!-- Optimal Exposure Times -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">OPTIMAL EXPOSURE TIMES</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Highlight Time (best whites):</span>
-                  <span style="font-weight: bold" id="highlightExposureTime"
-                    >-- sec</span
-                  >
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Shadow Time (best blacks):</span>
-                  <span style="font-weight: bold" id="shadowExposureTime"
-                    >-- sec</span
-                  >
-                </div>
-              </div>
+              <div class="label-sm">SUGGESTED EXPOSURE TIME</div>
               <div
                 class="label-sm"
                 style="
@@ -4811,29 +4868,19 @@
                 "
               >
                 <div style="display: flex; justify-content: space-between">
-                  <span>Suggested Time (compromise):</span>
+                  <span>Midpoint Time:</span>
                   <span
                     style="font-weight: bold; font-size: 1.1rem"
                     id="suggestedExposureTime"
                     >-- sec</span
                   >
                 </div>
-              </div>
-              <div
-                class="label-sm"
-                style="font-size: 0.75rem; margin-top: 5px; color: #999"
-              >
-                <div style="display: flex; justify-content: space-between">
-                  <span
-                    >Strategy:
-                    <span style="font-weight: bold" id="exposureStrategy"
-                      >--</span
-                    ></span
-                  >
-                  <span
-                    >(Ratio:
-                    <span style="font-weight: bold" id="exposureRatio">--</span
-                    >)</span
+                <div
+                  style="display: flex; justify-content: space-between; margin-top: 3px"
+                >
+                  <span>Midpoint Lux:</span>
+                  <span style="font-weight: bold" id="midpointLuxDisplay"
+                    >-- lux</span
                   >
                 </div>
               </div>
@@ -4848,27 +4895,6 @@
                 id="exposureNote"
               >
                 --
-              </div>
-            </div>
-
-            <!-- Guidance Message -->
-            <div
-              class="info-box"
-              style="
-                margin-top: 10px;
-                background: rgba(100, 200, 100, 0.1);
-                border-color: rgba(100, 200, 100, 0.3);
-              "
-            >
-              <div class="label-sm" style="color: #66cc66; text-align: center">
-                NEXT STEP
-              </div>
-              <div
-                class="label-sm"
-                style="text-align: center; margin-top: 5px; font-size: 0.9rem"
-              >
-                Use suggested time above for exposure. Adjust based on test
-                prints.
               </div>
             </div>
 
@@ -4919,32 +4945,6 @@
                 class="slider"
                 id="splitAvgSamplesSlider"
               />
-            </div>
-
-            <!-- Algorithm Selection -->
-            <div class="control" style="margin-top: 15px">
-              <div class="control-label">
-                <span>ALGORITHM</span>
-              </div>
-              <select
-                class="settings-input"
-                id="splitAlgorithmSelect"
-                style="width: 100%"
-              >
-                <option value="heiland">Heiland Enhanced (Recommended)</option>
-                <option value="original">Original Fixed-Filter</option>
-                <option value="comparison">Compare Both Algorithms</option>
-              </select>
-              <div
-                class="label-sm"
-                style="
-                  margin-top: 4px;
-                  color: var(--text-secondary);
-                  font-size: 0.55rem;
-                "
-              >
-                Heiland: Dynamic filter selection based on contrast
-              </div>
             </div>
 
             <!-- Highlight Measurement for Split Grade -->
@@ -4999,31 +4999,56 @@
               </div>
             </div>
 
-            <!-- Filter Selection -->
-            <div class="control" style="margin-top: 15px">
-              <div class="control-label">
-                <span>SOFT FILTER (Highlights)</span>
+            <!-- Paper & Filter Characteristics (Split-Grade) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">PAPER CHARACTERISTICS</div>
+              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Printable EV:</span>
+                  <span style="font-weight: bold" id="splitPrintableEV">-- EV</span>
+                </div>
               </div>
-              <select
-                class="settings-input"
-                id="splitSoftFilterSelect"
-                style="width: 100%"
-              >
-                <option value="">Auto-Select</option>
-              </select>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Gamma (Tone Curve):</span>
+                  <span style="font-weight: bold" id="splitPaperGamma">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Contrast Index:</span>
+                  <span style="font-weight: bold" id="splitContrastIndex">--</span>
+                </div>
+              </div>
+              <div class="label-sm" style="font-size: 0.85rem">
+                <div style="display: flex; justify-content: space-between">
+                  <span>Density Range:</span>
+                  <span style="font-weight: bold" id="splitDensityRange">
+                    -- (Dmin-Dmax)
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div class="control" style="margin-top: 10px">
-              <div class="control-label">
-                <span>HARD FILTER (Shadows)</span>
+            <!-- Analysis Reasoning -->
+            <div
+              class="info-box"
+              style="
+                margin-top: 10px;
+                background: rgba(50, 150, 255, 0.1);
+                border-color: rgba(50, 150, 255, 0.3);
+              "
+            >
+              <div class="label-sm" style="color: #6699ff">
+                ANALYSIS REASONING
               </div>
-              <select
-                class="settings-input"
-                id="splitHardFilterSelect"
-                style="width: 100%"
+              <div
+                class="label-sm"
+                style="font-size: 0.85rem; margin-top: 5px"
+                id="splitAnalysisReasoning"
               >
-                <option value="">Auto-Select</option>
-              </select>
+                --
+              </div>
             </div>
 
             <!-- Exposure Times Results -->
@@ -5047,14 +5072,6 @@
                   <span id="splitSoftFilterName">--</span> |
                   <span id="splitSoftPercent">--%</span>
                 </div>
-                <button
-                  class="settings-btn"
-                  id="sendSoftToCalc"
-                  style="margin-top: 5px; width: 100%"
-                  disabled
-                >
-                  → Send to CALC
-                </button>
               </div>
               <div
                 class="info-box"
@@ -5075,15 +5092,17 @@
                   <span id="splitHardFilterName">--</span> |
                   <span id="splitHardPercent">--%</span>
                 </div>
-                <button
-                  class="settings-btn"
-                  id="sendHardToCalc"
-                  style="margin-top: 5px; width: 100%"
-                  disabled
-                >
-                  → Send to CALC
-                </button>
               </div>
+            </div>
+
+            <div class="settings-btn-group" style="margin-top: 10px">
+              <button
+                class="settings-btn"
+                id="sendSplitBothToCalc"
+                disabled
+              >
+                → Send Both to CALC
+              </button>
             </div>
 
             <!-- Total Time -->
@@ -5112,9 +5131,8 @@
               </div>
               <div class="label-sm" style="text-align: center; margin-top: 5px">
                 1. Measure highlight and shadow areas<br />
-                2. Select filters (or use auto-select)<br />
-                3. Click "Calculate Split-Grade"<br />
-                4. Send times to CALC tab for exposure
+                2. Click "Calculate Split-Grade"<br />
+                3. Send times to CALC tab for exposure
               </div>
             </div>
 
@@ -5129,6 +5147,142 @@
               <button class="settings-btn" id="clearSplitBtn">
                 Clear Readings
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIRTUAL PROOF MODE -->
+        <div
+          id="meterProofMode"
+          class="meter-mode-content"
+          style="display: none"
+        >
+          <div class="incremental-timer">
+            <div class="title-sm" style="text-align: center">
+              VIRTUAL PROOF
+            </div>
+            <div
+              class="label-sm"
+              style="text-align: center; margin-bottom: 10px"
+            >
+              Sequential scan to rebuild a grayscale preview
+            </div>
+
+            <div class="control">
+              <div class="control-label">
+                <span>GRID SIZE</span>
+                <span class="value-display" id="proofGridTotal">--</span>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 6px">
+                <input
+                  type="number"
+                  id="proofGridWidth"
+                  class="settings-input"
+                  min="1"
+                  max="50"
+                  step="1"
+                  value="30"
+                  style="width: 50%"
+                />
+                <input
+                  type="number"
+                  id="proofGridHeight"
+                  class="settings-input"
+                  min="1"
+                  max="50"
+                  step="1"
+                  value="20"
+                  style="width: 50%"
+                />
+              </div>
+              <div class="settings-btn-group" style="margin-top: 8px">
+                <button class="settings-btn" id="proofApplyGridBtn">
+                  Apply Grid
+                </button>
+              </div>
+            </div>
+
+            <div class="control">
+              <div class="control-label">
+                <span>AVERAGING SAMPLES</span>
+                <span class="value-display" id="proofAvgSamplesValue">5</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value="5"
+                class="slider"
+                id="proofAvgSamplesSlider"
+              />
+            </div>
+
+            <div class="control" style="margin-top: 10px">
+              <div class="control-label">
+                <span>PREVIEW FILTER GRADE</span>
+              </div>
+              <select
+                class="settings-input"
+                id="proofFilterGrade"
+                style="width: 100%"
+              ></select>
+            </div>
+
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">SCAN PROGRESS</div>
+              <div class="value-display" id="proofScanProgress">0/0</div>
+              <div class="label-sm" id="proofScanStatus">Idle</div>
+              <div class="settings-btn-group" style="margin-top: 6px">
+                <button class="settings-btn" id="proofMeasureNextBtn">
+                  Measure Next Cell
+                </button>
+                <button
+                  class="settings-btn"
+                  id="proofSetReferenceBtn"
+                  disabled
+                >
+                  Set Zone V Reference
+                </button>
+                <button
+                  class="settings-btn"
+                  id="proofRecomputeBtn"
+                  disabled
+                >
+                  Recompute Preview
+                </button>
+                <button class="settings-btn" id="proofClearBtn">
+                  Clear Grid
+                </button>
+              </div>
+            </div>
+
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">LAST SAMPLE</div>
+              <div class="label-sm" id="proofLastLux">Lux: --</div>
+              <div class="label-sm" id="proofLastZone">Zone: --</div>
+              <div class="label-sm" id="proofLastIsoR">ISO R: --</div>
+              <div class="label-sm" id="proofLastEvRange">EV Range: --</div>
+              <div class="label-sm" id="proofLastDensity">Density: --</div>
+              <div class="label-sm" id="proofLastClipping">Clipping: --</div>
+            </div>
+
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">VIRTUAL PROOF</div>
+              <div class="proof-grid" id="proofGrid"></div>
+              <div class="proof-legend">
+                <span>Dark (black)</span>
+                <span>Light (white)</span>
+              </div>
+              <div class="proof-histogram">
+                <div class="label-sm proof-histogram-label">HISTOGRAM</div>
+                <canvas
+                  id="proofHistogram"
+                  class="proof-histogram-canvas"
+                  role="img"
+                  aria-label="Virtual proof histogram"
+                ></canvas>
+              </div>
             </div>
           </div>
         </div>
@@ -5433,6 +5587,12 @@
         autoAdvanceDelay: 1,
         safelightAutoOff: true, // Turn off safelight when enlarger is on
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
+        proofStabilityEnabled: true,
+        proofStabilityBeep: true,
+        proofStabilityTolerance: 2.5,
+        proofStabilityMinStable: 2,
+        proofStabilityMaxWait: 900,
+        proofStabilityMinDelta: 0.2,
         // Base time slider limits
         baseTimeMin: 0.4,
         baseTimeMax: 50,
@@ -8018,6 +8178,30 @@
             ),
             safelightAutoOff:
               document.getElementById("safelightAutoOff").checked, // NEW
+            proofStabilityEnabled: document.getElementById(
+              "proofStabilityEnabled",
+            )?.checked,
+            proofStabilityBeep: document.getElementById(
+              "proofStabilityBeep",
+            )?.checked,
+            proofStabilityTolerance: parseFloat(
+              document.getElementById("proofStabilityTolerance")?.value ||
+                DEFAULT_SETTINGS.proofStabilityTolerance,
+            ),
+            proofStabilityMinStable: parseInt(
+              document.getElementById("proofStabilityMinStable")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMinStable,
+              10,
+            ),
+            proofStabilityMaxWait: parseInt(
+              document.getElementById("proofStabilityMaxWait")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMaxWait,
+              10,
+            ),
+            proofStabilityMinDelta: parseFloat(
+              document.getElementById("proofStabilityMinDelta")?.value ||
+                DEFAULT_SETTINGS.proofStabilityMinDelta,
+            ),
             // Base time slider limits
             baseTimeMin: parseFloat(
               document.getElementById("baseTimeMin")?.value || 0.4,
@@ -8226,6 +8410,25 @@
               updateChart();
             } catch (e) {}
           }).call(this);
+
+          if (window.lightMeterManager) {
+            const stability = window.lightMeterManager.proof.stability;
+            stability.enabled = this.settings.proofStabilityEnabled !== false;
+            stability.beepOnStable =
+              this.settings.proofStabilityBeep !== false;
+            stability.tolerancePct =
+              parseFloat(this.settings.proofStabilityTolerance) ||
+              DEFAULT_SETTINGS.proofStabilityTolerance;
+            stability.minStableCount =
+              parseInt(this.settings.proofStabilityMinStable, 10) ||
+              DEFAULT_SETTINGS.proofStabilityMinStable;
+            stability.maxWaitMs =
+              parseInt(this.settings.proofStabilityMaxWait, 10) ||
+              DEFAULT_SETTINGS.proofStabilityMaxWait;
+            stability.minDeltaLux =
+              parseFloat(this.settings.proofStabilityMinDelta) ||
+              DEFAULT_SETTINGS.proofStabilityMinDelta;
+          }
         }
 
         /**
@@ -10451,6 +10654,65 @@
        * @property {Object} splitPresets - Saved split-grade configurations
        * @property {string} currentSplitPreset - Currently loaded preset name
        */
+      function applySplitGradeToCalc(splitData) {
+        if (!splitData) return;
+
+        const formatTime = (value) =>
+          Number.isFinite(value) ? value.toFixed(2) : "--";
+
+        appState.calculator.splitGrade = {
+          enabled: true,
+          neutralTime: splitData.neutralTime,
+          highlightsBase: splitData.highlightsBase,
+          shadowsBase: splitData.shadowsBase,
+          softTime: splitData.softTime,
+          hardTime: splitData.hardTime,
+          totalTime: splitData.totalTime,
+          softFilter: splitData.softFilter,
+          hardFilter: splitData.hardFilter,
+          paperBrand: splitData.paperBrand || null,
+          fomaPaperType: splitData.fomaPaperType || null,
+          burnPercent: splitData.burnPercent || null,
+          softFactor: splitData.softFactor || null,
+          hardFactor: splitData.hardFactor || null,
+        };
+
+        const display = document.getElementById("splitGradeDisplay");
+        const neutralDisplay = document.getElementById("splitNeutralDisplay");
+        const splitTimeDisplay = document.getElementById(
+          "splitTimeDisplayCalc",
+        );
+        const totalDisplay = document.getElementById("splitTotalDisplay");
+        const highlightsSpan = document.getElementById("highlightsTime");
+        const shadowsSpan = document.getElementById("shadowsTime");
+
+        if (display) display.style.display = "block";
+        if (neutralDisplay)
+          neutralDisplay.textContent = `${formatTime(splitData.neutralTime)}s`;
+        if (splitTimeDisplay)
+          splitTimeDisplay.textContent = `${formatTime(
+            splitData.highlightsBase,
+          )}s / ${formatTime(splitData.shadowsBase)}s`;
+        if (totalDisplay)
+          totalDisplay.textContent = `${formatTime(splitData.totalTime)}s`;
+        if (highlightsSpan)
+          highlightsSpan.textContent = `${formatTime(
+            splitData.softTime,
+          )}s (F${splitData.softFilter || "--"})`;
+        if (shadowsSpan)
+          shadowsSpan.textContent = `${formatTime(
+            splitData.hardTime,
+          )}s (F${splitData.hardFilter || "--"})`;
+
+        switchTab("calc");
+
+        const container = document.querySelector(".container");
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+      }
+
       class SplitGradeCalculator {
         /**
          * Creates a SplitGradeCalculator instance
@@ -10963,9 +11225,7 @@
         sendToCalc() {
           const result = this.calculate();
 
-          // Store in appState
-          appState.calculator.splitGrade = {
-            enabled: true,
+          applySplitGradeToCalc({
             neutralTime: this.neutralTime,
             highlightsBase: result.highlightsBase,
             shadowsBase: result.shadowsBase,
@@ -10979,35 +11239,7 @@
             burnPercent: this.burnPercent,
             softFactor: result.softFactor,
             hardFactor: result.hardFactor,
-          };
-
-          // Update CALC tab display
-          const display = document.getElementById("splitGradeDisplay");
-          const neutralDisplay = document.getElementById("splitNeutralDisplay");
-          const splitTimeDisplay = document.getElementById(
-            "splitTimeDisplayCalc",
-          );
-          const totalDisplay = document.getElementById("splitTotalDisplay");
-          const highlightsSpan = document.getElementById("highlightsTime");
-          const shadowsSpan = document.getElementById("shadowsTime");
-
-          if (display) display.style.display = "block";
-          if (neutralDisplay)
-            neutralDisplay.textContent = `${this.neutralTime.toFixed(2)}s`;
-          if (splitTimeDisplay)
-            splitTimeDisplay.textContent = `${result.highlightsBase.toFixed(
-              2,
-            )}s / ${result.shadowsBase.toFixed(2)}s`;
-          if (totalDisplay)
-            totalDisplay.textContent = `${result.totalTime.toFixed(2)}s`;
-          if (highlightsSpan)
-            highlightsSpan.textContent = `${result.softTime.toFixed(2)}s (F${
-              this.softFilter
-            })`;
-          if (shadowsSpan)
-            shadowsSpan.textContent = `${result.hardTime.toFixed(2)}s (F${
-              this.hardFilter
-            })`;
+          });
 
           // Log split-grade session
           if (window.exposureLogManager) {
@@ -11025,17 +11257,6 @@
               burnPercent: this.burnPercent,
             });
           }
-
-          // Switch to CALC tab
-          switchTab("calc");
-
-          // Scroll to top using container
-          const container = document.querySelector(".container");
-          if (container) {
-            container.scrollTop = 0;
-          }
-          // Also scroll window as fallback
-          window.scrollTo(0, 0);
 
           // Show feedback
           playBeep(800, 0.3, 0.3);
@@ -12612,6 +12833,57 @@
         // NEW: Safelight auto-off setting
         document.getElementById("safelightAutoOff").checked =
           settingsManager.settings.safelightAutoOff !== false; // Default to true
+
+        // Virtual proof stability settings
+        const stabilityEnabled =
+          settingsManager.settings.proofStabilityEnabled !== false;
+        const stabilityBeep =
+          settingsManager.settings.proofStabilityBeep !== false;
+        const stabilityTolerance =
+          settingsManager.settings.proofStabilityTolerance ??
+          DEFAULT_SETTINGS.proofStabilityTolerance;
+        const stabilityMinStable =
+          settingsManager.settings.proofStabilityMinStable ??
+          DEFAULT_SETTINGS.proofStabilityMinStable;
+        const stabilityMaxWait =
+          settingsManager.settings.proofStabilityMaxWait ??
+          DEFAULT_SETTINGS.proofStabilityMaxWait;
+        const stabilityMinDelta =
+          settingsManager.settings.proofStabilityMinDelta ??
+          DEFAULT_SETTINGS.proofStabilityMinDelta;
+
+        const proofEnabledEl = document.getElementById(
+          "proofStabilityEnabled",
+        );
+        if (proofEnabledEl) proofEnabledEl.checked = stabilityEnabled;
+        const proofBeepEl = document.getElementById("proofStabilityBeep");
+        if (proofBeepEl) proofBeepEl.checked = stabilityBeep;
+        const proofToleranceEl = document.getElementById(
+          "proofStabilityTolerance",
+        );
+        if (proofToleranceEl) proofToleranceEl.value = stabilityTolerance;
+        const proofMinStableEl = document.getElementById(
+          "proofStabilityMinStable",
+        );
+        if (proofMinStableEl) proofMinStableEl.value = stabilityMinStable;
+        const proofMaxWaitEl = document.getElementById("proofStabilityMaxWait");
+        if (proofMaxWaitEl) proofMaxWaitEl.value = stabilityMaxWait;
+        const proofMinDeltaEl = document.getElementById("proofStabilityMinDelta");
+        if (proofMinDeltaEl) proofMinDeltaEl.value = stabilityMinDelta;
+
+        if (window.lightMeterManager) {
+          const stability = window.lightMeterManager.proof.stability;
+          stability.enabled = stabilityEnabled;
+          stability.beepOnStable = stabilityBeep;
+          stability.tolerancePct = parseFloat(stabilityTolerance) ||
+            DEFAULT_SETTINGS.proofStabilityTolerance;
+          stability.minStableCount = parseInt(stabilityMinStable, 10) ||
+            DEFAULT_SETTINGS.proofStabilityMinStable;
+          stability.maxWaitMs = parseInt(stabilityMaxWait, 10) ||
+            DEFAULT_SETTINGS.proofStabilityMaxWait;
+          stability.minDeltaLux = parseFloat(stabilityMinDelta) ||
+            DEFAULT_SETTINGS.proofStabilityMinDelta;
+        }
       }
 
       // Timer Manager
@@ -17695,6 +17967,7 @@
           this.calibrations = this.loadAllCalibrations();
           this.calibration = this.getCalibrationForCurrentPaper();
 
+
           // Sensor status
           this.sensorConnected = false;
           this.lastLux = null;
@@ -17709,6 +17982,30 @@
           this.recommendedGrade = null;
           this.splitGradeResult = null;
           this.contrastSuggestedTime = null;
+
+          // Virtual proof state
+          this.proof = {
+            width: 30,
+            height: 20,
+            cursor: 0,
+            samples: [],
+            results: [],
+            referenceIndex: null,
+            referenceLux: null,
+            lastIndex: null,
+            filterGrade: "2",
+            isScanning: false,
+            isMeasuring: false,
+            scanAbort: false,
+            stability: {
+              enabled: true,
+              tolerancePct: 2.5,
+              minStableCount: 2,
+              maxWaitMs: 900,
+              minDeltaLux: 0.2,
+              beepOnStable: true,
+            },
+          };
 
           // Filter data will be fetched from server (no local copies)
           this.filtersCache = {}; // Cache filters per paper to reduce server calls
@@ -17740,6 +18037,12 @@
 
           // Split-grade mode controls
           this.bindSplitModeControls();
+
+          // Virtual proof mode controls
+          this.bindProofModeControls();
+
+          // Virtual proof settings controls
+          this.bindProofSettingsControls();
 
           // Calibration controls
           this.bindCalibrationControls();
@@ -17793,6 +18096,7 @@
             exposure: "Exposure",
             contrast: "Contrast",
             split: "Split-Grade",
+            proof: "Virtual Proof",
           };
           const modeDisplay = document.getElementById("meterModeValue");
           if (modeDisplay) modeDisplay.textContent = modeNames[mode] || mode;
@@ -17804,6 +18108,8 @@
             mode === "contrast" ? "block" : "none";
           document.getElementById("meterSplitMode").style.display =
             mode === "split" ? "block" : "none";
+          document.getElementById("meterProofMode").style.display =
+            mode === "proof" ? "block" : "none";
         }
 
         /**
@@ -17941,6 +18247,7 @@
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
+
         }
 
         /**
@@ -18032,6 +18339,7 @@
           // Load calibration for new paper and update display
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
+
         }
 
         /**
@@ -18071,53 +18379,8 @@
             dropdown.appendChild(option);
           });
 
-          // Also update split-grade filter dropdowns
-          this.updateSplitGradeFilterDropdowns();
-        }
+          this.updateProofFilterDropdown();
 
-        /**
-         * Update split-grade filter dropdowns based on current paper brand
-         */
-        updateSplitGradeFilterDropdowns() {
-          const softDropdown = document.getElementById("splitSoftFilterSelect");
-          const hardDropdown = document.getElementById("splitHardFilterSelect");
-
-          if (!softDropdown || !hardDropdown) return;
-
-          // Clear existing options
-          softDropdown.innerHTML = "";
-          hardDropdown.innerHTML = "";
-
-          // Add "Auto-Select" option first
-          const autoOption = document.createElement("option");
-          autoOption.value = "";
-          autoOption.textContent = "Auto-Select";
-          softDropdown.appendChild(autoOption);
-
-          const autoOption2 = document.createElement("option");
-          autoOption2.value = "";
-          autoOption2.textContent = "Auto-Select";
-          hardDropdown.appendChild(autoOption2);
-
-          // Add appropriate options based on filter system
-          const filters = this.getFilterData();
-
-          // Add filter options to both dropdowns in paper-specific order
-          this.getOrderedFilterEntries(filters).forEach(([grade, data]) => {
-            const factor =
-              data && typeof data.factor === "number" ? data.factor : 1.0;
-            const name = (data && data.name) || grade;
-
-            const softOption = document.createElement("option");
-            softOption.value = grade;
-            softOption.textContent = `${name} (×${factor.toFixed(1)})`;
-            softDropdown.appendChild(softOption);
-
-            const hardOption = document.createElement("option");
-            hardOption.value = grade;
-            hardOption.textContent = `${name} (×${factor.toFixed(1)})`;
-            hardDropdown.appendChild(hardOption);
-          });
         }
 
         /**
@@ -18295,31 +18558,6 @@
             });
           }
 
-          // Fine tuning sliders
-          const highlightOffsetSlider = document.getElementById(
-            "highlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "highlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.addEventListener("input", () => {
-              highlightOffsetValue.textContent =
-                parseFloat(highlightOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
-          const shadowOffsetSlider =
-            document.getElementById("shadowOffsetSlider");
-          const shadowOffsetValue =
-            document.getElementById("shadowOffsetValue");
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.addEventListener("input", () => {
-              shadowOffsetValue.textContent =
-                parseFloat(shadowOffsetSlider.value).toFixed(2) + " EV";
-            });
-          }
-
           // Highlight measure button
           const highlightBtn = document.getElementById("measureHighlightBtn");
           if (highlightBtn) {
@@ -18390,32 +18628,6 @@
             );
           }
 
-          // Filter selection dropdowns
-          const softFilterSelect = document.getElementById(
-            "splitSoftFilterSelect",
-          );
-          const hardFilterSelect = document.getElementById(
-            "splitHardFilterSelect",
-          );
-
-          if (softFilterSelect) {
-            softFilterSelect.addEventListener("change", () => {
-              // Update filter display if we have results
-              if (this.splitGradeResult) {
-                this.updateSplitGradeDisplays(this.splitGradeResult);
-              }
-            });
-          }
-
-          if (hardFilterSelect) {
-            hardFilterSelect.addEventListener("change", () => {
-              // Update filter display if we have results
-              if (this.splitGradeResult) {
-                this.updateSplitGradeDisplays(this.splitGradeResult);
-              }
-            });
-          }
-
           // Calculate button
           const calcBtn = document.getElementById("calculateSplitBtn");
           if (calcBtn) {
@@ -18423,20 +18635,872 @@
           }
 
           // Send to CALC buttons
-          const sendSoftBtn = document.getElementById("sendSoftToCalc");
-          if (sendSoftBtn) {
-            sendSoftBtn.addEventListener("click", () => this.sendSoftToCalc());
-          }
-
-          const sendHardBtn = document.getElementById("sendHardToCalc");
-          if (sendHardBtn) {
-            sendHardBtn.addEventListener("click", () => this.sendHardToCalc());
+          const sendBothBtn = document.getElementById("sendSplitBothToCalc");
+          if (sendBothBtn) {
+            sendBothBtn.addEventListener("click", () =>
+              this.sendSplitBothToCalc(),
+            );
           }
 
           // Clear button
           const clearBtn = document.getElementById("clearSplitBtn");
           if (clearBtn) {
             clearBtn.addEventListener("click", () => this.clearSplitReadings());
+          }
+        }
+
+        /**
+         * Bind virtual proof mode controls
+         */
+        bindProofModeControls() {
+          const widthInput = document.getElementById("proofGridWidth");
+          const heightInput = document.getElementById("proofGridHeight");
+          const applyBtn = document.getElementById("proofApplyGridBtn");
+          const measureBtn = document.getElementById("proofMeasureNextBtn");
+          const setRefBtn = document.getElementById("proofSetReferenceBtn");
+          const recomputeBtn = document.getElementById("proofRecomputeBtn");
+          const clearBtn = document.getElementById("proofClearBtn");
+          const avgSlider = document.getElementById("proofAvgSamplesSlider");
+          const avgValue = document.getElementById("proofAvgSamplesValue");
+          const filterSelect = document.getElementById("proofFilterGrade");
+
+          if (avgSlider && avgValue) {
+            avgSlider.addEventListener("input", () => {
+              avgValue.textContent = avgSlider.value;
+            });
+          }
+
+          if (applyBtn) {
+            applyBtn.addEventListener("click", async () => {
+              await this.stopProofScan();
+              const width = parseInt(widthInput?.value || "0", 10);
+              const height = parseInt(heightInput?.value || "0", 10);
+              this.configureProofGrid(width, height);
+            });
+          }
+
+          if (measureBtn) {
+            measureBtn.addEventListener("click", () => this.toggleProofScan());
+          }
+
+          if (setRefBtn) {
+            setRefBtn.addEventListener("click", async () => {
+              await this.stopProofScan();
+              if (this.proof.lastIndex !== null) {
+                this.setProofReference(this.proof.lastIndex);
+              }
+            });
+          }
+
+          if (recomputeBtn) {
+            recomputeBtn.addEventListener("click", async () => {
+              await this.stopProofScan();
+              this.recomputeProofResults();
+            });
+          }
+
+          if (clearBtn) {
+            clearBtn.addEventListener("click", async () => {
+              await this.stopProofScan();
+              this.clearProofGrid();
+            });
+          }
+
+          if (filterSelect) {
+            filterSelect.addEventListener("change", () => {
+              this.proof.filterGrade = filterSelect.value;
+              if (this.proof.referenceLux !== null) {
+                this.recomputeProofResults();
+              }
+            });
+          }
+
+          this.updateProofFilterDropdown();
+          this.configureProofGrid(this.proof.width, this.proof.height, true);
+        }
+
+        bindProofSettingsControls() {
+          const enabledToggle = document.getElementById(
+            "proofStabilityEnabled",
+          );
+          const beepToggle = document.getElementById("proofStabilityBeep");
+          const toleranceInput = document.getElementById(
+            "proofStabilityTolerance",
+          );
+          const minStableInput = document.getElementById(
+            "proofStabilityMinStable",
+          );
+          const maxWaitInput = document.getElementById("proofStabilityMaxWait");
+          const minDeltaInput = document.getElementById("proofStabilityMinDelta");
+
+          const stability = this.proof.stability || {};
+          if (enabledToggle) enabledToggle.checked = !!stability.enabled;
+          if (beepToggle) beepToggle.checked = !!stability.beepOnStable;
+          if (toleranceInput) {
+            toleranceInput.value = stability.tolerancePct ?? 2.5;
+          }
+          if (minStableInput) {
+            minStableInput.value = stability.minStableCount ?? 2;
+          }
+          if (maxWaitInput) {
+            maxWaitInput.value = stability.maxWaitMs ?? 900;
+          }
+          if (minDeltaInput) {
+            minDeltaInput.value = stability.minDeltaLux ?? 0.2;
+          }
+
+          const applySettings = () => {
+            if (enabledToggle) {
+              this.proof.stability.enabled = enabledToggle.checked;
+            }
+            if (beepToggle) {
+              this.proof.stability.beepOnStable = beepToggle.checked;
+            }
+            if (toleranceInput) {
+              const value = parseFloat(toleranceInput.value);
+              this.proof.stability.tolerancePct =
+                Number.isFinite(value) && value > 0 ? value : 2.5;
+            }
+            if (minStableInput) {
+              const value = parseInt(minStableInput.value, 10);
+              this.proof.stability.minStableCount =
+                Number.isFinite(value) && value > 0 ? value : 2;
+            }
+            if (maxWaitInput) {
+              const value = parseInt(maxWaitInput.value, 10);
+              this.proof.stability.maxWaitMs =
+                Number.isFinite(value) && value > 0 ? value : 900;
+            }
+            if (minDeltaInput) {
+              const value = parseFloat(minDeltaInput.value);
+              this.proof.stability.minDeltaLux =
+                Number.isFinite(value) && value > 0 ? value : 0.2;
+            }
+          };
+
+          [
+            enabledToggle,
+            beepToggle,
+            toleranceInput,
+            minStableInput,
+            maxWaitInput,
+            minDeltaInput,
+          ].forEach((element) => {
+            if (!element) return;
+            element.addEventListener("change", applySettings);
+            element.addEventListener("input", applySettings);
+          });
+        }
+
+        updateProofFilterDropdown() {
+          const dropdown = document.getElementById("proofFilterGrade");
+          if (!dropdown) {
+            return;
+          }
+
+          const current = this.proof.filterGrade || dropdown.value;
+          dropdown.innerHTML = "";
+
+          const noneOption = document.createElement("option");
+          noneOption.value = "";
+          noneOption.textContent = "None (no filter)";
+          dropdown.appendChild(noneOption);
+
+          const filters = this.getFilterData();
+          this.getOrderedFilterEntries(filters).forEach(([grade, data]) => {
+            const option = document.createElement("option");
+            const factor =
+              data && typeof data.factor === "number" ? data.factor : 1.0;
+            const isoR =
+              data && typeof data.iso_r === "number" ? data.iso_r : null;
+            const name = (data && data.name) || grade;
+            option.value = grade;
+            const isoLabel = isoR !== null ? `ISO R ${Math.round(isoR)}` : "ISO R --";
+            option.textContent = `${name} (${isoLabel}, ×${factor.toFixed(1)})`;
+            dropdown.appendChild(option);
+          });
+
+          if (current && dropdown.querySelector(`option[value="${current}"]`)) {
+            dropdown.value = current;
+          } else if (filters["2"]) {
+            dropdown.value = "2";
+            this.proof.filterGrade = "2";
+          } else {
+            dropdown.value = "";
+            this.proof.filterGrade = "";
+          }
+        }
+
+        configureProofGrid(width, height, keepReference = false) {
+          const safeWidth = Math.min(Math.max(width || 1, 1), 50);
+          const safeHeight = Math.min(Math.max(height || 1, 1), 50);
+          const total = safeWidth * safeHeight;
+
+          this.proof.width = safeWidth;
+          this.proof.height = safeHeight;
+          this.proof.cursor = 0;
+          this.proof.isScanning = false;
+          this.proof.isMeasuring = false;
+          this.proof.scanAbort = false;
+          this.proof.samples = Array(total).fill(null);
+          this.proof.results = Array(total).fill(null);
+          this.proof.lastIndex = null;
+
+          if (!keepReference) {
+            this.proof.referenceIndex = null;
+            this.proof.referenceLux = null;
+          }
+
+          const totalDisplay = document.getElementById("proofGridTotal");
+          if (totalDisplay) {
+            totalDisplay.textContent = `${safeWidth} x ${safeHeight} (${total})`;
+          }
+
+          this.renderProofGrid();
+          this.updateProofStatus();
+          this.setProofScanStatus("Idle");
+          this.updateProofHistogram();
+        }
+
+        renderProofGrid() {
+          const grid = document.getElementById("proofGrid");
+          if (!grid) return;
+
+          grid.innerHTML = "";
+          grid.style.gridTemplateColumns = `repeat(${this.proof.width}, 1fr)`;
+          grid.style.gridTemplateRows = `repeat(${this.proof.height}, 1fr)`;
+
+          const total = this.proof.width * this.proof.height;
+          for (let i = 0; i < total; i += 1) {
+            const cell = document.createElement("div");
+            cell.className = "proof-cell";
+            cell.id = `proofCell-${i}`;
+            cell.addEventListener("click", async () => {
+              await this.stopProofScan();
+              this.setProofReference(i);
+            });
+            grid.appendChild(cell);
+            this.updateProofGridCell(i);
+          }
+        }
+
+        updateProofGridCell(index) {
+          const cell = document.getElementById(`proofCell-${index}`);
+          if (!cell) return;
+
+          const result = this.proof.results[index];
+          const hasSample = this.proof.samples[index] !== null;
+          const cursorIndex = this.getProofCursorIndex();
+
+          cell.classList.toggle("proof-cursor", index === cursorIndex);
+          cell.classList.toggle(
+            "proof-reference",
+            index === this.proof.referenceIndex,
+          );
+          cell.classList.toggle(
+            "proof-clipped-white",
+            !!(result && result.clipped_white),
+          );
+          cell.classList.toggle(
+            "proof-clipped-black",
+            !!(result && result.clipped_black),
+          );
+
+          if (result && typeof result.grayscale === "number") {
+            const g = Math.max(0, Math.min(255, result.grayscale));
+            cell.style.background = `rgb(${g}, ${g}, ${g})`;
+          } else if (hasSample) {
+            cell.style.background = "#333";
+          } else {
+            cell.style.background = "#111";
+          }
+
+          if (result && typeof result.zone === "number") {
+            const densityLabel =
+              result && typeof result.density === "number"
+                ? ` | D ${result.density.toFixed(2)}`
+                : "";
+            cell.title = `Zone ${result.zone.toFixed(1)}${densityLabel}`;
+          } else if (hasSample) {
+            cell.title = "Measured";
+          } else {
+            cell.title = "Empty";
+          }
+        }
+
+        updateProofStatus() {
+          const total = this.proof.width * this.proof.height;
+          const measured = this.proof.samples.filter((v) => v !== null).length;
+          const progress = document.getElementById("proofScanProgress");
+          if (progress) {
+            progress.textContent = `${measured}/${total}`;
+          }
+
+          const measureBtn = document.getElementById("proofMeasureNextBtn");
+          if (measureBtn) {
+            if (this.proof.isScanning) {
+              measureBtn.disabled = false;
+              measureBtn.textContent = "Stop Scan";
+            } else if (this.proof.cursor >= total) {
+              measureBtn.disabled = true;
+              measureBtn.textContent = "Scan Complete";
+            } else {
+              measureBtn.disabled = false;
+              measureBtn.textContent = "Start Scan";
+            }
+          }
+
+          const setRefBtn = document.getElementById("proofSetReferenceBtn");
+          if (setRefBtn) {
+            setRefBtn.disabled = this.proof.lastIndex === null;
+          }
+
+          const recomputeBtn = document.getElementById("proofRecomputeBtn");
+          if (recomputeBtn) {
+            recomputeBtn.disabled =
+              this.proof.referenceLux === null || measured === 0;
+          }
+        }
+
+        updateProofHistogram() {
+          const canvas = document.getElementById("proofHistogram");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          const width = canvas.clientWidth || 240;
+          const height = canvas.clientHeight || 90;
+          const dpr = window.devicePixelRatio || 1;
+          const scaledWidth = Math.max(1, Math.floor(width * dpr));
+          const scaledHeight = Math.max(1, Math.floor(height * dpr));
+
+          if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+          }
+
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = "#0b0b0b";
+          ctx.fillRect(0, 0, width, height);
+
+          const values = [];
+          for (const result of this.proof.results) {
+            if (!result || typeof result.grayscale !== "number") continue;
+            const clamped = Math.max(0, Math.min(255, result.grayscale));
+            values.push(clamped);
+          }
+
+          if (values.length === 0) {
+            return;
+          }
+
+          const binCount = 64;
+          const bins = Array(binCount).fill(0);
+          for (const value of values) {
+            const bin = Math.min(
+              binCount - 1,
+              Math.floor((value / 256) * binCount),
+            );
+            bins[bin] += 1;
+          }
+
+          // Apply gaussian smoothing to reduce spikes
+          const smoothBins = Array(binCount).fill(0);
+          const kernel = [0.27, 0.46, 0.27]; // Simple 3-point gaussian
+          for (let i = 0; i < binCount; i += 1) {
+            let sum = 0;
+            let weightSum = 0;
+            for (let j = -1; j <= 1; j += 1) {
+              const idx = i + j;
+              if (idx >= 0 && idx < binCount) {
+                sum += bins[idx] * kernel[j + 1];
+                weightSum += kernel[j + 1];
+              }
+            }
+            smoothBins[i] = sum / weightSum;
+          }
+
+          const maxCount = Math.max(...smoothBins);
+          if (maxCount <= 0) {
+            return;
+          }
+
+          // Draw smooth curve using quadratic interpolation
+          ctx.beginPath();
+          ctx.moveTo(0, height);
+          
+          // First point
+          const x0 = 0;
+          const y0 = height - (smoothBins[0] / maxCount) * height;
+          ctx.lineTo(x0, y0);
+          
+          // Draw smooth curve through all points
+          for (let i = 0; i < binCount; i += 1) {
+            const x1 = ((i + 0.5) / binCount) * width;
+            const y1 = height - (smoothBins[i] / maxCount) * height;
+            
+            if (i < binCount - 1) {
+              const x2 = ((i + 1.5) / binCount) * width;
+              const y2 = height - (smoothBins[i + 1] / maxCount) * height;
+              
+              // Control point at midpoint for smooth curve
+              const cpX = (x1 + x2) / 2;
+              const cpY = (y1 + y2) / 2;
+              ctx.quadraticCurveTo(x1, y1, cpX, cpY);
+            } else {
+              // Last point
+              ctx.lineTo(x1, y1);
+            }
+          }
+          
+          ctx.lineTo(width, height);
+          ctx.closePath();
+
+          ctx.fillStyle = "rgba(220, 220, 220, 0.85)";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(250, 250, 250, 0.9)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        setProofScanStatus(message) {
+          const status = document.getElementById("proofScanStatus");
+          if (status) {
+            status.textContent = message;
+          }
+        }
+
+        async fetchProofLux(samples) {
+          const params = new URLSearchParams({
+            samples: samples,
+            calibration: this.calibration,
+          });
+
+          const response = await fetch("/light-meter?" + params.toString());
+          const data = await response.json();
+
+          if (data.status !== "success") {
+            const errorMessage = data.error || "Measurement error";
+            throw new Error(errorMessage);
+          }
+
+          return data;
+        }
+
+        async waitForProofStability() {
+          const stability = this.proof.stability || {};
+          const maxWaitMs = stability.maxWaitMs || 900;
+          const tolerancePct = stability.tolerancePct || 2.5;
+          const minStableCount = stability.minStableCount || 2;
+          const minDeltaLux = stability.minDeltaLux || 0.2;
+
+          const startTime = Date.now();
+          let lastLux = null;
+          let stableCount = 0;
+
+          this.setProofScanStatus("Hold still...");
+
+          while (Date.now() - startTime < maxWaitMs) {
+            if (this.proof.scanAbort) {
+              return { stable: false, lux: null, cancelled: true };
+            }
+
+            let currentLux = null;
+            try {
+              const data = await this.fetchProofLux(1);
+              currentLux = data.lux;
+            } catch (error) {
+              this.showFeedback("Stability error: " + error.message, "error");
+              return { stable: false, lux: null, cancelled: false };
+            }
+
+            if (!currentLux || currentLux <= 0) {
+              continue;
+            }
+
+            if (lastLux !== null) {
+              const tolerance = Math.max(
+                minDeltaLux,
+                Math.abs(lastLux) * (tolerancePct / 100),
+              );
+              if (Math.abs(currentLux - lastLux) <= tolerance) {
+                stableCount += 1;
+              } else {
+                stableCount = 0;
+              }
+            }
+
+            lastLux = currentLux;
+
+            if (stableCount >= minStableCount) {
+              this.setProofScanStatus("Stable");
+              if (stability.beepOnStable) {
+                playBeep(600, 0.1, 0.2);
+              }
+              return { stable: true, lux: currentLux, cancelled: false };
+            }
+          }
+
+          this.setProofScanStatus("Stability timeout");
+          return { stable: false, lux: lastLux, cancelled: false };
+        }
+
+        async measureProofNext() {
+          const total = this.proof.width * this.proof.height;
+          if (this.proof.cursor >= total) {
+            this.showFeedback("Grid scan complete", "success");
+            return false;
+          }
+
+          if (this.proof.isMeasuring) {
+            return false;
+          }
+
+          const samples =
+            parseInt(document.getElementById("proofAvgSamplesSlider").value) ||
+            5;
+          const measureBtn = document.getElementById("proofMeasureNextBtn");
+          const index = this.getProofCursorIndex();
+          const allowStop = this.proof.isScanning;
+
+          if (index === null) {
+            this.showFeedback("Invalid scan position", "error");
+            return false;
+          }
+
+          if (measureBtn && !allowStop) {
+            measureBtn.disabled = true;
+            measureBtn.textContent = "Measuring...";
+          }
+
+          this.proof.isMeasuring = true;
+
+          const stability = this.proof.stability || {};
+          let stableLux = null;
+          if (stability.enabled) {
+            const stabilityResult = await this.waitForProofStability();
+            if (stabilityResult.cancelled) {
+              this.proof.isMeasuring = false;
+              this.updateProofStatus();
+              return false;
+            }
+            if (!stabilityResult.stable) {
+              this.showFeedback(
+                "Stability timeout. Hold still and try again.",
+                "error",
+              );
+              this.proof.isMeasuring = false;
+              this.updateProofStatus();
+              return false;
+            }
+            stableLux = stabilityResult.lux;
+          }
+
+          try {
+            let data = null;
+            if (samples === 1 && stableLux !== null) {
+              data = { status: "success", lux: stableLux };
+            } else {
+              data = await this.fetchProofLux(samples);
+            }
+
+            if (data.status === "success") {
+              this.proof.samples[index] = data.lux;
+              this.proof.lastIndex = index;
+
+              await this.updateProofResult(index);
+              this.proof.cursor += 1;
+
+              this.updateProofGridCell(index);
+              const nextCursorIndex = this.getProofCursorIndex();
+              if (nextCursorIndex !== null) {
+                this.updateProofGridCell(nextCursorIndex);
+              }
+              this.updateProofStatus();
+              if (!stability.enabled) {
+                playBeep(800, 0.3, 0.2);
+              }
+              this.setProofScanStatus("Captured");
+              return true;
+            } else {
+              this.showFeedback("Measurement error: " + data.error, "error");
+            }
+          } catch (error) {
+            this.showFeedback("Connection error: " + error.message, "error");
+          } finally {
+            this.proof.isMeasuring = false;
+            this.updateProofStatus();
+          }
+
+          return false;
+        }
+
+        async updateProofResult(index) {
+          const lux = this.proof.samples[index];
+          if (!lux || lux <= 0) return;
+
+          try {
+            const paperId = this.currentPaperId || this.getCurrentPaperId();
+            const params = new URLSearchParams({
+              lux: lux,
+              calibration: this.calibration,
+              paper_id: paperId,
+            });
+
+            if (this.proof.referenceLux) {
+              params.append("reference_lux", this.proof.referenceLux);
+            }
+
+            if (this.proof.filterGrade) {
+              params.append("filter", this.proof.filterGrade);
+            }
+
+            const response = await fetch(
+              "/light-meter-virtual-proof?" + params.toString(),
+            );
+            const data = await response.json();
+
+            if (data.status === "success" && data.result) {
+              this.proof.results[index] = data.result;
+              this.updateProofGridCell(index);
+              this.updateProofSampleInfo(index, data.result);
+            } else {
+              this.showFeedback("Preview error: " + data.error, "error");
+            }
+          } catch (error) {
+            this.showFeedback("Preview error: " + error.message, "error");
+          }
+        }
+
+        updateProofSampleInfo(index, result) {
+          if (index !== this.proof.lastIndex) return;
+
+          const luxDisplay = document.getElementById("proofLastLux");
+          const zoneDisplay = document.getElementById("proofLastZone");
+          const isoDisplay = document.getElementById("proofLastIsoR");
+          const evDisplay = document.getElementById("proofLastEvRange");
+          const densityDisplay = document.getElementById("proofLastDensity");
+          const clippingDisplay = document.getElementById("proofLastClipping");
+
+          if (luxDisplay) {
+            luxDisplay.textContent = `Lux: ${this.proof.samples[
+              index
+            ].toFixed(1)}`;
+          }
+          if (zoneDisplay) {
+            if (result && typeof result.zone === "number") {
+              zoneDisplay.textContent = `Zone: ${result.zone.toFixed(1)}`;
+            } else {
+              zoneDisplay.textContent = "Zone: --";
+            }
+          }
+          if (isoDisplay) {
+            if (result && typeof result.iso_r === "number") {
+              isoDisplay.textContent = `ISO R: ${Math.round(result.iso_r)}`;
+            } else {
+              isoDisplay.textContent = "ISO R: --";
+            }
+          }
+          if (evDisplay) {
+            if (result && typeof result.printable_ev === "number") {
+              evDisplay.textContent = `EV Range: ${result.printable_ev.toFixed(1)}`;
+            } else {
+              evDisplay.textContent = "EV Range: --";
+            }
+          }
+          if (densityDisplay) {
+            if (result && typeof result.density === "number") {
+              densityDisplay.textContent = `Density: ${result.density.toFixed(2)}`;
+            } else {
+              densityDisplay.textContent = "Density: --";
+            }
+          }
+          if (clippingDisplay) {
+            const clips = [];
+            if (result?.clipped_white) clips.push("paper white");
+            if (result?.clipped_black) clips.push("max black");
+            clippingDisplay.textContent =
+              clips.length > 0 ? `Clipping: ${clips.join(", ")}` : "Clipping: --";
+          }
+        }
+
+        async recomputeProofResults() {
+          await this.stopProofScan();
+          const total = this.proof.width * this.proof.height;
+          const recomputeBtn = document.getElementById("proofRecomputeBtn");
+          if (recomputeBtn) {
+            recomputeBtn.disabled = true;
+            recomputeBtn.textContent = "Recomputing...";
+          }
+
+          for (let i = 0; i < total; i += 1) {
+            if (this.proof.samples[i] !== null) {
+              await this.updateProofResult(i);
+            }
+          }
+
+          if (recomputeBtn) {
+            recomputeBtn.textContent = "Recompute Preview";
+          }
+
+          this.updateProofStatus();
+          this.updateProofHistogram();
+        }
+
+        setProofReference(index) {
+          this.stopProofScan();
+          const lux = this.proof.samples[index];
+          if (lux === null) {
+            this.showFeedback("Measure a cell before setting reference", "error");
+            return;
+          }
+
+          this.proof.referenceIndex = index;
+          this.proof.referenceLux = lux;
+
+          this.renderProofGrid();
+          this.recomputeProofResults();
+        }
+
+        clearProofGrid() {
+          this.configureProofGrid(this.proof.width, this.proof.height, false);
+          const luxDisplay = document.getElementById("proofLastLux");
+          const zoneDisplay = document.getElementById("proofLastZone");
+          const isoDisplay = document.getElementById("proofLastIsoR");
+          const evDisplay = document.getElementById("proofLastEvRange");
+          const densityDisplay = document.getElementById("proofLastDensity");
+          const clippingDisplay = document.getElementById("proofLastClipping");
+          if (luxDisplay) luxDisplay.textContent = "Lux: --";
+          if (zoneDisplay) zoneDisplay.textContent = "Zone: --";
+          if (isoDisplay) isoDisplay.textContent = "ISO R: --";
+          if (evDisplay) evDisplay.textContent = "EV Range: --";
+          if (densityDisplay) densityDisplay.textContent = "Density: --";
+          if (clippingDisplay) clippingDisplay.textContent = "Clipping: --";
+          this.updateProofHistogram();
+        }
+
+        getProofCursorIndex() {
+          return this.proofStepToIndex(this.proof.cursor);
+        }
+
+        proofStepToIndex(step) {
+          const total = this.proof.width * this.proof.height;
+          if (step < 0 || step >= total) {
+            return null;
+          }
+
+          const row = Math.floor(step / this.proof.width);
+          let col = step % this.proof.width;
+          if (row % 2 === 1) {
+            col = this.proof.width - 1 - col;
+          }
+
+          return row * this.proof.width + col;
+        }
+
+        async toggleProofScan() {
+          if (this.proof.isScanning) {
+            await this.stopProofScan();
+          } else {
+            await this.startProofScan();
+          }
+        }
+
+        async startProofScan() {
+          const total = this.proof.width * this.proof.height;
+          if (this.proof.isScanning) {
+            return;
+          }
+
+          if (this.proof.cursor >= total) {
+            this.showFeedback("Grid scan complete", "success");
+            this.updateProofStatus();
+            return;
+          }
+
+          this.proof.isScanning = true;
+          this.proof.scanAbort = false;
+          this.setProofScanStatus("Scanning...");
+          this.updateProofStatus();
+
+          while (this.proof.cursor < total && !this.proof.scanAbort) {
+            const measured = await this.measureProofNext();
+            if (!measured) {
+              break;
+            }
+          }
+
+          this.proof.isScanning = false;
+          if (!this.proof.scanAbort) {
+            this.setProofScanStatus("Idle");
+            this.autoSelectMiddleGray();
+          }
+          this.updateProofStatus();
+        }
+
+        async stopProofScan() {
+          if (!this.proof.isScanning && !this.proof.isMeasuring) {
+            return;
+          }
+
+          this.proof.scanAbort = true;
+          while (this.proof.isMeasuring) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+
+          this.proof.isScanning = false;
+          this.setProofScanStatus("Idle");
+          this.updateProofStatus();
+        }
+
+        autoSelectMiddleGray() {
+          const validSamples = this.proof.samples.filter(
+            (lux) => lux !== null && lux > 0,
+          );
+
+          if (validSamples.length === 0) {
+            return;
+          }
+
+          // Calculate geometric mean (same as CONTRAST ANALYZER)
+          // Geometric mean = exp(mean(log(values)))
+          const geometricMean = Math.exp(
+            validSamples.reduce((sum, lux) => sum + Math.log(lux), 0) /
+              validSamples.length,
+          );
+
+          // Find the cell closest to the geometric mean (in log space for photographic accuracy)
+          let closestIndex = null;
+          let closestDistance = Infinity;
+
+          this.proof.samples.forEach((lux, index) => {
+            if (lux === null || lux <= 0) return;
+
+            // Distance in log space (EV space)
+            const distance = Math.abs(Math.log(lux) - Math.log(geometricMean));
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = index;
+            }
+          });
+
+          // Set the reference automatically
+          if (closestIndex !== null) {
+            this.proof.referenceIndex = closestIndex;
+            this.proof.referenceLux = this.proof.samples[closestIndex];
+            this.renderProofGrid();
+            this.recomputeProofResults();
+
+            this.showFeedback(
+              `Auto-selected Zone V reference: ${this.proof.referenceLux.toFixed(
+                1,
+              )} lux (geometric mean)`,
+              "success",
+            );
+            playBeep(1000, 0.3, 0.3);
           }
         }
 
@@ -18801,22 +19865,10 @@
             const paperId = this.currentPaperId || this.getCurrentPaperId();
             const calibration = this.calibration || 1000.0;
 
-            // Fine tuning controls
-            const intent =
-              document.getElementById("contrastIntent")?.value || "balanced";
-            const highlightOffset = parseFloat(
-              document.getElementById("highlightOffsetSlider")?.value || "0",
-            );
-            const shadowOffset = parseFloat(
-              document.getElementById("shadowOffsetSlider")?.value || "0",
-            );
-
             // Send calibration along with the request
-            const response = await fetch(
-              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}&intent=${encodeURIComponent(
-                intent,
-              )}&highlight_offset=${highlightOffset}&shadow_offset=${shadowOffset}`,
-            );
+            const baseParams =
+              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}`;
+            const response = await fetch(baseParams);
             const data = await response.json();
 
             if (data.status === "success") {
@@ -18836,23 +19888,6 @@
                   grade.match_quality.charAt(0).toUpperCase() +
                   grade.match_quality.slice(1);
 
-                // Enhanced display: Paper characteristics
-                document.getElementById("printableEV").textContent =
-                  (grade.printable_ev || 0).toFixed(1) + " EV";
-
-                document.getElementById("paperGamma").textContent = (
-                  grade.gamma || 0.7
-                ).toFixed(2);
-
-                document.getElementById("contrastIndex").textContent = (
-                  grade.contrast_index || 1.0
-                ).toFixed(2);
-
-                const dmin = grade.dmin || 0.05;
-                const dmax = grade.dmax || 2.0;
-                document.getElementById("densityRange").textContent =
-                  `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
-
                 // Analysis reasoning
                 const reasoning =
                   grade.reasoning || `Grade ${grade.grade} recommended`;
@@ -18862,23 +19897,16 @@
                 console.log("Enhanced analysis data:", grade);
               }
 
-              // Display exposure times (NEW)
+              // Display exposure time (midpoint-based)
               if (data.exposure_times) {
                 const times = data.exposure_times;
                 this.contrastSuggestedTime = times.suggested_time;
-                document.getElementById("highlightExposureTime").textContent =
-                  times.highlight_time + " sec";
-                document.getElementById("shadowExposureTime").textContent =
-                  times.shadow_time + " sec";
                 document.getElementById("suggestedExposureTime").textContent =
                   times.suggested_time + " sec";
-                document.getElementById("exposureStrategy").textContent =
-                  times.strategy.charAt(0).toUpperCase() +
-                  times.strategy.slice(1);
-                document.getElementById("exposureRatio").textContent =
-                  times.exposure_ratio + ":1";
+                document.getElementById("midpointLuxDisplay").textContent =
+                  (times.midpoint_lux ?? "--") + " lux";
                 document.getElementById("exposureNote").textContent =
-                  times.notes;
+                  times.notes || "--";
 
                 const sendContrastBtn =
                   document.getElementById("sendContrastToCalc");
@@ -18886,18 +19914,14 @@
                   sendContrastBtn.disabled = false;
                 }
 
-                console.log("Exposure times calculated:", times);
+                console.log("Exposure time calculated:", times);
               } else {
                 this.contrastSuggestedTime = null;
                 // Clear exposure time displays if not available
-                document.getElementById("highlightExposureTime").textContent =
-                  "-- sec";
-                document.getElementById("shadowExposureTime").textContent =
-                  "-- sec";
                 document.getElementById("suggestedExposureTime").textContent =
                   "-- sec";
-                document.getElementById("exposureStrategy").textContent = "--";
-                document.getElementById("exposureRatio").textContent = "--";
+                document.getElementById("midpointLuxDisplay").textContent =
+                  "-- lux";
                 document.getElementById("exposureNote").textContent = "--";
                 const sendContrastBtn =
                   document.getElementById("sendContrastToCalc");
@@ -18932,49 +19956,17 @@
           document.getElementById("recommendedGrade").textContent = "--";
           document.getElementById("matchQuality").textContent = "--";
 
-          // Clear enhanced characteristics
-          document.getElementById("printableEV").textContent = "-- EV";
-          document.getElementById("paperGamma").textContent = "--";
-          document.getElementById("contrastIndex").textContent = "--";
-          document.getElementById("densityRange").textContent =
-            "-- (Dmin-Dmax)";
           document.getElementById("analysisReasoning").textContent = "--";
 
-          // Clear exposure time displays (NEW)
-          document.getElementById("highlightExposureTime").textContent =
-            "-- sec";
-          document.getElementById("shadowExposureTime").textContent = "-- sec";
+          // Clear exposure time displays
           document.getElementById("suggestedExposureTime").textContent =
             "-- sec";
-          document.getElementById("exposureStrategy").textContent = "--";
-          document.getElementById("exposureRatio").textContent = "--";
+          document.getElementById("midpointLuxDisplay").textContent = "-- lux";
           document.getElementById("exposureNote").textContent = "--";
 
           const sendContrastBtn = document.getElementById("sendContrastToCalc");
           if (sendContrastBtn) {
             sendContrastBtn.disabled = true;
-          }
-
-          // Reset fine tuning controls
-          const intentSelect = document.getElementById("contrastIntent");
-          if (intentSelect) intentSelect.value = "balanced";
-          const highlightOffsetSlider = document.getElementById(
-            "highlightOffsetSlider",
-          );
-          const highlightOffsetValue = document.getElementById(
-            "highlightOffsetValue",
-          );
-          if (highlightOffsetSlider && highlightOffsetValue) {
-            highlightOffsetSlider.value = "0";
-            highlightOffsetValue.textContent = "0.00 EV";
-          }
-          const shadowOffsetSlider =
-            document.getElementById("shadowOffsetSlider");
-          const shadowOffsetValue =
-            document.getElementById("shadowOffsetValue");
-          if (shadowOffsetSlider && shadowOffsetValue) {
-            shadowOffsetSlider.value = "0";
-            shadowOffsetValue.textContent = "0.00 EV";
           }
 
           // Disable buttons
@@ -19027,23 +20019,7 @@
           console.log("Highlight lux:", this.highlightLux);
           console.log("Shadow lux:", this.shadowLux);
 
-          // Get selected filters (from dropdowns or use empty for auto-select)
-          const softFilter =
-            document.getElementById("splitSoftFilterSelect")?.value || "";
-          const hardFilter =
-            document.getElementById("splitHardFilterSelect")?.value || "";
-
-          // Get selected algorithm
-          const algorithmSelect = document.getElementById(
-            "splitAlgorithmSelect",
-          );
-          const algorithm = algorithmSelect ? algorithmSelect.value : "heiland";
-
-          // Determine which endpoint to use
-          let endpoint = "/light-meter-split-grade";
-          if (algorithm === "heiland") {
-            endpoint = "/light-meter-split-grade-heiland";
-          }
+          const endpoint = "/light-meter-split-grade-heiland";
 
           // Build query parameters with paper_id
           const params = new URLSearchParams({
@@ -19052,9 +20028,6 @@
             calibration: calibration,
             paper_id: paperId,
           });
-
-          if (softFilter) params.append("soft_filter", softFilter);
-          if (hardFilter) params.append("hard_filter", hardFilter);
 
           console.log("Calling split-grade endpoint:", endpoint);
           console.log("Parameters:", params.toString());
@@ -19109,6 +20082,7 @@
               const matchNote = document.getElementById("splitMatchNote");
               if (
                 result.match_quality === "poor" &&
+                result.total_printable_ev &&
                 result.total_printable_ev > result.delta_ev + 2
               ) {
                 matchNote.textContent =
@@ -19125,10 +20099,36 @@
                 matchNote.textContent = "";
               }
 
+              document.getElementById("splitPrintableEV").textContent =
+                (result.total_printable_ev || 0).toFixed(1) + " EV";
+
+              document.getElementById("splitPaperGamma").textContent = (
+                result.paper_gamma || 0.7
+              ).toFixed(2);
+
+              document.getElementById("splitContrastIndex").textContent = (
+                result.paper_contrast_index || 1.0
+              ).toFixed(2);
+
+              const dmin = result.paper_dmin || 0.05;
+              const dmax = result.paper_dmax || 2.0;
+              document.getElementById("splitDensityRange").textContent =
+                `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
+
+              const reasoning = result.selection_reason
+                ? `${result.selection_reason} (Match: ${result.match_quality})`
+                : `Match: ${result.match_quality}`;
+              document.getElementById("splitAnalysisReasoning").textContent =
+                reasoning;
+
               // Calculate split-adjusted times
               const softAdj = result.soft_time * (result.soft_percent / 100);
               const hardAdj = result.hard_time * (result.hard_percent / 100);
               const totalAdj = softAdj + hardAdj;
+
+              result.soft_time_adjusted = softAdj;
+              result.hard_time_adjusted = hardAdj;
+              result.total_time_adjusted = totalAdj;
 
               // Soft exposure (split-adjusted)
               document.getElementById("splitSoftTime").textContent =
@@ -19150,9 +20150,8 @@
               document.getElementById("splitTotalTime").textContent =
                 totalAdj.toFixed(2) + "s";
 
-              // Enable send buttons
-              document.getElementById("sendSoftToCalc").disabled = false;
-              document.getElementById("sendHardToCalc").disabled = false;
+              // Enable send button
+              document.getElementById("sendSplitBothToCalc").disabled = false;
 
               playBeep(1000, 0.3, 0.3);
             } else {
@@ -19182,6 +20181,12 @@
           document.getElementById("splitDeltaEV").textContent = "--";
           document.getElementById("splitMatchQuality").textContent = "--";
           document.getElementById("splitMatchNote").textContent = "--";
+          document.getElementById("splitPrintableEV").textContent = "-- EV";
+          document.getElementById("splitPaperGamma").textContent = "--";
+          document.getElementById("splitContrastIndex").textContent = "--";
+          document.getElementById("splitDensityRange").textContent =
+            "-- (Dmin-Dmax)";
+          document.getElementById("splitAnalysisReasoning").textContent = "--";
           document.getElementById("splitSoftTime").textContent = "--.--";
           document.getElementById("splitSoftFilterName").textContent = "--";
           document.getElementById("splitSoftPercent").textContent = "--%";
@@ -19190,16 +20195,9 @@
           document.getElementById("splitHardPercent").textContent = "--%";
           document.getElementById("splitTotalTime").textContent = "--.--";
 
-          // Reset filter dropdowns to auto-select
-          const softDropdown = document.getElementById("splitSoftFilterSelect");
-          const hardDropdown = document.getElementById("splitHardFilterSelect");
-          if (softDropdown) softDropdown.value = "";
-          if (hardDropdown) hardDropdown.value = "";
-
           // Disable buttons
           document.getElementById("calculateSplitBtn").disabled = true;
-          document.getElementById("sendSoftToCalc").disabled = true;
-          document.getElementById("sendHardToCalc").disabled = true;
+          document.getElementById("sendSplitBothToCalc").disabled = true;
 
           // Clear on server too
           try {
@@ -19210,35 +20208,51 @@
         }
 
         /**
-         * Send soft exposure time to CALC tab
+         * Send both split-grade times to CALC tab
          */
-        sendSoftToCalc() {
-          if (!this.splitGradeResult || !this.splitGradeResult.soft_time) {
-            this.showFeedback("No soft exposure time calculated", "error");
+        sendSplitBothToCalc() {
+          if (!this.splitGradeResult) {
+            this.showFeedback("No split-grade result available", "error");
             return;
           }
 
-          const time = this.splitGradeResult.soft_time;
-          const filter = this.splitGradeResult.soft_filter;
-          const source = `Split-Grade Soft (${filter})`;
+          const softTime =
+            this.splitGradeResult.soft_time_adjusted ||
+            this.splitGradeResult.soft_time;
+          const hardTime =
+            this.splitGradeResult.hard_time_adjusted ||
+            this.splitGradeResult.hard_time;
 
-          this.sendTimeToCalc(time, source);
-        }
-
-        /**
-         * Send hard exposure time to CALC tab
-         */
-        sendHardToCalc() {
-          if (!this.splitGradeResult || !this.splitGradeResult.hard_time) {
-            this.showFeedback("No hard exposure time calculated", "error");
+          if (!softTime || !hardTime) {
+            this.showFeedback("Split-grade times are missing", "error");
             return;
           }
 
-          const time = this.splitGradeResult.hard_time;
-          const filter = this.splitGradeResult.hard_filter;
-          const source = `Split-Grade Hard (${filter})`;
+          const totalTime =
+            this.splitGradeResult.total_time_adjusted ||
+            this.splitGradeResult.total_time ||
+            softTime + hardTime;
 
-          this.sendTimeToCalc(time, source);
+          applySplitGradeToCalc({
+            neutralTime: totalTime,
+            highlightsBase: softTime,
+            shadowsBase: hardTime,
+            softTime: softTime,
+            hardTime: hardTime,
+            totalTime: totalTime,
+            softFilter: this.splitGradeResult.soft_filter,
+            hardFilter: this.splitGradeResult.hard_filter,
+            softFactor: this.splitGradeResult.soft_factor,
+            hardFactor: this.splitGradeResult.hard_factor,
+          });
+
+          playBeep(800, 0.3, 0.3);
+          this.showFeedback(
+            `Split-grade sent: ${softTime.toFixed(2)}s + ${hardTime.toFixed(
+              2,
+            )}s = ${totalTime.toFixed(2)}s total`,
+            "success",
+          );
         }
 
         /**
@@ -19411,6 +20425,7 @@
             foma_fomatone: 1000,
           };
         }
+
 
         /**
          * Get current paper ID based on brand and type selection
@@ -19629,6 +20644,12 @@
             { id: "settingTimerWarningBeep", evt: "change" },
             { id: "settingTimerEndBeep", evt: "change" },
             { id: "settingStopIncrement", evt: "change" },
+            { id: "proofStabilityEnabled", evt: "change" },
+            { id: "proofStabilityBeep", evt: "change" },
+            { id: "proofStabilityTolerance", evt: "input" },
+            { id: "proofStabilityMinStable", evt: "input" },
+            { id: "proofStabilityMaxWait", evt: "input" },
+            { id: "proofStabilityMinDelta", evt: "input" },
           ];
           toBind.forEach(({ id, evt }) => {
             const el = document.getElementById(id);
