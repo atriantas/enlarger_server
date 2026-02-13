@@ -25,6 +25,7 @@ from lib.temperature_sensor import TemperatureSensor
 from lib.wifi_ap import WiFiAP
 from lib.wifi_sta import WiFiSTA
 from lib.http_server import HTTPServer
+from lib.update_manager import UpdateManager
 
 # Optional: Light meter sensor (TSL2591X via I2C)
 try:
@@ -94,6 +95,14 @@ class DarkroomTimer:
         self.wifi_ap = WiFiAP()
         self.wifi_sta = WiFiSTA()
         
+        # Initialize update manager
+        print("\nInitializing update manager...")
+        self.update_manager = UpdateManager(
+            repo_owner='atriantas',
+            repo_name='enlarger_server',
+            version_file='version.json'
+        )
+        
         # HTTP server (initialized later)
         self.http = None
         
@@ -154,7 +163,8 @@ class DarkroomTimer:
             self.timer,
             self.wifi_ap,
             self.wifi_sta,
-            self.light_meter
+            self.light_meter,
+            self.update_manager
         )
         self.http.start()
     

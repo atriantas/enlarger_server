@@ -31,7 +31,7 @@ class HTTPServer:
     - WiFi configuration endpoint
     """
     
-    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None, light_meter=None):
+    def __init__(self, gpio_control, timer_manager, wifi_ap=None, wifi_sta=None, light_meter=None, update_manager=None):
         """
         Initialize HTTP server.
         
@@ -41,12 +41,14 @@ class HTTPServer:
             wifi_ap: WiFiAP instance (optional)
             wifi_sta: WiFiSTA instance (optional)
             light_meter: DarkroomLightMeter instance (optional)
+            update_manager: UpdateManager instance (optional)
         """
         self.gpio = gpio_control
         self.timer = timer_manager
         self.wifi_ap = wifi_ap
         self.wifi_sta = wifi_sta
         self.light_meter = light_meter
+        self.update_manager = update_manager
         self.sock = None
         self.running = False
     
@@ -1379,6 +1381,8 @@ class HTTPServer:
                 await self._handle_light_meter_calibrate(conn, params)
             elif path == '/light-meter-config':
                 await self._handle_light_meter_config(conn, params)
+            elif path == '/update-check':
+                await self._handle_update_check(conn, params)
             elif path == '/favicon.ico':
                 # Return empty response for favicon
                 response = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
@@ -1432,6 +1436,39 @@ class HTTPServer:
                 pass
             self.sock = None
         print("HTTP server stopped")
+    
+    async def _handle_update_check(self, conn, params):
+        """Handle GET /update-check - Check for available updates from GitHub."""
+        try:
+            if not self.update_manager:
+                response = self._json_response({
+                    'success': False,
+                    'error': 'UpdateManager not initialized'
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            # Check for updates and download if available
+            result = await self.update_manager.check_and_download()
+            
+            # Determine HTTP status
+            status = 200 if result.get('success', False) else 400
+            
+            response = self._json_response(result, status)
+            await self._sendall(conn, response)
+            
+            # If update succeeded and restart is required, schedule restart
+            if result.get('success') and result.get('restart_required'):
+                print("[HTTPServer] Update successful, scheduling restart in 3 seconds...")
+                asyncio.create_task(self.update_manager.trigger_restart(delay_ms=3000))
+        
+        except Exception as e:
+            print(f"[HTTPServer] Error in /update-check: {e}")
+            response = self._json_response({
+                'success': False,
+                'error': str(e)
+            }, 500)
+            await self._sendall(conn, response)
     
     async def run_async(self):
         """Run HTTP server loop asynchronously."""
