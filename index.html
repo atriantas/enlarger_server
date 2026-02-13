@@ -1451,6 +1451,26 @@
           color: var(--text-secondary);
           margin-top: 6px;
         }
+
+        .proof-histogram {
+          margin-top: 8px;
+          background: #0b0b0b;
+          border: 1px solid #000;
+          border-radius: 8px;
+          padding: 6px;
+        }
+
+        .proof-histogram-label {
+          text-align: center;
+          margin-bottom: 4px;
+          color: var(--text-secondary);
+        }
+
+        .proof-histogram-canvas {
+          width: 100%;
+          height: 90px;
+          display: block;
+        }
       }
     </style>
   </head>
@@ -5253,6 +5273,15 @@
               <div class="proof-legend">
                 <span>Dark (black)</span>
                 <span>Light (white)</span>
+              </div>
+              <div class="proof-histogram">
+                <div class="label-sm proof-histogram-label">HISTOGRAM</div>
+                <canvas
+                  id="proofHistogram"
+                  class="proof-histogram-canvas"
+                  role="img"
+                  aria-label="Virtual proof histogram"
+                ></canvas>
               </div>
             </div>
           </div>
@@ -18830,6 +18859,7 @@
           this.renderProofGrid();
           this.updateProofStatus();
           this.setProofScanStatus("Idle");
+          this.updateProofHistogram();
         }
 
         renderProofGrid() {
@@ -18930,6 +18960,110 @@
             recomputeBtn.disabled =
               this.proof.referenceLux === null || measured === 0;
           }
+        }
+
+        updateProofHistogram() {
+          const canvas = document.getElementById("proofHistogram");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          const width = canvas.clientWidth || 240;
+          const height = canvas.clientHeight || 90;
+          const dpr = window.devicePixelRatio || 1;
+          const scaledWidth = Math.max(1, Math.floor(width * dpr));
+          const scaledHeight = Math.max(1, Math.floor(height * dpr));
+
+          if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+          }
+
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = "#0b0b0b";
+          ctx.fillRect(0, 0, width, height);
+
+          const values = [];
+          for (const result of this.proof.results) {
+            if (!result || typeof result.grayscale !== "number") continue;
+            const clamped = Math.max(0, Math.min(255, result.grayscale));
+            values.push(clamped);
+          }
+
+          if (values.length === 0) {
+            return;
+          }
+
+          const binCount = 64;
+          const bins = Array(binCount).fill(0);
+          for (const value of values) {
+            const bin = Math.min(
+              binCount - 1,
+              Math.floor((value / 256) * binCount),
+            );
+            bins[bin] += 1;
+          }
+
+          // Apply gaussian smoothing to reduce spikes
+          const smoothBins = Array(binCount).fill(0);
+          const kernel = [0.27, 0.46, 0.27]; // Simple 3-point gaussian
+          for (let i = 0; i < binCount; i += 1) {
+            let sum = 0;
+            let weightSum = 0;
+            for (let j = -1; j <= 1; j += 1) {
+              const idx = i + j;
+              if (idx >= 0 && idx < binCount) {
+                sum += bins[idx] * kernel[j + 1];
+                weightSum += kernel[j + 1];
+              }
+            }
+            smoothBins[i] = sum / weightSum;
+          }
+
+          const maxCount = Math.max(...smoothBins);
+          if (maxCount <= 0) {
+            return;
+          }
+
+          // Draw smooth curve using quadratic interpolation
+          ctx.beginPath();
+          ctx.moveTo(0, height);
+          
+          // First point
+          const x0 = 0;
+          const y0 = height - (smoothBins[0] / maxCount) * height;
+          ctx.lineTo(x0, y0);
+          
+          // Draw smooth curve through all points
+          for (let i = 0; i < binCount; i += 1) {
+            const x1 = ((i + 0.5) / binCount) * width;
+            const y1 = height - (smoothBins[i] / maxCount) * height;
+            
+            if (i < binCount - 1) {
+              const x2 = ((i + 1.5) / binCount) * width;
+              const y2 = height - (smoothBins[i + 1] / maxCount) * height;
+              
+              // Control point at midpoint for smooth curve
+              const cpX = (x1 + x2) / 2;
+              const cpY = (y1 + y2) / 2;
+              ctx.quadraticCurveTo(x1, y1, cpX, cpY);
+            } else {
+              // Last point
+              ctx.lineTo(x1, y1);
+            }
+          }
+          
+          ctx.lineTo(width, height);
+          ctx.closePath();
+
+          ctx.fillStyle = "rgba(220, 220, 220, 0.85)";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(250, 250, 250, 0.9)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
         }
 
         setProofScanStatus(message) {
@@ -19213,6 +19347,7 @@
           }
 
           this.updateProofStatus();
+          this.updateProofHistogram();
         }
 
         setProofReference(index) {
@@ -19244,6 +19379,7 @@
           if (evDisplay) evDisplay.textContent = "EV Range: --";
           if (densityDisplay) densityDisplay.textContent = "Density: --";
           if (clippingDisplay) clippingDisplay.textContent = "Clipping: --";
+          this.updateProofHistogram();
         }
 
         getProofCursorIndex() {
