@@ -1436,6 +1436,14 @@
           box-shadow: inset 0 0 0 2px var(--warning);
         }
 
+        .proof-cell.proof-selected {
+          box-shadow: inset 0 0 0 3px #4A9EFF;
+        }
+
+        .proof-cell.proof-reference.proof-selected {
+          box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px #4A9EFF;
+        }
+
         .proof-cell.proof-clipped-white {
           outline: 2px solid #ccc;
         }
@@ -17993,6 +18001,7 @@
             referenceIndex: null,
             referenceLux: null,
             lastIndex: null,
+            selectedIndex: null,
             filterGrade: "2",
             isScanning: false,
             isMeasuring: false,
@@ -18686,8 +18695,8 @@
           if (setRefBtn) {
             setRefBtn.addEventListener("click", async () => {
               await this.stopProofScan();
-              if (this.proof.lastIndex !== null) {
-                this.setProofReference(this.proof.lastIndex);
+              if (this.proof.selectedIndex !== null) {
+                this.setProofReference(this.proof.selectedIndex);
               }
             });
           }
@@ -18845,6 +18854,7 @@
           this.proof.samples = Array(total).fill(null);
           this.proof.results = Array(total).fill(null);
           this.proof.lastIndex = null;
+          this.proof.selectedIndex = null;
 
           if (!keepReference) {
             this.proof.referenceIndex = null;
@@ -18877,7 +18887,7 @@
             cell.id = `proofCell-${i}`;
             cell.addEventListener("click", async () => {
               await this.stopProofScan();
-              this.setProofReference(i);
+              this.selectProofCell(i);
             });
             grid.appendChild(cell);
             this.updateProofGridCell(i);
@@ -18896,6 +18906,10 @@
           cell.classList.toggle(
             "proof-reference",
             index === this.proof.referenceIndex,
+          );
+          cell.classList.toggle(
+            "proof-selected",
+            index === this.proof.selectedIndex,
           );
           cell.classList.toggle(
             "proof-clipped-white",
@@ -18952,7 +18966,7 @@
 
           const setRefBtn = document.getElementById("proofSetReferenceBtn");
           if (setRefBtn) {
-            setRefBtn.disabled = this.proof.lastIndex === null;
+            setRefBtn.disabled = this.proof.selectedIndex === null;
           }
 
           const recomputeBtn = document.getElementById("proofRecomputeBtn");
@@ -19275,8 +19289,9 @@
           }
         }
 
-        updateProofSampleInfo(index, result) {
-          if (index !== this.proof.lastIndex) return;
+        updateProofSampleInfo(index, result, forceUpdate = false) {
+          // Only update if this is the last measured cell or explicitly forced
+          if (!forceUpdate && index !== this.proof.lastIndex) return;
 
           const luxDisplay = document.getElementById("proofLastLux");
           const zoneDisplay = document.getElementById("proofLastZone");
@@ -19350,6 +19365,31 @@
           this.updateProofHistogram();
         }
 
+        selectProofCell(index) {
+          const lux = this.proof.samples[index];
+          const result = this.proof.results[index];
+          
+          if (lux === null) {
+            this.showFeedback("This cell has not been measured yet", "error");
+            return;
+          }
+
+          // Update selected index and refresh UI
+          const previousSelected = this.proof.selectedIndex;
+          this.proof.selectedIndex = index;
+          
+          if (previousSelected !== null) {
+            this.updateProofGridCell(previousSelected);
+          }
+          this.updateProofGridCell(index);
+          
+          // Display cell info in LAST SAMPLE box
+          this.updateProofSampleInfo(index, result, true);
+          
+          // Update button state
+          this.updateProofStatus();
+        }
+
         setProofReference(index) {
           this.stopProofScan();
           const lux = this.proof.samples[index];
@@ -19358,8 +19398,17 @@
             return;
           }
 
+          // Clear previous selection when setting reference
+          const previousSelected = this.proof.selectedIndex;
+          this.proof.selectedIndex = null;
+
           this.proof.referenceIndex = index;
           this.proof.referenceLux = lux;
+
+          // Update previous selected cell if it exists
+          if (previousSelected !== null && previousSelected !== index) {
+            this.updateProofGridCell(previousSelected);
+          }
 
           this.renderProofGrid();
           this.recomputeProofResults();
