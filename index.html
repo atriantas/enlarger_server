@@ -1623,35 +1623,7 @@
           />
         </div>
 
-        <div class="control">
-          <div class="control-label">
-            <span>STOP ADJUST</span>
-            <span class="value-display" id="stopValue">0.0</span>
-          </div>
-          <input
-            type="range"
-            min="-6"
-            max="6"
-            step="1"
-            value="0"
-            class="slider"
-            id="stopSlider"
-          />
-
-          <!-- Dynamic ruler that will be populated based on selected increment denominator -->
-          <div
-            id="calcStopRuler"
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 5px;
-              padding: 0 5px;
-            "
-          >
-            <!-- labels populated by JS -->
-          </div>
-
-          <div class="segmented-control-container">
+        <div class="segmented-control-container">
             <div
               class="segmented-control"
               id="calcIncrementSeg"
@@ -1699,6 +1671,34 @@
                 1/6
               </button>
             </div>
+          </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>STOP ADJUST</span>
+            <span class="value-display" id="stopValue">0.0</span>
+          </div>
+          <input
+            type="range"
+            min="-6"
+            max="6"
+            step="1"
+            value="0"
+            class="slider"
+            id="stopSlider"
+          />
+
+          <!-- Dynamic ruler that will be populated based on selected increment denominator -->
+          <div
+            id="calcStopRuler"
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 5px;
+              padding: 0 5px;
+            "
+          >
+            <!-- labels populated by JS -->
           </div>
         </div>
 
@@ -2604,35 +2604,7 @@
           />
         </div>
 
-        <div class="control">
-          <div class="control-label">
-            <span>INCREMENT (in stops)</span>
-            <span class="value-display" id="testIncrementValue">⅓ stop</span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="9"
-            step="1"
-            value="1"
-            class="slider"
-            id="testIncrementSlider"
-          />
-
-          <!-- Dynamic ruler populated by JS based on denominator -->
-          <div
-            id="testIncrementRuler"
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 5px;
-              padding: 0 5px;
-            "
-          >
-            <!-- labels populated by JS -->
-          </div>
-
-          <div class="segmented-control-container">
+        <div class="segmented-control-container">
             <div
               class="segmented-control"
               id="testIncrementSeg"
@@ -2680,6 +2652,34 @@
                 1/6
               </button>
             </div>
+          </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>INCREMENT (in stops)</span>
+            <span class="value-display" id="testIncrementValue">⅓ stop</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="9"
+            step="1"
+            value="1"
+            class="slider"
+            id="testIncrementSlider"
+          />
+
+          <!-- Dynamic ruler populated by JS based on denominator -->
+          <div
+            id="testIncrementRuler"
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 5px;
+              padding: 0 5px;
+            "
+          >
+            <!-- labels populated by JS -->
           </div>
         </div>
 
