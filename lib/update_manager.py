@@ -10,6 +10,17 @@ import os
 import asyncio
 import time
 
+try:
+    import ussl
+    _HAS_SSL = True
+except ImportError:
+    try:
+        import ssl as ussl
+        _HAS_SSL = True
+    except ImportError:
+        ussl = None
+        _HAS_SSL = False
+
 class UpdateManager:
     """
     Manages automatic updates from GitHub releases.
@@ -24,6 +35,7 @@ class UpdateManager:
     
     # GitHub API endpoint for releases
     GITHUB_API_BASE = "api.github.com"
+    RAW_HOST = "raw.githubusercontent.com"
     
     # Files to update (path relative to Pico root)
     FILES_TO_UPDATE = [
@@ -110,6 +122,94 @@ class UpdateManager:
         local_tuple = self._parse_version(local_version)
         return remote_tuple > local_tuple
     
+    def _connect(self, host, port, use_ssl=True):
+        """Open a socket connection with optional TLS."""
+        addr = socket.getaddrinfo(host, port)[0][-1]
+        sock = socket.socket()
+        sock.connect(addr)
+        if use_ssl:
+            if not _HAS_SSL:
+                sock.close()
+                raise OSError("SSL not available")
+            try:
+                sock = ussl.wrap_socket(sock)
+            except Exception:
+                # Some builds only accept positional args without kwargs
+                sock = ussl.wrap_socket(sock)
+        return sock
+
+    def _decode_bytes(self, data):
+        """Decode bytes to UTF-8 without keyword args (MicroPython compatibility)."""
+        try:
+            return data.decode("utf-8")
+        except Exception:
+            try:
+                return data.decode()
+            except Exception:
+                return ""
+
+    def _read_headers(self, sock):
+        """Read HTTP response headers and return (status_code, headers, remainder)."""
+        data = b""
+        while b"\r\n\r\n" not in data:
+            chunk = sock.recv(256)
+            if not chunk:
+                break
+            data += chunk
+        header_bytes, remainder = data.split(b"\r\n\r\n", 1)
+        header_text = self._decode_bytes(header_bytes)
+        lines = header_text.split("\r\n")
+        status_line = lines[0] if lines else ""
+        status_code = 0
+        try:
+            status_code = int(status_line.split(" ")[1])
+        except Exception:
+            status_code = 0
+        headers = {}
+        for line in lines[1:]:
+            if ":" in line:
+                key, value = line.split(":", 1)
+                headers[key.strip().lower()] = value.strip()
+        return status_code, headers, remainder
+
+    def _readline(self, sock, buffer):
+        """Read a line ending in CRLF from buffer/socket."""
+        while b"\r\n" not in buffer:
+            chunk = sock.recv(256)
+            if not chunk:
+                break
+            buffer += chunk
+        line, _, buffer = buffer.partition(b"\r\n")
+        return line, buffer
+
+    def _read_chunked(self, sock, initial, write_fn):
+        """Read chunked HTTP body and stream to write_fn."""
+        buffer = initial
+        total = 0
+        while True:
+            line, buffer = self._readline(sock, buffer)
+            if not line:
+                break
+            try:
+                chunk_size = int(line.strip(), 16)
+            except ValueError:
+                break
+            if chunk_size == 0:
+                # Consume trailing CRLF after last chunk
+                if b"\r\n" not in buffer:
+                    _ = sock.recv(2)
+                break
+            while len(buffer) < chunk_size + 2:
+                chunk = sock.recv(512)
+                if not chunk:
+                    break
+                buffer += chunk
+            chunk_data = buffer[:chunk_size]
+            write_fn(chunk_data)
+            total += len(chunk_data)
+            buffer = buffer[chunk_size + 2:]
+        return total
+
     async def check_latest_release(self):
         """
         Fetch latest release metadata from GitHub API.
@@ -120,41 +220,39 @@ class UpdateManager:
             
             # Build GitHub API URL
             url = f"/repos/{self.repo_owner}/{self.repo_name}/releases/latest"
-            
-            # Create socket connection to GitHub API
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.GITHUB_API_BASE, 443))
-            
-            # Send HTTPS request (MicroPython 1.27.0 doesn't have urllib, so raw socket)
-            # For simplicity, we'll use HTTP on port 80 instead of HTTPS
-            sock.close()
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.GITHUB_API_BASE, 80))
-            
-            request = f"GET {url} HTTP/1.1\r\nHost: {self.GITHUB_API_BASE}\r\nUser-Agent: Pico2W-Darkroom\r\nConnection: close\r\n\r\n"
+
+            sock = self._connect(self.GITHUB_API_BASE, 443, use_ssl=True)
+            request = (
+                f"GET {url} HTTP/1.1\r\n"
+                f"Host: {self.GITHUB_API_BASE}\r\n"
+                "User-Agent: Pico2W-Darkroom\r\n"
+                "Accept: application/json\r\n"
+                "Connection: close\r\n\r\n"
+            )
             sock.send(request.encode())
-            
-            # Read response
-            response = b''
-            while True:
-                try:
-                    chunk = sock.recv(1024)
+
+            status_code, headers, remainder = self._read_headers(sock)
+            if status_code != 200:
+                sock.close()
+                raise ValueError(f"HTTP {status_code}")
+
+            body_bytes = b""
+            if headers.get("transfer-encoding") == "chunked":
+                body_bytes = b""
+                def _collect(chunk):
+                    nonlocal body_bytes
+                    body_bytes += chunk
+                self._read_chunked(sock, remainder, _collect)
+            else:
+                body_bytes = remainder
+                while True:
+                    chunk = sock.recv(512)
                     if not chunk:
                         break
-                    response += chunk
-                except:
-                    break
+                    body_bytes += chunk
             sock.close()
-            
-            # Parse HTTP response (split headers and body)
-            response_str = response.decode('utf-8', errors='ignore')
-            if '\r\n\r\n' in response_str:
-                body = response_str.split('\r\n\r\n', 1)[1]
-            else:
-                raise ValueError("Invalid HTTP response")
-            
-            # Parse JSON body
-            release_data = json.loads(body)
+
+            release_data = json.loads(self._decode_bytes(body_bytes))
             
             if 'tag_name' not in release_data:
                 return {
@@ -194,58 +292,64 @@ class UpdateManager:
     async def download_file(self, file_path):
         """
         Download a single file from GitHub raw content.
-        Returns {success, size, content} or {success, error}
+        Returns {success, size, tmp_path} or {success, error}
         """
         try:
-            # Build raw GitHub URL
-            # From release assets or raw main branch
-            url = f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/Back_Up/{file_path}"
-            
             print(f"[UpdateManager] Downloading {file_path}...")
-            
-            # Connect to GitHub
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(("raw.githubusercontent.com", 80))  # Use HTTP for simplicity
-            
-            request = f"GET /{self.repo_owner}/{self.repo_name}/Back_Up/{file_path} HTTP/1.1\r\nHost: raw.githubusercontent.com\r\nUser-Agent: Pico2W-Darkroom\r\nConnection: close\r\n\r\n"
+
+            path = f"/{self.repo_owner}/{self.repo_name}/Back_Up/{file_path}"
+            sock = self._connect(self.RAW_HOST, 443, use_ssl=True)
+            request = (
+                f"GET {path} HTTP/1.1\r\n"
+                f"Host: {self.RAW_HOST}\r\n"
+                "User-Agent: Pico2W-Darkroom\r\n"
+                "Connection: close\r\n\r\n"
+            )
             sock.send(request.encode())
-            
-            # Read response in chunks
-            content = b''
-            total_bytes = 0
-            while True:
-                try:
-                    chunk = sock.recv(self.CHUNK_SIZE)
-                    if not chunk:
-                        break
-                    content += chunk
-                    total_bytes += len(chunk)
-                    
-                    # Garbage collection every ~10 chunks (5KB)
-                    if total_bytes % 5120 == 0:
-                        gc.collect()
-                except:
-                    break
-            sock.close()
-            
-            # Parse HTTP response
-            response_str = content.decode('utf-8', errors='ignore')
-            if '\r\n\r\n' in response_str:
-                body = response_str.split('\r\n\r\n', 1)[1]
-            else:
-                raise ValueError("Invalid HTTP response")
-            
-            # Check for 404 or other errors
-            if "404" in response_str:
+
+            status_code, headers, remainder = self._read_headers(sock)
+            if status_code == 404:
+                sock.close()
                 print(f"[UpdateManager] File not found: {file_path}")
                 return {'success': False, 'error': 'File not found on GitHub'}
-            
-            print(f"[UpdateManager] Downloaded {file_path}: {len(body)} bytes")
-            
+            if status_code != 200:
+                sock.close()
+                return {'success': False, 'error': f'HTTP {status_code}'}
+
+            tmp_path = f"{file_path}.tmp"
+            # Create lib directory if needed
+            if '/' in file_path:
+                dir_path = file_path.rsplit('/', 1)[0]
+                try:
+                    os.mkdir(dir_path)
+                except OSError:
+                    pass
+
+            total_bytes = 0
+            with open(tmp_path, 'wb') as f:
+                if headers.get("transfer-encoding") == "chunked":
+                    total_bytes = self._read_chunked(sock, remainder, f.write)
+                else:
+                    if remainder:
+                        f.write(remainder)
+                        total_bytes += len(remainder)
+                    while True:
+                        chunk = sock.recv(self.CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        total_bytes += len(chunk)
+                        if total_bytes % 5120 == 0:
+                            gc.collect()
+
+            sock.close()
+
+            print(f"[UpdateManager] Downloaded {file_path}: {total_bytes} bytes")
+
             return {
                 'success': True,
-                'size': len(body),
-                'content': body
+                'size': total_bytes,
+                'tmp_path': tmp_path
             }
             
         except Exception as e:
@@ -290,8 +394,12 @@ class UpdateManager:
                     })
                     continue
                 
-                # Step 3: Write file to Pico (safe write with .tmp extension)
-                write_result = await self._write_file_safe(file_path, result['content'])
+                # Step 3: Commit temp file
+                write_result = await self._commit_temp_file(
+                    file_path,
+                    result['tmp_path'],
+                    result['size']
+                )
                 
                 if write_result['success']:
                     updated_files.append(file_path)
@@ -330,35 +438,20 @@ class UpdateManager:
                 'current_version': self.current_version
             }
     
-    async def _write_file_safe(self, file_path, content):
+    async def _commit_temp_file(self, file_path, tmp_path, expected_size):
         """
-        Safely write file with atomic operation.
-        1. Write to .tmp file first
-        2. Verify size matches
-        3. Rename .tmp to final (atomic on most filesystems)
+        Commit a temp file to final destination.
+        1. Verify size matches expected
+        2. Rename .tmp to final (atomic on most filesystems)
         """
         try:
-            tmp_path = f"{file_path}.tmp"
-            
-            # Create lib directory if needed
-            if '/' in file_path:
-                dir_path = file_path.rsplit('/', 1)[0]
-                try:
-                    os.mkdir(dir_path)
-                except OSError:
-                    pass  # Directory already exists
-            
-            # Write to temporary file
-            with open(tmp_path, 'w') as f:
-                f.write(content)
-            
             # Verify file was written
             stat_info = os.stat(tmp_path)
-            if stat_info[6] != len(content):
+            if stat_info[6] != expected_size:
                 os.remove(tmp_path)
                 return {
                     'success': False,
-                    'error': f'Size mismatch: wrote {stat_info[6]}, expected {len(content)}'
+                    'error': f'Size mismatch: wrote {stat_info[6]}, expected {expected_size}'
                 }
             
             # Atomic rename (remove old file first on MicroPython)
@@ -380,7 +473,7 @@ class UpdateManager:
                 os.remove(tmp_path)
             except:
                 pass
-            print(f"[UpdateManager] Error writing {file_path}: {e}")
+            print(f"[UpdateManager] Error committing {file_path}: {e}")
             return {'success': False, 'error': str(e)}
     
     async def trigger_restart(self, delay_ms=1000):

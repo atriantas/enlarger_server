@@ -137,14 +137,10 @@ class DarkroomTimer:
                 self.current_ip = sta_ip
                 print(f"STA connected: IP={sta_ip}")
                 
-                # Wait grace period before disabling AP
-                print(f"\nAP will disable in {AP_GRACE_PERIOD} seconds...")
-                print("Connect to router network now if needed.")
-                await asyncio.sleep(AP_GRACE_PERIOD)
-                
-                # Disable AP to save memory
-                print("Disabling AP to save memory...")
+                # Disable AP immediately to avoid routing conflicts
+                print("Disabling AP (to avoid dual-interface routing conflicts)...")
                 self.wifi_ap.stop()
+                await asyncio.sleep(1)  # Let network settle
                 
                 return sta_ip
             else:

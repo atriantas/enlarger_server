@@ -95,6 +95,12 @@ class WiFiSTA:
             # Activate station interface
             self.sta.active(True)
             
+            # Disable power saving mode (can cause connectivity issues)
+            try:
+                self.sta.config(pm=0xa11140)  # Disable WiFi power management
+            except:
+                pass  # Older firmware may not support this
+            
             # Disconnect if already connected
             if self.sta.isconnected():
                 self.sta.disconnect()
@@ -121,8 +127,19 @@ class WiFiSTA:
                     return None
             
             if self.sta.isconnected():
-                ip = self.sta.ifconfig()[0]
-                print(f"WiFi connected: IP={ip}")
+                ifcfg = self.sta.ifconfig()
+                ip = ifcfg[0]
+                gateway = ifcfg[2]
+                dns = ifcfg[3]
+                try:
+                    mac_bytes = self.sta.config('mac')
+                    mac = ':'.join(['%02X' % b for b in mac_bytes])
+                    print(f"WiFi connected: IP={ip}")
+                    print(f"  Gateway: {gateway}, DNS: {dns}")
+                    print(f"  MAC: {mac}")
+                except:
+                    print(f"WiFi connected: IP={ip}")
+                    print(f"  Gateway: {gateway}, DNS: {dns}")
                 
                 # Save credentials on success
                 if save:
@@ -189,8 +206,19 @@ class WiFiSTA:
                     return None
             
             if self.sta.isconnected():
-                ip = self.sta.ifconfig()[0]
-                print(f"WiFi connected: IP={ip}")
+                ifcfg = self.sta.ifconfig()
+                ip = ifcfg[0]
+                gateway = ifcfg[2]
+                dns = ifcfg[3]
+                try:
+                    mac_bytes = self.sta.config('mac')
+                    mac = ':'.join(['%02X' % b for b in mac_bytes])
+                    print(f"WiFi connected: IP={ip}")
+                    print(f"  Gateway: {gateway}, DNS: {dns}")
+                    print(f"  MAC: {mac}")
+                except:
+                    print(f"WiFi connected: IP={ip}")
+                    print(f"  Gateway: {gateway}, DNS: {dns}")
                 
                 # Save credentials on success
                 if save:
