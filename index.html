@@ -125,9 +125,10 @@
       .container {
         max-width: 480px;
         margin: 0 auto;
-        height: 100vh; /* Full viewport height */
+        height: calc(100vh - 12px); /* Account for body padding */
         overflow-y: auto; /* Allow scrolling within container */
         scrollbar-width: none; /* Firefox */
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
       }
 
       /* Hide scrollbar for Chrome, Safari and Opera */
@@ -373,7 +374,7 @@
       .label-sm {
         font-size: 0.65rem;
         color: var(--text-secondary);
-        margin-bottom: 3px;
+        margin-bottom: 2px;
       }
 
       /* Unified value display class - consolidates result-value, chemical-result-value */
@@ -1802,9 +1803,8 @@
               <button
                 class="timer-btn"
                 id="copyCurrentTime"
-                style="flex: 1; font-size: 0.6rem; padding: 2px 4px"
               >
-                Use Current
+                Use Current Exposure Time
               </button>
             </div>
           </div>
@@ -1926,12 +1926,7 @@
                   <select
                     class="settings-input"
                     id="originalFStop"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -1948,12 +1943,7 @@
                   <select
                     class="settings-input"
                     id="newFStop"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -1985,12 +1975,7 @@
                   <select
                     class="settings-input"
                     id="originalPaperSize"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2032,12 +2017,7 @@
                   <select
                     class="settings-input"
                     id="newPaperSize"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2089,17 +2069,17 @@
                 <div class="settings-group" style="margin-top: 5px">
                   <button
                     class="toggle-btn active"
-                    data-brand="FOMA"
-                    id="btnContrastFoma"
-                  >
-                    FOMA
-                  </button>
-                  <button
-                    class="toggle-btn"
                     data-brand="Ilford"
                     id="btnContrastIlford"
                   >
                     Ilford
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    data-brand="FOMA"
+                    id="btnContrastFoma"
+                  >
+                    FOMA
                   </button>
                 </div>
               </div>
@@ -2116,24 +2096,24 @@
                   <div
                     id="ilfordPaperSelector"
                     class="control"
-                    style="display: none; margin-top: 5px"
+                    style="display: block; margin-top: 5px"
                   >
                     <select
                       class="settings-input"
                       id="ilfordPaperType"
                       style="width: 100%"
                     >
-                      <option value="cooltone">Multigrade RC Cooltone</option>
-                      <option value="portfolio">
-                        Multigrade IV RC Portfolio (Discontinued)
-                      </option>
-                      <option value="rc_deluxe_new">
+                      <option value="rc_deluxe_new" selected>
                         MULTIGRADE RC DELUXE (NEW)
                       </option>
                       <option value="rc_portfolio_new">
                         MULTIGRADE RC PORTFOLIO (NEW)
                       </option>
+                      <option value="portfolio">
+                        Multigrade IV RC Portfolio (Discontinued)
+                      </option>
                       <option value="fb_classic">Multigrade FB Classic</option>
+                      <option value="cooltone">Multigrade RC Cooltone</option>
                       <option value="fb_warmtone">
                         Multigrade FB Warmtone
                       </option>
@@ -2147,14 +2127,14 @@
                   <div
                     id="fomaPaperSelector"
                     class="control"
-                    style="margin-top: 5px"
+                    style="display: none; margin-top: 5px"
                   >
                     <select
                       class="settings-input"
                       id="fomaPaperType"
                       style="width: 100%"
                     >
-                      <option value="fomaspeed">FOMASPEED VARIANT</option>
+                      <option value="fomaspeed" selected>FOMASPEED VARIANT</option>
                       <option value="fomabrom">FOMABROM VARIANT</option>
                       <option value="fomapastel_mg">
                         FOMAPASTEL MG (Special FB Colored Base)
@@ -2170,12 +2150,7 @@
                   <select
                     class="settings-input"
                     id="contrastFilterSelect"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="none">No filter</option>
                   </select>
@@ -2211,12 +2186,7 @@
                   <select
                     class="settings-input"
                     id="customFilterGroup"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0">Group A</option>
                     <option value="1">Group B</option>
@@ -2234,19 +2204,6 @@
                   />
                 </div>
               </div>
-
-              <div
-                style="
-                  font-size: 0.8rem;
-                  color: var(--text-secondary);
-                  margin-bottom: 6px;
-                "
-              >
-                Store up to 12 named factors per group (3 groups). Use these to
-                drive the Contrast Factor used in New Adjusted Time. Values
-                auto-save and are included in Export All Data.
-              </div>
-
               <div class="custom-filter-rows" id="customFilterRows"></div>
             </div>
           </section>
@@ -2312,9 +2269,6 @@
                   margin-top: 3px;
                 "
               >
-                Formula: Original Time × (New Height ÷ Original Height)² × (New
-                F-Stop ÷ Original F-Stop)² × (√New Paper Area ÷ √Original Paper
-                Area)² × Filter Factor
               </div>
             </div>
           </div>
@@ -2334,10 +2288,6 @@
                 margin-top: 3px;
               "
             >
-              Example: 10s at 30cm, f/5.6, No filter → 22.5s at 45cm, f/5.6, No
-              filter<br />
-              Example with filter: 10s at f/5.6 → 14s with Y filter (1.4×
-              factor)
             </div>
           </div>
         </div>
@@ -2371,17 +2321,17 @@
             <div class="settings-group" style="margin-top: 5px">
               <button
                 class="toggle-btn active"
-                data-brand="FOMA"
-                id="btnSplitFoma"
-              >
-                FOMA
-              </button>
-              <button
-                class="toggle-btn"
                 data-brand="Ilford"
                 id="btnSplitIlford"
               >
                 Ilford
+              </button>
+              <button
+                class="toggle-btn"
+                data-brand="FOMA"
+                id="btnSplitFoma"
+              >
+                FOMA
               </button>
             </div>
           </div>
@@ -2394,7 +2344,7 @@
             <select
               class="settings-input"
               id="splitFomaPaperType"
-              style="width: 100%; margin-top: 5px"
+              style="width: 100%"
             >
               <option value="fomaspeed">FOMASPEED VARIANT</option>
               <option value="fomabrom">FOMABROM VARIANT</option>
@@ -2415,16 +2365,16 @@
             <select
               class="settings-input"
               id="splitIlfordPaperType"
-              style="width: 100%; margin-top: 5px"
+              style="width: 100%"
             >
-              <option value="cooltone">Multigrade RC Cooltone</option>
-              <option value="portfolio">
-                Multigrade IV RC Portfolio (Discontinued)
-              </option>
               <option value="rc_deluxe_new">MULTIGRADE RC DELUXE (NEW)</option>
               <option value="rc_portfolio_new">
                 MULTIGRADE RC PORTFOLIO (NEW)
               </option>
+              <option value="portfolio">
+                Multigrade IV RC Portfolio (Discontinued)
+              </option>
+              <option value="cooltone">Multigrade RC Cooltone</option>
               <option value="fb_classic">Multigrade FB Classic</option>
               <option value="fb_warmtone">Multigrade FB Warmtone</option>
               <option value="fb_cooltone">Multigrade FB Cooltone</option>
@@ -2514,7 +2464,6 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Split-Grade Presets</div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -2535,7 +2484,6 @@
                 </div>
               </div>
 
-              <div class="title-md">Saved Presets</div>
               <div class="shelf-life-list" id="splitPresetList">
                 <!-- Split presets will be listed here -->
               </div>
@@ -2958,9 +2906,7 @@
               <div class="collapsible-title">TEST STRIP PROFILES</div>
             </button>
             <div class="collapsible-content">
-              <div class="incremental-timer" style="margin-top: 15px">
-                <div class="title-md">Test Strip Profiles</div>
-
+              <div class="incremental-timer">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Profile Name</div>
@@ -2979,8 +2925,6 @@
                     </button>
                   </div>
                 </div>
-
-                <div class="title-md">Saved Test Strip Profiles</div>
                 <div class="shelf-life-list" id="testStripProfileList">
                   <!-- Test strip profiles will be listed here -->
                 </div>
@@ -3150,7 +3094,6 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Chemical Presets</div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -3171,7 +3114,6 @@
                 </div>
               </div>
 
-              <div class="title-md">Saved Chemical Presets</div>
               <div class="shelf-life-list" id="chemicalPresetList">
                 <!-- Chemical presets will be listed here -->
               </div>
@@ -3592,8 +3534,6 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Timer Profiles</div>
-
               <div class="settings-group">
                 <div class="settings-item">
                   <div class="settings-label">Profile Name</div>
@@ -3612,8 +3552,6 @@
                   </button>
                 </div>
               </div>
-
-              <div class="title-md">Saved Timer Profiles</div>
               <div class="shelf-life-list" id="timerProfileList">
                 <!-- Timer profiles will be listed here -->
               </div>
@@ -5560,33 +5498,7 @@
       </div>
 
       <footer>
-        <div>DARKROOM TIMER v3.0.0 (Pico 2 W)</div>
-        <div>
-          Height & Aperture & Paper Size & Contrast Calculator: New Time =
-          Original Time × (New Height ÷ Original Height)² × (New F-Stop ÷
-          Original F-Stop)² × (√New Paper Area ÷ √Original Paper Area)² × Filter
-          Factor
-        </div>
-        <div>
-          Chemical Mix Calculator: Stock = Total Volume ÷ (Stock Parts + Water
-          Parts)
-        </div>
-        <div>
-          Capacity Calculator: Max Prints = (Capacity × Tray Volume / 1000) ÷
-          Paper Area
-        </div>
-        <div>
-          Countdown Feature: Configurable 0-30 second delay with audible beeps
-          before all timers start
-        </div>
-        <div>
-          Test Strip Auto Advance: Toggle automatic progression between test
-          strip steps
-        </div>
-        <div>
-          Data Export: Includes Timer Profiles, Chemical Presets, Capacity
-          Tracker, and Shelf Life Data
-        </div>
+        <div>CYANOWOOD DARKROOM TIMER v1.0.1</div>
       </footer>
     </div>
 
@@ -8570,6 +8482,8 @@
           if (storageMethod(collection)) {
             if (updateListMethod) updateListMethod();
 
+            playBeep(800, 0.3, 0.3);
+
             // Feedback handling
             if (feedbackMethod) {
               feedbackMethod(
@@ -8628,12 +8542,24 @@
 
         // Generic render preset list helper
         renderPresetList(config) {
-          const { listElement, collection, currentItem, renderItemContent } =
-            config;
+          const {
+            listElement,
+            collection,
+            currentItem,
+            renderItemContent,
+            emptyMessage,
+          } = config;
 
           if (!listElement) return;
 
           listElement.innerHTML = "";
+
+          if (!collection || collection.length === 0) {
+            listElement.innerHTML = `<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">${
+              emptyMessage || "No profiles saved yet"
+            }</div>`;
+            return;
+          }
 
           collection.forEach((item) => {
             const itemDiv = document.createElement("div");
@@ -8674,9 +8600,8 @@
                   successMessage || "All items deleted!",
                   "success",
                 );
-              } else {
-                playBeep(600, 0.5, 0.3);
               }
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -8711,7 +8636,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            successMessage: `Profile "${name}" saved!`,
           });
 
           if (result) {
@@ -8772,8 +8696,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            confirmMessage: `Delete profile "${profileName}"?`,
-            successMessage: `Profile "${profileName}" deleted!`,
             onDeleteCallback: () => {
               if (this.getCurrentProfile() === profileName) {
                 this.setCurrentProfile(null);
@@ -8789,8 +8711,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            confirmMessage: "Delete ALL timer profiles? This cannot be undone!",
-            successMessage: "All timer profiles deleted!",
             onClearCallback: () => {
               this.setCurrentProfile(null);
             },
@@ -10458,7 +10378,6 @@
             updateListMethod: () => this.updateChemicalPresetList(),
             feedbackMethod: (msg, type) =>
               settingsManager.showAllProfilesFeedback(msg, type),
-            successMessage: `Preset "${name}" saved!`,
           });
 
           if (result) {
@@ -10506,8 +10425,6 @@
             storageMethod: (presets) =>
               StorageManager.saveChemicalPresets(presets),
             updateListMethod: () => this.updateChemicalPresetList(),
-            confirmMessage: `Delete preset "${presetName}"?`,
-            successMessage: `Preset "${presetName}" deleted!`,
             onDeleteCallback: () => {
               if (this.getCurrentPreset() === presetName) {
                 this.setCurrentPreset(null);
@@ -10557,9 +10474,6 @@
             updateListMethod: () => this.updateChemicalPresetList(),
             feedbackMethod: (msg, type) =>
               settingsManager.showAllProfilesFeedback(msg, type),
-            confirmMessage:
-              "Delete ALL chemical presets? This cannot be undone!",
-            successMessage: "All chemical presets deleted!",
             onClearCallback: () => {
               this.setCurrentPreset(null);
             },
@@ -10971,9 +10885,9 @@
          */
         constructor() {
           this.neutralTime = 10.0; // Test strip result
-          this.paperBrand = "FOMA";
+          this.paperBrand = "Ilford";
           this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
-          this.ilfordPaperType = "cooltone"; // cooltone, portfolio, etc.
+          this.ilfordPaperType = "rc_deluxe_new"; // cooltone, portfolio, etc.
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50; // Shadow burn percentage
@@ -11591,47 +11505,28 @@
           const nameInput = document.getElementById("splitPresetName");
           const name = nameInput.value.trim();
 
-          if (!name) {
-            settingsManager.showAllProfilesFeedback(
-              "Please enter a preset name",
-              "error",
-            );
-            return;
-          }
+          const result = settingsManager.savePreset({
+            name,
+            dataObject: {
+              neutralTime: this.neutralTime,
+              paperBrand: this.paperBrand,
+              fomaPaperType: this.fomaPaperType,
+              ilfordPaperType: this.ilfordPaperType,
+              softFilter: this.softFilter,
+              hardFilter: this.hardFilter,
+              burnPercent: this.burnPercent,
+            },
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+          });
 
-          const preset = {
-            name: name,
-            neutralTime: this.neutralTime,
-            paperBrand: this.paperBrand,
-            fomaPaperType: this.fomaPaperType,
-            ilfordPaperType: this.ilfordPaperType, // Added: Save Ilford paper type
-            softFilter: this.softFilter,
-            hardFilter: this.hardFilter,
-            burnPercent: this.burnPercent,
-            date: new Date().toISOString(),
-          };
-
-          // Check for existing
-          const existingIndex = this.splitPresets.findIndex(
-            (p) => p.name === name,
-          );
-          if (existingIndex >= 0) {
-            this.splitPresets[existingIndex] = preset;
-          } else {
-            this.splitPresets.push(preset);
-          }
-
-          // Save
-          if (StorageManager.saveSplitPresets(this.splitPresets)) {
+          if (result) {
             nameInput.value = "";
             this.currentSplitPreset = name;
             StorageManager.saveCurrentSplitPreset(name);
-            this.updatePresetList();
-            playBeep(800, 0.3, 0.3);
-            settingsManager.showAllProfilesFeedback(
-              `Split preset "${name}" saved!`,
-              "success",
-            );
           }
         }
 
@@ -11716,42 +11611,37 @@
          * Delete a preset
          */
         deletePreset(name) {
-          if (!confirm(`Delete split preset "${name}"?`)) return;
-
-          this.splitPresets = this.splitPresets.filter((p) => p.name !== name);
-          StorageManager.saveSplitPresets(this.splitPresets);
-
-          if (this.currentSplitPreset === name) {
-            this.currentSplitPreset = null;
-            StorageManager.saveCurrentSplitPreset(null);
-          }
-
-          this.updatePresetList();
-          playBeep(400, 0.3, 0.3);
-          settingsManager.showAllProfilesFeedback(
-            `Split preset "${name}" deleted!`,
-            "success",
-          );
+          return settingsManager.deletePreset({
+            name,
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onDeleteCallback: () => {
+              if (this.currentSplitPreset === name) {
+                this.currentSplitPreset = null;
+                StorageManager.saveCurrentSplitPreset(null);
+              }
+            },
+          });
         }
 
         /**
          * Clear all presets
          */
         clearAllPresets() {
-          if (!confirm("Delete ALL split presets? This cannot be undone!"))
-            return;
-
-          this.splitPresets = [];
-          this.currentSplitPreset = null;
-          StorageManager.saveSplitPresets([]);
-          StorageManager.saveCurrentSplitPreset(null);
-          this.updatePresetList();
-
-          playBeep(400, 0.3, 0.3);
-          settingsManager.showAllProfilesFeedback(
-            "All split presets deleted!",
-            "success",
-          );
+          return settingsManager.clearAllPresets({
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onClearCallback: () => {
+              this.currentSplitPreset = null;
+              StorageManager.saveCurrentSplitPreset(null);
+            },
+          });
         }
 
         /**
@@ -11761,65 +11651,63 @@
           const listElement = document.getElementById("splitPresetList");
           if (!listElement) return;
 
-          listElement.innerHTML = "";
+          // Paper type display mappings
+          const fomaPaperNames = {
+            fomaspeed: "FOMASPEED",
+            fomabrom: "FOMABROM",
+            fomapastel_mg: "FOMAPASTEL MG",
+            fomatone_mg_classic_variant: "FOMATONE MG",
+          };
 
-          this.splitPresets.forEach((preset) => {
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `shelf-life-item ${
-              this.currentSplitPreset === preset.name ? "active" : ""
-            }`;
+          const ilfordPaperNames = {
+            cooltone: "RC Cooltone",
+            portfolio: "RC Portfolio",
+            rc_deluxe_new: "RC Deluxe",
+            rc_portfolio_new: "RC Portfolio New",
+            fb_classic: "FB Classic",
+            fb_warmtone: "FB Warmtone",
+            fb_cooltone: "FB Cooltone",
+          };
 
-            const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${preset.burnPercent}%`;
-            const dateStr = new Date(preset.date).toLocaleDateString();
+          settingsManager.renderPresetList({
+            listElement,
+            collection: this.splitPresets,
+            currentItem: this.currentSplitPreset,
+            renderItemContent: (preset) => {
+              const filterInfo = `F${preset.softFilter}→F${
+                preset.hardFilter
+              } ${preset.burnPercent}%`;
+              const dateStr = new Date(preset.date).toLocaleDateString();
 
-            // Build additional info string
-            let additionalInfo = "";
+              // Build additional info string
+              let additionalInfo = "";
 
-            // Paper type display mappings
-            const fomaPaperNames = {
-              fomaspeed: "FOMASPEED",
-              fomabrom: "FOMABROM",
-              fomapastel_mg: "FOMAPASTEL MG",
-              fomatone_mg_classic_variant: "FOMATONE MG",
-            };
+              if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
+                const paperName =
+                  fomaPaperNames[preset.fomaPaperType] || preset.fomaPaperType;
+                additionalInfo = ` • ${paperName}`;
+              } else if (
+                preset.paperBrand === "Ilford" &&
+                preset.ilfordPaperType
+              ) {
+                const paperName =
+                  ilfordPaperNames[preset.ilfordPaperType] ||
+                  preset.ilfordPaperType;
+                additionalInfo = ` • ${paperName}`;
+              }
 
-            const ilfordPaperNames = {
-              cooltone: "RC Cooltone",
-              portfolio: "RC Portfolio",
-              rc_deluxe_new: "RC Deluxe",
-              rc_portfolio_new: "RC Portfolio New",
-              fb_classic: "FB Classic",
-              fb_warmtone: "FB Warmtone",
-              fb_cooltone: "FB Cooltone",
-            };
-
-            if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
-              const paperName =
-                fomaPaperNames[preset.fomaPaperType] || preset.fomaPaperType;
-              additionalInfo = ` • ${paperName}`;
-            } else if (
-              preset.paperBrand === "Ilford" &&
-              preset.ilfordPaperType
-            ) {
-              const paperName =
-                ilfordPaperNames[preset.ilfordPaperType] ||
-                preset.ilfordPaperType;
-              additionalInfo = ` • ${paperName}`;
-            }
-
-            itemDiv.innerHTML = `
-              <div>
-                <strong>${preset.name}</strong>
-                <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
-                <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand}${additionalInfo} • ${filterInfo}</div>
-              </div>
-              <div class="shelf-life-actions">
-                <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
-                <button class="btn-action delete-btn" data-context="split" data-name="${preset.name}">Delete</button>
-              </div>
-            `;
-
-            listElement.appendChild(itemDiv);
+              return `
+                <div>
+                  <strong>${preset.name}</strong>
+                  <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
+                  <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand}${additionalInfo} • ${filterInfo}</div>
+                </div>
+                <div class="shelf-life-actions">
+                  <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
+                  <button class="btn-action delete-btn" data-context="split" data-name="${preset.name}">Delete</button>
+                </div>
+              `;
+            },
           });
         }
       }
@@ -14161,8 +14049,8 @@
           this.newPaperSizeCustom = 0.052; // Changed from 0.080
 
           // NEW: Contrast control variables
-          this.currentBrand = "FOMA"; // FOMA, Ilford
-          this.currentPaper = "fomaspeed";
+          this.currentBrand = "Ilford"; // FOMA, Ilford
+          this.currentPaper = "rc_deluxe_new";
           this.currentFilter = "none";
           this.filterFactor = 1.0;
           this.customBankFactor = 1.0;
@@ -14556,8 +14444,8 @@
 
           this.applyHeightTimeBtn.addEventListener("click", initAudioContext);
 
-          // Initialize filter options on startup
-          this.updateFilterOptions();
+          // Initialize paper brand + filter options on startup
+          this.setPaperBrand(this.currentBrand);
         }
 
         /**
@@ -14587,9 +14475,9 @@
               this.fomaPaperType.value = "fomaspeed";
             }
           } else if (brand === "Ilford") {
-            this.currentPaper = "cooltone";
+            this.currentPaper = "rc_deluxe_new";
             if (this.ilfordPaperType) {
-              this.ilfordPaperType.value = "cooltone";
+              this.ilfordPaperType.value = "rc_deluxe_new";
             }
           }
 
@@ -16182,33 +16070,30 @@
 
             // Calculate color intensity based on method
             if (this.method === "cumulative") {
-              // Color based on total exposure (cumulative method)
+              // Color based on total exposure (cumulative method), reversed
               const maxTime = this.steps[this.steps.length - 1].time;
-              const intensity = Math.min(
-                100 + (step.time / maxTime) * 150,
-                250,
-              );
+              const ratio = maxTime > 0 ? step.time / maxTime : 0;
+              const intensity = Math.min(100 + (1 - ratio) * 150, 250);
               stepEl.style.backgroundColor = `rgb(${intensity}, 0, 0)`;
             } else {
-              // Color based on total exposure on paper (incremental method)
+              // Color based on total exposure on paper (incremental method), reversed
               const maxTotal = this.steps[this.steps.length - 1].totalExposure;
-              const intensity = Math.min(
-                100 + (step.totalExposure / maxTotal) * 150,
-                250,
-              );
+              const ratio = maxTotal > 0 ? step.totalExposure / maxTotal : 0;
+              const intensity = Math.min(100 + (1 - ratio) * 150, 250);
               stepEl.style.backgroundColor = `rgb(${intensity}, 0, 0)`;
             }
 
-            // Theme adjustments
+            // Use light-scheme grayscale intensity for light/day themes
             if (
               document.body.classList.contains("light-scheme") ||
               document.body.classList.contains("day-scheme")
             ) {
-              // Create bigger steps: use index-based calculation for more distinct colors
               const stepIndex = index;
               const totalSteps = this.steps.length;
-              // Use 50-250 range with bigger jumps between steps
-              const greyIntensity = 50 + stepIndex * (150 / (totalSteps - 1));
+              const divisor = Math.max(totalSteps - 1, 1);
+              // Use 50-250 range with bigger jumps between steps, reversed
+              const greyIntensity =
+                50 + (totalSteps - 1 - stepIndex) * (150 / divisor);
               stepEl.style.backgroundColor = `rgb(${greyIntensity}, ${greyIntensity}, ${greyIntensity})`;
             }
 
@@ -17336,38 +17221,20 @@
          * const success = this.saveProfile("My Profile"); // Save current settings
          */
         saveProfile(name) {
-          if (!name || name.trim() === "") {
-            alert("Please enter a profile name");
-            return false;
-          }
-
-          const profile = {
-            name: name.trim(),
-            ...this.getCurrentSettings(),
-            date: new Date().toISOString(),
-          };
-
-          // Get existing profiles
           const profiles = StorageManager.loadTestStripProfiles();
+          const trimmedName = name ? name.trim() : "";
 
-          // Check if profile already exists
-          const existingIndex = profiles.findIndex(
-            (p) => p.name === profile.name,
-          );
-          if (existingIndex >= 0) {
-            profiles[existingIndex] = profile;
-          } else {
-            profiles.push(profile);
-          }
+          const result = settingsManager.savePreset({
+            name: trimmedName,
+            dataObject: this.getCurrentSettings(),
+            collection: profiles,
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+          });
 
-          // Save to storage
-          if (StorageManager.saveTestStripProfiles(profiles)) {
-            this.updateTestStripProfileList();
-            playBeep(800, 0.3, 0.3);
-            return true;
-          }
-
-          return false;
+          return result;
         }
 
         /**
@@ -17408,17 +17275,21 @@
          * const success = this.deleteProfile("Old Profile"); // Delete profile
          */
         deleteProfile(profileName) {
-          if (confirm(`Delete test strip profile "${profileName}"?`)) {
-            const profiles = StorageManager.loadTestStripProfiles();
-            const filtered = profiles.filter((p) => p.name !== profileName);
+          const profiles = StorageManager.loadTestStripProfiles();
 
-            if (StorageManager.saveTestStripProfiles(filtered)) {
-              this.updateTestStripProfileList();
-              playBeep(400, 0.3, 0.3);
-              return true;
-            }
-          }
-          return false;
+          return settingsManager.deletePreset({
+            name: profileName,
+            collection: profiles,
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onDeleteCallback: () => {
+              if (this.getCurrentTestStripProfile() === profileName) {
+                this.setCurrentTestStripProfile(null);
+              }
+            },
+          });
         }
 
         /**
@@ -17434,16 +17305,16 @@
          * const success = this.clearAllProfiles(); // Clear all profiles
          */
         clearAllProfiles() {
-          if (
-            confirm("Clear all test strip profiles? This cannot be undone.")
-          ) {
-            if (StorageManager.saveTestStripProfiles([])) {
-              this.updateTestStripProfileList();
-              playBeep(400, 0.3, 0.3);
-              return true;
-            }
-          }
-          return false;
+          return settingsManager.clearAllPresets({
+            collection: StorageManager.loadTestStripProfiles(),
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onClearCallback: () => {
+              this.setCurrentTestStripProfile(null);
+            },
+          });
         }
 
         /**
@@ -17466,51 +17337,42 @@
 
           const profiles = StorageManager.loadTestStripProfiles();
           const currentProfile = this.getCurrentTestStripProfile();
-          listElement.innerHTML = "";
 
-          if (profiles.length === 0) {
-            listElement.innerHTML =
-              '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">No profiles saved yet</div>';
-            return;
-          }
+          settingsManager.renderPresetList({
+            listElement,
+            collection: profiles,
+            currentItem: currentProfile,
+            renderItemContent: (profile) => {
+              const methodLabel =
+                profile.method === "cumulative" ? "Cumulative" : "Incremental";
+              const autoAdvanceLabel = profile.autoAdvance ? "Auto" : "Manual";
+              const denomLabel = `1/${profile.denominator}`;
 
-          profiles.forEach((profile) => {
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `shelf-life-item ${
-              currentProfile === profile.name ? "active" : ""
-            }`;
-
-            const methodLabel =
-              profile.method === "cumulative" ? "Cumulative" : "Incremental";
-            const autoAdvanceLabel = profile.autoAdvance ? "Auto" : "Manual";
-            const denomLabel = `1/${profile.denominator}`;
-
-            itemDiv.innerHTML = `
-              <div>
-                <strong>${profile.name}</strong>
-                <div style="font-size: 0.65rem; color: var(--text-secondary);">
-                  ${profile.baseTime}s • ${
-                    profile.stepIncrement
-                  }×${denomLabel} • ${profile.numSteps} steps
+              return `
+                <div>
+                  <strong>${profile.name}</strong>
+                  <div style="font-size: 0.65rem; color: var(--text-secondary);">
+                    ${profile.baseTime}s • ${
+                      profile.stepIncrement
+                    }×${denomLabel} • ${profile.numSteps} steps
+                  </div>
+                  <div style="font-size: 0.6rem; color: var(--accent);">
+                    ${methodLabel} • ${autoAdvanceLabel}
+                  </div>
+                  <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
+                    ${new Date(profile.date).toLocaleDateString()}
+                  </div>
                 </div>
-                <div style="font-size: 0.6rem; color: var(--accent);">
-                  ${methodLabel} • ${autoAdvanceLabel}
+                <div class="shelf-life-actions">
+                  <button class="btn-action load-btn" data-context="teststrip" data-name="${
+                    profile.name
+                  }">Load</button>
+                  <button class="btn-action delete-btn" data-context="teststrip" data-name="${
+                    profile.name
+                  }">Delete</button>
                 </div>
-                <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
-                  ${new Date(profile.date).toLocaleDateString()}
-                </div>
-              </div>
-              <div class="shelf-life-actions">
-                <button class="btn-action load-btn" data-context="teststrip" data-name="${
-                  profile.name
-                }">Load</button>
-                <button class="btn-action delete-btn" data-context="teststrip" data-name="${
-                  profile.name
-                }">Delete</button>
-              </div>
-            `;
-
-            listElement.appendChild(itemDiv);
+              `;
+            },
           });
         }
       }
@@ -18480,15 +18342,15 @@
 
           // Extract the suffix for UI state tracking
           const ilfordPrefixes = {
-            ilford_cooltone: "cooltone",
-            ilford_iv_rc_portfolio: "portfolio",
             ilford_multigrade_rc_deluxe_new: "rc_deluxe_new",
             ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
+            ilford_iv_rc_portfolio: "portfolio",
+            ilford_cooltone: "cooltone",
             ilford_fb_classic: "fb_classic",
             ilford_fb_warmtone: "fb_warmtone",
             ilford_fb_cooltone: "fb_cooltone",
           };
-          this.ilfordPaperType = ilfordPrefixes[paperId] || "cooltone";
+          this.ilfordPaperType = ilfordPrefixes[paperId] || "rc_deluxe_new";
 
           // Update filter dropdowns with grades for this paper
           this.updateFilterDropdown();
