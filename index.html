@@ -153,7 +153,6 @@
       .tab-nav-container {
         position: relative;
         margin-bottom: 8px;
-        border-bottom: 1px solid var(--border);
         padding-bottom: 6px;
       }
 
@@ -606,7 +605,6 @@
       .settings-btn.primary {
         background: var(--border-light);
         border-color: var(--accent);
-        margin-top: 0.5rem;
       }
 
       .settings-btn.danger {
@@ -744,34 +742,6 @@
       }
 
       /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
-
-      /* Chart styles */
-
-      .time-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.7rem;
-      }
-
-      .time-table th,
-      .time-table td {
-        padding: 5px 3px;
-        text-align: center;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .time-table th {
-        background: var(--panel-light);
-        color: var(--text);
-        border-bottom: 1px solid var(--border);
-        white-space: nowrap;
-      }
-
-      .time-table tr:nth-child(even) {
-        background: var(--panel);
-      }
-
-      /* increment-cell can use .label-sm */
 
       /* Unified flex control groups */
       .sound-controls {
@@ -1014,7 +984,7 @@
 
       /* Container: use a single canonical set of rules for fullscreen */
       body.fullscreen-mode .container {
-        max-width: 960px;
+        max-width: 640px;
         margin: 0 auto;
         height: 100vh;
         display: flex;
@@ -1507,7 +1477,9 @@
         >
           <span class="menu-icon">☰</span>
           <span class="menu-label">Menu</span>
-          <span class="active-tab-name" id="activeTabName">CALC</span>
+          <span class="active-tab-name" id="activeTabName">
+            EXPOSURE &amp; CALCULATOR
+          </span>
         </button>
 
         <div
@@ -1518,39 +1490,36 @@
         >
           <button
             class="tab-dropdown-item"
-            data-tab="fstop-test"
-            role="menuitem"
-          >
-            TEST
-          </button>
-          <button
-            class="tab-dropdown-item"
             data-tab="light-meter"
             role="menuitem"
           >
-            METER
+            METERING
+          </button>
+          <button
+            class="tab-dropdown-item"
+            data-tab="fstop-test"
+            role="menuitem"
+          >
+            TEST STRIP
           </button>
           <button class="tab-dropdown-item" data-tab="split" role="menuitem">
-            SPLIT
+            SPLIT GRADE
           </button>
           <button
             class="tab-dropdown-item active"
             data-tab="calc"
             role="menuitem"
           >
-            CALC
+            EXPOSURE &amp; CALCULATOR
           </button>
           <button class="tab-dropdown-item" data-tab="timer" role="menuitem">
             TIMER
           </button>
-          <button class="tab-dropdown-item" data-tab="relay" role="menuitem">
-            CONTROL
-          </button>
           <button class="tab-dropdown-item" data-tab="chemical" role="menuitem">
             CHEMICAL
           </button>
-          <button class="tab-dropdown-item" data-tab="chart" role="menuitem">
-            CHART
+          <button class="tab-dropdown-item" data-tab="relay" role="menuitem">
+            CONTROLLER
           </button>
           <button class="tab-dropdown-item" data-tab="logs" role="menuitem">
             LOGS
@@ -1629,7 +1598,7 @@
               class="segmented-control"
               id="calcIncrementSeg"
               role="tablist"
-              aria-label="Calc stop increment"
+              aria-label="Exposure stop increment"
             >
               <button
                 type="button"
@@ -2296,11 +2265,9 @@
       <!-- SPLIT Tab - Split-Grade Calculator -->
       <div id="split" class="tab-content">
         <div class="incremental-timer">
-          <div class="title-md">The Ilford Way - Split-Grade</div>
-
           <div class="control">
             <div class="control-label">
-              <span>NEUTRAL TIME (Test Strip Result)</span>
+              <span>NEUTRAL TIME</span>
               <span class="value-display" id="neutralTimeValue">10.0s</span>
             </div>
             <input
@@ -2452,7 +2419,7 @@
 
           <div class="settings-btn-group">
             <button class="settings-btn primary" id="sendToCalc">
-              Send to CALC
+              Send to EXPOSURE
             </button>
           </div>
         </div>
@@ -2496,42 +2463,6 @@
             </div>
           </div>
         </section>
-      </div>
-
-      <!-- Chart Tab with Incremental Time Column -->
-      <div id="chart" class="tab-content">
-        <!-- BASE TIME slider removed per user request -->
-        <div
-          class="chart-note"
-          role="note"
-          title="This chart uses the main BASE TIME control in the CALC tab."
-          aria-label="Chart uses base time from CALC"
-          style="
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-          "
-        >
-          ⓘ Uses BASE TIME from CALC tab
-        </div>
-
-        <div style="overflow-x: auto; margin-bottom: 10px">
-          <table
-            class="time-table"
-            id="timeTable"
-            style="margin-left: -6px; margin-right: -6px"
-          >
-            <thead>
-              <tr>
-                <th>STOP</th>
-                <th>TOTAL TIME</th>
-                <th>+/- FROM BASE</th>
-                <th>INCREMENT</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
       </div>
 
       <!-- F-Stop Test Strip Generator Tab -->
@@ -2795,7 +2726,7 @@
                   aria-pressed="false"
                   style="min-width: 80px; font-size: 0.75rem"
                 >
-                  → CALC
+                  → EXPOSURE
                 </button>
                 <button
                   type="button"
@@ -2805,7 +2736,7 @@
                   aria-pressed="false"
                   style="min-width: 80px; font-size: 0.75rem"
                 >
-                  → SPLIT
+                  → SPLIT GRADE
                 </button>
               </div>
             </div>
@@ -2945,188 +2876,6 @@
 
       <!-- UPDATED: CHEMICAL MANAGEMENT TAB -->
       <div id="chemical" class="tab-content">
-        <!-- Mix Calculator -->
-        <section class="collapsible" data-id="chemical-mix">
-          <button class="collapsible-header" aria-expanded="false">
-            CHEMICAL MIX CALCULATOR
-          </button>
-          <div class="collapsible-content">
-            <div class="incremental-timer">
-              <div class="title-sm" style="text-align: center">
-                CHEMICAL MIX CALCULATOR
-              </div>
-
-              <div class="control">
-                <div class="control-label">
-                  <span>TOTAL VOLUME</span>
-                  <span class="value-display" id="totalVolumeValue"
-                    >1000ml</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="100"
-                  max="5000"
-                  step="50"
-                  value="1000"
-                  class="slider"
-                  id="totalVolumeSlider"
-                />
-              </div>
-
-              <div
-                class="title-sm"
-                style="
-                  text-align: center;
-                  font-size: 0.75rem;
-                  margin-bottom: 8px;
-                "
-              >
-                DILUTION RATIO
-              </div>
-              <div class="dilution-selector">
-                <button class="toggle-btn active" data-ratio="1+9">
-                  1+9 (1:10)
-                </button>
-                <button class="toggle-btn" data-ratio="1+14">
-                  1+14 (1:15)
-                </button>
-                <button class="toggle-btn" data-ratio="1+19">
-                  1+19 (1:20)
-                </button>
-                <button class="toggle-btn" data-ratio="1+24">
-                  1+24 (1:25)
-                </button>
-                <button class="toggle-btn" data-ratio="1+29">
-                  1+29 (1:30)
-                </button>
-                <button class="toggle-btn" data-ratio="1+39">
-                  1+39 (1:40)
-                </button>
-              </div>
-
-              <div
-                class="title-sm"
-                style="
-                  text-align: center;
-                  font-size: 0.75rem;
-                  margin-top: 10px;
-                  margin-bottom: 5px;
-                "
-              >
-                OR CUSTOM RATIO
-              </div>
-              <div class="custom-dilution">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value="1"
-                  class="settings-input"
-                  id="customStockParts"
-                  placeholder="Stock"
-                />
-                <div style="color: var(--text-secondary); align-self: center">
-                  +
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value="9"
-                  class="settings-input"
-                  id="customWaterParts"
-                  placeholder="Water"
-                />
-              </div>
-
-              <div
-                class="incremental-timer"
-                style="background: var(--panel-light); margin-bottom: 0"
-              >
-                <div
-                  class="title-sm"
-                  style="text-align: center; font-size: 0.75rem"
-                >
-                  MIXING INSTRUCTIONS
-                </div>
-                <div class="chemical-results-grid">
-                  <div class="info-box">
-                    <div class="label-sm">STOCK SOLUTION</div>
-                    <div
-                      class="value-display"
-                      id="stockVolume"
-                      style="font-size: 1.2rem"
-                    >
-                      100ml
-                    </div>
-                  </div>
-                  <div class="info-box">
-                    <div class="label-sm">WATER</div>
-                    <div
-                      class="value-display"
-                      id="waterVolume"
-                      style="font-size: 1.2rem"
-                    >
-                      900ml
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style="
-                    font-size: 0.6rem;
-                    color: --text-secondary;
-                    text-align: center;
-                    margin-top: 8px;
-                  "
-                >
-                  Add stock to water, not water to stock
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Chemical Presets Section - NEW -->
-        <section class="collapsible" data-id="chemical-presets">
-          <button class="collapsible-header" aria-expanded="false">
-            <div class="collapsible-title">CHEMICAL PRESETS</div>
-          </button>
-          <div class="collapsible-content">
-            <div class="incremental-timer" style="margin-top: 15px">
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Preset Name</div>
-                  <input
-                    type="text"
-                    class="settings-input"
-                    id="chemicalPresetName"
-                    placeholder="Enter preset name"
-                    maxlength="20"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">&nbsp;</div>
-                  <button class="settings-btn" id="saveChemicalPreset">
-                    Save Current as Preset
-                  </button>
-                </div>
-              </div>
-
-              <div class="shelf-life-list" id="chemicalPresetList">
-                <!-- Chemical presets will be listed here -->
-              </div>
-
-              <div class="settings-btn-group">
-                <button class="settings-btn danger" id="clearChemicalPresets">
-                  Clear All
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- UPDATED: Developer Capacity Tracker with Paper Area Calculations -->
         <section class="collapsible" data-id="capacity-tracker">
           <button class="collapsible-header" aria-expanded="false">
@@ -3360,6 +3109,188 @@
                 >
                   Red items expired, orange expire in 3 days
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Mix Calculator -->
+        <section class="collapsible" data-id="chemical-mix">
+          <button class="collapsible-header" aria-expanded="false">
+            CHEMICAL MIX CALCULATOR
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer">
+              <div class="title-sm" style="text-align: center">
+                CHEMICAL MIX CALCULATOR
+              </div>
+
+              <div class="control">
+                <div class="control-label">
+                  <span>TOTAL VOLUME</span>
+                  <span class="value-display" id="totalVolumeValue"
+                    >1000ml</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="100"
+                  max="5000"
+                  step="50"
+                  value="1000"
+                  class="slider"
+                  id="totalVolumeSlider"
+                />
+              </div>
+
+              <div
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-bottom: 8px;
+                "
+              >
+                DILUTION RATIO
+              </div>
+              <div class="dilution-selector">
+                <button class="toggle-btn active" data-ratio="1+9">
+                  1+9 (1:10)
+                </button>
+                <button class="toggle-btn" data-ratio="1+14">
+                  1+14 (1:15)
+                </button>
+                <button class="toggle-btn" data-ratio="1+19">
+                  1+19 (1:20)
+                </button>
+                <button class="toggle-btn" data-ratio="1+24">
+                  1+24 (1:25)
+                </button>
+                <button class="toggle-btn" data-ratio="1+29">
+                  1+29 (1:30)
+                </button>
+                <button class="toggle-btn" data-ratio="1+39">
+                  1+39 (1:40)
+                </button>
+              </div>
+
+              <div
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-top: 10px;
+                  margin-bottom: 5px;
+                "
+              >
+                OR CUSTOM RATIO
+              </div>
+              <div class="custom-dilution">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value="1"
+                  class="settings-input"
+                  id="customStockParts"
+                  placeholder="Stock"
+                />
+                <div style="color: var(--text-secondary); align-self: center">
+                  +
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value="9"
+                  class="settings-input"
+                  id="customWaterParts"
+                  placeholder="Water"
+                />
+              </div>
+
+              <div
+                class="incremental-timer"
+                style="background: var(--panel-light); margin-bottom: 0"
+              >
+                <div
+                  class="title-sm"
+                  style="text-align: center; font-size: 0.75rem"
+                >
+                  MIXING INSTRUCTIONS
+                </div>
+                <div class="chemical-results-grid">
+                  <div class="info-box">
+                    <div class="label-sm">STOCK SOLUTION</div>
+                    <div
+                      class="value-display"
+                      id="stockVolume"
+                      style="font-size: 1.2rem"
+                    >
+                      100ml
+                    </div>
+                  </div>
+                  <div class="info-box">
+                    <div class="label-sm">WATER</div>
+                    <div
+                      class="value-display"
+                      id="waterVolume"
+                      style="font-size: 1.2rem"
+                    >
+                      900ml
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    font-size: 0.6rem;
+                    color: --text-secondary;
+                    text-align: center;
+                    margin-top: 8px;
+                  "
+                >
+                  Add stock to water, not water to stock
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chemical Mix Presets Section -->
+        <section class="collapsible" data-id="chemical-presets">
+          <button class="collapsible-header" aria-expanded="false">
+            <div class="collapsible-title">CHEMICAL MIX PRESETS</div>
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer" style="margin-top: 15px">
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Preset Name</div>
+                  <input
+                    type="text"
+                    class="settings-input"
+                    id="chemicalPresetName"
+                    placeholder="Enter preset name"
+                    maxlength="20"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">&nbsp;</div>
+                  <button class="settings-btn" id="saveChemicalPreset">
+                    Save Current as Preset
+                  </button>
+                </div>
+              </div>
+
+              <div class="shelf-life-list" id="chemicalPresetList">
+                <!-- Chemical presets will be listed here -->
+              </div>
+
+              <div class="settings-btn-group">
+                <button class="settings-btn danger" id="clearChemicalPresets">
+                  Clear All
+                </button>
               </div>
             </div>
           </div>
@@ -3682,7 +3613,7 @@
                   </div>
                 </div>
               </div>
-              <div class="settings-group">
+              <div class="settings-group" style="margin-top: 20px">
                 <div class="settings-item">
                   <button class="settings-btn" id="allRelaysOn">All ON</button>
                 </div>
@@ -3791,124 +3722,6 @@
             </div>
           </div>
 
-          <div class="settings-section">
-            <div class="title-md">Controller Manager</div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Server IP (auto-detected)</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="relayServerIP"
-                  placeholder="Auto-detected from page URL"
-                  value=""
-                  readonly
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Server Port</div>
-                <input
-                  type="number"
-                  class="settings-input"
-                  id="relayServerPort"
-                  value="80"
-                  readonly
-                />
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Test Connection</div>
-                <button class="settings-btn" id="testRelayConnection">
-                  Test
-                </button>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Status</div>
-                <div
-                  id="relayStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  Not connected
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- WiFi Configuration Section (Pico 2 W) -->
-          <div class="settings-section">
-            <div class="title-md">WiFi Configuration</div>
-            <div
-              style="
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-                margin-bottom: 8px;
-              "
-            >
-              Connect to a WiFi router for mDNS access (darkroom.local)
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">WiFi SSID</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="wifiSSID"
-                  placeholder="Your WiFi network name"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">WiFi Password</div>
-                <input
-                  type="password"
-                  class="settings-input"
-                  id="wifiPassword"
-                  placeholder="WiFi password"
-                />
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn primary" id="connectWifi">
-                  Connect to WiFi
-                </button>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">WiFi Status</div>
-                <div
-                  id="wifiStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  AP Mode (192.168.4.1)
-                </div>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button
-                  class="settings-btn"
-                  id="forceHotspotMode"
-                  style="background: var(--accent-color)"
-                >
-                  Force Hotspot Mode
-                </button>
-              </div>
-              <div class="settings-item">
-                <button class="settings-btn danger" id="clearWifiCredentials">
-                  Clear WiFi Credentials
-                </button>
-              </div>
-            </div>
-            <div
-              style="
-                font-size: 0.65rem;
-                color: var(--text-secondary);
-                margin-top: 8px;
-              "
-            >
-              Note: After connecting to WiFi, access via darkroom.local
-            </div>
-          </div>
         </div>
       </div>
 
@@ -3916,7 +3729,7 @@
       <div id="settings" class="tab-content">
         <div class="incremental-timer">
           <!-- Fullscreen Section -->
-          <div class="settings-section">
+          <div class="settings-item">
             <div class="title-md">Display</div>
             <button
               class="settings-btn primary"
@@ -3939,55 +3752,6 @@
             </div>
           </div>
 
-          <!-- Updates Section -->
-          <div class="settings-section">
-            <div class="title-md">Updates</div>
-            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">
-              Check for new versions from GitHub and update automatically
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Current Version</div>
-                <div
-                  id="currentAppVersion"
-                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
-                >
-                  Loading...
-                </div>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Latest Version</div>
-                <div
-                  id="latestAppVersion"
-                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
-                >
-                  Unknown
-                </div>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn primary" id="checkUpdatesBtn">
-                  Check for Updates
-                </button>
-              </div>
-              <div class="settings-item">
-                <div id="updateStatus" style="color: var(--text-secondary); font-size: 0.8rem; min-height: 20px;">
-                  Ready
-                </div>
-              </div>
-            </div>
-            <div id="updateProgress" style="display: none; margin-top: 8px;">
-              <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px;">Progress:</div>
-              <div style="width: 100%; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden;">
-                <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
-              </div>
-              <div id="updateProgressText" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">0%</div>
-            </div>
-            <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 8px;">
-              Note: Pico will restart automatically after a successful update
-            </div>
-          </div>
 
           <!-- GLOBAL SETTINGS Collapsible Section -->
           <section class="collapsible" data-id="global-settings">
@@ -4066,56 +3830,81 @@
             </div>
           </section>
 
-          <!-- CALC SETTINGS Collapsible Section -->
-          <section class="collapsible" data-id="calc-settings">
+          <!-- METERING SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="meter-settings">
             <button class="collapsible-header" aria-expanded="false">
-              CALC SETTINGS
+              METERING SETTINGS
             </button>
             <div class="collapsible-content">
+              <div class="title-md">Virtual Proof Stability</div>
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Base Time Min (s)</div>
+                  <div class="settings-label">Stability Detection</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityEnabled" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Beep On Stable</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityBeep" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Tolerance (%)</div>
                   <input
                     type="number"
-                    id="baseTimeMin"
+                    id="proofStabilityTolerance"
                     class="settings-input"
-                    min="0.1"
+                    min="0.5"
                     max="10"
                     step="0.1"
-                    value="0.4"
+                    value="2.5"
                   />
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Base Time Max (s)</div>
+                  <div class="settings-label">Min Stable Reads</div>
                   <input
                     type="number"
-                    id="baseTimeMax"
+                    id="proofStabilityMinStable"
                     class="settings-input"
-                    min="10"
-                    max="300"
+                    min="1"
+                    max="5"
                     step="1"
-                    value="50"
+                    value="2"
                   />
                 </div>
               </div>
+
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Calc 3s Beep</div>
-                  <label class="switch">
-                    <input
-                      type="checkbox"
-                      id="settingCalcWarningBeep"
-                      checked
-                    />
-                    <span class="slider-switch"></span>
-                  </label>
+                  <div class="settings-label">Max Wait (ms)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMaxWait"
+                    class="settings-input"
+                    min="300"
+                    max="3000"
+                    step="50"
+                    value="900"
+                  />
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Calc End Beep</div>
-                  <label class="switch">
-                    <input type="checkbox" id="settingCalcEndBeep" checked />
-                    <span class="slider-switch"></span>
-                  </label>
+                  <div class="settings-label">Min Delta (lux)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinDelta"
+                    class="settings-input"
+                    min="0.05"
+                    max="5"
+                    step="0.05"
+                    value="0.2"
+                  />
                 </div>
               </div>
             </div>
@@ -4172,6 +3961,61 @@
                     step="1"
                     value="50"
                   />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- EXPOSURE SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="calc-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              EXPOSURE SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Min (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMin"
+                    class="settings-input"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    value="0.4"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Max (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMax"
+                    class="settings-input"
+                    min="10"
+                    max="300"
+                    step="1"
+                    value="50"
+                  />
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Exposure 3s Beep</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingCalcWarningBeep"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Exposure End Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingCalcEndBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -4249,9 +4093,6 @@
                     <span class="slider-switch"></span>
                   </label>
                 </div>
-              </div>
-
-              <div class="settings-group">
                 <div class="settings-item">
                   <div class="settings-label">Timer End Beep</div>
                   <label class="switch">
@@ -4269,15 +4110,33 @@
               CONTROLLER SETTINGS
             </button>
             <div class="collapsible-content">
+              
+<div class="settings-section">
+              <div class="title-md" style="margin-top: 12px">
+                Auto - Manual Enlarger Control
+              </div>
               <div class="settings-group">
                 <div class="settings-item">
-                  <div
-                    id="safelightAutoOffStatus"
-                    style="color: var(--text-secondary); font-size: 0.8rem"
-                  >
-                    Loading...
-                  </div>
+                  <div class="settings-label">Auto-trigger Enlarger</div>
+                  <label class="switch">
+                    <input type="checkbox" id="autoTriggerRelay" checked />
+                    <span class="slider-switch"></span>
+                  </label>
                 </div>
+              </div>
+              <div
+                style="
+                  font-size: 0.7rem;
+                  color: var(--text-secondary);
+                  margin-top: 10px;
+                "
+              >
+                Note: When enabled, the timer relay will automatically
+                trigger during countdown timers in EXPOSURE and TEST STRIP tabs.
+              </div>
+
+              <div class="title-md" style="margin-top: 12px">
+                Auto - Manual Safelight Control
               </div>
 
               <div class="settings-group">
@@ -4301,23 +4160,53 @@
                   </div>
                 </div>
               </div>
-
-              <div class="title-md" style="margin-top: 12px">
-                Auto - Manual Enlarger Control
               </div>
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Auto-trigger Enlarger</div>
-                  <label class="switch">
-                    <input type="checkbox" id="autoTriggerRelay" checked />
-                    <span class="slider-switch"></span>
-                  </label>
+
+              <div class="settings-section" style="margin-top: 16px;">
+                <div class="title-md">Controller Manager</div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Server IP (auto-detected)</div>
+                    <input
+                      type="text"
+                      class="settings-input"
+                      id="relayServerIP"
+                      placeholder="Auto-detected from page URL"
+                      value=""
+                      readonly
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Server Port</div>
+                    <input
+                      type="number"
+                      class="settings-input"
+                      id="relayServerPort"
+                      value="80"
+                      readonly
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <div class="settings-group">
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Test Connection</div>
+                    <button class="settings-btn" id="testRelayConnection">
+                      Test
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Status</div>
+                    <div
+                      id="relayStatus"
+                      style="color: var(--text-secondary); font-size: 0.8rem"
+                    >
+                      Not connected
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Test Timer Relay</div>
+                  <div class="title-md">Test Timer Relay</div>
                   <div style="display: flex; gap: 5px">
                     <input
                       type="number"
@@ -4335,122 +4224,145 @@
                   </div>
                 </div>
               </div>
+              </div>
 
-              <div
-                style="
-                  font-size: 0.7rem;
-                  color: var(--text-secondary);
-                  margin-top: 10px;
-                "
-              >
-                Note: When enabled, the timer relay (GP14) will automatically
-                trigger during countdown timers in CALC and F-STOP TEST tabs.
-                Time is sent as a single request with delay parameter for
-                maximum accuracy.
+              <!-- WiFi Configuration Section (Pico 2 W) -->
+              <div class="settings-section">
+                <div class="title-md">WiFi Configuration</div>
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    color: var(--text-secondary);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Connect to a WiFi router for mDNS access (darkroom.local)
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi SSID</div>
+                    <input
+                      type="text"
+                      class="settings-input"
+                      id="wifiSSID"
+                      placeholder="Your WiFi network name"
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi Password</div>
+                    <input
+                      type="password"
+                      class="settings-input"
+                      id="wifiPassword"
+                      placeholder="WiFi password"
+                    />
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button class="settings-btn primary" id="connectWifi">
+                      Connect to WiFi
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi Status</div>
+                    <div
+                      id="wifiStatus"
+                      style="color: var(--text-secondary); font-size: 0.8rem"
+                    >
+                      AP Mode (192.168.4.1)
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button
+                      class="settings-btn"
+                      id="forceHotspotMode"
+                    >
+                      Force Hotspot Mode
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <button class="settings-btn" id="clearWifiCredentials">
+                      Clear WiFi Credentials
+                    </button>
+                  </div>
+                </div>
+                <div
+                  style="
+                    font-size: 0.65rem;
+                    color: var(--text-secondary);
+                    margin-top: 8px;
+                  "
+                >
+                  Note: After connecting to WiFi, access via darkroom.local
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <div class="title-md">Updates</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">
+                  Check for new versions from GitHub and update automatically
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Current Version</div>
+                    <div
+                      id="currentAppVersion"
+                      style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                    >
+                      Loading...
+                    </div>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Latest Version</div>
+                    <div
+                      id="latestAppVersion"
+                      style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                    >
+                      Unknown
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button class="settings-btn primary" id="checkUpdatesBtn">
+                      Check for Updates
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div id="updateStatus" style="color: var(--text-secondary); font-size: 0.8rem; min-height: 20px;">
+                      Ready
+                    </div>
+                  </div>
+                </div>
+                <div id="updateProgress" style="display: none; margin-top: 8px;">
+                  <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px;">Progress:</div>
+                  <div style="width: 100%; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden;">
+                    <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
+                  </div>
+                  <div id="updateProgressText" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">0%</div>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 8px;">
+                  Note: Pico will restart automatically after a successful update
+                </div>
               </div>
             </div>
           </section>
 
-          <!-- METER SETTINGS Collapsible Section -->
-          <section class="collapsible" data-id="meter-settings">
-            <button class="collapsible-header" aria-expanded="false">
-              METER SETTINGS
-            </button>
-            <div class="collapsible-content">
-              <div class="title-md">Virtual Proof Stability</div>
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Stability Detection</div>
-                  <label class="switch">
-                    <input type="checkbox" id="proofStabilityEnabled" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Beep On Stable</div>
-                  <label class="switch">
-                    <input type="checkbox" id="proofStabilityBeep" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Tolerance (%)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityTolerance"
-                    class="settings-input"
-                    min="0.5"
-                    max="10"
-                    step="0.1"
-                    value="2.5"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Min Stable Reads</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMinStable"
-                    class="settings-input"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value="2"
-                  />
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Max Wait (ms)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMaxWait"
-                    class="settings-input"
-                    min="300"
-                    max="3000"
-                    step="50"
-                    value="900"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Min Delta (lux)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMinDelta"
-                    class="settings-input"
-                    min="0.05"
-                    max="5"
-                    step="0.05"
-                    value="0.2"
-                  />
-                </div>
-              </div>
-
-              <div
-                style="
-                  font-size: 0.7rem;
-                  color: var(--text-secondary);
-                  margin-top: 10px;
-                "
-              >
-                Capture starts only after readings stabilize within tolerance.
-              </div>
+          <div class="settings-item" style="margin-top: 10px;">
+            <div class="settings-section">
+              <button class="settings-btn primary" id="saveGlobalSettings">
+               Save All Settings
+              </button>
+              <div id="allProfilesFeedback" class="json-feedback"></div>
             </div>
-          </section>
-
-          <div class="settings-section">
-            <button class="settings-btn primary" id="saveGlobalSettings">
-              Save All Settings
-            </button>
-            <div id="allProfilesFeedback" class="json-feedback"></div>
           </div>
 
-          <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
+          <!-- UPDATED: Profile & Settings Sharing Section -->
           <div class="settings-section">
-            <div class="title-md">Profile & Chemical Presets Sharing</div>
+            <div class="title-md">Profile & Settings Sharing</div>
             <div class="settings-btn-group">
               <button class="settings-btn" id="exportAllProfiles">
                 Export All Data
@@ -4728,7 +4640,7 @@
                 id="sendExposureToCalc"
                 disabled
               >
-                → Send to CALC Timer
+                → Send to EXPOSURE
               </button>
             </div>
           </div>
@@ -4900,7 +4812,7 @@
                 Analyze Contrast
               </button>
               <button class="settings-btn" id="sendContrastToCalc" disabled>
-                Send Suggested Time to CALC
+                Send Suggested Time to EXPOSURE
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -5097,7 +5009,7 @@
                 id="sendSplitBothToCalc"
                 disabled
               >
-                → Send Both to CALC
+                → Send Both to EXPOSURE
               </button>
             </div>
 
@@ -5128,7 +5040,7 @@
               <div class="label-sm" style="text-align: center; margin-top: 5px">
                 1. Measure highlight and shadow areas<br />
                 2. Click "Calculate Split-Grade"<br />
-                3. Send times to CALC tab for exposure
+                3. Send times to EXPOSURE tab for exposure
               </div>
             </div>
 
@@ -5447,7 +5359,7 @@
       <!-- NEW: LOGS Tab for Exposure Session Logging -->
       <div id="logs" class="tab-content">
         <div class="incremental-timer">
-          <div class="title-md">EXPOSURE SESSION LOGS</div>
+          <div class="title-md">LOGS</div>
           <div class="label-sm" style="margin-bottom: 8px">
             Automatically tracks your printing sessions. Temporary sessions (max
             6) are auto-saved. Save permanently to keep sessions forever.
@@ -6720,14 +6632,13 @@
        * @function switchTab
        * @description Switches the active tab and updates related UI components.
        * Removes active class from all dropdown items, adds it to selected item, and triggers
-       * tab-specific updates (chart, test strip, chemical, timer, relay).
+      * tab-specific updates (test strip, chemical, timer, relay).
        * Also updates the active tab name display and closes the dropdown.
        * @param {string} tabId - ID of the tab to activate
        * @returns {void}
        * @fires Element.classList.remove - Removes active class from all dropdown items
        * @fires Element.classList.add - Adds active class to selected dropdown item
        * @fires refreshCollapsibleHeights - Updates collapsible sections
-       * @fires updateChart - Updates chart tab
        * @fires fstopTestGenerator.updateDisplay - Updates test strip display
        * @fires chemicalManager.updateDisplay - Updates chemical display
        * @fires settingsManager.updateTimerProfileListUI - Updates timer profiles
@@ -6760,9 +6671,7 @@
         closeMenu();
 
         // Update tab-specific content
-        if (tabId === "chart") {
-          updateChart();
-        } else if (tabId === "fstop-test") {
+        if (tabId === "fstop-test") {
           if (window.fstopTestGenerator) {
             window.fstopTestGenerator.updateDisplay();
             window.fstopTestGenerator.updateInstructions();
@@ -8376,9 +8285,6 @@
             } catch (e) {
               /* ignore if not yet defined */
             }
-            try {
-              updateChart();
-            } catch (e) {}
           }).call(this);
 
           if (window.lightMeterManager) {
@@ -8768,6 +8674,7 @@
             splitGradePresets: window.splitGradeCalculator
               ? window.splitGradeCalculator.splitPresets
               : [],
+            testStripProfiles: StorageManager.loadTestStripProfiles(),
             lightMeterCalibrations: window.lightMeterManager
               ? window.lightMeterManager.calibrations
               : JSON.parse(
@@ -9061,6 +8968,90 @@
                 );
                 window.splitGradeCalculator.updatePresetList();
                 importedCount += validPresets.length;
+              }
+            }
+
+            // Import test strip profiles
+            if (data.testStripProfiles && Array.isArray(data.testStripProfiles)) {
+              const validTestStripProfiles = data.testStripProfiles
+                .filter((profile) => {
+                  return (
+                    profile &&
+                    typeof profile.name === "string" &&
+                    profile.name.trim() !== "" &&
+                    Number.isFinite(profile.baseTime) &&
+                    Number.isFinite(profile.stepIncrement) &&
+                    Number.isFinite(profile.denominator) &&
+                    Number.isFinite(profile.numSteps) &&
+                    typeof profile.method === "string"
+                  );
+                })
+                .map((profile) => ({
+                  ...profile,
+                  method:
+                    profile.method === "incremental"
+                      ? "incremental"
+                      : "cumulative",
+                  autoAdvance: !!profile.autoAdvance,
+                  autoAdvanceDelay: Number.isFinite(profile.autoAdvanceDelay)
+                    ? profile.autoAdvanceDelay
+                    : DEFAULT_SETTINGS.autoAdvanceDelay,
+                }));
+
+              if (validTestStripProfiles.length > 0) {
+                const existingProfiles = StorageManager.loadTestStripProfiles();
+                const existingNames = existingProfiles.map((p) => p.name);
+                const newNames = validTestStripProfiles.map((p) => p.name);
+                const duplicates = newNames.filter((name) =>
+                  existingNames.includes(name),
+                );
+
+                let testStripMergeStrategy = "skip";
+                if (duplicates.length > 0) {
+                  testStripMergeStrategy =
+                    prompt(
+                      `Found ${
+                        duplicates.length
+                      } duplicate test strip profile(s): ${duplicates.join(
+                        ", ",
+                      )}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+
+                  if (![
+                    "overwrite",
+                    "skip",
+                  ].includes(testStripMergeStrategy)) {
+                    testStripMergeStrategy = "skip";
+                  }
+                }
+
+                validTestStripProfiles.forEach((newProfile) => {
+                  const existingIndex = existingProfiles.findIndex(
+                    (p) => p.name === newProfile.name,
+                  );
+
+                  if (existingIndex >= 0) {
+                    if (testStripMergeStrategy === "overwrite") {
+                      existingProfiles[existingIndex] = {
+                        ...newProfile,
+                        date: newProfile.date || new Date().toISOString(),
+                      };
+                    }
+                  } else {
+                    existingProfiles.push({
+                      ...newProfile,
+                      date: newProfile.date || new Date().toISOString(),
+                    });
+                  }
+                });
+
+                StorageManager.saveTestStripProfiles(existingProfiles);
+                if (window.testStripGenerator) {
+                  window.testStripGenerator.updateTestStripProfileList();
+                }
+                importedCount += validTestStripProfiles.length;
               }
             }
 
@@ -9714,7 +9705,7 @@
                   <div>
                     <strong>${session.name}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
                   </div>
                   <div class="shelf-life-actions">
                     <button class="btn-action" onclick="exposureLogManager.viewSession('${
@@ -9759,7 +9750,7 @@
                   <div>
                     <strong>${session.name}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
                     ${
                       session.notes
                         ? `<div style="font-size: 0.65rem; color: var(--text); margin-top: 2px;">${session.notes}</div>`
@@ -9822,20 +9813,32 @@
           const session = sessions.find((s) => s.id === sessionId);
           if (!session) return;
 
+          const sourceLabels = {
+            test: "Test Strip",
+            split: "Split Grade",
+            calc: "Exposure",
+            manual: "Session",
+          };
+          const sourceLabel = sourceLabels[session.source] || session.source;
+
           let details = `Session: ${session.name}\n`;
           details += `Created: ${new Date(session.created).toLocaleString()}\n`;
-          details += `Source: ${session.source}\n\n`;
+          details += `Source: ${sourceLabel}\n\n`;
 
           if (session.phases.test) {
-            details += `TEST PHASE:\n`;
+            const transferLabel =
+              session.phases.test.transferDestination === "split"
+                ? "Split Grade"
+                : "Exposure";
+            details += `TEST STRIP PHASE:\n`;
             details += `  Base Time: ${session.phases.test.baseTime}s\n`;
             details += `  Method: ${session.phases.test.method}\n`;
             details += `  Selected: ${session.phases.test.selectedStep}s (${session.phases.test.selectedStop} stops)\n`;
-            details += `  Transfer: ${session.phases.test.transferDestination}\n\n`;
+            details += `  Transfer: ${transferLabel}\n\n`;
           }
 
           if (session.phases.split) {
-            details += `SPLIT PHASE:\n`;
+            details += `SPLIT GRADE PHASE:\n`;
             details += `  Neutral: ${session.phases.split.neutralTime}s\n`;
             details += `  Paper: ${session.phases.split.paperBrand}\n`;
             details += `  Soft Filter: ${session.phases.split.softFilter} (${session.phases.split.filterBrand})\n`;
@@ -9846,7 +9849,7 @@
           }
 
           if (session.phases.calc && session.phases.calc.length > 0) {
-            details += `CALC PHASE:\n`;
+            details += `EXPOSURE PHASE:\n`;
             session.phases.calc.forEach((calc, i) => {
               // Format the stop adjustment for display
               const stopDisplay = formatStop(calc.stopAdjustment);
@@ -9857,7 +9860,7 @@
               if (calc.notes) details += ` - ${calc.notes}`;
               details += `\n`;
             });
-            details += `  CALC Total: ${this.calculateCalcTotal(session)}s\n\n`;
+            details += `  EXPOSURE Total: ${this.calculateCalcTotal(session)}s\n\n`;
           }
 
           if (session.phases.timer) {
@@ -11886,9 +11889,6 @@
             this.safelightAutoOff =
               settingsManager.settings.safelightAutoOff !== false;
           }
-          // Update safelight auto-off status display
-          this.updateSafelightAutoOffStatus();
-
           // Add event listener for the toggle in settings
           document
             .getElementById("safelightAutoOff")
@@ -11896,7 +11896,6 @@
               this.safelightAutoOff =
                 document.getElementById("safelightAutoOff").checked;
               this.saveSettings();
-              this.updateSafelightAutoOffStatus();
             });
         }
 
@@ -12148,47 +12147,6 @@
             }
           }
         }
-
-        /**
-         * @method updateSafelightAutoOffStatus
-         * @description Updates the visual display of safelight auto-off status in the UI.
-         * Changes text content and color based on current setting and active theme.
-         * @returns {void}
-         * @fires document.getElementById - Updates "safelightAutoOffStatus" element
-         * @theme-aware - Adapts colors for dark, light, and day schemes
-         * @example
-         * relayManager.updateSafelightAutoOffStatus(); // Updates UI display
-         */
-        updateSafelightAutoOffStatus() {
-          const statusElement = document.getElementById(
-            "safelightAutoOffStatus",
-          );
-          if (!statusElement) return;
-
-          if (this.safelightAutoOff) {
-            statusElement.textContent = "ENABLED";
-            statusElement.style.color = "#f00";
-
-            // Theme adjustments
-            if (document.body.classList.contains("light-scheme")) {
-              statusElement.style.color = "#0066cc";
-            } else if (document.body.classList.contains("day-scheme")) {
-              statusElement.style.color = "#ffcc00";
-            }
-          } else {
-            statusElement.textContent = "DISABLED";
-            statusElement.style.color = "#900";
-
-            // Theme adjustments
-            if (document.body.classList.contains("light-scheme")) {
-              statusElement.style.color = "#666";
-            } else if (document.body.classList.contains("day-scheme")) {
-              statusElement.style.color = "#ccc";
-            }
-          }
-        }
-
-        // initRelayToggleButtons removed - now using event delegation
 
         /**
          * @method saveSettings
@@ -13238,7 +13196,6 @@
       // Calculator functions
       const baseTimeSlider = document.getElementById("baseTimeSlider");
       const stopSlider = document.getElementById("stopSlider");
-      const chartBaseSlider = document.getElementById("chartBaseSlider");
 
       /**
        * @function formatStop
@@ -13462,13 +13419,12 @@
         /**
          * @method render
          * @description Unified render method that updates all calculator UI elements.
-         * Syncs state to appState, then calls render functions for display, details, timer status, and chart.
+         * Syncs state to appState, then calls render functions for display, details, and timer status.
          * @returns {void}
          * @fires syncToState - Updates central state before rendering
          * @fires renderCalculatorDisplay - Updates main display
          * @fires renderCalculatorExposureDetails - Updates exposure details
          * @fires renderCalculatorTimerStatus - Updates timer status
-         * @fires updateChart - Updates f-stop chart
          * @example
          * this.render(); // Update all UI elements
          */
@@ -13477,7 +13433,6 @@
           renderCalculatorDisplay();
           renderCalculatorExposureDetails();
           renderCalculatorTimerStatus();
-          updateChart();
         }
 
         /**
@@ -15321,7 +15276,6 @@
           window.fstopTestGenerator.updateDisplay();
         }
         updateAllRulers();
-        updateChart();
       }
 
       // Helper: render/refresh rulers and denominator handling for stops
@@ -17042,7 +16996,7 @@
 
           // Visual feedback via settings manager if available
           if (settingsManager && settingsManager.showAllProfilesFeedback) {
-            const label = destination === "calc" ? "CALC" : "SPLIT";
+            const label = destination === "calc" ? "EXPOSURE" : "SPLIT GRADE";
             settingsManager.showAllProfilesFeedback(
               `Transfer destination: ${label}`,
               "info",
@@ -17374,80 +17328,6 @@
               `;
             },
           });
-        }
-      }
-
-      /**
-       * @function updateChart
-       * @description Updates the f-stop calculation table with current base time and stop settings.
-       * Generates a table showing total time, increment from base, and step increments for stops -6 to +6.
-       * Highlights the currently selected stop row.
-       * @returns {void}
-       * @fires chartBaseSlider.value - Reads chart base time (if available)
-       * @fires Element.getElementById - Gets base time slider and table body
-       * @fires window.incrementalTimer - Reads calculator base time
-       * @fires settingsManager.settings - Reads settings base time
-       * @fires calculateTime - Calculates time for each stop
-       * @fires formatStop - Formats stop values
-       * @fires Element.innerHTML - Clears and rebuilds table
-       * @fires Element.appendChild - Adds rows to table
-       * @fires Element.style - Applies highlighting to current stop row
-       * @example
-       * updateChart(); // Update f-stop calculation table
-       */
-      function updateChart() {
-        const baseTime = (function () {
-          // Prefer chart slider if present, otherwise fall back to the main base time slider
-          if (typeof chartBaseSlider !== "undefined" && chartBaseSlider)
-            return parseFloat(chartBaseSlider.value);
-          const bt = document.getElementById("baseTimeSlider");
-          if (bt) return parseFloat(bt.value);
-          if (window.incrementalTimer)
-            return parseFloat(window.incrementalTimer.baseTime) || 10;
-          if (settingsManager)
-            return parseFloat(settingsManager.settings.baseTime) || 10;
-          return 10;
-        })();
-        const chartBaseEl = document.getElementById("chartBaseValue");
-        if (chartBaseEl) chartBaseEl.textContent = `${baseTime.toFixed(1)}s`;
-
-        const tableBody = document.getElementById("tableBody");
-        const currentStop = parseInt(stopSlider.value);
-
-        tableBody.innerHTML = "";
-
-        let previousTotalTime = null;
-
-        for (let stop = -6; stop <= 6; stop++) {
-          const totalTime = calculateTime(baseTime, stop);
-          const fromBaseTime = totalTime - baseTime;
-
-          let increment = 0;
-          if (previousTotalTime !== null) {
-            increment = totalTime - previousTotalTime;
-          }
-          previousTotalTime = totalTime;
-
-          const stopLabel = formatStop(stop);
-          const row = document.createElement("tr");
-
-          if (stop === currentStop) {
-            row.style.background = "var(--panel-light)";
-            row.style.fontWeight = "bold";
-          }
-
-          row.innerHTML = `
-                <td>${stopLabel}</td>
-                <td><strong>${totalTime.toFixed(2)}</strong></td>
-                <td>${fromBaseTime >= 0 ? "+" : ""}${fromBaseTime.toFixed(
-                  2,
-                )}</td>
-                <td class="increment-cell">${
-                  increment >= 0 ? "+" : ""
-                }${increment.toFixed(2)}</td>
-            `;
-
-          tableBody.appendChild(row);
         }
       }
 
@@ -20449,7 +20329,10 @@
           playBeep(800, 0.3, 0.3);
 
           // Show feedback
-          this.showFeedback(`${source}: ${time.toFixed(2)}s → CALC`, "success");
+          this.showFeedback(
+            `${source}: ${time.toFixed(2)}s → EXPOSURE`,
+            "success",
+          );
 
           // Log to exposure log manager
           if (window.exposureLogManager) {
@@ -21332,9 +21215,6 @@
               try {
                 updateAllRulers();
               } catch (e) {}
-              try {
-                updateChart();
-              } catch (e) {}
             }
           }
         });
@@ -21443,8 +21323,6 @@
             }
           });
 
-        // Initial chart update
-        updateChart();
       });
     </script>
   </body>
