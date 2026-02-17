@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Darkroom Timer (Pico 2 W)</title>
+    <title>Darkroom Timer</title>
     <style>
       /* ===== CONSOLIDATED STYLES FOR REDUCED REDUNDANCY ===== */
       /* The following similar classes have been consolidated:
@@ -5517,6 +5517,104 @@
       let timerManager;
       let audioService = null; // Centralized audio service
 
+      class ApiClient {
+        constructor() {
+          this.defaultTimeoutMs = 8000;
+        }
+
+        resolveBaseUrl(preferRelay = false) {
+          if (preferRelay && window.relayManager?.serverIP) {
+            const relayPort = window.relayManager.serverPort || 80;
+            return `http://${window.relayManager.serverIP}:${relayPort}`;
+          }
+
+          if (window.location.protocol.startsWith("http")) {
+            return `${window.location.protocol}//${window.location.host}`;
+          }
+
+          const fallbackHost = window.location.hostname || "192.168.4.1";
+          const fallbackPort = parseInt(window.location.port, 10) || 80;
+          return `http://${fallbackHost}:${fallbackPort}`;
+        }
+
+        buildUrl(path, { params, preferRelay = false, baseUrl } = {}) {
+          const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+          const resolvedBase = baseUrl || this.resolveBaseUrl(preferRelay);
+          const url = new URL(normalizedPath, resolvedBase);
+
+          if (params && typeof params === "object") {
+            Object.entries(params).forEach(([key, value]) => {
+              if (value !== undefined && value !== null) {
+                url.searchParams.set(key, String(value));
+              }
+            });
+          }
+
+          return url.toString();
+        }
+
+        async request(
+          path,
+          {
+            method = "GET",
+            params,
+            headers = {},
+            parse = "json",
+            timeoutMs = this.defaultTimeoutMs,
+            preferRelay = false,
+            baseUrl,
+            ...fetchOptions
+          } = {},
+        ) {
+          const url = this.buildUrl(path, { params, preferRelay, baseUrl });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+          try {
+            const response = await fetch(url, {
+              method,
+              headers,
+              signal: controller.signal,
+              ...fetchOptions,
+            });
+
+            if (!response.ok) {
+              const error = new Error(`HTTP ${response.status}`);
+              error.status = response.status;
+              error.url = url;
+              throw error;
+            }
+
+            let data = null;
+            if (parse === "json") {
+              data = await response.json();
+            } else if (parse === "text") {
+              data = await response.text();
+            }
+
+            return { response, data, url };
+          } catch (error) {
+            if (error.name === "AbortError") {
+              throw new Error(`Request timeout after ${timeoutMs}ms`);
+            }
+            throw error;
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        }
+
+        async getJSON(path, options = {}) {
+          const { data } = await this.request(path, {
+            ...options,
+            method: "GET",
+            parse: "json",
+          });
+          return data;
+        }
+      }
+
+      const apiClient = new ApiClient();
+
       // ===== AUDIO SERVICE CLASS =====
       /**
        * AudioService - Manages Web Audio API for sound feedback
@@ -5803,7 +5901,6 @@
           this.pollTask = null;
           this.dataBuffer = []; // Circular buffer (max 60 points)
           this.maxDataPoints = 60; // 15 minutes at 15sec intervals
-          this.lastUpdateTime = 0;
           this.enabled = false;
 
           // Storage keys
@@ -5816,6 +5913,17 @@
 
           // Initialize UI elements
           this.initUI();
+        }
+
+        getServerBaseUrl() {
+          if (window.relayManager?.serverIP) {
+            const port = window.relayManager.serverPort || 80;
+            return `http://${window.relayManager.serverIP}:${port}`;
+          }
+
+          const host = window.location.hostname || this.serverIP || "192.168.4.1";
+          const port = parseInt(window.location.port, 10) || 80;
+          return `http://${host}:${port}`;
         }
 
         initUI() {
@@ -5863,10 +5971,10 @@
         async syncAndStartPolling() {
           // Sync enable state with backend on startup
           try {
-            const response = await fetch(
-              `http://${this.serverIP}/temperature-enable?enabled=true`,
-            );
-            const data = await response.json();
+            const data = await apiClient.getJSON("/temperature-enable", {
+              params: { enabled: "true" },
+              preferRelay: true,
+            });
 
             if (data.status === "success") {
               this.startPolling();
@@ -5920,10 +6028,10 @@
         async setEnabled(enabled) {
           // Send enable/disable command to backend first
           try {
-            const response = await fetch(
-              `http://${this.serverIP}/temperature-enable?enabled=${enabled}`,
-            );
-            const data = await response.json();
+            const data = await apiClient.getJSON("/temperature-enable", {
+              params: { enabled: enabled ? "true" : "false" },
+              preferRelay: true,
+            });
 
             if (data.status !== "success") {
               console.error("Failed to set temperature enable:", data.error);
@@ -5932,8 +6040,9 @@
                 "temperatureControlToggle",
               );
               if (toggle) toggle.checked = this.enabled;
-              alert(
-                `Error: ${data.error || "Failed to enable temperature control"}`,
+              notifyUser(
+                data.error || "Failed to enable temperature control",
+                "error",
               );
               return;
             }
@@ -5942,7 +6051,7 @@
             // Revert toggle state on failure
             const toggle = document.getElementById("temperatureControlToggle");
             if (toggle) toggle.checked = this.enabled;
-            alert("Failed to connect to server");
+            notifyUser("Failed to connect to server", "error");
             return;
           }
 
@@ -5982,35 +6091,40 @@
             const target = parseFloat(input.value);
 
             if (isNaN(target) || target < 15 || target > 50) {
-              alert("Temperature must be between 15°C and 50°C");
+              notifyUser("Temperature must be between 15°C and 50°C", "error");
               input.value = this.targetTemperature.toFixed(1);
               return;
             }
 
             // Send to server
-            const response = await fetch(
-              `http://${this.serverIP}/temperature-control?target=${target}`,
-            );
-            const data = await response.json();
+            const data = await apiClient.getJSON("/temperature-control", {
+              params: { target },
+              preferRelay: true,
+            });
 
             if (data.status === "success") {
               this.targetTemperature = target;
               this.saveTargetTemperature(target);
+              notifyUser(`Target temperature set to ${target}°C`, "success");
               console.log(`✓ Target temperature set to ${target}°C`);
             } else {
-              alert(`Error: ${data.error || "Failed to set temperature"}`);
+              notifyUser(data.error || "Failed to set temperature", "error");
               input.value = this.targetTemperature.toFixed(1);
             }
           } catch (e) {
             console.error("Error setting temperature:", e);
-            alert("Failed to set temperature - server unreachable?");
+            notifyUser(
+              `Failed to set temperature: ${e.message || "server unreachable?"}`,
+              "error",
+            );
           }
         }
 
         async pollTemperature() {
           try {
-            const response = await fetch(`http://${this.serverIP}/temperature`);
-            const data = await response.json();
+            const data = await apiClient.getJSON("/temperature", {
+              preferRelay: true,
+            });
 
             if (data.status === "success") {
               this.addDataPoint(data.temperature, data.target, data.relay_on);
@@ -6605,6 +6719,15 @@
         }
       }
 
+      function notifyUser(message, type = "info") {
+        if (settingsManager?.showAllProfilesFeedback) {
+          settingsManager.showAllProfilesFeedback(message, type);
+          return;
+        }
+
+        showFeedback("allProfilesFeedback", message, type);
+      }
+
       function refreshCollapsibleHeights(container = document) {
         const sections = container.querySelectorAll(".collapsible");
         sections.forEach((sec) => {
@@ -6806,8 +6929,7 @@
         }
       });
 
-      // Add event listeners for base time limit inputs
-      document.addEventListener("DOMContentLoaded", () => {
+      function bindBaseTimeAndTransferHandlers() {
         const baseTimeMinInput = document.getElementById("baseTimeMin");
         const baseTimeMaxInput = document.getElementById("baseTimeMax");
 
@@ -6884,7 +7006,7 @@
             }
           });
         }
-      });
+      }
 
       // Legacy audio wrapper for backward compatibility
 
@@ -7871,7 +7993,7 @@
        * - Color scheme
        * - Countdown settings
        * - Test strip auto-advance
-       * - Safelight auto-off
+      * - Auto safelight toggle state
        * - F-stop denominator
        * - Base time slider limits
        *
@@ -10022,18 +10144,12 @@
           this.showProgress(false);
 
           try {
-            const response = await fetch("/update-check", {
-              method: "GET",
+            const result = await apiClient.getJSON("/update-check", {
               headers: {
                 "Content-Type": "application/json",
               },
+              preferRelay: true,
             });
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
 
             if (!result.success) {
               this.setUpdateStatus(`Error: ${result.error || "Unknown error"}`, "error");
@@ -11709,8 +11825,7 @@
        * @class RelayManager
        * @classdesc Central hub for managing relay control and server communication.
        * Handles all HTTP requests to Pico 2 W server, manages relay state tracking,
-       * implements auto-trigger functionality for timer integration, and provides
-       * safelight auto-off feature to prevent fogging during exposures.
+        * and implements auto-trigger functionality for timer integration.
        *
        * @property {string} serverIP - The IP address of the Pico 2 W server (default: "192.168.4.1")
        * @property {number} serverPort - The port number of the HTTP server (default: 80)
@@ -11729,15 +11844,9 @@
        * @description
        * Relay Mapping (Pico 2 W):
        * - Relay 1 → GP14 (Enlarger Timer) - Primary exposure control
-       * - Relay 2 → GP15 (Safelight) - Auto-controlled during exposure
+      * - Relay 2 → GP15 (Safelight)
        * - Relay 3 → GP16 (Ventilation)
        * - Relay 4 → GP17 (White Light)
-       *
-       * Safelight Auto-Off Flow:
-       * 1. User starts exposure (CALC, TEST, or TIMER with auto-trigger)
-       * 2. If safelight is on, remember state and turn it OFF
-       * 3. Server starts GP14 timer for specified duration
-       * 4. After duration, safelight is automatically restored
        *
        * Triple-Fallback Fetch Strategy:
        * 1. CORS mode (Chrome/Safari) - preferred
@@ -11760,7 +11869,8 @@
          * @constructor
          * @description Creates a RelayManager instance with default settings and initializes the relay state tracking.
          * Auto-detects server IP from window.location for seamless AP/STA mode switching.
-         * Loads saved settings from localStorage and sets up the initial UI state.
+        * Loads saved settings from localStorage, syncs server-side auto-safelight state,
+        * and sets up the initial UI state.
          */
         constructor() {
           // Auto-detect server IP from current page location
@@ -11782,8 +11892,7 @@
         /**
          * @method init
          * @description Initializes the RelayManager by loading saved settings, binding UI elements,
-         * and setting up event listeners. Also synchronizes with SettingsManager for safelight auto-off
-         * and updates the UI display.
+         * setting up event listeners, and updating the UI display.
          * @returns {void}
          */
         init() {
@@ -11875,6 +11984,10 @@
           this.updateRelayButtons();
         }
 
+        getRelayBaseUrl() {
+          return `http://${this.serverIP}:${this.serverPort}`;
+        }
+
         /**
          * @method shutdownPi
          * @description Initiates a graceful shutdown of the Raspberry Pi.
@@ -11891,6 +12004,7 @@
           const ssidInput = document.getElementById("wifiSSID");
           const passwordInput = document.getElementById("wifiPassword");
           const statusElement = document.getElementById("wifiStatus");
+          const baseUrl = this.getRelayBaseUrl();
 
           if (!ssidInput || !ssidInput.value.trim()) {
             if (statusElement)
@@ -11904,37 +12018,27 @@
           if (statusElement) statusElement.textContent = "Connecting...";
 
           try {
-            const response = await fetch(
-              `http://${this.serverIP}:${this.serverPort}/wifi-config?ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}`,
-              {
-                method: "GET",
-                mode: "cors",
-                cache: "no-cache",
-              },
-            );
+            const data = await apiClient.getJSON("/wifi-config", {
+              params: { ssid, password },
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.status === "success") {
-                if (statusElement) {
-                  statusElement.textContent = `Connected! IP: ${data.ip || "pending"}`;
-                  statusElement.style.color = "#0f0";
-                }
-                // Update server IP if we got a new one
-                if (data.ip && data.ip !== "0.0.0.0") {
-                  this.serverIP = data.ip;
-                  if (this.relayServerIP) this.relayServerIP.value = data.ip;
-                  this.saveSettings();
-                }
-              } else {
-                if (statusElement) {
-                  statusElement.textContent = `Failed: ${data.message || "Unknown error"}`;
-                  statusElement.style.color = "#f00";
-                }
+            if (data.status === "success") {
+              if (statusElement) {
+                statusElement.textContent = `Connected! IP: ${data.ip || "pending"}`;
+                statusElement.style.color = "#0f0";
+              }
+              // Update server IP if we got a new one
+              if (data.ip && data.ip !== "0.0.0.0") {
+                this.serverIP = data.ip;
+                if (this.relayServerIP) this.relayServerIP.value = data.ip;
+                this.saveSettings();
               }
             } else {
               if (statusElement) {
-                statusElement.textContent = "Connection failed";
+                statusElement.textContent = `Failed: ${data.message || "Unknown error"}`;
                 statusElement.style.color = "#f00";
               }
             }
@@ -11956,29 +12060,24 @@
         async updateWifiStatus() {
           const statusElement = document.getElementById("wifiStatus");
           if (!statusElement) return;
+          const baseUrl = this.getRelayBaseUrl();
 
           try {
-            const response = await fetch(
-              `http://${this.serverIP}:${this.serverPort}/wifi-status`,
-              {
-                method: "GET",
-                mode: "cors",
-                cache: "no-cache",
-              },
-            );
+            const data = await apiClient.getJSON("/wifi-status", {
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.sta_connected) {
-                statusElement.textContent = `Connected: ${data.sta_ip} (${data.ssid || "WiFi"})`;
-                statusElement.style.color = "#0f0";
-              } else if (data.ap_active) {
-                statusElement.textContent = `AP Mode: ${data.ap_ip}`;
-                statusElement.style.color = "#ff0";
-              } else {
-                statusElement.textContent = "Disconnected";
-                statusElement.style.color = "#f00";
-              }
+            if (data.sta_connected) {
+              statusElement.textContent = `Connected: ${data.sta_ip} (${data.ssid || "WiFi"})`;
+              statusElement.style.color = "#0f0";
+            } else if (data.ap_active) {
+              statusElement.textContent = `AP Mode: ${data.ap_ip}`;
+              statusElement.style.color = "#ff0";
+            } else {
+              statusElement.textContent = "Disconnected";
+              statusElement.style.color = "#f00";
             }
           } catch (error) {
             // Silently fail on status check - might not be connected yet
@@ -11993,30 +12092,25 @@
          * @returns {Promise<void>}
          */
         async loadAutoSafelightStatus() {
+          const baseUrl = this.getRelayBaseUrl();
           try {
-            const response = await fetch(
-              `http://${this.serverIP}:${this.serverPort}/status`,
-              {
-                method: "GET",
-                mode: "cors",
-                cache: "no-cache",
-              },
-            );
+            const data = await apiClient.getJSON("/status", {
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (typeof data.auto_safelight === 'boolean') {
-                const toggle = document.getElementById("safelightAutoOff");
-                if (toggle) {
-                  toggle.checked = data.auto_safelight;
-                  // Update settings manager to match server state
-                  if (settingsManager) {
-                    settingsManager.settings.safelightAutoOff = data.auto_safelight;
-                    StorageManager.saveSettings(settingsManager.settings);
-                  }
+            if (typeof data.auto_safelight === 'boolean') {
+              const toggle = document.getElementById("safelightAutoOff");
+              if (toggle) {
+                toggle.checked = data.auto_safelight;
+                // Update settings manager to match server state
+                if (settingsManager) {
+                  settingsManager.settings.safelightAutoOff = data.auto_safelight;
+                  StorageManager.saveSettings(settingsManager.settings);
                 }
-                console.log(`Auto-safelight loaded from server: ${data.auto_safelight}`);
               }
+              console.log(`Auto-safelight loaded from server: ${data.auto_safelight}`);
             }
           } catch (error) {
             console.log("Failed to load auto-safelight status:", error);
@@ -12032,6 +12126,7 @@
          */
         async forceHotspotMode() {
           const statusElement = document.getElementById("wifiStatus");
+          const baseUrl = this.getRelayBaseUrl();
 
           if (
             !confirm(
@@ -12047,40 +12142,29 @@
           }
 
           try {
-            const response = await fetch(
-              `http://${this.serverIP}:${this.serverPort}/wifi-ap-force`,
-              {
-                method: "GET",
-                mode: "cors",
-                cache: "no-cache",
-              },
-            );
+            const data = await apiClient.getJSON("/wifi-ap-force", {
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.status === "success") {
-                if (statusElement) {
-                  statusElement.textContent = `Hotspot Mode: ${data.ap_ip || "192.168.4.1"}`;
-                  statusElement.style.color = "#ff0";
-                }
-                // Update server IP to AP address
-                this.serverIP = data.ap_ip || "192.168.4.1";
-                if (this.relayServerIP)
-                  this.relayServerIP.value = this.serverIP;
-                this.saveSettings();
-
-                alert(
-                  `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`,
-                );
-              } else {
-                if (statusElement) {
-                  statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
-                  statusElement.style.color = "#f00";
-                }
+            if (data.status === "success") {
+              if (statusElement) {
+                statusElement.textContent = `Hotspot Mode: ${data.ap_ip || "192.168.4.1"}`;
+                statusElement.style.color = "#ff0";
               }
+              // Update server IP to AP address
+              this.serverIP = data.ap_ip || "192.168.4.1";
+              if (this.relayServerIP)
+                this.relayServerIP.value = this.serverIP;
+              this.saveSettings();
+
+              alert(
+                `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`,
+              );
             } else {
               if (statusElement) {
-                statusElement.textContent = "Switch failed";
+                statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
                 statusElement.style.color = "#f00";
               }
             }
@@ -12106,6 +12190,7 @@
          */
         async clearWifiCredentials() {
           const statusElement = document.getElementById("wifiStatus");
+          const baseUrl = this.getRelayBaseUrl();
 
           if (
             !confirm(
@@ -12116,40 +12201,29 @@
           }
 
           try {
-            const response = await fetch(
-              `http://${this.serverIP}:${this.serverPort}/wifi-clear`,
-              {
-                method: "GET",
-                mode: "cors",
-                cache: "no-cache",
-              },
-            );
+            const data = await apiClient.getJSON("/wifi-clear", {
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.status === "success") {
-                if (statusElement) {
-                  statusElement.textContent = "Credentials cleared";
-                  statusElement.style.color = "#0f0";
-                }
-                // Clear the input fields
-                const ssidInput = document.getElementById("wifiSSID");
-                const passwordInput = document.getElementById("wifiPassword");
-                if (ssidInput) ssidInput.value = "";
-                if (passwordInput) passwordInput.value = "";
-
-                alert(
-                  "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.",
-                );
-              } else {
-                if (statusElement) {
-                  statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
-                  statusElement.style.color = "#f00";
-                }
+            if (data.status === "success") {
+              if (statusElement) {
+                statusElement.textContent = "Credentials cleared";
+                statusElement.style.color = "#0f0";
               }
+              // Clear the input fields
+              const ssidInput = document.getElementById("wifiSSID");
+              const passwordInput = document.getElementById("wifiPassword");
+              if (ssidInput) ssidInput.value = "";
+              if (passwordInput) passwordInput.value = "";
+
+              alert(
+                "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.",
+              );
             } else {
               if (statusElement) {
-                statusElement.textContent = "Clear failed";
+                statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
                 statusElement.style.color = "#f00";
               }
             }
@@ -12166,7 +12240,7 @@
          * @method saveSettings
          * @description Saves current relay manager settings to localStorage.
          * Reads values from UI elements and persists server configuration,
-         * auto-trigger preference, and safelight auto-off setting.
+         * and auto-trigger preference.
          * @returns {void}
          * @fires localStorage.setItem - Saves "relaySettings" key
          * @throws {Error} Logs error if localStorage save fails
@@ -12256,32 +12330,24 @@
          * await relayManager.sendRequest("timer", { gpio: 25, duration: 10.5 });
          */
         async sendRequest(endpoint, params = {}) {
-          const url = `http://${this.serverIP}:${this.serverPort}/${endpoint}`;
-          const queryString = Object.keys(params)
-            .map(
-              (key) =>
-                `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
-            )
-            .join("&");
-
-          const fullUrl = queryString ? `${url}?${queryString}` : url;
+          const baseUrl = this.getRelayBaseUrl();
+          const fullUrl = apiClient.buildUrl(endpoint, { params, baseUrl });
 
           try {
             // Try with CORS first (for Chrome/Safari)
-            const response = await fetch(fullUrl, {
+            await apiClient.request(endpoint, {
               method: "GET",
+              params,
+              baseUrl,
+              parse: "text",
+              timeoutMs: 3000,
               mode: "cors",
               cache: "no-cache",
               headers: {
                 Accept: "application/json",
               },
             });
-
-            if (response.ok) {
-              return true;
-            } else {
-              throw new Error(`HTTP ${response.status}`);
-            }
+            return true;
           } catch (error) {
             console.warn(
               "CORS fetch failed, trying alternative methods:",
@@ -12428,15 +12494,11 @@
          * @method triggerTimerRelay
          * @description Triggers the enlarger relay with a timed duration.
          * This is the primary method used by CALC, TEST, and TIMER tabs for exposures.
-         * Implements the complete safelight auto-off flow with immediate restoration.
          * @param {number} durationSeconds - The exposure duration in seconds
          * @returns {Promise<void>} Resolves when timer trigger completes
          * @throws {Error} Logs error if timer request fails
-         * @fires console.log - Logs safelight state changes for debugging
          * @fires sendRequest - Sends timer command to server (gpio=25, duration=durationSeconds)
          * @fires updateStatus - Updates UI with timer status
-         * @fires setTimeout - Schedules safelight restoration after exposure
-         * @fires setRelay - Controls safelight (relay 2) before and after exposure
          * @description Triggers a timed enlarger relay activation.
          * Requires auto-trigger to be enabled.
          * @example
@@ -12501,8 +12563,8 @@
         /**
          * @method testTimerRelay
          * @description Tests the timer relay functionality with a user-specified duration.
-         * Reads duration from UI input and triggers the enlarger with safelight handling.
-         * Useful for testing exposure timing and safelight auto-off feature.
+         * Reads duration from UI input and triggers the enlarger.
+         * Useful for testing exposure timing.
          * @returns {Promise<void>} Resolves when test timer completes
          * @fires parseFloat - Reads duration from testTimerSeconds input element
          * @fires triggerTimerRelay - Starts exposure with specified duration
@@ -13487,26 +13549,6 @@
         updateAllDisplays() {
           // Deprecated - use render() instead
           this.render();
-        }
-
-        /**
-         * @method triggerRelayForTimer
-         * @description Triggers the enlarger relay for the current exposure time.
-         * Only triggers if auto-trigger is enabled in RelayManager.
-         * @returns {Promise<void>} Resolves when relay trigger completes
-         * @fires relayManager.triggerTimerRelay - Sends timer command to server
-         * @example
-         * // Called automatically during start() method
-         * await this.triggerRelayForTimer();
-         */
-        async triggerRelayForTimer() {
-          if (window.relayManager && window.relayManager.autoTrigger) {
-            // Use the current exposure time
-            const exposureTime = this.thisExposureTime;
-
-            // Send relay trigger with the exposure time
-            await window.relayManager.triggerTimerRelay(exposureTime);
-          }
         }
 
         /**
@@ -16062,38 +16104,13 @@
         }
 
         /**
-         * @method triggerRelayForStep
-         * @description Triggers the enlarger relay for a specific test step.
-         * Only triggers if auto-trigger is enabled and step time is positive.
-         * @param {number} stepTime - Exposure time for this step in seconds
-         * @returns {Promise<void>} Resolves when relay trigger completes
-         * @throws {Error} Logs error if relay trigger fails
-         * @fires relayManager.triggerTimerRelay - Sends timer command to server
-         * @example
-         * await this.triggerRelayForStep(10.5); // Trigger for 10.5s
-         */
-        async triggerRelayForStep(stepTime) {
-          if (
-            window.relayManager &&
-            window.relayManager.autoTrigger &&
-            stepTime > 0
-          ) {
-            try {
-              await window.relayManager.triggerTimerRelay(stepTime);
-            } catch (error) {
-              console.error("Failed to trigger relay for step:", error);
-            }
-          }
-        }
-
-        /**
          * @method startStep
          * @description Starts a single test strip step with relay triggering.
          * Updates UI displays, triggers relay, and starts interval timer.
          * @returns {Promise<void>} Resolves when step starts
          * @throws {Error} Logs error if relay trigger fails
          * @fires updatePreview - Updates visual preview
-         * @fires triggerRelayForStep - Triggers enlarger
+         * @fires relayManager.triggerTimerRelay - Triggers enlarger
          * @fires startInterval - Begins countdown timer
          * @fires Element.textContent - Updates all displays
          * @example
@@ -16952,16 +16969,6 @@
           StorageManager.saveCurrentTestStripProfile(profileName);
         }
 
-        /**
-         * @method getCurrentSettings
-         * @description Gets current test strip settings as a configuration object.
-         * Collects base time, step increment, denominator, and number of steps.
-         * @returns {Object} Settings object with baseTime, stepIncrement, denominator, numSteps
-         * @fires Element.value - Reads slider values
-         * @fires window.stopDenominator - Reads global denominator setting
-         * @example
-         * const settings = this.getCurrentSettings(); // Get current configuration
-         */
         /**
          * @method getCurrentSettings
          * @description Gets current test strip settings as a configuration object.
@@ -20486,6 +20493,9 @@
         // Initialize settings manager first
         settingsManager = new SettingsManager();
 
+        // Bind static UI handlers that require DOM + settings manager
+        bindBaseTimeAndTransferHandlers();
+
         // Initialize calculator
         window.incrementalTimer = new IncrementalTimer();
 
@@ -20601,22 +20611,22 @@
         document.getElementById("safelightAutoOff")?.addEventListener("change", async (e) => {
           const enabled = e.target.checked;
           try {
-            const response = await fetch(`http://${window.relayManager.serverIP}:${window.relayManager.serverPort}/auto-safelight?enabled=${enabled ? 1 : 0}`);
-            if (response.ok) {
-              console.log(`Auto-safelight ${enabled ? 'enabled' : 'disabled'} on server`);
-              settingsManager.showAllProfilesFeedback?.(
-                `Auto Safelight ${enabled ? 'ON' : 'OFF'}`,
-                'success'
-              );
-            } else {
-              console.error('Failed to update auto-safelight on server');
-              settingsManager.showAllProfilesFeedback?.(
-                'Failed to update server',
-                'error'
-              );
-            }
+            await apiClient.getJSON("/auto-safelight", {
+              params: { enabled: enabled ? 1 : 0 },
+              preferRelay: true,
+            });
+
+            console.log(`Auto-safelight ${enabled ? 'enabled' : 'disabled'} on server`);
+            settingsManager.showAllProfilesFeedback?.(
+              `Auto Safelight ${enabled ? 'ON' : 'OFF'}`,
+              'success'
+            );
           } catch (error) {
             console.error('Error updating auto-safelight:', error);
+            settingsManager.showAllProfilesFeedback?.(
+              'Failed to update server',
+              'error'
+            );
           }
         });
 
