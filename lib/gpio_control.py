@@ -15,6 +15,10 @@ RELAY_PINS = {
     17: {"name": "White Light", "state": False}
 }
 
+# Pin numbers for automatic safelight control
+ENLARGER_PIN = 14
+SAFELIGHT_PIN = 15
+
 
 class GPIOControl:
     """
@@ -28,6 +32,7 @@ class GPIOControl:
         """Initialize GPIO pins as outputs with relays OFF."""
         self.pins = {}
         self.states = {}
+        self.auto_safelight = True  # Enable automatic safelight control by default
         
         for pin_num in RELAY_PINS:
             # Initialize pin as output
@@ -38,14 +43,20 @@ class GPIOControl:
             print(f"GPIO {pin_num} ({RELAY_PINS[pin_num]['name']}): initialized OFF")
         
         print("GPIO setup complete")
+        print("Automatic safelight control: ENABLED")
     
-    def set_relay_state(self, pin, state):
+    def set_relay_state(self, pin, state, skip_auto_safelight=False):
         """
         Set relay state (True=ON, False=OFF).
+        
+        Automatic safelight control:
+        - When enlarger (pin 14) turns ON, safelight (pin 15) turns OFF automatically
+        - When enlarger (pin 14) turns OFF, safelight (pin 15) turns ON automatically
         
         Args:
             pin (int): GPIO pin number (14, 15, 16, or 17)
             state (bool): True to turn ON, False to turn OFF
+            skip_auto_safelight (bool): Internal flag to prevent recursion
             
         Returns:
             bool: True if successful, False if invalid pin
@@ -61,6 +72,16 @@ class GPIOControl:
         
         state_str = "ON" if state else "OFF"
         print(f"GPIO {pin} ({RELAY_PINS[pin]['name']}): {state_str}")
+        
+        # Automatic safelight control (only if enabled and not already recursing)
+        if self.auto_safelight and not skip_auto_safelight and pin == ENLARGER_PIN:
+            # When enlarger turns ON, turn safelight OFF
+            # When enlarger turns OFF, turn safelight ON
+            safelight_state = not state
+            self.set_relay_state(SAFELIGHT_PIN, safelight_state, skip_auto_safelight=True)
+            action = "OFF" if state else "ON"
+            print(f"  → Auto-safelight: turning {action} (enlarger is {state_str})")
+        
         return True
     
     def get_relay_state(self, pin):
@@ -122,4 +143,23 @@ class GPIOControl:
         if pin in RELAY_PINS:
             return RELAY_PINS[pin]["name"]
         return "Unknown"
+    
+    def set_auto_safelight(self, enabled):
+        """
+        Enable or disable automatic safelight control.
+        
+        When enabled:
+        - Enlarger ON → Safelight OFF
+        - Enlarger OFF → Safelight ON
+        
+        Args:
+            enabled (bool): True to enable, False to disable
+        """
+        self.auto_safelight = enabled
+        status = "ENABLED" if enabled else "DISABLED"
+        print(f"Automatic safelight control: {status}")
+    
+    def get_auto_safelight(self):
+        """Get automatic safelight control status."""
+        return self.auto_safelight
 

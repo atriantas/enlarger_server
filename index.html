@@ -125,9 +125,20 @@
       .container {
         max-width: 480px;
         margin: 0 auto;
-        height: 100vh; /* Full viewport height */
+        height: calc(100vh - 12px); /* Account for body padding */
         overflow-y: auto; /* Allow scrolling within container */
         scrollbar-width: none; /* Firefox */
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+      }
+
+      @supports (height: 100dvh) {
+        body {
+          min-height: 100dvh;
+        }
+
+        .container {
+          height: calc(100dvh - 12px); /* Use dynamic viewport for mobile UI chrome */
+        }
       }
 
       /* Hide scrollbar for Chrome, Safari and Opera */
@@ -152,7 +163,6 @@
       .tab-nav-container {
         position: relative;
         margin-bottom: 8px;
-        border-bottom: 1px solid var(--border);
         padding-bottom: 6px;
       }
 
@@ -373,7 +383,7 @@
       .label-sm {
         font-size: 0.65rem;
         color: var(--text-secondary);
-        margin-bottom: 3px;
+        margin-bottom: 2px;
       }
 
       /* Unified value display class - consolidates result-value, chemical-result-value */
@@ -605,7 +615,6 @@
       .settings-btn.primary {
         background: var(--border-light);
         border-color: var(--accent);
-        margin-top: 0.5rem;
       }
 
       .settings-btn.danger {
@@ -743,34 +752,6 @@
       }
 
       /* ===== THE REST OF THE ORIGINAL STYLES WITH VARIABLES ===== */
-
-      /* Chart styles */
-
-      .time-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.7rem;
-      }
-
-      .time-table th,
-      .time-table td {
-        padding: 5px 3px;
-        text-align: center;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .time-table th {
-        background: var(--panel-light);
-        color: var(--text);
-        border-bottom: 1px solid var(--border);
-        white-space: nowrap;
-      }
-
-      .time-table tr:nth-child(even) {
-        background: var(--panel);
-      }
-
-      /* increment-cell can use .label-sm */
 
       /* Unified flex control groups */
       .sound-controls {
@@ -1013,7 +994,7 @@
 
       /* Container: use a single canonical set of rules for fullscreen */
       body.fullscreen-mode .container {
-        max-width: 960px;
+        max-width: 640px;
         margin: 0 auto;
         height: 100vh;
         display: flex;
@@ -1506,7 +1487,9 @@
         >
           <span class="menu-icon">☰</span>
           <span class="menu-label">Menu</span>
-          <span class="active-tab-name" id="activeTabName">CALC</span>
+          <span class="active-tab-name" id="activeTabName">
+            EXPOSURE &amp; CALCULATOR
+          </span>
         </button>
 
         <div
@@ -1517,39 +1500,36 @@
         >
           <button
             class="tab-dropdown-item"
-            data-tab="fstop-test"
-            role="menuitem"
-          >
-            TEST
-          </button>
-          <button
-            class="tab-dropdown-item"
             data-tab="light-meter"
             role="menuitem"
           >
-            METER
+            METERING
+          </button>
+          <button
+            class="tab-dropdown-item"
+            data-tab="fstop-test"
+            role="menuitem"
+          >
+            TEST STRIP
           </button>
           <button class="tab-dropdown-item" data-tab="split" role="menuitem">
-            SPLIT
+            SPLIT GRADE
           </button>
           <button
             class="tab-dropdown-item active"
             data-tab="calc"
             role="menuitem"
           >
-            CALC
+            EXPOSURE &amp; CALCULATOR
           </button>
           <button class="tab-dropdown-item" data-tab="timer" role="menuitem">
             TIMER
           </button>
-          <button class="tab-dropdown-item" data-tab="relay" role="menuitem">
-            CONTROL
-          </button>
           <button class="tab-dropdown-item" data-tab="chemical" role="menuitem">
             CHEMICAL
           </button>
-          <button class="tab-dropdown-item" data-tab="chart" role="menuitem">
-            CHART
+          <button class="tab-dropdown-item" data-tab="relay" role="menuitem">
+            CONTROLLER
           </button>
           <button class="tab-dropdown-item" data-tab="logs" role="menuitem">
             LOGS
@@ -1623,40 +1603,12 @@
           />
         </div>
 
-        <div class="control">
-          <div class="control-label">
-            <span>STOP ADJUST</span>
-            <span class="value-display" id="stopValue">0.0</span>
-          </div>
-          <input
-            type="range"
-            min="-6"
-            max="6"
-            step="1"
-            value="0"
-            class="slider"
-            id="stopSlider"
-          />
-
-          <!-- Dynamic ruler that will be populated based on selected increment denominator -->
-          <div
-            id="calcStopRuler"
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 5px;
-              padding: 0 5px;
-            "
-          >
-            <!-- labels populated by JS -->
-          </div>
-
-          <div class="segmented-control-container">
+        <div class="segmented-control-container">
             <div
               class="segmented-control"
               id="calcIncrementSeg"
               role="tablist"
-              aria-label="Calc stop increment"
+              aria-label="Exposure stop increment"
             >
               <button
                 type="button"
@@ -1699,6 +1651,34 @@
                 1/6
               </button>
             </div>
+          </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>STOP ADJUST</span>
+            <span class="value-display" id="stopValue">0.0</span>
+          </div>
+          <input
+            type="range"
+            min="-6"
+            max="6"
+            step="1"
+            value="0"
+            class="slider"
+            id="stopSlider"
+          />
+
+          <!-- Dynamic ruler that will be populated based on selected increment denominator -->
+          <div
+            id="calcStopRuler"
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 5px;
+              padding: 0 5px;
+            "
+          >
+            <!-- labels populated by JS -->
           </div>
         </div>
 
@@ -1802,9 +1782,8 @@
               <button
                 class="timer-btn"
                 id="copyCurrentTime"
-                style="flex: 1; font-size: 0.6rem; padding: 2px 4px"
               >
-                Use Current
+                Use Current Exposure Time
               </button>
             </div>
           </div>
@@ -1926,12 +1905,7 @@
                   <select
                     class="settings-input"
                     id="originalFStop"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -1948,12 +1922,7 @@
                   <select
                     class="settings-input"
                     id="newFStop"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="2.8">f/2.8</option>
                     <option value="4">f/4</option>
@@ -1985,12 +1954,7 @@
                   <select
                     class="settings-input"
                     id="originalPaperSize"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2032,12 +1996,7 @@
                   <select
                     class="settings-input"
                     id="newPaperSize"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0.011">3.5×5" (0.011 m²)</option>
                     <option value="0.013">4×5" (0.013 m²)</option>
@@ -2089,17 +2048,17 @@
                 <div class="settings-group" style="margin-top: 5px">
                   <button
                     class="toggle-btn active"
-                    data-brand="FOMA"
-                    id="btnContrastFoma"
-                  >
-                    FOMA
-                  </button>
-                  <button
-                    class="toggle-btn"
                     data-brand="Ilford"
                     id="btnContrastIlford"
                   >
                     Ilford
+                  </button>
+                  <button
+                    class="toggle-btn"
+                    data-brand="FOMA"
+                    id="btnContrastFoma"
+                  >
+                    FOMA
                   </button>
                 </div>
               </div>
@@ -2116,24 +2075,24 @@
                   <div
                     id="ilfordPaperSelector"
                     class="control"
-                    style="display: none; margin-top: 5px"
+                    style="display: block; margin-top: 5px"
                   >
                     <select
                       class="settings-input"
                       id="ilfordPaperType"
                       style="width: 100%"
                     >
-                      <option value="cooltone">Multigrade RC Cooltone</option>
-                      <option value="portfolio">
-                        Multigrade IV RC Portfolio (Discontinued)
-                      </option>
-                      <option value="rc_deluxe_new">
+                      <option value="rc_deluxe_new" selected>
                         MULTIGRADE RC DELUXE (NEW)
                       </option>
                       <option value="rc_portfolio_new">
                         MULTIGRADE RC PORTFOLIO (NEW)
                       </option>
+                      <option value="portfolio">
+                        Multigrade IV RC Portfolio (Discontinued)
+                      </option>
                       <option value="fb_classic">Multigrade FB Classic</option>
+                      <option value="cooltone">Multigrade RC Cooltone</option>
                       <option value="fb_warmtone">
                         Multigrade FB Warmtone
                       </option>
@@ -2147,14 +2106,14 @@
                   <div
                     id="fomaPaperSelector"
                     class="control"
-                    style="margin-top: 5px"
+                    style="display: none; margin-top: 5px"
                   >
                     <select
                       class="settings-input"
                       id="fomaPaperType"
                       style="width: 100%"
                     >
-                      <option value="fomaspeed">FOMASPEED VARIANT</option>
+                      <option value="fomaspeed" selected>FOMASPEED VARIANT</option>
                       <option value="fomabrom">FOMABROM VARIANT</option>
                       <option value="fomapastel_mg">
                         FOMAPASTEL MG (Special FB Colored Base)
@@ -2170,12 +2129,7 @@
                   <select
                     class="settings-input"
                     id="contrastFilterSelect"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="none">No filter</option>
                   </select>
@@ -2211,12 +2165,7 @@
                   <select
                     class="settings-input"
                     id="customFilterGroup"
-                    style="
-                      width: 100%;
-                      text-align: center;
-                      cursor: pointer;
-                      margin-top: 8px;
-                    "
+                    style="width: 100%"
                   >
                     <option value="0">Group A</option>
                     <option value="1">Group B</option>
@@ -2234,19 +2183,6 @@
                   />
                 </div>
               </div>
-
-              <div
-                style="
-                  font-size: 0.8rem;
-                  color: var(--text-secondary);
-                  margin-bottom: 6px;
-                "
-              >
-                Store up to 12 named factors per group (3 groups). Use these to
-                drive the Contrast Factor used in New Adjusted Time. Values
-                auto-save and are included in Export All Data.
-              </div>
-
               <div class="custom-filter-rows" id="customFilterRows"></div>
             </div>
           </section>
@@ -2312,9 +2248,6 @@
                   margin-top: 3px;
                 "
               >
-                Formula: Original Time × (New Height ÷ Original Height)² × (New
-                F-Stop ÷ Original F-Stop)² × (√New Paper Area ÷ √Original Paper
-                Area)² × Filter Factor
               </div>
             </div>
           </div>
@@ -2334,10 +2267,6 @@
                 margin-top: 3px;
               "
             >
-              Example: 10s at 30cm, f/5.6, No filter → 22.5s at 45cm, f/5.6, No
-              filter<br />
-              Example with filter: 10s at f/5.6 → 14s with Y filter (1.4×
-              factor)
             </div>
           </div>
         </div>
@@ -2346,11 +2275,9 @@
       <!-- SPLIT Tab - Split-Grade Calculator -->
       <div id="split" class="tab-content">
         <div class="incremental-timer">
-          <div class="title-md">The Ilford Way - Split-Grade</div>
-
           <div class="control">
             <div class="control-label">
-              <span>NEUTRAL TIME (Test Strip Result)</span>
+              <span>NEUTRAL TIME</span>
               <span class="value-display" id="neutralTimeValue">10.0s</span>
             </div>
             <input
@@ -2371,17 +2298,17 @@
             <div class="settings-group" style="margin-top: 5px">
               <button
                 class="toggle-btn active"
-                data-brand="FOMA"
-                id="btnSplitFoma"
-              >
-                FOMA
-              </button>
-              <button
-                class="toggle-btn"
                 data-brand="Ilford"
                 id="btnSplitIlford"
               >
                 Ilford
+              </button>
+              <button
+                class="toggle-btn"
+                data-brand="FOMA"
+                id="btnSplitFoma"
+              >
+                FOMA
               </button>
             </div>
           </div>
@@ -2394,7 +2321,7 @@
             <select
               class="settings-input"
               id="splitFomaPaperType"
-              style="width: 100%; margin-top: 5px"
+              style="width: 100%"
             >
               <option value="fomaspeed">FOMASPEED VARIANT</option>
               <option value="fomabrom">FOMABROM VARIANT</option>
@@ -2415,16 +2342,16 @@
             <select
               class="settings-input"
               id="splitIlfordPaperType"
-              style="width: 100%; margin-top: 5px"
+              style="width: 100%"
             >
-              <option value="cooltone">Multigrade RC Cooltone</option>
-              <option value="portfolio">
-                Multigrade IV RC Portfolio (Discontinued)
-              </option>
               <option value="rc_deluxe_new">MULTIGRADE RC DELUXE (NEW)</option>
               <option value="rc_portfolio_new">
                 MULTIGRADE RC PORTFOLIO (NEW)
               </option>
+              <option value="portfolio">
+                Multigrade IV RC Portfolio (Discontinued)
+              </option>
+              <option value="cooltone">Multigrade RC Cooltone</option>
               <option value="fb_classic">Multigrade FB Classic</option>
               <option value="fb_warmtone">Multigrade FB Warmtone</option>
               <option value="fb_cooltone">Multigrade FB Cooltone</option>
@@ -2502,7 +2429,7 @@
 
           <div class="settings-btn-group">
             <button class="settings-btn primary" id="sendToCalc">
-              Send to CALC
+              Send to EXPOSURE
             </button>
           </div>
         </div>
@@ -2514,7 +2441,6 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Split-Grade Presets</div>
 
               <div class="settings-group">
                 <div class="settings-item">
@@ -2535,7 +2461,6 @@
                 </div>
               </div>
 
-              <div class="title-md">Saved Presets</div>
               <div class="shelf-life-list" id="splitPresetList">
                 <!-- Split presets will be listed here -->
               </div>
@@ -2548,42 +2473,6 @@
             </div>
           </div>
         </section>
-      </div>
-
-      <!-- Chart Tab with Incremental Time Column -->
-      <div id="chart" class="tab-content">
-        <!-- BASE TIME slider removed per user request -->
-        <div
-          class="chart-note"
-          role="note"
-          title="This chart uses the main BASE TIME control in the CALC tab."
-          aria-label="Chart uses base time from CALC"
-          style="
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-          "
-        >
-          ⓘ Uses BASE TIME from CALC tab
-        </div>
-
-        <div style="overflow-x: auto; margin-bottom: 10px">
-          <table
-            class="time-table"
-            id="timeTable"
-            style="margin-left: -6px; margin-right: -6px"
-          >
-            <thead>
-              <tr>
-                <th>STOP</th>
-                <th>TOTAL TIME</th>
-                <th>+/- FROM BASE</th>
-                <th>INCREMENT</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
       </div>
 
       <!-- F-Stop Test Strip Generator Tab -->
@@ -2604,35 +2493,7 @@
           />
         </div>
 
-        <div class="control">
-          <div class="control-label">
-            <span>INCREMENT (in stops)</span>
-            <span class="value-display" id="testIncrementValue">⅓ stop</span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="9"
-            step="1"
-            value="1"
-            class="slider"
-            id="testIncrementSlider"
-          />
-
-          <!-- Dynamic ruler populated by JS based on denominator -->
-          <div
-            id="testIncrementRuler"
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 5px;
-              padding: 0 5px;
-            "
-          >
-            <!-- labels populated by JS -->
-          </div>
-
-          <div class="segmented-control-container">
+        <div class="segmented-control-container">
             <div
               class="segmented-control"
               id="testIncrementSeg"
@@ -2680,6 +2541,34 @@
                 1/6
               </button>
             </div>
+          </div>
+
+        <div class="control">
+          <div class="control-label">
+            <span>INCREMENT (in stops)</span>
+            <span class="value-display" id="testIncrementValue">⅓ stop</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="9"
+            step="1"
+            value="1"
+            class="slider"
+            id="testIncrementSlider"
+          />
+
+          <!-- Dynamic ruler populated by JS based on denominator -->
+          <div
+            id="testIncrementRuler"
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 5px;
+              padding: 0 5px;
+            "
+          >
+            <!-- labels populated by JS -->
           </div>
         </div>
 
@@ -2847,7 +2736,7 @@
                   aria-pressed="false"
                   style="min-width: 80px; font-size: 0.75rem"
                 >
-                  → CALC
+                  → EXPOSURE
                 </button>
                 <button
                   type="button"
@@ -2857,7 +2746,7 @@
                   aria-pressed="false"
                   style="min-width: 80px; font-size: 0.75rem"
                 >
-                  → SPLIT
+                  → SPLIT GRADE
                 </button>
               </div>
             </div>
@@ -2958,9 +2847,7 @@
               <div class="collapsible-title">TEST STRIP PROFILES</div>
             </button>
             <div class="collapsible-content">
-              <div class="incremental-timer" style="margin-top: 15px">
-                <div class="title-md">Test Strip Profiles</div>
-
+              <div class="incremental-timer">
                 <div class="settings-group">
                   <div class="settings-item">
                     <div class="settings-label">Profile Name</div>
@@ -2979,8 +2866,6 @@
                     </button>
                   </div>
                 </div>
-
-                <div class="title-md">Saved Test Strip Profiles</div>
                 <div class="shelf-life-list" id="testStripProfileList">
                   <!-- Test strip profiles will be listed here -->
                 </div>
@@ -3001,190 +2886,6 @@
 
       <!-- UPDATED: CHEMICAL MANAGEMENT TAB -->
       <div id="chemical" class="tab-content">
-        <!-- Mix Calculator -->
-        <section class="collapsible" data-id="chemical-mix">
-          <button class="collapsible-header" aria-expanded="false">
-            CHEMICAL MIX CALCULATOR
-          </button>
-          <div class="collapsible-content">
-            <div class="incremental-timer">
-              <div class="title-sm" style="text-align: center">
-                CHEMICAL MIX CALCULATOR
-              </div>
-
-              <div class="control">
-                <div class="control-label">
-                  <span>TOTAL VOLUME</span>
-                  <span class="value-display" id="totalVolumeValue"
-                    >1000ml</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  min="100"
-                  max="5000"
-                  step="50"
-                  value="1000"
-                  class="slider"
-                  id="totalVolumeSlider"
-                />
-              </div>
-
-              <div
-                class="title-sm"
-                style="
-                  text-align: center;
-                  font-size: 0.75rem;
-                  margin-bottom: 8px;
-                "
-              >
-                DILUTION RATIO
-              </div>
-              <div class="dilution-selector">
-                <button class="toggle-btn active" data-ratio="1+9">
-                  1+9 (1:10)
-                </button>
-                <button class="toggle-btn" data-ratio="1+14">
-                  1+14 (1:15)
-                </button>
-                <button class="toggle-btn" data-ratio="1+19">
-                  1+19 (1:20)
-                </button>
-                <button class="toggle-btn" data-ratio="1+24">
-                  1+24 (1:25)
-                </button>
-                <button class="toggle-btn" data-ratio="1+29">
-                  1+29 (1:30)
-                </button>
-                <button class="toggle-btn" data-ratio="1+39">
-                  1+39 (1:40)
-                </button>
-              </div>
-
-              <div
-                class="title-sm"
-                style="
-                  text-align: center;
-                  font-size: 0.75rem;
-                  margin-top: 10px;
-                  margin-bottom: 5px;
-                "
-              >
-                OR CUSTOM RATIO
-              </div>
-              <div class="custom-dilution">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value="1"
-                  class="settings-input"
-                  id="customStockParts"
-                  placeholder="Stock"
-                />
-                <div style="color: var(--text-secondary); align-self: center">
-                  +
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value="9"
-                  class="settings-input"
-                  id="customWaterParts"
-                  placeholder="Water"
-                />
-              </div>
-
-              <div
-                class="incremental-timer"
-                style="background: var(--panel-light); margin-bottom: 0"
-              >
-                <div
-                  class="title-sm"
-                  style="text-align: center; font-size: 0.75rem"
-                >
-                  MIXING INSTRUCTIONS
-                </div>
-                <div class="chemical-results-grid">
-                  <div class="info-box">
-                    <div class="label-sm">STOCK SOLUTION</div>
-                    <div
-                      class="value-display"
-                      id="stockVolume"
-                      style="font-size: 1.2rem"
-                    >
-                      100ml
-                    </div>
-                  </div>
-                  <div class="info-box">
-                    <div class="label-sm">WATER</div>
-                    <div
-                      class="value-display"
-                      id="waterVolume"
-                      style="font-size: 1.2rem"
-                    >
-                      900ml
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style="
-                    font-size: 0.6rem;
-                    color: --text-secondary;
-                    text-align: center;
-                    margin-top: 8px;
-                  "
-                >
-                  Add stock to water, not water to stock
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Chemical Presets Section - NEW -->
-        <section class="collapsible" data-id="chemical-presets">
-          <button class="collapsible-header" aria-expanded="false">
-            <div class="collapsible-title">CHEMICAL PRESETS</div>
-          </button>
-          <div class="collapsible-content">
-            <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Chemical Presets</div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Preset Name</div>
-                  <input
-                    type="text"
-                    class="settings-input"
-                    id="chemicalPresetName"
-                    placeholder="Enter preset name"
-                    maxlength="20"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">&nbsp;</div>
-                  <button class="settings-btn" id="saveChemicalPreset">
-                    Save Current as Preset
-                  </button>
-                </div>
-              </div>
-
-              <div class="title-md">Saved Chemical Presets</div>
-              <div class="shelf-life-list" id="chemicalPresetList">
-                <!-- Chemical presets will be listed here -->
-              </div>
-
-              <div class="settings-btn-group">
-                <button class="settings-btn danger" id="clearChemicalPresets">
-                  Clear All
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- UPDATED: Developer Capacity Tracker with Paper Area Calculations -->
         <section class="collapsible" data-id="capacity-tracker">
           <button class="collapsible-header" aria-expanded="false">
@@ -3422,6 +3123,188 @@
             </div>
           </div>
         </section>
+
+        <!-- Mix Calculator -->
+        <section class="collapsible" data-id="chemical-mix">
+          <button class="collapsible-header" aria-expanded="false">
+            CHEMICAL MIX CALCULATOR
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer">
+              <div class="title-sm" style="text-align: center">
+                CHEMICAL MIX CALCULATOR
+              </div>
+
+              <div class="control">
+                <div class="control-label">
+                  <span>TOTAL VOLUME</span>
+                  <span class="value-display" id="totalVolumeValue"
+                    >1000ml</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="100"
+                  max="5000"
+                  step="50"
+                  value="1000"
+                  class="slider"
+                  id="totalVolumeSlider"
+                />
+              </div>
+
+              <div
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-bottom: 8px;
+                "
+              >
+                DILUTION RATIO
+              </div>
+              <div class="dilution-selector">
+                <button class="toggle-btn active" data-ratio="1+9">
+                  1+9 (1:10)
+                </button>
+                <button class="toggle-btn" data-ratio="1+14">
+                  1+14 (1:15)
+                </button>
+                <button class="toggle-btn" data-ratio="1+19">
+                  1+19 (1:20)
+                </button>
+                <button class="toggle-btn" data-ratio="1+24">
+                  1+24 (1:25)
+                </button>
+                <button class="toggle-btn" data-ratio="1+29">
+                  1+29 (1:30)
+                </button>
+                <button class="toggle-btn" data-ratio="1+39">
+                  1+39 (1:40)
+                </button>
+              </div>
+
+              <div
+                class="title-sm"
+                style="
+                  text-align: center;
+                  font-size: 0.75rem;
+                  margin-top: 10px;
+                  margin-bottom: 5px;
+                "
+              >
+                OR CUSTOM RATIO
+              </div>
+              <div class="custom-dilution">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value="1"
+                  class="settings-input"
+                  id="customStockParts"
+                  placeholder="Stock"
+                />
+                <div style="color: var(--text-secondary); align-self: center">
+                  +
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value="9"
+                  class="settings-input"
+                  id="customWaterParts"
+                  placeholder="Water"
+                />
+              </div>
+
+              <div
+                class="incremental-timer"
+                style="background: var(--panel-light); margin-bottom: 0"
+              >
+                <div
+                  class="title-sm"
+                  style="text-align: center; font-size: 0.75rem"
+                >
+                  MIXING INSTRUCTIONS
+                </div>
+                <div class="chemical-results-grid">
+                  <div class="info-box">
+                    <div class="label-sm">STOCK SOLUTION</div>
+                    <div
+                      class="value-display"
+                      id="stockVolume"
+                      style="font-size: 1.2rem"
+                    >
+                      100ml
+                    </div>
+                  </div>
+                  <div class="info-box">
+                    <div class="label-sm">WATER</div>
+                    <div
+                      class="value-display"
+                      id="waterVolume"
+                      style="font-size: 1.2rem"
+                    >
+                      900ml
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    font-size: 0.6rem;
+                    color: --text-secondary;
+                    text-align: center;
+                    margin-top: 8px;
+                  "
+                >
+                  Add stock to water, not water to stock
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chemical Mix Presets Section -->
+        <section class="collapsible" data-id="chemical-presets">
+          <button class="collapsible-header" aria-expanded="false">
+            <div class="collapsible-title">CHEMICAL MIX PRESETS</div>
+          </button>
+          <div class="collapsible-content">
+            <div class="incremental-timer" style="margin-top: 15px">
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Preset Name</div>
+                  <input
+                    type="text"
+                    class="settings-input"
+                    id="chemicalPresetName"
+                    placeholder="Enter preset name"
+                    maxlength="20"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">&nbsp;</div>
+                  <button class="settings-btn" id="saveChemicalPreset">
+                    Save Current as Preset
+                  </button>
+                </div>
+              </div>
+
+              <div class="shelf-life-list" id="chemicalPresetList">
+                <!-- Chemical presets will be listed here -->
+              </div>
+
+              <div class="settings-btn-group">
+                <button class="settings-btn danger" id="clearChemicalPresets">
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Timer Tab with Photo Wash Toggle AND Timer Profiles -->
@@ -3592,8 +3475,6 @@
           </button>
           <div class="collapsible-content">
             <div class="incremental-timer" style="margin-top: 15px">
-              <div class="title-md">Timer Profiles</div>
-
               <div class="settings-group">
                 <div class="settings-item">
                   <div class="settings-label">Profile Name</div>
@@ -3612,8 +3493,6 @@
                   </button>
                 </div>
               </div>
-
-              <div class="title-md">Saved Timer Profiles</div>
               <div class="shelf-life-list" id="timerProfileList">
                 <!-- Timer profiles will be listed here -->
               </div>
@@ -3744,7 +3623,7 @@
                   </div>
                 </div>
               </div>
-              <div class="settings-group">
+              <div class="settings-group" style="margin-top: 20px">
                 <div class="settings-item">
                   <button class="settings-btn" id="allRelaysOn">All ON</button>
                 </div>
@@ -3853,124 +3732,6 @@
             </div>
           </div>
 
-          <div class="settings-section">
-            <div class="title-md">Controller Manager</div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Server IP (auto-detected)</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="relayServerIP"
-                  placeholder="Auto-detected from page URL"
-                  value=""
-                  readonly
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Server Port</div>
-                <input
-                  type="number"
-                  class="settings-input"
-                  id="relayServerPort"
-                  value="80"
-                  readonly
-                />
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Test Connection</div>
-                <button class="settings-btn" id="testRelayConnection">
-                  Test
-                </button>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Status</div>
-                <div
-                  id="relayStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  Not connected
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- WiFi Configuration Section (Pico 2 W) -->
-          <div class="settings-section">
-            <div class="title-md">WiFi Configuration</div>
-            <div
-              style="
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-                margin-bottom: 8px;
-              "
-            >
-              Connect to a WiFi router for mDNS access (darkroom.local)
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">WiFi SSID</div>
-                <input
-                  type="text"
-                  class="settings-input"
-                  id="wifiSSID"
-                  placeholder="Your WiFi network name"
-                />
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">WiFi Password</div>
-                <input
-                  type="password"
-                  class="settings-input"
-                  id="wifiPassword"
-                  placeholder="WiFi password"
-                />
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn primary" id="connectWifi">
-                  Connect to WiFi
-                </button>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">WiFi Status</div>
-                <div
-                  id="wifiStatus"
-                  style="color: var(--text-secondary); font-size: 0.8rem"
-                >
-                  AP Mode (192.168.4.1)
-                </div>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button
-                  class="settings-btn"
-                  id="forceHotspotMode"
-                  style="background: var(--accent-color)"
-                >
-                  Force Hotspot Mode
-                </button>
-              </div>
-              <div class="settings-item">
-                <button class="settings-btn danger" id="clearWifiCredentials">
-                  Clear WiFi Credentials
-                </button>
-              </div>
-            </div>
-            <div
-              style="
-                font-size: 0.65rem;
-                color: var(--text-secondary);
-                margin-top: 8px;
-              "
-            >
-              Note: After connecting to WiFi, access via darkroom.local
-            </div>
-          </div>
         </div>
       </div>
 
@@ -3978,7 +3739,7 @@
       <div id="settings" class="tab-content">
         <div class="incremental-timer">
           <!-- Fullscreen Section -->
-          <div class="settings-section">
+          <div class="settings-item">
             <div class="title-md">Display</div>
             <button
               class="settings-btn primary"
@@ -4001,55 +3762,6 @@
             </div>
           </div>
 
-          <!-- Updates Section -->
-          <div class="settings-section">
-            <div class="title-md">Updates</div>
-            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">
-              Check for new versions from GitHub and update automatically
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <div class="settings-label">Current Version</div>
-                <div
-                  id="currentAppVersion"
-                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
-                >
-                  Loading...
-                </div>
-              </div>
-              <div class="settings-item">
-                <div class="settings-label">Latest Version</div>
-                <div
-                  id="latestAppVersion"
-                  style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
-                >
-                  Unknown
-                </div>
-              </div>
-            </div>
-            <div class="settings-group">
-              <div class="settings-item">
-                <button class="settings-btn primary" id="checkUpdatesBtn">
-                  Check for Updates
-                </button>
-              </div>
-              <div class="settings-item">
-                <div id="updateStatus" style="color: var(--text-secondary); font-size: 0.8rem; min-height: 20px;">
-                  Ready
-                </div>
-              </div>
-            </div>
-            <div id="updateProgress" style="display: none; margin-top: 8px;">
-              <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px;">Progress:</div>
-              <div style="width: 100%; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden;">
-                <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
-              </div>
-              <div id="updateProgressText" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">0%</div>
-            </div>
-            <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 8px;">
-              Note: Pico will restart automatically after a successful update
-            </div>
-          </div>
 
           <!-- GLOBAL SETTINGS Collapsible Section -->
           <section class="collapsible" data-id="global-settings">
@@ -4128,56 +3840,81 @@
             </div>
           </section>
 
-          <!-- CALC SETTINGS Collapsible Section -->
-          <section class="collapsible" data-id="calc-settings">
+          <!-- METERING SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="meter-settings">
             <button class="collapsible-header" aria-expanded="false">
-              CALC SETTINGS
+              METERING SETTINGS
             </button>
             <div class="collapsible-content">
+              <div class="title-md">Virtual Proof Stability</div>
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Base Time Min (s)</div>
+                  <div class="settings-label">Stability Detection</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityEnabled" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Beep On Stable</div>
+                  <label class="switch">
+                    <input type="checkbox" id="proofStabilityBeep" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Tolerance (%)</div>
                   <input
                     type="number"
-                    id="baseTimeMin"
+                    id="proofStabilityTolerance"
                     class="settings-input"
-                    min="0.1"
+                    min="0.5"
                     max="10"
                     step="0.1"
-                    value="0.4"
+                    value="2.5"
                   />
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Base Time Max (s)</div>
+                  <div class="settings-label">Min Stable Reads</div>
                   <input
                     type="number"
-                    id="baseTimeMax"
+                    id="proofStabilityMinStable"
                     class="settings-input"
-                    min="10"
-                    max="300"
+                    min="1"
+                    max="5"
                     step="1"
-                    value="50"
+                    value="2"
                   />
                 </div>
               </div>
+
               <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Calc 3s Beep</div>
-                  <label class="switch">
-                    <input
-                      type="checkbox"
-                      id="settingCalcWarningBeep"
-                      checked
-                    />
-                    <span class="slider-switch"></span>
-                  </label>
+                  <div class="settings-label">Max Wait (ms)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMaxWait"
+                    class="settings-input"
+                    min="300"
+                    max="3000"
+                    step="50"
+                    value="900"
+                  />
                 </div>
                 <div class="settings-item">
-                  <div class="settings-label">Calc End Beep</div>
-                  <label class="switch">
-                    <input type="checkbox" id="settingCalcEndBeep" checked />
-                    <span class="slider-switch"></span>
-                  </label>
+                  <div class="settings-label">Min Delta (lux)</div>
+                  <input
+                    type="number"
+                    id="proofStabilityMinDelta"
+                    class="settings-input"
+                    min="0.05"
+                    max="5"
+                    step="0.05"
+                    value="0.2"
+                  />
                 </div>
               </div>
             </div>
@@ -4234,6 +3971,61 @@
                     step="1"
                     value="50"
                   />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- EXPOSURE SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="calc-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              EXPOSURE SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Min (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMin"
+                    class="settings-input"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    value="0.4"
+                  />
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Base Time Max (s)</div>
+                  <input
+                    type="number"
+                    id="baseTimeMax"
+                    class="settings-input"
+                    min="10"
+                    max="300"
+                    step="1"
+                    value="50"
+                  />
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Exposure 3s Beep</div>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="settingCalcWarningBeep"
+                      checked
+                    />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-label">Exposure End Beep</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingCalcEndBeep" checked />
+                    <span class="slider-switch"></span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -4311,9 +4103,6 @@
                     <span class="slider-switch"></span>
                   </label>
                 </div>
-              </div>
-
-              <div class="settings-group">
                 <div class="settings-item">
                   <div class="settings-label">Timer End Beep</div>
                   <label class="switch">
@@ -4331,39 +4120,8 @@
               CONTROLLER SETTINGS
             </button>
             <div class="collapsible-content">
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div
-                    id="safelightAutoOffStatus"
-                    style="color: var(--text-secondary); font-size: 0.8rem"
-                  >
-                    Loading...
-                  </div>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Safelight Auto-Off</div>
-                  <label class="switch">
-                    <input type="checkbox" id="safelightAutoOff" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">&nbsp;</div>
-                  <div
-                    style="
-                      font-size: 0.7rem;
-                      color: var(--text-secondary);
-                      text-align: center;
-                    "
-                  >
-                    Turn off safelight when enlarger is on
-                  </div>
-                </div>
-              </div>
-
+              
+<div class="settings-section">
               <div class="title-md" style="margin-top: 12px">
                 Auto - Manual Enlarger Control
               </div>
@@ -4375,11 +4133,71 @@
                     <span class="slider-switch"></span>
                   </label>
                 </div>
+                <div class="settings-item">
+                  <div class="settings-label">Auto Safelight Control</div>
+                  <label class="switch">
+                    <input type="checkbox" id="safelightAutoOff" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+              <div
+                style="
+                  font-size: 0.7rem;
+                  color: var(--text-secondary);
+                  margin-top: 10px;
+                "
+              >
+                Note: Auto-trigger controls enlarger relay during timers. Auto Safelight automatically turns off safelight when enlarger is on.
               </div>
 
-              <div class="settings-group">
+              </div>
+
+              <div class="settings-section" style="margin-top: 16px;">
+                <div class="title-md">Controller Manager</div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Server IP (auto-detected)</div>
+                    <input
+                      type="text"
+                      class="settings-input"
+                      id="relayServerIP"
+                      placeholder="Auto-detected from page URL"
+                      value=""
+                      readonly
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Server Port</div>
+                    <input
+                      type="number"
+                      class="settings-input"
+                      id="relayServerPort"
+                      value="80"
+                      readonly
+                    />
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Test Connection</div>
+                    <button class="settings-btn" id="testRelayConnection">
+                      Test
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Status</div>
+                    <div
+                      id="relayStatus"
+                      style="color: var(--text-secondary); font-size: 0.8rem"
+                    >
+                      Not connected
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
                 <div class="settings-item">
-                  <div class="settings-label">Test Timer Relay</div>
+                  <div class="title-md">Test Timer Relay</div>
                   <div style="display: flex; gap: 5px">
                     <input
                       type="number"
@@ -4397,122 +4215,145 @@
                   </div>
                 </div>
               </div>
+              </div>
 
-              <div
-                style="
-                  font-size: 0.7rem;
-                  color: var(--text-secondary);
-                  margin-top: 10px;
-                "
-              >
-                Note: When enabled, the timer relay (GP14) will automatically
-                trigger during countdown timers in CALC and F-STOP TEST tabs.
-                Time is sent as a single request with delay parameter for
-                maximum accuracy.
+              <!-- WiFi Configuration Section (Pico 2 W) -->
+              <div class="settings-section">
+                <div class="title-md">WiFi Configuration</div>
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    color: var(--text-secondary);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Connect to a WiFi router for mDNS access (darkroom.local)
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi SSID</div>
+                    <input
+                      type="text"
+                      class="settings-input"
+                      id="wifiSSID"
+                      placeholder="Your WiFi network name"
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi Password</div>
+                    <input
+                      type="password"
+                      class="settings-input"
+                      id="wifiPassword"
+                      placeholder="WiFi password"
+                    />
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button class="settings-btn primary" id="connectWifi">
+                      Connect to WiFi
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">WiFi Status</div>
+                    <div
+                      id="wifiStatus"
+                      style="color: var(--text-secondary); font-size: 0.8rem"
+                    >
+                      AP Mode (192.168.4.1)
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button
+                      class="settings-btn"
+                      id="forceHotspotMode"
+                    >
+                      Force Hotspot Mode
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <button class="settings-btn" id="clearWifiCredentials">
+                      Clear WiFi Credentials
+                    </button>
+                  </div>
+                </div>
+                <div
+                  style="
+                    font-size: 0.65rem;
+                    color: var(--text-secondary);
+                    margin-top: 8px;
+                  "
+                >
+                  Note: After connecting to WiFi, access via darkroom.local
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <div class="title-md">Updates</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">
+                  Check for new versions from GitHub and update automatically
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Current Version</div>
+                    <div
+                      id="currentAppVersion"
+                      style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                    >
+                      Loading...
+                    </div>
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">Latest Version</div>
+                    <div
+                      id="latestAppVersion"
+                      style="color: var(--text-secondary); font-size: 0.8rem; padding: 6px 0;"
+                    >
+                      Unknown
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <button class="settings-btn primary" id="checkUpdatesBtn">
+                      Check for Updates
+                    </button>
+                  </div>
+                  <div class="settings-item">
+                    <div id="updateStatus" style="color: var(--text-secondary); font-size: 0.8rem; min-height: 20px;">
+                      Ready
+                    </div>
+                  </div>
+                </div>
+                <div id="updateProgress" style="display: none; margin-top: 8px;">
+                  <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px;">Progress:</div>
+                  <div style="width: 100%; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden;">
+                    <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
+                  </div>
+                  <div id="updateProgressText" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">0%</div>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 8px;">
+                  Note: Pico will restart automatically after a successful update
+                </div>
               </div>
             </div>
           </section>
 
-          <!-- METER SETTINGS Collapsible Section -->
-          <section class="collapsible" data-id="meter-settings">
-            <button class="collapsible-header" aria-expanded="false">
-              METER SETTINGS
-            </button>
-            <div class="collapsible-content">
-              <div class="title-md">Virtual Proof Stability</div>
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Stability Detection</div>
-                  <label class="switch">
-                    <input type="checkbox" id="proofStabilityEnabled" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Beep On Stable</div>
-                  <label class="switch">
-                    <input type="checkbox" id="proofStabilityBeep" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Tolerance (%)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityTolerance"
-                    class="settings-input"
-                    min="0.5"
-                    max="10"
-                    step="0.1"
-                    value="2.5"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Min Stable Reads</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMinStable"
-                    class="settings-input"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value="2"
-                  />
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Max Wait (ms)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMaxWait"
-                    class="settings-input"
-                    min="300"
-                    max="3000"
-                    step="50"
-                    value="900"
-                  />
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">Min Delta (lux)</div>
-                  <input
-                    type="number"
-                    id="proofStabilityMinDelta"
-                    class="settings-input"
-                    min="0.05"
-                    max="5"
-                    step="0.05"
-                    value="0.2"
-                  />
-                </div>
-              </div>
-
-              <div
-                style="
-                  font-size: 0.7rem;
-                  color: var(--text-secondary);
-                  margin-top: 10px;
-                "
-              >
-                Capture starts only after readings stabilize within tolerance.
-              </div>
+          <div class="settings-item" style="margin-top: 10px;">
+            <div class="settings-section">
+              <button class="settings-btn primary" id="saveGlobalSettings">
+               Save All Settings
+              </button>
+              <div id="allProfilesFeedback" class="json-feedback"></div>
             </div>
-          </section>
-
-          <div class="settings-section">
-            <button class="settings-btn primary" id="saveGlobalSettings">
-              Save All Settings
-            </button>
-            <div id="allProfilesFeedback" class="json-feedback"></div>
           </div>
 
-          <!-- UPDATED: Profile & Chemical Presets Sharing Section -->
+          <!-- UPDATED: Profile & Settings Sharing Section -->
           <div class="settings-section">
-            <div class="title-md">Profile & Chemical Presets Sharing</div>
+            <div class="title-md">Profile & Settings Sharing</div>
             <div class="settings-btn-group">
               <button class="settings-btn" id="exportAllProfiles">
                 Export All Data
@@ -4790,7 +4631,7 @@
                 id="sendExposureToCalc"
                 disabled
               >
-                → Send to CALC Timer
+                → Send to EXPOSURE
               </button>
             </div>
           </div>
@@ -4962,7 +4803,7 @@
                 Analyze Contrast
               </button>
               <button class="settings-btn" id="sendContrastToCalc" disabled>
-                Send Suggested Time to CALC
+                Send Suggested Time to EXPOSURE
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -5159,7 +5000,7 @@
                 id="sendSplitBothToCalc"
                 disabled
               >
-                → Send Both to CALC
+                → Send Both to EXPOSURE
               </button>
             </div>
 
@@ -5190,7 +5031,7 @@
               <div class="label-sm" style="text-align: center; margin-top: 5px">
                 1. Measure highlight and shadow areas<br />
                 2. Click "Calculate Split-Grade"<br />
-                3. Send times to CALC tab for exposure
+                3. Send times to EXPOSURE tab for exposure
               </div>
             </div>
 
@@ -5509,7 +5350,7 @@
       <!-- NEW: LOGS Tab for Exposure Session Logging -->
       <div id="logs" class="tab-content">
         <div class="incremental-timer">
-          <div class="title-md">EXPOSURE SESSION LOGS</div>
+          <div class="title-md">LOGS</div>
           <div class="label-sm" style="margin-bottom: 8px">
             Automatically tracks your printing sessions. Temporary sessions (max
             6) are auto-saved. Save permanently to keep sessions forever.
@@ -5560,33 +5401,7 @@
       </div>
 
       <footer>
-        <div>DARKROOM TIMER v3.0.0 (Pico 2 W)</div>
-        <div>
-          Height & Aperture & Paper Size & Contrast Calculator: New Time =
-          Original Time × (New Height ÷ Original Height)² × (New F-Stop ÷
-          Original F-Stop)² × (√New Paper Area ÷ √Original Paper Area)² × Filter
-          Factor
-        </div>
-        <div>
-          Chemical Mix Calculator: Stock = Total Volume ÷ (Stock Parts + Water
-          Parts)
-        </div>
-        <div>
-          Capacity Calculator: Max Prints = (Capacity × Tray Volume / 1000) ÷
-          Paper Area
-        </div>
-        <div>
-          Countdown Feature: Configurable 0-30 second delay with audible beeps
-          before all timers start
-        </div>
-        <div>
-          Test Strip Auto Advance: Toggle automatic progression between test
-          strip steps
-        </div>
-        <div>
-          Data Export: Includes Timer Profiles, Chemical Presets, Capacity
-          Tracker, and Shelf Life Data
-        </div>
+        <div>CYANOWOOD DARKROOM TIMER v1.0.1</div>
       </footer>
     </div>
 
@@ -5643,7 +5458,7 @@
         // Test strip auto-advance
         autoAdvance: false,
         autoAdvanceDelay: 1,
-        safelightAutoOff: true, // Turn off safelight when enlarger is on
+        safelightAutoOff: true, // Auto safelight control (server-side)
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
         proofStabilityEnabled: true,
         proofStabilityBeep: true,
@@ -5983,7 +5798,7 @@
        */
       class TemperatureManager {
         constructor() {
-          this.serverIP = window.serverIP || "192.168.4.1";
+          this.serverIP = window.location.hostname || "192.168.4.1";
           this.pollInterval = 15000; // Poll every 15 seconds (matches backend sensor read)
           this.pollTask = null;
           this.dataBuffer = []; // Circular buffer (max 60 points)
@@ -6808,14 +6623,13 @@
        * @function switchTab
        * @description Switches the active tab and updates related UI components.
        * Removes active class from all dropdown items, adds it to selected item, and triggers
-       * tab-specific updates (chart, test strip, chemical, timer, relay).
+      * tab-specific updates (test strip, chemical, timer, relay).
        * Also updates the active tab name display and closes the dropdown.
        * @param {string} tabId - ID of the tab to activate
        * @returns {void}
        * @fires Element.classList.remove - Removes active class from all dropdown items
        * @fires Element.classList.add - Adds active class to selected dropdown item
        * @fires refreshCollapsibleHeights - Updates collapsible sections
-       * @fires updateChart - Updates chart tab
        * @fires fstopTestGenerator.updateDisplay - Updates test strip display
        * @fires chemicalManager.updateDisplay - Updates chemical display
        * @fires settingsManager.updateTimerProfileListUI - Updates timer profiles
@@ -6848,9 +6662,7 @@
         closeMenu();
 
         // Update tab-specific content
-        if (tabId === "chart") {
-          updateChart();
-        } else if (tabId === "fstop-test") {
+        if (tabId === "fstop-test") {
           if (window.fstopTestGenerator) {
             window.fstopTestGenerator.updateDisplay();
             window.fstopTestGenerator.updateInstructions();
@@ -8234,8 +8046,7 @@
             autoAdvanceDelay: parseInt(
               document.getElementById("settingAutoAdvanceDelay").value,
             ),
-            safelightAutoOff:
-              document.getElementById("safelightAutoOff").checked, // NEW
+            safelightAutoOff: document.getElementById("safelightAutoOff")?.checked !== false,
             proofStabilityEnabled: document.getElementById(
               "proofStabilityEnabled",
             )?.checked,
@@ -8464,9 +8275,6 @@
             } catch (e) {
               /* ignore if not yet defined */
             }
-            try {
-              updateChart();
-            } catch (e) {}
           }).call(this);
 
           if (window.lightMeterManager) {
@@ -8570,6 +8378,8 @@
           if (storageMethod(collection)) {
             if (updateListMethod) updateListMethod();
 
+            playBeep(800, 0.3, 0.3);
+
             // Feedback handling
             if (feedbackMethod) {
               feedbackMethod(
@@ -8628,12 +8438,24 @@
 
         // Generic render preset list helper
         renderPresetList(config) {
-          const { listElement, collection, currentItem, renderItemContent } =
-            config;
+          const {
+            listElement,
+            collection,
+            currentItem,
+            renderItemContent,
+            emptyMessage,
+          } = config;
 
           if (!listElement) return;
 
           listElement.innerHTML = "";
+
+          if (!collection || collection.length === 0) {
+            listElement.innerHTML = `<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">${
+              emptyMessage || "No profiles saved yet"
+            }</div>`;
+            return;
+          }
 
           collection.forEach((item) => {
             const itemDiv = document.createElement("div");
@@ -8674,9 +8496,8 @@
                   successMessage || "All items deleted!",
                   "success",
                 );
-              } else {
-                playBeep(600, 0.5, 0.3);
               }
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -8711,7 +8532,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            successMessage: `Profile "${name}" saved!`,
           });
 
           if (result) {
@@ -8772,8 +8592,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            confirmMessage: `Delete profile "${profileName}"?`,
-            successMessage: `Profile "${profileName}" deleted!`,
             onDeleteCallback: () => {
               if (this.getCurrentProfile() === profileName) {
                 this.setCurrentProfile(null);
@@ -8789,8 +8607,6 @@
             updateListMethod: () => this.updateTimerProfileListUI(),
             feedbackMethod: (msg, type) =>
               this.showAllProfilesFeedback(msg, type),
-            confirmMessage: "Delete ALL timer profiles? This cannot be undone!",
-            successMessage: "All timer profiles deleted!",
             onClearCallback: () => {
               this.setCurrentProfile(null);
             },
@@ -8848,6 +8664,7 @@
             splitGradePresets: window.splitGradeCalculator
               ? window.splitGradeCalculator.splitPresets
               : [],
+            testStripProfiles: StorageManager.loadTestStripProfiles(),
             lightMeterCalibrations: window.lightMeterManager
               ? window.lightMeterManager.calibrations
               : JSON.parse(
@@ -9141,6 +8958,90 @@
                 );
                 window.splitGradeCalculator.updatePresetList();
                 importedCount += validPresets.length;
+              }
+            }
+
+            // Import test strip profiles
+            if (data.testStripProfiles && Array.isArray(data.testStripProfiles)) {
+              const validTestStripProfiles = data.testStripProfiles
+                .filter((profile) => {
+                  return (
+                    profile &&
+                    typeof profile.name === "string" &&
+                    profile.name.trim() !== "" &&
+                    Number.isFinite(profile.baseTime) &&
+                    Number.isFinite(profile.stepIncrement) &&
+                    Number.isFinite(profile.denominator) &&
+                    Number.isFinite(profile.numSteps) &&
+                    typeof profile.method === "string"
+                  );
+                })
+                .map((profile) => ({
+                  ...profile,
+                  method:
+                    profile.method === "incremental"
+                      ? "incremental"
+                      : "cumulative",
+                  autoAdvance: !!profile.autoAdvance,
+                  autoAdvanceDelay: Number.isFinite(profile.autoAdvanceDelay)
+                    ? profile.autoAdvanceDelay
+                    : DEFAULT_SETTINGS.autoAdvanceDelay,
+                }));
+
+              if (validTestStripProfiles.length > 0) {
+                const existingProfiles = StorageManager.loadTestStripProfiles();
+                const existingNames = existingProfiles.map((p) => p.name);
+                const newNames = validTestStripProfiles.map((p) => p.name);
+                const duplicates = newNames.filter((name) =>
+                  existingNames.includes(name),
+                );
+
+                let testStripMergeStrategy = "skip";
+                if (duplicates.length > 0) {
+                  testStripMergeStrategy =
+                    prompt(
+                      `Found ${
+                        duplicates.length
+                      } duplicate test strip profile(s): ${duplicates.join(
+                        ", ",
+                      )}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+
+                  if (![
+                    "overwrite",
+                    "skip",
+                  ].includes(testStripMergeStrategy)) {
+                    testStripMergeStrategy = "skip";
+                  }
+                }
+
+                validTestStripProfiles.forEach((newProfile) => {
+                  const existingIndex = existingProfiles.findIndex(
+                    (p) => p.name === newProfile.name,
+                  );
+
+                  if (existingIndex >= 0) {
+                    if (testStripMergeStrategy === "overwrite") {
+                      existingProfiles[existingIndex] = {
+                        ...newProfile,
+                        date: newProfile.date || new Date().toISOString(),
+                      };
+                    }
+                  } else {
+                    existingProfiles.push({
+                      ...newProfile,
+                      date: newProfile.date || new Date().toISOString(),
+                    });
+                  }
+                });
+
+                StorageManager.saveTestStripProfiles(existingProfiles);
+                if (window.testStripGenerator) {
+                  window.testStripGenerator.updateTestStripProfileList();
+                }
+                importedCount += validTestStripProfiles.length;
               }
             }
 
@@ -9794,7 +9695,7 @@
                   <div>
                     <strong>${session.name}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
                   </div>
                   <div class="shelf-life-actions">
                     <button class="btn-action" onclick="exposureLogManager.viewSession('${
@@ -9839,7 +9740,7 @@
                   <div>
                     <strong>${session.name}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">CALC Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
                     ${
                       session.notes
                         ? `<div style="font-size: 0.65rem; color: var(--text); margin-top: 2px;">${session.notes}</div>`
@@ -9902,20 +9803,32 @@
           const session = sessions.find((s) => s.id === sessionId);
           if (!session) return;
 
+          const sourceLabels = {
+            test: "Test Strip",
+            split: "Split Grade",
+            calc: "Exposure",
+            manual: "Session",
+          };
+          const sourceLabel = sourceLabels[session.source] || session.source;
+
           let details = `Session: ${session.name}\n`;
           details += `Created: ${new Date(session.created).toLocaleString()}\n`;
-          details += `Source: ${session.source}\n\n`;
+          details += `Source: ${sourceLabel}\n\n`;
 
           if (session.phases.test) {
-            details += `TEST PHASE:\n`;
+            const transferLabel =
+              session.phases.test.transferDestination === "split"
+                ? "Split Grade"
+                : "Exposure";
+            details += `TEST STRIP PHASE:\n`;
             details += `  Base Time: ${session.phases.test.baseTime}s\n`;
             details += `  Method: ${session.phases.test.method}\n`;
             details += `  Selected: ${session.phases.test.selectedStep}s (${session.phases.test.selectedStop} stops)\n`;
-            details += `  Transfer: ${session.phases.test.transferDestination}\n\n`;
+            details += `  Transfer: ${transferLabel}\n\n`;
           }
 
           if (session.phases.split) {
-            details += `SPLIT PHASE:\n`;
+            details += `SPLIT GRADE PHASE:\n`;
             details += `  Neutral: ${session.phases.split.neutralTime}s\n`;
             details += `  Paper: ${session.phases.split.paperBrand}\n`;
             details += `  Soft Filter: ${session.phases.split.softFilter} (${session.phases.split.filterBrand})\n`;
@@ -9926,7 +9839,7 @@
           }
 
           if (session.phases.calc && session.phases.calc.length > 0) {
-            details += `CALC PHASE:\n`;
+            details += `EXPOSURE PHASE:\n`;
             session.phases.calc.forEach((calc, i) => {
               // Format the stop adjustment for display
               const stopDisplay = formatStop(calc.stopAdjustment);
@@ -9937,7 +9850,7 @@
               if (calc.notes) details += ` - ${calc.notes}`;
               details += `\n`;
             });
-            details += `  CALC Total: ${this.calculateCalcTotal(session)}s\n\n`;
+            details += `  EXPOSURE Total: ${this.calculateCalcTotal(session)}s\n\n`;
           }
 
           if (session.phases.timer) {
@@ -10458,7 +10371,6 @@
             updateListMethod: () => this.updateChemicalPresetList(),
             feedbackMethod: (msg, type) =>
               settingsManager.showAllProfilesFeedback(msg, type),
-            successMessage: `Preset "${name}" saved!`,
           });
 
           if (result) {
@@ -10506,8 +10418,6 @@
             storageMethod: (presets) =>
               StorageManager.saveChemicalPresets(presets),
             updateListMethod: () => this.updateChemicalPresetList(),
-            confirmMessage: `Delete preset "${presetName}"?`,
-            successMessage: `Preset "${presetName}" deleted!`,
             onDeleteCallback: () => {
               if (this.getCurrentPreset() === presetName) {
                 this.setCurrentPreset(null);
@@ -10557,9 +10467,6 @@
             updateListMethod: () => this.updateChemicalPresetList(),
             feedbackMethod: (msg, type) =>
               settingsManager.showAllProfilesFeedback(msg, type),
-            confirmMessage:
-              "Delete ALL chemical presets? This cannot be undone!",
-            successMessage: "All chemical presets deleted!",
             onClearCallback: () => {
               this.setCurrentPreset(null);
             },
@@ -10971,9 +10878,9 @@
          */
         constructor() {
           this.neutralTime = 10.0; // Test strip result
-          this.paperBrand = "FOMA";
+          this.paperBrand = "Ilford";
           this.fomaPaperType = "fomaspeed"; // fomaspeed or fomatonemg
-          this.ilfordPaperType = "cooltone"; // cooltone, portfolio, etc.
+          this.ilfordPaperType = "rc_deluxe_new"; // cooltone, portfolio, etc.
           this.softFilter = "00";
           this.hardFilter = "5";
           this.burnPercent = 50; // Shadow burn percentage
@@ -11591,47 +11498,28 @@
           const nameInput = document.getElementById("splitPresetName");
           const name = nameInput.value.trim();
 
-          if (!name) {
-            settingsManager.showAllProfilesFeedback(
-              "Please enter a preset name",
-              "error",
-            );
-            return;
-          }
+          const result = settingsManager.savePreset({
+            name,
+            dataObject: {
+              neutralTime: this.neutralTime,
+              paperBrand: this.paperBrand,
+              fomaPaperType: this.fomaPaperType,
+              ilfordPaperType: this.ilfordPaperType,
+              softFilter: this.softFilter,
+              hardFilter: this.hardFilter,
+              burnPercent: this.burnPercent,
+            },
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+          });
 
-          const preset = {
-            name: name,
-            neutralTime: this.neutralTime,
-            paperBrand: this.paperBrand,
-            fomaPaperType: this.fomaPaperType,
-            ilfordPaperType: this.ilfordPaperType, // Added: Save Ilford paper type
-            softFilter: this.softFilter,
-            hardFilter: this.hardFilter,
-            burnPercent: this.burnPercent,
-            date: new Date().toISOString(),
-          };
-
-          // Check for existing
-          const existingIndex = this.splitPresets.findIndex(
-            (p) => p.name === name,
-          );
-          if (existingIndex >= 0) {
-            this.splitPresets[existingIndex] = preset;
-          } else {
-            this.splitPresets.push(preset);
-          }
-
-          // Save
-          if (StorageManager.saveSplitPresets(this.splitPresets)) {
+          if (result) {
             nameInput.value = "";
             this.currentSplitPreset = name;
             StorageManager.saveCurrentSplitPreset(name);
-            this.updatePresetList();
-            playBeep(800, 0.3, 0.3);
-            settingsManager.showAllProfilesFeedback(
-              `Split preset "${name}" saved!`,
-              "success",
-            );
           }
         }
 
@@ -11716,42 +11604,37 @@
          * Delete a preset
          */
         deletePreset(name) {
-          if (!confirm(`Delete split preset "${name}"?`)) return;
-
-          this.splitPresets = this.splitPresets.filter((p) => p.name !== name);
-          StorageManager.saveSplitPresets(this.splitPresets);
-
-          if (this.currentSplitPreset === name) {
-            this.currentSplitPreset = null;
-            StorageManager.saveCurrentSplitPreset(null);
-          }
-
-          this.updatePresetList();
-          playBeep(400, 0.3, 0.3);
-          settingsManager.showAllProfilesFeedback(
-            `Split preset "${name}" deleted!`,
-            "success",
-          );
+          return settingsManager.deletePreset({
+            name,
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onDeleteCallback: () => {
+              if (this.currentSplitPreset === name) {
+                this.currentSplitPreset = null;
+                StorageManager.saveCurrentSplitPreset(null);
+              }
+            },
+          });
         }
 
         /**
          * Clear all presets
          */
         clearAllPresets() {
-          if (!confirm("Delete ALL split presets? This cannot be undone!"))
-            return;
-
-          this.splitPresets = [];
-          this.currentSplitPreset = null;
-          StorageManager.saveSplitPresets([]);
-          StorageManager.saveCurrentSplitPreset(null);
-          this.updatePresetList();
-
-          playBeep(400, 0.3, 0.3);
-          settingsManager.showAllProfilesFeedback(
-            "All split presets deleted!",
-            "success",
-          );
+          return settingsManager.clearAllPresets({
+            collection: this.splitPresets,
+            storageMethod: (presets) => StorageManager.saveSplitPresets(presets),
+            updateListMethod: () => this.updatePresetList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onClearCallback: () => {
+              this.currentSplitPreset = null;
+              StorageManager.saveCurrentSplitPreset(null);
+            },
+          });
         }
 
         /**
@@ -11761,65 +11644,63 @@
           const listElement = document.getElementById("splitPresetList");
           if (!listElement) return;
 
-          listElement.innerHTML = "";
+          // Paper type display mappings
+          const fomaPaperNames = {
+            fomaspeed: "FOMASPEED",
+            fomabrom: "FOMABROM",
+            fomapastel_mg: "FOMAPASTEL MG",
+            fomatone_mg_classic_variant: "FOMATONE MG",
+          };
 
-          this.splitPresets.forEach((preset) => {
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `shelf-life-item ${
-              this.currentSplitPreset === preset.name ? "active" : ""
-            }`;
+          const ilfordPaperNames = {
+            cooltone: "RC Cooltone",
+            portfolio: "RC Portfolio",
+            rc_deluxe_new: "RC Deluxe",
+            rc_portfolio_new: "RC Portfolio New",
+            fb_classic: "FB Classic",
+            fb_warmtone: "FB Warmtone",
+            fb_cooltone: "FB Cooltone",
+          };
 
-            const filterInfo = `F${preset.softFilter}→F${preset.hardFilter} ${preset.burnPercent}%`;
-            const dateStr = new Date(preset.date).toLocaleDateString();
+          settingsManager.renderPresetList({
+            listElement,
+            collection: this.splitPresets,
+            currentItem: this.currentSplitPreset,
+            renderItemContent: (preset) => {
+              const filterInfo = `F${preset.softFilter}→F${
+                preset.hardFilter
+              } ${preset.burnPercent}%`;
+              const dateStr = new Date(preset.date).toLocaleDateString();
 
-            // Build additional info string
-            let additionalInfo = "";
+              // Build additional info string
+              let additionalInfo = "";
 
-            // Paper type display mappings
-            const fomaPaperNames = {
-              fomaspeed: "FOMASPEED",
-              fomabrom: "FOMABROM",
-              fomapastel_mg: "FOMAPASTEL MG",
-              fomatone_mg_classic_variant: "FOMATONE MG",
-            };
+              if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
+                const paperName =
+                  fomaPaperNames[preset.fomaPaperType] || preset.fomaPaperType;
+                additionalInfo = ` • ${paperName}`;
+              } else if (
+                preset.paperBrand === "Ilford" &&
+                preset.ilfordPaperType
+              ) {
+                const paperName =
+                  ilfordPaperNames[preset.ilfordPaperType] ||
+                  preset.ilfordPaperType;
+                additionalInfo = ` • ${paperName}`;
+              }
 
-            const ilfordPaperNames = {
-              cooltone: "RC Cooltone",
-              portfolio: "RC Portfolio",
-              rc_deluxe_new: "RC Deluxe",
-              rc_portfolio_new: "RC Portfolio New",
-              fb_classic: "FB Classic",
-              fb_warmtone: "FB Warmtone",
-              fb_cooltone: "FB Cooltone",
-            };
-
-            if (preset.paperBrand === "FOMA" && preset.fomaPaperType) {
-              const paperName =
-                fomaPaperNames[preset.fomaPaperType] || preset.fomaPaperType;
-              additionalInfo = ` • ${paperName}`;
-            } else if (
-              preset.paperBrand === "Ilford" &&
-              preset.ilfordPaperType
-            ) {
-              const paperName =
-                ilfordPaperNames[preset.ilfordPaperType] ||
-                preset.ilfordPaperType;
-              additionalInfo = ` • ${paperName}`;
-            }
-
-            itemDiv.innerHTML = `
-              <div>
-                <strong>${preset.name}</strong>
-                <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
-                <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand}${additionalInfo} • ${filterInfo}</div>
-              </div>
-              <div class="shelf-life-actions">
-                <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
-                <button class="btn-action delete-btn" data-context="split" data-name="${preset.name}">Delete</button>
-              </div>
-            `;
-
-            listElement.appendChild(itemDiv);
+              return `
+                <div>
+                  <strong>${preset.name}</strong>
+                  <div style="font-size: 0.65rem; color: var(--text-secondary);">${dateStr}</div>
+                  <div style="font-size: 0.6rem; color: var(--accent);">${preset.neutralTime}s • ${preset.paperBrand}${additionalInfo} • ${filterInfo}</div>
+                </div>
+                <div class="shelf-life-actions">
+                  <button class="btn-action load-btn" data-context="split" data-name="${preset.name}">Load</button>
+                  <button class="btn-action delete-btn" data-context="split" data-name="${preset.name}">Delete</button>
+                </div>
+              `;
+            },
           });
         }
       }
@@ -11834,8 +11715,6 @@
        * @property {string} serverIP - The IP address of the Pico 2 W server (default: "192.168.4.1")
        * @property {number} serverPort - The port number of the HTTP server (default: 80)
        * @property {boolean} autoTrigger - Whether to automatically trigger the enlarger relay when timers start
-       * @property {boolean} safelightAutoOff - Whether to automatically turn off safelight when enlarger activates
-       * @property {boolean} safelightWasOn - Tracks if safelight was on before enlarger started (for restoration)
        * @property {Object} relayStates - Current state of all 4 relays (1-4)
        * @property {HTMLElement} relayServerIP - Input element for server IP
        * @property {HTMLElement} relayServerPort - Input element for server port
@@ -11889,8 +11768,6 @@
           this.serverIP = window.location.hostname || "192.168.4.1";
           this.serverPort = parseInt(window.location.port) || 80;
           this.autoTrigger = true;
-          this.safelightAutoOff = true; // Default to enabled
-          this.safelightWasOn = false; // Track if safelight was on before enlarger
 
           this.relayStates = {
             1: false, // GP14 - Enlarger Timer
@@ -11960,6 +11837,9 @@
           // Load WiFi status on init
           this.updateWifiStatus();
 
+          // Load auto-safelight status from server
+          this.loadAutoSafelightStatus();
+
           if (this.relayServerIP)
             this.relayServerIP.addEventListener("change", () =>
               this.saveSettings(),
@@ -11993,23 +11873,6 @@
 
           // Update UI
           this.updateRelayButtons();
-          // Load safelight auto-off setting from settingsManager
-          if (settingsManager) {
-            this.safelightAutoOff =
-              settingsManager.settings.safelightAutoOff !== false;
-          }
-          // Update safelight auto-off status display
-          this.updateSafelightAutoOffStatus();
-
-          // Add event listener for the toggle in settings
-          document
-            .getElementById("safelightAutoOff")
-            ?.addEventListener("change", () => {
-              this.safelightAutoOff =
-                document.getElementById("safelightAutoOff").checked;
-              this.saveSettings();
-              this.updateSafelightAutoOffStatus();
-            });
         }
 
         /**
@@ -12120,6 +11983,44 @@
           } catch (error) {
             // Silently fail on status check - might not be connected yet
             console.log("WiFi status check failed:", error);
+          }
+        }
+
+        /**
+         * @method loadAutoSafelightStatus
+         * @description Loads the current auto-safelight setting from the server.
+         * Updates the UI toggle to match the server's current state.
+         * @returns {Promise<void>}
+         */
+        async loadAutoSafelightStatus() {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/status`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (typeof data.auto_safelight === 'boolean') {
+                const toggle = document.getElementById("safelightAutoOff");
+                if (toggle) {
+                  toggle.checked = data.auto_safelight;
+                  // Update settings manager to match server state
+                  if (settingsManager) {
+                    settingsManager.settings.safelightAutoOff = data.auto_safelight;
+                    StorageManager.saveSettings(settingsManager.settings);
+                  }
+                }
+                console.log(`Auto-safelight loaded from server: ${data.auto_safelight}`);
+              }
+            }
+          } catch (error) {
+            console.log("Failed to load auto-safelight status:", error);
+            // Fallback to saved setting if server unavailable
           }
         }
 
@@ -12262,47 +12163,6 @@
         }
 
         /**
-         * @method updateSafelightAutoOffStatus
-         * @description Updates the visual display of safelight auto-off status in the UI.
-         * Changes text content and color based on current setting and active theme.
-         * @returns {void}
-         * @fires document.getElementById - Updates "safelightAutoOffStatus" element
-         * @theme-aware - Adapts colors for dark, light, and day schemes
-         * @example
-         * relayManager.updateSafelightAutoOffStatus(); // Updates UI display
-         */
-        updateSafelightAutoOffStatus() {
-          const statusElement = document.getElementById(
-            "safelightAutoOffStatus",
-          );
-          if (!statusElement) return;
-
-          if (this.safelightAutoOff) {
-            statusElement.textContent = "ENABLED";
-            statusElement.style.color = "#f00";
-
-            // Theme adjustments
-            if (document.body.classList.contains("light-scheme")) {
-              statusElement.style.color = "#0066cc";
-            } else if (document.body.classList.contains("day-scheme")) {
-              statusElement.style.color = "#ffcc00";
-            }
-          } else {
-            statusElement.textContent = "DISABLED";
-            statusElement.style.color = "#900";
-
-            // Theme adjustments
-            if (document.body.classList.contains("light-scheme")) {
-              statusElement.style.color = "#666";
-            } else if (document.body.classList.contains("day-scheme")) {
-              statusElement.style.color = "#ccc";
-            }
-          }
-        }
-
-        // initRelayToggleButtons removed - now using event delegation
-
-        /**
          * @method saveSettings
          * @description Saves current relay manager settings to localStorage.
          * Reads values from UI elements and persists server configuration,
@@ -12324,11 +12184,6 @@
             ? this.autoTriggerRelay.checked
             : true;
 
-          // NEW: Get safelight auto-off setting
-          this.safelightAutoOff = document.getElementById("safelightAutoOff")
-            ? document.getElementById("safelightAutoOff").checked
-            : true;
-
           try {
             localStorage.setItem(
               "relaySettings",
@@ -12336,7 +12191,6 @@
                 serverIP: this.serverIP,
                 serverPort: this.serverPort,
                 autoTrigger: this.autoTrigger,
-                safelightAutoOff: this.safelightAutoOff, // NEW
               }),
             );
           } catch (e) {
@@ -12347,8 +12201,8 @@
         /**
          * @method loadSettings
          * @description Loads relay manager settings from localStorage.
-         * Restores server configuration, auto-trigger preference, safelight auto-off setting,
-         * and relay states. Uses default values if no saved settings exist.
+         * Restores server configuration, auto-trigger preference, and relay states.
+         * Uses default values if no saved settings exist.
          * @returns {void}
          * @fires localStorage.getItem - Retrieves "relaySettings" and "relayStates" keys
          * @throws {Error} Logs error if localStorage load or parse fails
@@ -12367,7 +12221,6 @@
               this.serverPort =
                 parseInt(window.location.port) || settings.serverPort || 80;
               this.autoTrigger = settings.autoTrigger !== false;
-              this.safelightAutoOff = settings.safelightAutoOff !== false;
 
               // Load relay states
               const savedStates = localStorage.getItem("relayStates");
@@ -12464,74 +12317,15 @@
             }
           }
         }
-        /**
-         * @method handleSafelightAutoOff
-         * @description Implements the safelight auto-off feature to prevent fogging during exposures.
-         * Automatically turns off safelight when enlarger activates and restores it after exposure.
-         * This is the core method that implements the critical safelight protection flow.
-         * @param {number} relayNum - The relay number being controlled (1-4)
-         * @param {boolean} newState - The intended new state of the relay (true=ON, false=OFF)
-         * @returns {Promise<void>} Resolves when safelight control operations complete
-         * @description Safelight Auto-Off Flow:
-         * 1. If enlarger (relay 1) is turning ON:
-         *    - Check if safelight (relay 2) is currently ON
-         *    - If yes, remember state and turn safelight OFF
-         * 2. If enlarger (relay 1) is turning OFF:
-         *    - Check if safelight was previously turned off by this system
-         *    - If yes, immediately restore safelight to previous state
-         * @fires setRelay - Controls safelight relay (2) when needed
-         * @fires setTimeout - Restores safelight immediately
-         * @example
-         * // Called automatically by setRelay and toggleRelay methods
-         * await relayManager.handleSafelightAutoOff(1, true); // Enlarger turning on
-         */
-        async handleSafelightAutoOff(relayNum, newState) {
-          // If safelight auto-off is disabled, do nothing
-          if (!this.safelightAutoOff) return;
 
-          // If enlarger (relay 1) is being turned ON
-          if (relayNum === 1 && newState === true) {
-            // Check if safelight (relay 2) is currently on
-            if (this.relayStates[2]) {
-              // Remember that safelight was on
-              this.safelightWasOn = true;
-              console.log(
-                "Safelight was on, turning it off because enlarger is on",
-              );
-
-              // Turn off safelight
-              await this.setRelay(2, false);
-            } else {
-              this.safelightWasOn = false;
-            }
-          }
-          // If enlarger (relay 1) is being turned OFF
-          else if (relayNum === 1 && newState === false) {
-            // Check if we previously turned off the safelight
-            if (this.safelightWasOn) {
-              console.log("Enlarger turned off, restoring safelight");
-
-              // Restore safelight immediately
-              setTimeout(async () => {
-                // Only restore if user hasn't manually turned it back on
-                if (!this.relayStates[2]) {
-                  await this.setRelay(2, true);
-                }
-                this.safelightWasOn = false;
-              }, 0); // Immediate restoration
-            }
-          }
-        }
 
         /**
          * @method toggleRelay
          * @description Toggles a specific relay between ON and OFF states.
-         * Handles safelight auto-off logic before toggling, sends request to server,
-         * updates local state, and provides audio/visual feedback.
+         * Sends request to server, updates local state, and provides audio/visual feedback.
          * @param {number} relayNum - The relay number to toggle (1-4)
          * @returns {Promise<void>} Resolves when toggle operation completes
          * @throws {Error} Logs error if server request fails
-         * @fires handleSafelightAutoOff - Processes safelight protection before toggle
          * @fires sendRequest - Sends relay control command to server
          * @fires localStorage.setItem - Updates relay state persistence
          * @fires updateRelayButtons - Updates UI button states
@@ -12547,9 +12341,6 @@
         async toggleRelay(relayNum) {
           const newState = !this.relayStates[relayNum];
           const gpioPin = this.getGPIOPin(relayNum);
-
-          // Handle safelight auto-off logic BEFORE toggling
-          await this.handleSafelightAutoOff(relayNum, newState);
 
           const success = await this.sendRequest("relay", {
             gpio: gpioPin,
@@ -12574,13 +12365,12 @@
         /**
          * @method setRelay
          * @description Sets a specific relay to a specific state (ON/OFF).
-         * Handles safelight auto-off logic, sends request to server, and updates local state.
+         * Sends request to server and updates local state.
          * Unlike toggleRelay, this method sets an explicit state rather than toggling.
          * @param {number} relayNum - The relay number to control (1-4)
          * @param {boolean} state - The desired state (true=ON, false=OFF)
          * @returns {Promise<void>} Resolves when set operation completes
          * @throws {Error} Logs error if server request fails
-         * @fires handleSafelightAutoOff - Processes safelight protection before setting
          * @fires sendRequest - Sends relay control command to server
          * @fires localStorage.setItem - Updates relay state persistence
          * @fires updateRelayButtons - Updates UI button states
@@ -12597,9 +12387,6 @@
         async setRelay(relayNum, state) {
           const gpioPin = this.getGPIOPin(relayNum);
           const stateStr = state ? "on" : "off";
-
-          // Handle safelight auto-off logic
-          await this.handleSafelightAutoOff(relayNum, state);
 
           const success = await this.sendRequest("relay", {
             gpio: gpioPin,
@@ -12650,15 +12437,8 @@
          * @fires updateStatus - Updates UI with timer status
          * @fires setTimeout - Schedules safelight restoration after exposure
          * @fires setRelay - Controls safelight (relay 2) before and after exposure
-         * @description Critical Safelight Flow:
-         * 1. Check if auto-trigger is enabled (required for this method)
-         * 2. If safelight auto-off is enabled and safelight is on:
-         *    - Remember safelight was on
-         *    - Turn off safelight (relay 2)
-         * 3. Send timer request to server (gpio=25, duration=durationSeconds)
-         * 4. After duration:
-         *    - Restore safelight if it was on
-         *    - Reset safelightWasOn flag
+         * @description Triggers a timed enlarger relay activation.
+         * Requires auto-trigger to be enabled.
          * @example
          * // From CALC tab with 10.5 second exposure
          * await relayManager.triggerTimerRelay(10.5);
@@ -12675,13 +12455,6 @@
             return;
           }
 
-          // NEW: Handle safelight auto-off when timer starts
-          if (this.safelightAutoOff && this.relayStates[2]) {
-            console.log("Timer starting - turning off safelight");
-            this.safelightWasOn = true;
-            await this.setRelay(2, false);
-          }
-
           // Send single request with duration parameter
           const success = await this.sendRequest("timer", {
             gpio: 14,
@@ -12693,17 +12466,6 @@
               `Timer relay triggered for ${durationSeconds}s`,
               "success",
             );
-
-            // NEW: Restore safelight after timer completes
-            if (this.safelightAutoOff && this.safelightWasOn) {
-              setTimeout(async () => {
-                console.log("Timer completed - restoring safelight");
-                if (!this.relayStates[2]) {
-                  await this.setRelay(2, true);
-                }
-                this.safelightWasOn = false;
-              }, durationSeconds * 1000); // Immediate restoration
-            }
           } else {
             this.updateStatus("Timer relay failed", "error");
           }
@@ -12761,33 +12523,16 @@
         /**
          * @method allRelaysOn
          * @description Turns ON all relays simultaneously.
-         * Respects safelight auto-off setting: if enabled and enlarger is on,
-         * safelight will not be turned on to prevent fogging.
          * @returns {Promise<void>} Resolves when all relays are turned on
          * @fires setRelay - Controls each relay individually
          * @fires updateStatus - Updates UI with success message
          * @fires playBeep - Audio feedback (800Hz, 0.5s duration)
          * @example
-         * // Turn on all relays (respecting safelight auto-off)
          * await relayManager.allRelaysOn();
          */
         async allRelaysOn() {
-          // If safelight auto-off is enabled and we're turning on enlarger,
-          // we should handle safelight appropriately
-          if (this.safelightAutoOff) {
-            // Turn on all relays except safelight if enlarger is being turned on
-            for (let i = 1; i <= 4; i++) {
-              if (i === 2 && this.relayStates[1]) {
-                // Skip turning on safelight if enlarger is already on or about to be on
-                continue;
-              }
-              await this.setRelay(i, true);
-            }
-          } else {
-            // Original behavior
-            for (let i = 1; i <= 4; i++) {
-              await this.setRelay(i, true);
-            }
+          for (let i = 1; i <= 4; i++) {
+            await this.setRelay(i, true);
           }
 
           this.updateStatus("All relays ON", "success");
@@ -12797,20 +12542,17 @@
         /**
          * @method allRelaysOff
          * @description Turns OFF all relays simultaneously.
-         * Resets the safelightWasOn flag to prevent unexpected safelight restoration.
          * @returns {Promise<void>} Resolves when all relays are turned off
          * @fires setRelay - Controls each relay individually
          * @fires updateStatus - Updates UI with success message
          * @fires playBeep - Audio feedback (400Hz, 0.5s duration)
          * @example
-         * // Turn off all relays
          * await relayManager.allRelaysOff();
          */
         async allRelaysOff() {
           for (let i = 1; i <= 4; i++) {
             await this.setRelay(i, false);
           }
-          this.safelightWasOn = false; // Reset the flag
           this.updateStatus("All relays OFF", "success");
           playBeep(400, 0.5, 0.3);
         }
@@ -12924,6 +12666,10 @@
         // NEW: Auto advance setting
         document.getElementById("settingAutoAdvance").checked =
           settingsManager.settings.autoAdvance;
+
+        // Safelight auto-off setting
+        document.getElementById("safelightAutoOff").checked =
+          settingsManager.settings.safelightAutoOff !== false;
 
         // Apply auto advance to F-Stop Test generator
         if (window.fstopTestGenerator) {
@@ -13080,10 +12826,6 @@
             settingsManager.settings.testTransferDestination || "calc";
           window.fstopTestGenerator.setTransferDestination(destination);
         }
-
-        // NEW: Safelight auto-off setting
-        document.getElementById("safelightAutoOff").checked =
-          settingsManager.settings.safelightAutoOff !== false; // Default to true
 
         // Virtual proof stability settings
         const stabilityEnabled =
@@ -13350,7 +13092,6 @@
       // Calculator functions
       const baseTimeSlider = document.getElementById("baseTimeSlider");
       const stopSlider = document.getElementById("stopSlider");
-      const chartBaseSlider = document.getElementById("chartBaseSlider");
 
       /**
        * @function formatStop
@@ -13574,13 +13315,12 @@
         /**
          * @method render
          * @description Unified render method that updates all calculator UI elements.
-         * Syncs state to appState, then calls render functions for display, details, timer status, and chart.
+         * Syncs state to appState, then calls render functions for display, details, and timer status.
          * @returns {void}
          * @fires syncToState - Updates central state before rendering
          * @fires renderCalculatorDisplay - Updates main display
          * @fires renderCalculatorExposureDetails - Updates exposure details
          * @fires renderCalculatorTimerStatus - Updates timer status
-         * @fires updateChart - Updates f-stop chart
          * @example
          * this.render(); // Update all UI elements
          */
@@ -13589,7 +13329,6 @@
           renderCalculatorDisplay();
           renderCalculatorExposureDetails();
           renderCalculatorTimerStatus();
-          updateChart();
         }
 
         /**
@@ -14161,8 +13900,8 @@
           this.newPaperSizeCustom = 0.052; // Changed from 0.080
 
           // NEW: Contrast control variables
-          this.currentBrand = "FOMA"; // FOMA, Ilford
-          this.currentPaper = "fomaspeed";
+          this.currentBrand = "Ilford"; // FOMA, Ilford
+          this.currentPaper = "rc_deluxe_new";
           this.currentFilter = "none";
           this.filterFactor = 1.0;
           this.customBankFactor = 1.0;
@@ -14556,8 +14295,8 @@
 
           this.applyHeightTimeBtn.addEventListener("click", initAudioContext);
 
-          // Initialize filter options on startup
-          this.updateFilterOptions();
+          // Initialize paper brand + filter options on startup
+          this.setPaperBrand(this.currentBrand);
         }
 
         /**
@@ -14587,9 +14326,9 @@
               this.fomaPaperType.value = "fomaspeed";
             }
           } else if (brand === "Ilford") {
-            this.currentPaper = "cooltone";
+            this.currentPaper = "rc_deluxe_new";
             if (this.ilfordPaperType) {
-              this.ilfordPaperType.value = "cooltone";
+              this.ilfordPaperType.value = "rc_deluxe_new";
             }
           }
 
@@ -15433,7 +15172,6 @@
           window.fstopTestGenerator.updateDisplay();
         }
         updateAllRulers();
-        updateChart();
       }
 
       // Helper: render/refresh rulers and denominator handling for stops
@@ -16182,33 +15920,30 @@
 
             // Calculate color intensity based on method
             if (this.method === "cumulative") {
-              // Color based on total exposure (cumulative method)
+              // Color based on total exposure (cumulative method), reversed
               const maxTime = this.steps[this.steps.length - 1].time;
-              const intensity = Math.min(
-                100 + (step.time / maxTime) * 150,
-                250,
-              );
+              const ratio = maxTime > 0 ? step.time / maxTime : 0;
+              const intensity = Math.min(100 + (1 - ratio) * 150, 250);
               stepEl.style.backgroundColor = `rgb(${intensity}, 0, 0)`;
             } else {
-              // Color based on total exposure on paper (incremental method)
+              // Color based on total exposure on paper (incremental method), reversed
               const maxTotal = this.steps[this.steps.length - 1].totalExposure;
-              const intensity = Math.min(
-                100 + (step.totalExposure / maxTotal) * 150,
-                250,
-              );
+              const ratio = maxTotal > 0 ? step.totalExposure / maxTotal : 0;
+              const intensity = Math.min(100 + (1 - ratio) * 150, 250);
               stepEl.style.backgroundColor = `rgb(${intensity}, 0, 0)`;
             }
 
-            // Theme adjustments
+            // Use light-scheme grayscale intensity for light/day themes
             if (
               document.body.classList.contains("light-scheme") ||
               document.body.classList.contains("day-scheme")
             ) {
-              // Create bigger steps: use index-based calculation for more distinct colors
               const stepIndex = index;
               const totalSteps = this.steps.length;
-              // Use 50-250 range with bigger jumps between steps
-              const greyIntensity = 50 + stepIndex * (150 / (totalSteps - 1));
+              const divisor = Math.max(totalSteps - 1, 1);
+              // Use 50-250 range with bigger jumps between steps, reversed
+              const greyIntensity =
+                50 + (totalSteps - 1 - stepIndex) * (150 / divisor);
               stepEl.style.backgroundColor = `rgb(${greyIntensity}, ${greyIntensity}, ${greyIntensity})`;
             }
 
@@ -17157,7 +16892,7 @@
 
           // Visual feedback via settings manager if available
           if (settingsManager && settingsManager.showAllProfilesFeedback) {
-            const label = destination === "calc" ? "CALC" : "SPLIT";
+            const label = destination === "calc" ? "EXPOSURE" : "SPLIT GRADE";
             settingsManager.showAllProfilesFeedback(
               `Transfer destination: ${label}`,
               "info",
@@ -17336,38 +17071,20 @@
          * const success = this.saveProfile("My Profile"); // Save current settings
          */
         saveProfile(name) {
-          if (!name || name.trim() === "") {
-            alert("Please enter a profile name");
-            return false;
-          }
-
-          const profile = {
-            name: name.trim(),
-            ...this.getCurrentSettings(),
-            date: new Date().toISOString(),
-          };
-
-          // Get existing profiles
           const profiles = StorageManager.loadTestStripProfiles();
+          const trimmedName = name ? name.trim() : "";
 
-          // Check if profile already exists
-          const existingIndex = profiles.findIndex(
-            (p) => p.name === profile.name,
-          );
-          if (existingIndex >= 0) {
-            profiles[existingIndex] = profile;
-          } else {
-            profiles.push(profile);
-          }
+          const result = settingsManager.savePreset({
+            name: trimmedName,
+            dataObject: this.getCurrentSettings(),
+            collection: profiles,
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+          });
 
-          // Save to storage
-          if (StorageManager.saveTestStripProfiles(profiles)) {
-            this.updateTestStripProfileList();
-            playBeep(800, 0.3, 0.3);
-            return true;
-          }
-
-          return false;
+          return result;
         }
 
         /**
@@ -17408,17 +17125,21 @@
          * const success = this.deleteProfile("Old Profile"); // Delete profile
          */
         deleteProfile(profileName) {
-          if (confirm(`Delete test strip profile "${profileName}"?`)) {
-            const profiles = StorageManager.loadTestStripProfiles();
-            const filtered = profiles.filter((p) => p.name !== profileName);
+          const profiles = StorageManager.loadTestStripProfiles();
 
-            if (StorageManager.saveTestStripProfiles(filtered)) {
-              this.updateTestStripProfileList();
-              playBeep(400, 0.3, 0.3);
-              return true;
-            }
-          }
-          return false;
+          return settingsManager.deletePreset({
+            name: profileName,
+            collection: profiles,
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onDeleteCallback: () => {
+              if (this.getCurrentTestStripProfile() === profileName) {
+                this.setCurrentTestStripProfile(null);
+              }
+            },
+          });
         }
 
         /**
@@ -17434,16 +17155,16 @@
          * const success = this.clearAllProfiles(); // Clear all profiles
          */
         clearAllProfiles() {
-          if (
-            confirm("Clear all test strip profiles? This cannot be undone.")
-          ) {
-            if (StorageManager.saveTestStripProfiles([])) {
-              this.updateTestStripProfileList();
-              playBeep(400, 0.3, 0.3);
-              return true;
-            }
-          }
-          return false;
+          return settingsManager.clearAllPresets({
+            collection: StorageManager.loadTestStripProfiles(),
+            storageMethod: (items) => StorageManager.saveTestStripProfiles(items),
+            updateListMethod: () => this.updateTestStripProfileList(),
+            feedbackMethod: (msg, type) =>
+              settingsManager.showAllProfilesFeedback(msg, type),
+            onClearCallback: () => {
+              this.setCurrentTestStripProfile(null);
+            },
+          });
         }
 
         /**
@@ -17466,126 +17187,43 @@
 
           const profiles = StorageManager.loadTestStripProfiles();
           const currentProfile = this.getCurrentTestStripProfile();
-          listElement.innerHTML = "";
 
-          if (profiles.length === 0) {
-            listElement.innerHTML =
-              '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">No profiles saved yet</div>';
-            return;
-          }
+          settingsManager.renderPresetList({
+            listElement,
+            collection: profiles,
+            currentItem: currentProfile,
+            renderItemContent: (profile) => {
+              const methodLabel =
+                profile.method === "cumulative" ? "Cumulative" : "Incremental";
+              const autoAdvanceLabel = profile.autoAdvance ? "Auto" : "Manual";
+              const denomLabel = `1/${profile.denominator}`;
 
-          profiles.forEach((profile) => {
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `shelf-life-item ${
-              currentProfile === profile.name ? "active" : ""
-            }`;
-
-            const methodLabel =
-              profile.method === "cumulative" ? "Cumulative" : "Incremental";
-            const autoAdvanceLabel = profile.autoAdvance ? "Auto" : "Manual";
-            const denomLabel = `1/${profile.denominator}`;
-
-            itemDiv.innerHTML = `
-              <div>
-                <strong>${profile.name}</strong>
-                <div style="font-size: 0.65rem; color: var(--text-secondary);">
-                  ${profile.baseTime}s • ${
-                    profile.stepIncrement
-                  }×${denomLabel} • ${profile.numSteps} steps
+              return `
+                <div>
+                  <strong>${profile.name}</strong>
+                  <div style="font-size: 0.65rem; color: var(--text-secondary);">
+                    ${profile.baseTime}s • ${
+                      profile.stepIncrement
+                    }×${denomLabel} • ${profile.numSteps} steps
+                  </div>
+                  <div style="font-size: 0.6rem; color: var(--accent);">
+                    ${methodLabel} • ${autoAdvanceLabel}
+                  </div>
+                  <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
+                    ${new Date(profile.date).toLocaleDateString()}
+                  </div>
                 </div>
-                <div style="font-size: 0.6rem; color: var(--accent);">
-                  ${methodLabel} • ${autoAdvanceLabel}
+                <div class="shelf-life-actions">
+                  <button class="btn-action load-btn" data-context="teststrip" data-name="${
+                    profile.name
+                  }">Load</button>
+                  <button class="btn-action delete-btn" data-context="teststrip" data-name="${
+                    profile.name
+                  }">Delete</button>
                 </div>
-                <div style="font-size: 0.55rem; color: var(--text-secondary); margin-top: 2px;">
-                  ${new Date(profile.date).toLocaleDateString()}
-                </div>
-              </div>
-              <div class="shelf-life-actions">
-                <button class="btn-action load-btn" data-context="teststrip" data-name="${
-                  profile.name
-                }">Load</button>
-                <button class="btn-action delete-btn" data-context="teststrip" data-name="${
-                  profile.name
-                }">Delete</button>
-              </div>
-            `;
-
-            listElement.appendChild(itemDiv);
+              `;
+            },
           });
-        }
-      }
-
-      /**
-       * @function updateChart
-       * @description Updates the f-stop calculation table with current base time and stop settings.
-       * Generates a table showing total time, increment from base, and step increments for stops -6 to +6.
-       * Highlights the currently selected stop row.
-       * @returns {void}
-       * @fires chartBaseSlider.value - Reads chart base time (if available)
-       * @fires Element.getElementById - Gets base time slider and table body
-       * @fires window.incrementalTimer - Reads calculator base time
-       * @fires settingsManager.settings - Reads settings base time
-       * @fires calculateTime - Calculates time for each stop
-       * @fires formatStop - Formats stop values
-       * @fires Element.innerHTML - Clears and rebuilds table
-       * @fires Element.appendChild - Adds rows to table
-       * @fires Element.style - Applies highlighting to current stop row
-       * @example
-       * updateChart(); // Update f-stop calculation table
-       */
-      function updateChart() {
-        const baseTime = (function () {
-          // Prefer chart slider if present, otherwise fall back to the main base time slider
-          if (typeof chartBaseSlider !== "undefined" && chartBaseSlider)
-            return parseFloat(chartBaseSlider.value);
-          const bt = document.getElementById("baseTimeSlider");
-          if (bt) return parseFloat(bt.value);
-          if (window.incrementalTimer)
-            return parseFloat(window.incrementalTimer.baseTime) || 10;
-          if (settingsManager)
-            return parseFloat(settingsManager.settings.baseTime) || 10;
-          return 10;
-        })();
-        const chartBaseEl = document.getElementById("chartBaseValue");
-        if (chartBaseEl) chartBaseEl.textContent = `${baseTime.toFixed(1)}s`;
-
-        const tableBody = document.getElementById("tableBody");
-        const currentStop = parseInt(stopSlider.value);
-
-        tableBody.innerHTML = "";
-
-        let previousTotalTime = null;
-
-        for (let stop = -6; stop <= 6; stop++) {
-          const totalTime = calculateTime(baseTime, stop);
-          const fromBaseTime = totalTime - baseTime;
-
-          let increment = 0;
-          if (previousTotalTime !== null) {
-            increment = totalTime - previousTotalTime;
-          }
-          previousTotalTime = totalTime;
-
-          const stopLabel = formatStop(stop);
-          const row = document.createElement("tr");
-
-          if (stop === currentStop) {
-            row.style.background = "var(--panel-light)";
-            row.style.fontWeight = "bold";
-          }
-
-          row.innerHTML = `
-                <td>${stopLabel}</td>
-                <td><strong>${totalTime.toFixed(2)}</strong></td>
-                <td>${fromBaseTime >= 0 ? "+" : ""}${fromBaseTime.toFixed(
-                  2,
-                )}</td>
-                <td class="increment-cell">${
-                  increment >= 0 ? "+" : ""
-                }${increment.toFixed(2)}</td>
-            `;
-
-          tableBody.appendChild(row);
         }
       }
 
@@ -18480,15 +18118,15 @@
 
           // Extract the suffix for UI state tracking
           const ilfordPrefixes = {
-            ilford_cooltone: "cooltone",
-            ilford_iv_rc_portfolio: "portfolio",
             ilford_multigrade_rc_deluxe_new: "rc_deluxe_new",
             ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
+            ilford_iv_rc_portfolio: "portfolio",
+            ilford_cooltone: "cooltone",
             ilford_fb_classic: "fb_classic",
             ilford_fb_warmtone: "fb_warmtone",
             ilford_fb_cooltone: "fb_cooltone",
           };
-          this.ilfordPaperType = ilfordPrefixes[paperId] || "cooltone";
+          this.ilfordPaperType = ilfordPrefixes[paperId] || "rc_deluxe_new";
 
           // Update filter dropdowns with grades for this paper
           this.updateFilterDropdown();
@@ -20587,7 +20225,10 @@
           playBeep(800, 0.3, 0.3);
 
           // Show feedback
-          this.showFeedback(`${source}: ${time.toFixed(2)}s → CALC`, "success");
+          this.showFeedback(
+            `${source}: ${time.toFixed(2)}s → EXPOSURE`,
+            "success",
+          );
 
           // Log to exposure log manager
           if (window.exposureLogManager) {
@@ -20955,6 +20596,29 @@
             });
           });
         })();
+
+        // Safelight auto-off toggle - communicate with server
+        document.getElementById("safelightAutoOff")?.addEventListener("change", async (e) => {
+          const enabled = e.target.checked;
+          try {
+            const response = await fetch(`http://${window.relayManager.serverIP}:${window.relayManager.serverPort}/auto-safelight?enabled=${enabled ? 1 : 0}`);
+            if (response.ok) {
+              console.log(`Auto-safelight ${enabled ? 'enabled' : 'disabled'} on server`);
+              settingsManager.showAllProfilesFeedback?.(
+                `Auto Safelight ${enabled ? 'ON' : 'OFF'}`,
+                'success'
+              );
+            } else {
+              console.error('Failed to update auto-safelight on server');
+              settingsManager.showAllProfilesFeedback?.(
+                'Failed to update server',
+                'error'
+              );
+            }
+          } catch (error) {
+            console.error('Error updating auto-safelight:', error);
+          }
+        });
 
         // Initialize denom and controls (functions moved outside DOMContentLoaded)
         window.stopDenominator =
@@ -21470,9 +21134,6 @@
               try {
                 updateAllRulers();
               } catch (e) {}
-              try {
-                updateChart();
-              } catch (e) {}
             }
           }
         });
@@ -21581,8 +21242,6 @@
             }
           });
 
-        // Initial chart update
-        updateChart();
       });
     </script>
   </body>

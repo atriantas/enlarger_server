@@ -327,6 +327,7 @@ class HTTPServer:
             "relays": states,
             "active_timers": self.timer.get_active_count(),
             "timer_details": timers,
+            "auto_safelight": self.gpio.get_auto_safelight(),
             "timestamp": time.ticks_ms()
         })
         await self._sendall(conn, response)
@@ -355,6 +356,46 @@ class HTTPServer:
             "timestamp": time.ticks_ms()
         })
         await self._sendall(conn, response)
+    
+    async def _handle_auto_safelight(self, conn, params):
+        """Handle /auto-safelight endpoint - enable/disable automatic safelight control."""
+        try:
+            enabled_str = params.get('enabled', '').strip().lower()
+            
+            if not enabled_str:
+                # GET request - return current status
+                response = self._json_response({
+                    "status": "success",
+                    "auto_safelight": self.gpio.get_auto_safelight(),
+                    "description": "When enabled: Enlarger ON → Safelight OFF, Enlarger OFF → Safelight ON",
+                    "timestamp": time.ticks_ms()
+                })
+                await self._sendall(conn, response)
+                return
+            
+            if enabled_str not in ('true', 'false', '1', '0'):
+                response = self._json_response({
+                    "error": "enabled parameter required (true/false)"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            enabled = enabled_str in ('true', '1')
+            self.gpio.set_auto_safelight(enabled)
+            
+            response = self._json_response({
+                "status": "success",
+                "auto_safelight": enabled,
+                "message": f"Automatic safelight control {'enabled' if enabled else 'disabled'}",
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to set auto-safelight: {e}"
+            }, 500)
+            await self._sendall(conn, response)
     
     async def _handle_wifi_status(self, conn, params):
         """Handle /wifi-status endpoint."""
@@ -1347,6 +1388,8 @@ class HTTPServer:
                 await self._handle_status(conn, params)
             elif path == '/all':
                 await self._handle_all(conn, params)
+            elif path == '/auto-safelight':
+                await self._handle_auto_safelight(conn, params)
             elif path == '/temperature':
                 await self._handle_temperature(conn, params)
             elif path == '/temperature-control':

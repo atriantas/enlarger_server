@@ -33,6 +33,7 @@ class TimerManager:
         """
         self.gpio = gpio_control
         self.active_timers = {}  # pin -> task info
+        self._task_refs = {}  # pin -> task object (never overwritten, used for cancellation)
         self.temperature_sensor = temperature_sensor
         self.heating_task = None
         self.target_temperature = 20.0  # Default target in Celsius
@@ -103,6 +104,14 @@ class TimerManager:
             # Cleanup timer info
             if pin in self.active_timers:
                 del self.active_timers[pin]
+            if pin in self._task_refs:
+                current_task = None
+                try:
+                    current_task = asyncio.current_task()
+                except AttributeError:
+                    current_task = None
+                if current_task is None or self._task_refs.get(pin) is current_task:
+                    del self._task_refs[pin]
     
     def start_timer(self, pin, duration_sec, scheduled=True):
         """
@@ -127,7 +136,11 @@ class TimerManager:
             self._timer_task(pin, duration_sec, start_at_ms)
         )
         
-        # Store task reference for cancellation
+        # Store task reference separately (never overwritten by _timer_task)
+        # This ensures cancellation can always reach the running task
+        self._task_refs[pin] = task
+        
+        # Store task reference for display/backward compatibility
         self.active_timers[pin] = {
             "task": task,
             "start_at": start_at_ms,
@@ -152,31 +165,38 @@ class TimerManager:
         Returns:
             bool: True if timer was stopped, False if no timer found
         """
-        if pin not in self.active_timers:
+        if pin not in self.active_timers and pin not in self._task_refs:
             return False
         
-        timer_info = self.active_timers[pin]
+        # Cancel task using the separate reference (most reliable)
+        if pin in self._task_refs:
+            self._task_refs[pin].cancel()
+            del self._task_refs[pin]
         
-        # Cancel the task if it exists
-        if "task" in timer_info:
-            timer_info["task"].cancel()
+        # Also try active_timers for backward compatibility
+        if pin in self.active_timers:
+            timer_info = self.active_timers[pin]
+            if "task" in timer_info and timer_info["task"] not in (None,):
+                try:
+                    timer_info["task"].cancel()
+                except:
+                    pass
+            del self.active_timers[pin]
         
         # Ensure relay is off
         self.gpio.set_relay_state(pin, False)
-        
-        # Remove from active timers
-        if pin in self.active_timers:
-            del self.active_timers[pin]
         
         print(f"Stopped timer for GPIO {pin}")
         return True
     
     def stop_all_timers(self):
         """Stop all active timers and heating control."""
-        pins = list(self.active_timers.keys())
-        for pin in pins:
+        # Stop all relay timers (covers both _task_refs and active_timers)
+        pins = list(self.active_timers.keys()) + list(self._task_refs.keys())
+        for pin in set(pins):  # Use set to avoid duplicates
             self.stop_timer(pin)
         
+        # Stop heating control
         if self.heating_task:
             self.heating_task.cancel()
             self.heating_task = None

@@ -137,14 +137,10 @@ class DarkroomTimer:
                 self.current_ip = sta_ip
                 print(f"STA connected: IP={sta_ip}")
                 
-                # Wait grace period before disabling AP
-                print(f"\nAP will disable in {AP_GRACE_PERIOD} seconds...")
-                print("Connect to router network now if needed.")
-                await asyncio.sleep(AP_GRACE_PERIOD)
-                
-                # Disable AP to save memory
-                print("Disabling AP to save memory...")
+                # Disable AP immediately to avoid routing conflicts
+                print("Disabling AP (to avoid dual-interface routing conflicts)...")
                 self.wifi_ap.stop()
+                await asyncio.sleep(1)  # Let network settle
                 
                 return sta_ip
             else:
@@ -247,7 +243,18 @@ def _autorun_blocked():
 
 def main():
     """Main entry point."""
+    # Always initialize GPIO first for safety, even if autorun is blocked
     if _autorun_blocked():
+        print("\n" + "="*50)
+        print("AUTORUN BLOCKED")
+        print("="*50)
+        print("\nInitializing GPIO to safe state...")
+        try:
+            gpio = GPIOControl()
+            print("GPIO initialized and all relays OFF.")
+            print("Exiting (autorun blocked via GP6).")
+        except Exception as e:
+            print(f"ERROR: GPIO initialization failed: {e}")
         return
 
     app = DarkroomTimer()
