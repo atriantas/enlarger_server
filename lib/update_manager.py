@@ -70,6 +70,7 @@ class UpdateManager:
         self.version_file = version_file
         self.current_version = self._load_version()
         self.latest_version = None
+        self.release_tag = None  # Release tag from latest release
         self.release_data = None
         self.download_cache = {}
         
@@ -267,6 +268,7 @@ class UpdateManager:
             is_newer = self._version_newer(version, self.current_version)
             
             self.latest_version = version
+            self.release_tag = tag_name  # Store tag for use in download_file()
             self.release_data = release_data
             
             print(f"[UpdateManager] Latest version: {version} (current: {self.current_version})")
@@ -291,13 +293,17 @@ class UpdateManager:
     
     async def download_file(self, file_path):
         """
-        Download a single file from GitHub raw content.
+        Download a single file from GitHub raw content using the release tag.
         Returns {success, size, tmp_path} or {success, error}
         """
         try:
             print(f"[UpdateManager] Downloading {file_path}...")
 
-            path = f"/{self.repo_owner}/{self.repo_name}/Back_Up/{file_path}"
+            # Use release tag if available, otherwise fall back to main
+            branch = self.release_tag if hasattr(self, 'release_tag') and self.release_tag else 'main'
+            
+            # Construct path from tag: v1.2.3 becomes v1.2.3/path
+            path = f"/{self.repo_owner}/{self.repo_name}/{branch}/{file_path}"
             sock = self._connect(self.RAW_HOST, 443, use_ssl=True)
             request = (
                 f"GET {path} HTTP/1.1\r\n"

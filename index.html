@@ -131,6 +131,16 @@
         padding-bottom: max(8px, env(safe-area-inset-bottom));
       }
 
+      @supports (height: 100dvh) {
+        body {
+          min-height: 100dvh;
+        }
+
+        .container {
+          height: calc(100dvh - 12px); /* Use dynamic viewport for mobile UI chrome */
+        }
+      }
+
       /* Hide scrollbar for Chrome, Safari and Opera */
       .container::-webkit-scrollbar {
         display: none;
@@ -4123,6 +4133,13 @@
                     <span class="slider-switch"></span>
                   </label>
                 </div>
+                <div class="settings-item">
+                  <div class="settings-label">Auto Safelight Control</div>
+                  <label class="switch">
+                    <input type="checkbox" id="safelightAutoOff" checked />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
               </div>
               <div
                 style="
@@ -4131,35 +4148,9 @@
                   margin-top: 10px;
                 "
               >
-                Note: When enabled, the timer relay will automatically
-                trigger during countdown timers in EXPOSURE and TEST STRIP tabs.
+                Note: Auto-trigger controls enlarger relay during timers. Auto Safelight automatically turns off safelight when enlarger is on.
               </div>
 
-              <div class="title-md" style="margin-top: 12px">
-                Auto - Manual Safelight Control
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-item">
-                  <div class="settings-label">Safelight Auto-Off</div>
-                  <label class="switch">
-                    <input type="checkbox" id="safelightAutoOff" />
-                    <span class="slider-switch"></span>
-                  </label>
-                </div>
-                <div class="settings-item">
-                  <div class="settings-label">&nbsp;</div>
-                  <div
-                    style="
-                      font-size: 0.7rem;
-                      color: var(--text-secondary);
-                      text-align: center;
-                    "
-                  >
-                    Turn off safelight when enlarger is on
-                  </div>
-                </div>
-              </div>
               </div>
 
               <div class="settings-section" style="margin-top: 16px;">
@@ -5467,7 +5458,7 @@
         // Test strip auto-advance
         autoAdvance: false,
         autoAdvanceDelay: 1,
-        safelightAutoOff: true, // Turn off safelight when enlarger is on
+        safelightAutoOff: true, // Auto safelight control (server-side)
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
         proofStabilityEnabled: true,
         proofStabilityBeep: true,
@@ -5807,7 +5798,7 @@
        */
       class TemperatureManager {
         constructor() {
-          this.serverIP = window.serverIP || "192.168.4.1";
+          this.serverIP = window.location.hostname || "192.168.4.1";
           this.pollInterval = 15000; // Poll every 15 seconds (matches backend sensor read)
           this.pollTask = null;
           this.dataBuffer = []; // Circular buffer (max 60 points)
@@ -8055,8 +8046,7 @@
             autoAdvanceDelay: parseInt(
               document.getElementById("settingAutoAdvanceDelay").value,
             ),
-            safelightAutoOff:
-              document.getElementById("safelightAutoOff").checked, // NEW
+            safelightAutoOff: document.getElementById("safelightAutoOff")?.checked !== false,
             proofStabilityEnabled: document.getElementById(
               "proofStabilityEnabled",
             )?.checked,
@@ -11725,8 +11715,6 @@
        * @property {string} serverIP - The IP address of the Pico 2 W server (default: "192.168.4.1")
        * @property {number} serverPort - The port number of the HTTP server (default: 80)
        * @property {boolean} autoTrigger - Whether to automatically trigger the enlarger relay when timers start
-       * @property {boolean} safelightAutoOff - Whether to automatically turn off safelight when enlarger activates
-       * @property {boolean} safelightWasOn - Tracks if safelight was on before enlarger started (for restoration)
        * @property {Object} relayStates - Current state of all 4 relays (1-4)
        * @property {HTMLElement} relayServerIP - Input element for server IP
        * @property {HTMLElement} relayServerPort - Input element for server port
@@ -11780,8 +11768,6 @@
           this.serverIP = window.location.hostname || "192.168.4.1";
           this.serverPort = parseInt(window.location.port) || 80;
           this.autoTrigger = true;
-          this.safelightAutoOff = true; // Default to enabled
-          this.safelightWasOn = false; // Track if safelight was on before enlarger
 
           this.relayStates = {
             1: false, // GP14 - Enlarger Timer
@@ -11851,6 +11837,9 @@
           // Load WiFi status on init
           this.updateWifiStatus();
 
+          // Load auto-safelight status from server
+          this.loadAutoSafelightStatus();
+
           if (this.relayServerIP)
             this.relayServerIP.addEventListener("change", () =>
               this.saveSettings(),
@@ -11884,19 +11873,6 @@
 
           // Update UI
           this.updateRelayButtons();
-          // Load safelight auto-off setting from settingsManager
-          if (settingsManager) {
-            this.safelightAutoOff =
-              settingsManager.settings.safelightAutoOff !== false;
-          }
-          // Add event listener for the toggle in settings
-          document
-            .getElementById("safelightAutoOff")
-            ?.addEventListener("change", () => {
-              this.safelightAutoOff =
-                document.getElementById("safelightAutoOff").checked;
-              this.saveSettings();
-            });
         }
 
         /**
@@ -12007,6 +11983,44 @@
           } catch (error) {
             // Silently fail on status check - might not be connected yet
             console.log("WiFi status check failed:", error);
+          }
+        }
+
+        /**
+         * @method loadAutoSafelightStatus
+         * @description Loads the current auto-safelight setting from the server.
+         * Updates the UI toggle to match the server's current state.
+         * @returns {Promise<void>}
+         */
+        async loadAutoSafelightStatus() {
+          try {
+            const response = await fetch(
+              `http://${this.serverIP}:${this.serverPort}/status`,
+              {
+                method: "GET",
+                mode: "cors",
+                cache: "no-cache",
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (typeof data.auto_safelight === 'boolean') {
+                const toggle = document.getElementById("safelightAutoOff");
+                if (toggle) {
+                  toggle.checked = data.auto_safelight;
+                  // Update settings manager to match server state
+                  if (settingsManager) {
+                    settingsManager.settings.safelightAutoOff = data.auto_safelight;
+                    StorageManager.saveSettings(settingsManager.settings);
+                  }
+                }
+                console.log(`Auto-safelight loaded from server: ${data.auto_safelight}`);
+              }
+            }
+          } catch (error) {
+            console.log("Failed to load auto-safelight status:", error);
+            // Fallback to saved setting if server unavailable
           }
         }
 
@@ -12170,11 +12184,6 @@
             ? this.autoTriggerRelay.checked
             : true;
 
-          // NEW: Get safelight auto-off setting
-          this.safelightAutoOff = document.getElementById("safelightAutoOff")
-            ? document.getElementById("safelightAutoOff").checked
-            : true;
-
           try {
             localStorage.setItem(
               "relaySettings",
@@ -12182,7 +12191,6 @@
                 serverIP: this.serverIP,
                 serverPort: this.serverPort,
                 autoTrigger: this.autoTrigger,
-                safelightAutoOff: this.safelightAutoOff, // NEW
               }),
             );
           } catch (e) {
@@ -12193,8 +12201,8 @@
         /**
          * @method loadSettings
          * @description Loads relay manager settings from localStorage.
-         * Restores server configuration, auto-trigger preference, safelight auto-off setting,
-         * and relay states. Uses default values if no saved settings exist.
+         * Restores server configuration, auto-trigger preference, and relay states.
+         * Uses default values if no saved settings exist.
          * @returns {void}
          * @fires localStorage.getItem - Retrieves "relaySettings" and "relayStates" keys
          * @throws {Error} Logs error if localStorage load or parse fails
@@ -12213,7 +12221,6 @@
               this.serverPort =
                 parseInt(window.location.port) || settings.serverPort || 80;
               this.autoTrigger = settings.autoTrigger !== false;
-              this.safelightAutoOff = settings.safelightAutoOff !== false;
 
               // Load relay states
               const savedStates = localStorage.getItem("relayStates");
@@ -12310,74 +12317,15 @@
             }
           }
         }
-        /**
-         * @method handleSafelightAutoOff
-         * @description Implements the safelight auto-off feature to prevent fogging during exposures.
-         * Automatically turns off safelight when enlarger activates and restores it after exposure.
-         * This is the core method that implements the critical safelight protection flow.
-         * @param {number} relayNum - The relay number being controlled (1-4)
-         * @param {boolean} newState - The intended new state of the relay (true=ON, false=OFF)
-         * @returns {Promise<void>} Resolves when safelight control operations complete
-         * @description Safelight Auto-Off Flow:
-         * 1. If enlarger (relay 1) is turning ON:
-         *    - Check if safelight (relay 2) is currently ON
-         *    - If yes, remember state and turn safelight OFF
-         * 2. If enlarger (relay 1) is turning OFF:
-         *    - Check if safelight was previously turned off by this system
-         *    - If yes, immediately restore safelight to previous state
-         * @fires setRelay - Controls safelight relay (2) when needed
-         * @fires setTimeout - Restores safelight immediately
-         * @example
-         * // Called automatically by setRelay and toggleRelay methods
-         * await relayManager.handleSafelightAutoOff(1, true); // Enlarger turning on
-         */
-        async handleSafelightAutoOff(relayNum, newState) {
-          // If safelight auto-off is disabled, do nothing
-          if (!this.safelightAutoOff) return;
 
-          // If enlarger (relay 1) is being turned ON
-          if (relayNum === 1 && newState === true) {
-            // Check if safelight (relay 2) is currently on
-            if (this.relayStates[2]) {
-              // Remember that safelight was on
-              this.safelightWasOn = true;
-              console.log(
-                "Safelight was on, turning it off because enlarger is on",
-              );
-
-              // Turn off safelight
-              await this.setRelay(2, false);
-            } else {
-              this.safelightWasOn = false;
-            }
-          }
-          // If enlarger (relay 1) is being turned OFF
-          else if (relayNum === 1 && newState === false) {
-            // Check if we previously turned off the safelight
-            if (this.safelightWasOn) {
-              console.log("Enlarger turned off, restoring safelight");
-
-              // Restore safelight immediately
-              setTimeout(async () => {
-                // Only restore if user hasn't manually turned it back on
-                if (!this.relayStates[2]) {
-                  await this.setRelay(2, true);
-                }
-                this.safelightWasOn = false;
-              }, 0); // Immediate restoration
-            }
-          }
-        }
 
         /**
          * @method toggleRelay
          * @description Toggles a specific relay between ON and OFF states.
-         * Handles safelight auto-off logic before toggling, sends request to server,
-         * updates local state, and provides audio/visual feedback.
+         * Sends request to server, updates local state, and provides audio/visual feedback.
          * @param {number} relayNum - The relay number to toggle (1-4)
          * @returns {Promise<void>} Resolves when toggle operation completes
          * @throws {Error} Logs error if server request fails
-         * @fires handleSafelightAutoOff - Processes safelight protection before toggle
          * @fires sendRequest - Sends relay control command to server
          * @fires localStorage.setItem - Updates relay state persistence
          * @fires updateRelayButtons - Updates UI button states
@@ -12393,9 +12341,6 @@
         async toggleRelay(relayNum) {
           const newState = !this.relayStates[relayNum];
           const gpioPin = this.getGPIOPin(relayNum);
-
-          // Handle safelight auto-off logic BEFORE toggling
-          await this.handleSafelightAutoOff(relayNum, newState);
 
           const success = await this.sendRequest("relay", {
             gpio: gpioPin,
@@ -12420,13 +12365,12 @@
         /**
          * @method setRelay
          * @description Sets a specific relay to a specific state (ON/OFF).
-         * Handles safelight auto-off logic, sends request to server, and updates local state.
+         * Sends request to server and updates local state.
          * Unlike toggleRelay, this method sets an explicit state rather than toggling.
          * @param {number} relayNum - The relay number to control (1-4)
          * @param {boolean} state - The desired state (true=ON, false=OFF)
          * @returns {Promise<void>} Resolves when set operation completes
          * @throws {Error} Logs error if server request fails
-         * @fires handleSafelightAutoOff - Processes safelight protection before setting
          * @fires sendRequest - Sends relay control command to server
          * @fires localStorage.setItem - Updates relay state persistence
          * @fires updateRelayButtons - Updates UI button states
@@ -12443,9 +12387,6 @@
         async setRelay(relayNum, state) {
           const gpioPin = this.getGPIOPin(relayNum);
           const stateStr = state ? "on" : "off";
-
-          // Handle safelight auto-off logic
-          await this.handleSafelightAutoOff(relayNum, state);
 
           const success = await this.sendRequest("relay", {
             gpio: gpioPin,
@@ -12496,15 +12437,8 @@
          * @fires updateStatus - Updates UI with timer status
          * @fires setTimeout - Schedules safelight restoration after exposure
          * @fires setRelay - Controls safelight (relay 2) before and after exposure
-         * @description Critical Safelight Flow:
-         * 1. Check if auto-trigger is enabled (required for this method)
-         * 2. If safelight auto-off is enabled and safelight is on:
-         *    - Remember safelight was on
-         *    - Turn off safelight (relay 2)
-         * 3. Send timer request to server (gpio=25, duration=durationSeconds)
-         * 4. After duration:
-         *    - Restore safelight if it was on
-         *    - Reset safelightWasOn flag
+         * @description Triggers a timed enlarger relay activation.
+         * Requires auto-trigger to be enabled.
          * @example
          * // From CALC tab with 10.5 second exposure
          * await relayManager.triggerTimerRelay(10.5);
@@ -12521,13 +12455,6 @@
             return;
           }
 
-          // NEW: Handle safelight auto-off when timer starts
-          if (this.safelightAutoOff && this.relayStates[2]) {
-            console.log("Timer starting - turning off safelight");
-            this.safelightWasOn = true;
-            await this.setRelay(2, false);
-          }
-
           // Send single request with duration parameter
           const success = await this.sendRequest("timer", {
             gpio: 14,
@@ -12539,17 +12466,6 @@
               `Timer relay triggered for ${durationSeconds}s`,
               "success",
             );
-
-            // NEW: Restore safelight after timer completes
-            if (this.safelightAutoOff && this.safelightWasOn) {
-              setTimeout(async () => {
-                console.log("Timer completed - restoring safelight");
-                if (!this.relayStates[2]) {
-                  await this.setRelay(2, true);
-                }
-                this.safelightWasOn = false;
-              }, durationSeconds * 1000); // Immediate restoration
-            }
           } else {
             this.updateStatus("Timer relay failed", "error");
           }
@@ -12607,33 +12523,16 @@
         /**
          * @method allRelaysOn
          * @description Turns ON all relays simultaneously.
-         * Respects safelight auto-off setting: if enabled and enlarger is on,
-         * safelight will not be turned on to prevent fogging.
          * @returns {Promise<void>} Resolves when all relays are turned on
          * @fires setRelay - Controls each relay individually
          * @fires updateStatus - Updates UI with success message
          * @fires playBeep - Audio feedback (800Hz, 0.5s duration)
          * @example
-         * // Turn on all relays (respecting safelight auto-off)
          * await relayManager.allRelaysOn();
          */
         async allRelaysOn() {
-          // If safelight auto-off is enabled and we're turning on enlarger,
-          // we should handle safelight appropriately
-          if (this.safelightAutoOff) {
-            // Turn on all relays except safelight if enlarger is being turned on
-            for (let i = 1; i <= 4; i++) {
-              if (i === 2 && this.relayStates[1]) {
-                // Skip turning on safelight if enlarger is already on or about to be on
-                continue;
-              }
-              await this.setRelay(i, true);
-            }
-          } else {
-            // Original behavior
-            for (let i = 1; i <= 4; i++) {
-              await this.setRelay(i, true);
-            }
+          for (let i = 1; i <= 4; i++) {
+            await this.setRelay(i, true);
           }
 
           this.updateStatus("All relays ON", "success");
@@ -12643,20 +12542,17 @@
         /**
          * @method allRelaysOff
          * @description Turns OFF all relays simultaneously.
-         * Resets the safelightWasOn flag to prevent unexpected safelight restoration.
          * @returns {Promise<void>} Resolves when all relays are turned off
          * @fires setRelay - Controls each relay individually
          * @fires updateStatus - Updates UI with success message
          * @fires playBeep - Audio feedback (400Hz, 0.5s duration)
          * @example
-         * // Turn off all relays
          * await relayManager.allRelaysOff();
          */
         async allRelaysOff() {
           for (let i = 1; i <= 4; i++) {
             await this.setRelay(i, false);
           }
-          this.safelightWasOn = false; // Reset the flag
           this.updateStatus("All relays OFF", "success");
           playBeep(400, 0.5, 0.3);
         }
@@ -12770,6 +12666,10 @@
         // NEW: Auto advance setting
         document.getElementById("settingAutoAdvance").checked =
           settingsManager.settings.autoAdvance;
+
+        // Safelight auto-off setting
+        document.getElementById("safelightAutoOff").checked =
+          settingsManager.settings.safelightAutoOff !== false;
 
         // Apply auto advance to F-Stop Test generator
         if (window.fstopTestGenerator) {
@@ -12926,10 +12826,6 @@
             settingsManager.settings.testTransferDestination || "calc";
           window.fstopTestGenerator.setTransferDestination(destination);
         }
-
-        // NEW: Safelight auto-off setting
-        document.getElementById("safelightAutoOff").checked =
-          settingsManager.settings.safelightAutoOff !== false; // Default to true
 
         // Virtual proof stability settings
         const stabilityEnabled =
@@ -20700,6 +20596,29 @@
             });
           });
         })();
+
+        // Safelight auto-off toggle - communicate with server
+        document.getElementById("safelightAutoOff")?.addEventListener("change", async (e) => {
+          const enabled = e.target.checked;
+          try {
+            const response = await fetch(`http://${window.relayManager.serverIP}:${window.relayManager.serverPort}/auto-safelight?enabled=${enabled ? 1 : 0}`);
+            if (response.ok) {
+              console.log(`Auto-safelight ${enabled ? 'enabled' : 'disabled'} on server`);
+              settingsManager.showAllProfilesFeedback?.(
+                `Auto Safelight ${enabled ? 'ON' : 'OFF'}`,
+                'success'
+              );
+            } else {
+              console.error('Failed to update auto-safelight on server');
+              settingsManager.showAllProfilesFeedback?.(
+                'Failed to update server',
+                'error'
+              );
+            }
+          } catch (error) {
+            console.error('Error updating auto-safelight:', error);
+          }
+        });
 
         // Initialize denom and controls (functions moved outside DOMContentLoaded)
         window.stopDenominator =

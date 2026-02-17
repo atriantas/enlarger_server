@@ -243,7 +243,18 @@ def _autorun_blocked():
 
 def main():
     """Main entry point."""
+    # Always initialize GPIO first for safety, even if autorun is blocked
     if _autorun_blocked():
+        print("\n" + "="*50)
+        print("AUTORUN BLOCKED")
+        print("="*50)
+        print("\nInitializing GPIO to safe state...")
+        try:
+            gpio = GPIOControl()
+            print("GPIO initialized and all relays OFF.")
+            print("Exiting (autorun blocked via GP6).")
+        except Exception as e:
+            print(f"ERROR: GPIO initialization failed: {e}")
         return
 
     app = DarkroomTimer()
