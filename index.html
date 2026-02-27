@@ -3524,7 +3524,7 @@
                       type="text"
                       class="settings-input"
                       id="relay1Name"
-                      value="Enlarger Timer"
+                      value="Enlarger"
                       placeholder="Relay name"
                     />
                   </div>
@@ -3578,7 +3578,7 @@
                       type="text"
                       class="settings-input"
                       id="relay3Name"
-                      value="Ventilation"
+                      value="Heater"
                       placeholder="Relay name"
                     />
                   </div>
@@ -5401,7 +5401,7 @@
       </div>
 
       <footer>
-        <div>CYANOWOOD DARKROOM TIMER v1.0.1</div>
+        <div>CYANOWOOD DARKROOM TIMER <span id="footerAppVersion">v0.0.0</span></div>
       </footer>
     </div>
 
@@ -10057,12 +10057,33 @@
         }
 
         loadVersion() {
-          // For now, version will come from server after first check
-          // This could also be stored in localStorage
+          // Attempt to load current version from server first
+          this.loadVersionFromServer();
+        }
+
+        async loadVersionFromServer() {
+          try {
+            const data = await apiClient.getJSON("/all", {
+              preferRelay: true,
+              timeoutMs: 5000,
+            });
+
+            if (data.version) {
+              // Server has current version - use it
+              this.currentVersion = data.version;
+              this.updateVersionDisplay();
+              return;
+            }
+          } catch (error) {
+            console.log("[UpdateStatusManager] Could not fetch version from server:", error);
+          }
+
+          // Fallback to localStorage if server unavailable
           try {
             const stored = localStorage.getItem("appVersion");
             if (stored) {
               this.currentVersion = stored;
+              this.updateVersionDisplay();
             }
           } catch (e) {
             console.log("[UpdateStatusManager] Could not load version from localStorage");
@@ -10073,6 +10094,7 @@
           try {
             localStorage.setItem("appVersion", version);
             this.currentVersion = version;
+            this.updateVersionDisplay();
           } catch (e) {
             console.log("[UpdateStatusManager] Could not save version to localStorage");
           }
@@ -10081,12 +10103,16 @@
         updateVersionDisplay() {
           const currentVersionEl = document.getElementById("currentAppVersion");
           const latestVersionEl = document.getElementById("latestAppVersion");
+          const footerVersionEl = document.getElementById("footerAppVersion");
 
           if (currentVersionEl) {
             currentVersionEl.textContent = this.currentVersion || "Unknown";
           }
           if (latestVersionEl) {
             latestVersionEl.textContent = this.latestVersion || "Checking...";
+          }
+          if (footerVersionEl) {
+            footerVersionEl.textContent = `v${this.currentVersion || "0.0.0"}`;
           }
         }
 
