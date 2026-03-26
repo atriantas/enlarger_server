@@ -5,14 +5,11 @@ This tests the logic without requiring MicroPython hardware dependencies.
 """
 
 import math
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
 
-def calculate_delta_ev(highlight_lux, shadow_lux):
-    """Calculate contrast range (ΔEV) from highlight and shadow readings."""
-    if highlight_lux is None or shadow_lux is None:
-        return None
-    if highlight_lux <= 0 or shadow_lux <= 0:
-        return None
-    return abs(math.log2(shadow_lux / highlight_lux))
+from lib.splitgrade_enhanced import calculate_delta_ev
 
 def _iso_r_to_ev(iso_r):
     """Interpolate EV from ISO R value."""

@@ -43,7 +43,7 @@ def calculate_delta_ev(highlight_lux, shadow_lux):
     delta_ev = abs(math.log2(shadow_lux / highlight_lux))
     return delta_ev
 
-def calculate_split_grade_enhanced(highlight_lux, shadow_lux, paper_id='ilford_mg_iv', 
+def calculate_split_grade_enhanced(highlight_lux, shadow_lux, paper_id='ilford_multigrade_rc_deluxe_new', 
                                   calibration=1000.0, soft_filter=None, hard_filter=None):
     """
     Enhanced split-grade calculation using Heiland-like methodology.
@@ -51,7 +51,7 @@ def calculate_split_grade_enhanced(highlight_lux, shadow_lux, paper_id='ilford_m
     Args:
         highlight_lux: Lux reading at highlight area
         shadow_lux: Lux reading at shadow area
-        paper_id: Paper identifier (e.g., 'ilford_mg_iv', 'foma_fomaspeed')
+        paper_id: Paper identifier (e.g., 'ilford_multigrade_rc_deluxe_new', 'foma_fomaspeed')
         calibration: Calibration constant (lux × seconds)
         soft_filter: Optional soft filter (auto-select if None)
         hard_filter: Optional hard filter (auto-select if None)
@@ -70,7 +70,7 @@ def calculate_split_grade_enhanced(highlight_lux, shadow_lux, paper_id='ilford_m
     paper_data = get_paper_data(paper_id)
     if not paper_data:
         # Fallback to default paper
-        paper_data = get_paper_data('ilford_mg_iv')
+        paper_data = get_paper_data('ilford_multigrade_rc_deluxe_new')
     
     # Calculate contrast (ΔEV)
     delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
@@ -221,7 +221,7 @@ def calculate_paper_printable_range(paper_data, soft_filter, hard_filter):
     
     return printable_ev
 
-def compare_algorithms(highlight_lux, shadow_lux, paper_id='ilford_mg_iv', calibration=1000.0):
+def compare_algorithms(highlight_lux, shadow_lux, paper_id='ilford_multigrade_rc_deluxe_new', calibration=1000.0):
     """
     Compare enhanced algorithm with legacy algorithm.
     
@@ -350,7 +350,7 @@ if __name__ == "__main__":
         print(f"\n{name}: Highlight={highlight} lux, Shadow={shadow} lux")
         
         result = calculate_split_grade_enhanced(
-            highlight, shadow, 'ilford_mg_iv', 1000.0
+            highlight, shadow, 'ilford_multigrade_rc_deluxe_new', 1000.0
         )
         
         if result:
@@ -362,7 +362,7 @@ if __name__ == "__main__":
             print(f"  Selection: {result['selection_reason']}")
         
         # Compare algorithms
-        comparison = compare_algorithms(highlight, shadow, 'ilford_mg_iv', 1000.0)
+        comparison = compare_algorithms(highlight, shadow, 'ilford_multigrade_rc_deluxe_new', 1000.0)
         if comparison['improvement']:
             impr = comparison['improvement']
             print(f"  Improvement: {impr['time_difference_percent']:.1f}% time, {impr['balance_improvement']:.1f} balance")

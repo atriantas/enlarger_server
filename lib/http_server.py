@@ -1261,7 +1261,7 @@ class HTTPServer:
                     'ilford_cooltone', 'ilford_iv_rc_portfolio',
                     'ilford_multigrade_rc_deluxe_new', 'ilford_multigrade_rc_portfolio_new',
                     'ilford_fb_classic', 'ilford_fb_warmtone', 'ilford_fb_cooltone',
-                    'foma_fomabrom', 'ilford_mg_iv', 'ilford_warmtone'
+                    'foma_fomabrom', 'ilford_multigrade_rc_deluxe_new'
                 ]
                 if filter_system in valid_systems:
                     self.light_meter.set_filter_system(filter_system)

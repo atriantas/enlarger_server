@@ -1027,7 +1027,7 @@ def get_paper_data(paper_id):
     Retrieve paper data from database.
     
     Args:
-        paper_id: Paper identifier (e.g., 'ilford_mg_iv', 'foma_fomaspeed')
+        paper_id: Paper identifier (e.g., 'ilford_multigrade_rc_deluxe_new', 'foma_fomaspeed')
     
     Returns:
         dict: Paper data or None if not found
@@ -1211,8 +1211,8 @@ if __name__ == "__main__":
     print("=" * 50)
     
     # Test get_paper_data
-    paper = get_paper_data('ilford_mg_iv')
-    print(f"Ilford MG IV: {paper['manufacturer']} {paper['paper_type']}")
+    paper = get_paper_data('ilford_multigrade_rc_deluxe_new')
+    print(f"Ilford MG RC Deluxe: {paper['manufacturer']} {paper['paper_type']}")
     
     # Test filter selection
     for delta_ev in [0.5, 1.2, 2.0, 3.0, 4.5]:

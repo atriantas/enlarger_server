@@ -22,6 +22,7 @@ import time
 import math
 from machine import Pin, I2C
 from lib.paper_database import get_filter_selection, get_filter_data, validate_exposure_times
+from lib.splitgrade_enhanced import calculate_delta_ev as _calculate_delta_ev
 
 
 class TSL2591:
@@ -820,10 +821,7 @@ class DarkroomLightMeter:
         """
         Calculate contrast range (ΔEV) from highlight and shadow readings.
         
-        ΔEV = abs(log₂(shadow_lux / highlight_lux))
-        
-        Note: Shadow areas receive more light than highlight areas
-        because they're less dense on the negative.
+        Delegates to the canonical implementation in splitgrade_enhanced.
         
         Args:
             highlight_lux: Lux reading at paper highlight area
@@ -832,16 +830,7 @@ class DarkroomLightMeter:
         Returns:
             float: Contrast range in EV stops (always positive)
         """
-        if highlight_lux is None or shadow_lux is None:
-            return None
-        
-        if highlight_lux <= 0 or shadow_lux <= 0:
-            return None
-        
-        import math
-        delta_ev = abs(math.log2(shadow_lux / highlight_lux))
-        
-        return delta_ev
+        return _calculate_delta_ev(highlight_lux, shadow_lux)
     
     def recommend_filter_grade(
         self,
