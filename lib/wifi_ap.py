@@ -18,9 +18,6 @@ AP_SUBNET = "255.255.255.0"
 AP_GATEWAY = "192.168.4.1"
 AP_DNS = "192.168.4.1"
 
-# mDNS hostname (will be accessible as darkroom.local)
-MDNS_HOSTNAME = "darkroom"
-
 
 class WiFiAP:
     """

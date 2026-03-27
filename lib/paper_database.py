@@ -876,139 +876,44 @@ PAPER_ORDER = [
 
 # Filter selection rules based on contrast (ΔEV) measurements
 # Based on Heiland methodology research
+# ── Filter selection rule templates (shared by all papers in the same system) ──
+_ILFORD_RULES = {
+    'very_low':    {'min': 0.0, 'max': 1.0, 'soft': '1',  'hard': '2', 'description': 'Very low contrast - use close filters'},
+    'low':         {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
+    'medium_low':  {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
+    'normal':      {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
+    'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
+    'high':        {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
+    'very_high':   {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
+    'extreme':     {'min': 4.0, 'max': 10.0,'soft': '00', 'hard': '5', 'description': 'Extreme contrast'},
+}
+
+_FOMA_RULES = {
+    'very_low':    {'min': 0.0, 'max': 1.0, 'soft': 'Y',   'hard': 'M1',   'description': 'Very low contrast - use close filters'},
+    'low':         {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1',   'description': 'Low contrast'},
+    'medium_low':  {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
+    'normal':      {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
+    'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2',   'description': 'Medium-high contrast'},
+    'high':        {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
+    'very_high':   {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
+    'extreme':     {'min': 4.0, 'max': 10.0,'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'},
+}
+
 FILTER_SELECTION_RULES = {
-    # Ilford papers (standard Ilford filter system)
-    'ilford': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford Multigrade RC Deluxe (NEW)
-    'ilford_multigrade_rc_deluxe_new': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-        # Ilford Multigrade RC Portfolio (NEW)
-    'ilford_multigrade_rc_portfolio_new': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford Cooltone RC
-    'ilford_cooltone': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-        # Ilford FB Classic
-    'ilford_fb_classic': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford FB Warmtone
-    'ilford_fb_warmtone': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford FB Cooltone
-    'ilford_fb_cooltone': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # Ilford Portfolio (discontinued)
-    'ilford_iv_rc_portfolio': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': '1', 'hard': '2', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '00', 'hard': '2', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '00', 'hard': '3', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '00', 'hard': '3', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '00', 'hard': '4', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '00', 'hard': '4', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '00', 'hard': '5', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '00', 'hard': '5', 'description': 'Extreme contrast'}
-    },
-    # FOMA papers
-    'foma_fomaspeed': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'}
-    },
-    'foma_fomabrom': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'}
-    },
-    # Note: foma_fomapastel_mg uses different filter naming (includes 'None' filter)
-    # For backward compatibility, we'll use the same rules as other FOMA papers
-    'foma_fomapastel_mg': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'}
-    },
-    
-    'fomatone_mg_classic_variant': {
-        'very_low': {'min': 0.0, 'max': 1.0, 'soft': 'Y', 'hard': 'M1', 'description': 'Very low contrast - use close filters'},
-        'low': {'min': 1.0, 'max': 1.5, 'soft': '2xY', 'hard': 'M1', 'description': 'Low contrast'},
-        'medium_low': {'min': 1.5, 'max': 2.0, 'soft': '2xY', 'hard': '2xM1', 'description': 'Medium-low contrast'},
-        'normal': {'min': 2.0, 'max': 2.5, 'soft': '2xY', 'hard': '2xM1', 'description': 'Normal contrast'},
-        'medium_high': {'min': 2.5, 'max': 3.0, 'soft': '2xY', 'hard': 'M2', 'description': 'Medium-high contrast'},
-        'high': {'min': 3.0, 'max': 3.5, 'soft': '2xY', 'hard': '2xM2', 'description': 'High contrast'},
-        'very_high': {'min': 3.5, 'max': 4.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Very high contrast'},
-        'extreme': {'min': 4.0, 'max': 10.0, 'soft': '2xY', 'hard': '2xM2', 'description': 'Extreme contrast'}
-    }
+    # Ilford papers – all share the same Ilford multigrade filter rules
+    'ilford':                           _ILFORD_RULES,
+    'ilford_multigrade_rc_deluxe_new':  _ILFORD_RULES,
+    'ilford_multigrade_rc_portfolio_new': _ILFORD_RULES,
+    'ilford_cooltone':                  _ILFORD_RULES,
+    'ilford_fb_classic':                _ILFORD_RULES,
+    'ilford_fb_warmtone':               _ILFORD_RULES,
+    'ilford_fb_cooltone':               _ILFORD_RULES,
+    'ilford_iv_rc_portfolio':           _ILFORD_RULES,
+    # FOMA papers – all share the same FOMA colour-filter rules
+    'foma_fomaspeed':                   _FOMA_RULES,
+    'foma_fomabrom':                    _FOMA_RULES,
+    'foma_fomapastel_mg':               _FOMA_RULES,
+    'fomatone_mg_classic_variant':      _FOMA_RULES,
 }
 
 # Optimization parameters for Heiland-like algorithm

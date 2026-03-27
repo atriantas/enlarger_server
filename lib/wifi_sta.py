@@ -15,9 +15,6 @@ CONFIG_FILE = "wifi_config.json"
 # Connection timeout (seconds)
 CONNECT_TIMEOUT = 15
 
-# mDNS hostname (will be accessible as darkroom.local)
-MDNS_HOSTNAME = "darkroom"
-
 
 class WiFiSTA:
     """
@@ -69,6 +66,65 @@ class WiFiSTA:
         """Check if credentials are saved."""
         return self.ssid is not None and self.password is not None
     
+    # ── Shared connection helpers ─────────────────────────────────────
+    
+    def _prepare_connection(self, ssid, password):
+        """Resolve credentials, activate interface, disable power-saving.
+        
+        Returns:
+            tuple: (ssid, password) on success, (None, None) if no credentials.
+        """
+        ssid = ssid or self.ssid
+        password = password or self.password
+        if not ssid or not password:
+            print("No WiFi credentials available")
+            return None, None
+        self.sta.active(True)
+        # Disable power saving mode (can cause connectivity issues)
+        try:
+            self.sta.config(pm=0xa11140)
+        except:
+            pass  # Older firmware may not support this
+        return ssid, password
+    
+    def _check_connection_status(self):
+        """Return an error string if WLAN reports a terminal failure, else None."""
+        status = self.sta.status()
+        if status == network.STAT_WRONG_PASSWORD:
+            return "WiFi: Wrong password"
+        if status == network.STAT_NO_AP_FOUND:
+            return "WiFi: Network not found"
+        if status == network.STAT_CONNECT_FAIL:
+            return "WiFi: Connection failed"
+        return None
+    
+    def _handle_connected(self, ssid, password, save):
+        """Log connection info and optionally save credentials.
+        
+        Returns:
+            str: IP address.
+        """
+        ifcfg = self.sta.ifconfig()
+        ip = ifcfg[0]
+        gateway = ifcfg[2]
+        dns = ifcfg[3]
+        try:
+            mac_bytes = self.sta.config('mac')
+            mac = ':'.join(['%02X' % b for b in mac_bytes])
+            print(f"WiFi connected: IP={ip}")
+            print(f"  Gateway: {gateway}, DNS: {dns}")
+            print(f"  MAC: {mac}")
+        except:
+            print(f"WiFi connected: IP={ip}")
+            print(f"  Gateway: {gateway}, DNS: {dns}")
+        if save:
+            self.ssid = ssid
+            self.password = password
+            self._save_config()
+        return ip
+    
+    # ── Public connect methods ────────────────────────────────────────
+    
     async def connect_async(self, ssid=None, password=None, save=True):
         """
         Connect to WiFi network asynchronously.
@@ -82,76 +138,27 @@ class WiFiSTA:
             str: IP address if connected, None if failed
         """
         import asyncio
-        
-        # Use provided or saved credentials
-        ssid = ssid or self.ssid
-        password = password or self.password
-        
-        if not ssid or not password:
-            print("No WiFi credentials available")
+        ssid, password = self._prepare_connection(ssid, password)
+        if not ssid:
             return None
-        
         try:
-            # Activate station interface
-            self.sta.active(True)
-            
-            # Disable power saving mode (can cause connectivity issues)
-            try:
-                self.sta.config(pm=0xa11140)  # Disable WiFi power management
-            except:
-                pass  # Older firmware may not support this
-            
-            # Disconnect if already connected
             if self.sta.isconnected():
                 self.sta.disconnect()
                 await asyncio.sleep(0.5)
-            
             print(f"Connecting to WiFi: {ssid}")
             self.sta.connect(ssid, password)
-            
-            # Wait for connection with timeout
             timeout = CONNECT_TIMEOUT
             while not self.sta.isconnected() and timeout > 0:
                 await asyncio.sleep(0.5)
                 timeout -= 0.5
-                # Check for connection failure
-                status = self.sta.status()
-                if status == network.STAT_WRONG_PASSWORD:
-                    print("WiFi: Wrong password")
+                error = self._check_connection_status()
+                if error:
+                    print(error)
                     return None
-                elif status == network.STAT_NO_AP_FOUND:
-                    print("WiFi: Network not found")
-                    return None
-                elif status == network.STAT_CONNECT_FAIL:
-                    print("WiFi: Connection failed")
-                    return None
-            
             if self.sta.isconnected():
-                ifcfg = self.sta.ifconfig()
-                ip = ifcfg[0]
-                gateway = ifcfg[2]
-                dns = ifcfg[3]
-                try:
-                    mac_bytes = self.sta.config('mac')
-                    mac = ':'.join(['%02X' % b for b in mac_bytes])
-                    print(f"WiFi connected: IP={ip}")
-                    print(f"  Gateway: {gateway}, DNS: {dns}")
-                    print(f"  MAC: {mac}")
-                except:
-                    print(f"WiFi connected: IP={ip}")
-                    print(f"  Gateway: {gateway}, DNS: {dns}")
-                
-                # Save credentials on success
-                if save:
-                    self.ssid = ssid
-                    self.password = password
-                    self._save_config()
-                
-                return ip
-            else:
-                print("WiFi connection timeout")
-                return None
-                
+                return self._handle_connected(ssid, password, save)
+            print("WiFi connection timeout")
+            return None
         except Exception as e:
             print(f"WiFi connect error: {e}")
             return None
@@ -168,69 +175,27 @@ class WiFiSTA:
         Returns:
             str: IP address if connected, None if failed
         """
-        # Use provided or saved credentials
-        ssid = ssid or self.ssid
-        password = password or self.password
-        
-        if not ssid or not password:
-            print("No WiFi credentials available")
+        ssid, password = self._prepare_connection(ssid, password)
+        if not ssid:
             return None
-        
         try:
-            # Activate station interface
-            self.sta.active(True)
-            
-            # Disconnect if already connected
             if self.sta.isconnected():
                 self.sta.disconnect()
                 time.sleep(0.5)
-            
             print(f"Connecting to WiFi: {ssid}")
             self.sta.connect(ssid, password)
-            
-            # Wait for connection with timeout
             timeout = CONNECT_TIMEOUT
             while not self.sta.isconnected() and timeout > 0:
                 time.sleep(0.5)
                 timeout -= 0.5
-                # Check for connection failure
-                status = self.sta.status()
-                if status == network.STAT_WRONG_PASSWORD:
-                    print("WiFi: Wrong password")
+                error = self._check_connection_status()
+                if error:
+                    print(error)
                     return None
-                elif status == network.STAT_NO_AP_FOUND:
-                    print("WiFi: Network not found")
-                    return None
-                elif status == network.STAT_CONNECT_FAIL:
-                    print("WiFi: Connection failed")
-                    return None
-            
             if self.sta.isconnected():
-                ifcfg = self.sta.ifconfig()
-                ip = ifcfg[0]
-                gateway = ifcfg[2]
-                dns = ifcfg[3]
-                try:
-                    mac_bytes = self.sta.config('mac')
-                    mac = ':'.join(['%02X' % b for b in mac_bytes])
-                    print(f"WiFi connected: IP={ip}")
-                    print(f"  Gateway: {gateway}, DNS: {dns}")
-                    print(f"  MAC: {mac}")
-                except:
-                    print(f"WiFi connected: IP={ip}")
-                    print(f"  Gateway: {gateway}, DNS: {dns}")
-                
-                # Save credentials on success
-                if save:
-                    self.ssid = ssid
-                    self.password = password
-                    self._save_config()
-                
-                return ip
-            else:
-                print("WiFi connection timeout")
-                return None
-                
+                return self._handle_connected(ssid, password, save)
+            print("WiFi connection timeout")
+            return None
         except Exception as e:
             print(f"WiFi connect error: {e}")
             return None
