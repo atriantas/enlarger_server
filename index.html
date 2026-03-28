@@ -40,68 +40,88 @@
          All variants use the same base styles with class-specific overrides.
       */
 
-      /* ===== CSS VARIABLES - PRECISE MATCH TO ORIGINAL ===== */
+      /* ===== CSS VARIABLES ===== */
       :root {
-        /* Dark Scheme (Original Default) - EXACT matches */
-        --bg: #000;
-        --text: #f00;
-        --text-secondary: #900;
+        /* Darkroom (Default) — red & black only, safe for darkroom use */
+        --bg: #000000;
+        --text: #ee0000;
+        --text-secondary: #aa3333;
 
-        --accent: #f00;
-        --accent-dark: #700;
+        --accent: #ee0000;
+        --accent-dark: #880000;
+        --accent-highlight: #ff3333;
 
-        --panel: #100;
-        --panel-light: #200;
+        --panel: #0a0000;
+        --panel-light: #150000;
+        --surface: rgba(30, 0, 0, 0.65);
 
-        --border: #300;
-        --border-light: #400;
+        --border: #2a0000;
+        --border-light: #3d0a0a;
 
         --warning: #ff5500;
 
-        --slider-track: linear-gradient(to right, #300, #600, #f00);
+        --glow: rgba(238, 0, 0, 0.15);
+        --glow-strong: rgba(238, 0, 0, 0.35);
+
+        --slider-track: linear-gradient(to right, #2a0000, #660000, #ee0000);
+
+        --radius-sm: 8px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --transition: 0.2s ease;
       }
 
-      /* Light Scheme - Clean grey tones with blue accent */
+      /* Light Scheme — warm light theme */
       body.light-scheme {
-        --bg: #ffffff;
+        --bg: #fafafa;
         --text: #1a1a1a;
-        --text-secondary: #666666;
+        --text-secondary: #6b6b6b;
 
-        --accent: #3a86de;
-        --accent-dark: #2769ac;
+        --accent: #2e7dd6;
+        --accent-dark: #1d5fa0;
+        --accent-highlight: #4a9eff;
 
-        --panel: #e0e0e0;
-        --panel-light: #f2f2f2;
+        --panel: #ebebeb;
+        --panel-light: #f5f5f5;
+        --surface: rgba(255, 255, 255, 0.7);
 
-        --border: #a0a0a0;
-        --border-light: #bdbdbd;
+        --border: #c8c8c8;
+        --border-light: #d8d8d8;
 
-        --warning: #ff5500;
+        --warning: #e85d00;
 
-        --slider-track: linear-gradient(to right, #bdbdbd, #757575, #2196f3);
+        --glow: rgba(46, 125, 214, 0.12);
+        --glow-strong: rgba(46, 125, 214, 0.25);
+
+        --slider-track: linear-gradient(to right, #c8c8c8, #8a8a8a, #2e7dd6);
       }
 
-      /* Day Scheme - Dark grey tones with blue accent */
+      /* Night Scheme — neutral dark with blue accent */
       body.day-scheme {
-        --bg: #040404;
+        --bg: #0c0c0c;
         --text: #e0e0e0;
-        --text-secondary: #9e9e9e;
+        --text-secondary: #8a8a8a;
 
-        --accent: #3a86de;
-        --accent-dark: #2769ac;
+        --accent: #4a9eff;
+        --accent-dark: #2e6fbf;
+        --accent-highlight: #6cb4ff;
 
-        --panel: #1e1e1e;
-        --panel-light: #2d2d2d;
+        --panel: #161616;
+        --panel-light: #1e1e1e;
+        --surface: rgba(30, 30, 30, 0.7);
 
-        --border: #424242;
-        --border-light: #616161;
+        --border: #2a2a2a;
+        --border-light: #3a3a3a;
 
-        --warning: #ff5500;
+        --warning: #ff6a1a;
 
-        --slider-track: linear-gradient(to right, #424242, #757575, #42a5f5);
+        --glow: rgba(74, 158, 255, 0.12);
+        --glow-strong: rgba(74, 158, 255, 0.25);
+
+        --slider-track: linear-gradient(to right, #2a2a2a, #555555, #4a9eff);
       }
 
-      /* ===== BASE STYLES (IDENTICAL TO ORIGINAL) ===== */
+      /* ===== BASE STYLES ===== */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -110,16 +130,19 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background-color: var(--bg);
         color: var(--text);
-        line-height: 1.3;
+        line-height: 1.4;
         padding: 6px;
         min-height: 100vh;
         transition:
           background-color 0.3s,
           color 0.3s;
-        overflow: hidden; /* Hide scrollbar */
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
       }
 
       .container {
@@ -146,24 +169,25 @@
         display: none;
       }
 
-      /* ===== HEADER (EXACT MATCH) ===== */
+      /* ===== HEADER ===== */
       header {
         text-align: center;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+        padding: 8px 0;
       }
 
       h1 {
-        font-size: 1.2rem;
-        margin-bottom: 3px;
+        font-size: 0.85rem;
+        margin-bottom: 0;
+        letter-spacing: 0.2em;
+        font-weight: 600;
+        color: var(--text-secondary);
       }
 
       /* ===== COLLAPSIBLE TAB NAVIGATION ===== */
       .tab-nav-container {
         position: relative;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
+        margin-bottom: 10px;
       }
 
       .menu-button {
@@ -171,20 +195,22 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        padding: 8px 12px;
+        padding: 10px 14px;
         background: var(--panel-light);
         color: var(--text);
-        border: 1px solid var(--border-light);
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: bold;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         cursor: pointer;
-        transition: none;
+        transition: border-color var(--transition), box-shadow var(--transition);
+        box-shadow: 0 1px 4px var(--glow);
       }
 
       .menu-button:hover {
-        background: var(--panel-light);
         border-color: var(--border-light);
+        box-shadow: 0 2px 8px var(--glow);
       }
 
       .menu-button:focus {
@@ -203,9 +229,10 @@
 
       .active-tab-name {
         color: var(--accent);
-        font-weight: bold;
+        font-weight: 600;
         margin-left: auto;
         padding-left: 8px;
+        letter-spacing: 0.04em;
       }
 
       .tab-dropdown {
@@ -215,37 +242,41 @@
         right: 0;
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         margin-top: 4px;
         max-height: 0;
         overflow: hidden;
         opacity: 0;
-        transform: translateY(-10px);
-        transition: all 0.25s ease;
+        transform: translateY(-8px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 100;
-        pointer-events: none; /* Prevent clicks when closed */
+        pointer-events: none;
+        box-shadow: 0 4px 16px var(--glow);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
       .tab-dropdown.open {
         max-height: 400px;
         opacity: 1;
         transform: translateY(0);
-        pointer-events: auto; /* Allow clicks when open */
+        pointer-events: auto;
       }
 
       .tab-dropdown-item {
         display: block;
         width: 100%;
-        padding: 10px 12px;
+        padding: 11px 14px;
         background: transparent;
-        color: var(--text);
+        color: var(--text-secondary);
         border: none;
         border-bottom: 1px solid var(--border);
-        font-size: 0.9rem;
-        font-weight: bold;
+        font-size: 0.85rem;
+        font-weight: 500;
+        letter-spacing: 0.03em;
         text-align: left;
         cursor: pointer;
-        transition: none;
+        transition: background var(--transition), color var(--transition);
       }
 
       .tab-dropdown-item:last-child {
@@ -253,14 +284,15 @@
       }
 
       .tab-dropdown-item:hover {
-        background: var(--panel);
+        background: var(--panel-light);
         color: var(--text);
       }
 
       .tab-dropdown-item.active {
-        background: var(--border-light);
+        background: var(--panel-light);
         color: var(--accent);
         border-left: 3px solid var(--accent);
+        box-shadow: inset 4px 0 8px -4px var(--glow);
       }
 
       .tab-dropdown-item:focus {
@@ -293,7 +325,7 @@
 
       .slider {
         width: 100%;
-        height: 24px;
+        height: 28px;
         appearance: none;
         -webkit-appearance: none;
         background: transparent;
@@ -301,18 +333,25 @@
 
       .slider::-webkit-slider-runnable-track {
         width: 100%;
-        height: 3px;
+        height: 4px;
         background: var(--slider-track);
+        border-radius: 2px;
       }
 
       .slider::-webkit-slider-thumb {
         appearance: none;
         -webkit-appearance: none;
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         background: var(--accent);
-        margin-top: -8px;
+        margin-top: -9px;
+        box-shadow: 0 0 10px var(--glow-strong);
+        transition: box-shadow var(--transition);
+      }
+
+      .slider::-webkit-slider-thumb:hover {
+        box-shadow: 0 0 16px var(--glow-strong);
       }
 
       /* Unified result display containers */
@@ -321,16 +360,17 @@
         flex-direction: column;
         justify-content: space-between;
         text-align: center;
-        background: var(--panel-light);
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         padding: 8px;
+        box-shadow: 0 1px 4px var(--glow);
       }
 
       .timer-display {
-        font-size: 2.5rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        font-weight: bold;
+        font-size: 2.8rem;
+        font-family: "SF Mono", "Menlo", "Cascadia Code", monospace;
+        font-weight: 700;
         text-align: center;
         margin: 10px 0;
         color: var(--text);
@@ -338,36 +378,51 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        text-shadow: 0 0 20px var(--glow-strong);
+        letter-spacing: 0.02em;
       }
 
-      /* ===== BUTTON STYLES (EXACT MATCH) ===== */
+      /* ===== BUTTON STYLES ===== */
       .exp-btn {
         flex: 1;
         padding: 8px;
-        background: var(--accent);
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
         border: 1px solid var(--accent-dark);
         color: var(--bg);
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: bold;
+        border-radius: var(--radius-md);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
         cursor: pointer;
         min-width: 120px;
         min-height: 60px;
+        transition: box-shadow var(--transition), transform var(--transition), opacity var(--transition);
+        box-shadow: 0 2px 8px var(--glow);
+      }
+
+      .exp-btn:hover {
+        box-shadow: 0 2px 12px var(--glow-strong);
+      }
+
+      .exp-btn:active {
+        transform: scale(0.97);
       }
 
       .exp-btn.active {
-        background: var(--border-light);
+        background: var(--panel-light);
         border-color: var(--accent);
+        box-shadow: 0 0 8px var(--glow);
       }
 
       .exp-btn:disabled {
-        opacity: 0.3;
+        opacity: 0.25;
         cursor: not-allowed;
+        box-shadow: none;
       }
 
       .exp-btn.warning {
         border-color: var(--warning);
-        animation: pulse 1s infinite;
+        animation: pulse 1.5s ease-in-out infinite;
       }
 
       .exp-info {
@@ -379,27 +434,28 @@
 
       /* info-box is the unified result display container */
 
-      /* Unified small label class - consolidates info-label, label-sm, chemical-label-sm, label-sm */
+      /* Unified small label class */
       .label-sm {
         font-size: 0.65rem;
         color: var(--text-secondary);
         margin-bottom: 2px;
+        letter-spacing: 0.03em;
       }
 
-      /* Unified value display class - consolidates result-value, chemical-result-value */
+      /* Unified value display class */
       .value-display {
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        font-weight: bold;
+        font-family: "SF Mono", "Menlo", "Cascadia Code", monospace;
+        font-weight: 600;
         color: var(--text);
         font-size: 0.8rem;
       }
 
-      /* ===== TIMER GRID (EXACT MATCH) ===== */
+      /* ===== TIMER GRID ===== */
       .timer-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        gap: 8px;
+        gap: 10px;
         height: 320px;
         margin-bottom: 10px;
       }
@@ -407,50 +463,53 @@
       .timer-box {
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 6px;
+        border-radius: var(--radius-md);
+        padding: 8px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: space-between;
+        transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+        box-shadow: 0 1px 6px var(--glow);
       }
 
-      /* Disabled state - black and red only */
+      /* Disabled state */
       .timer-box.disabled {
-        background: var(--border-light);
-        border-color: var(--border-light);
-        color: var(--border-light);
+        background: var(--panel);
+        border-color: var(--border);
         color: var(--text-secondary);
         opacity: 0.2;
         cursor: not-allowed;
+        box-shadow: none;
       }
 
       .timer-btn .time-display {
-        background: var(--border-light);
-        border-color: var(--border-light);
         color: var(--text-secondary);
         cursor: not-allowed;
       }
 
       /* Unified title classes */
       .title-sm {
-        font-size: 0.75rem;
-        color: var(--text);
+        font-size: 0.7rem;
+        color: var(--text-secondary);
         text-transform: uppercase;
+        letter-spacing: 0.1em;
         margin-bottom: 4px;
       }
 
       .title-md {
-        font-size: 0.9rem;
-        color: var(--title);
+        font-size: 0.8rem;
+        color: var(--text);
         margin-bottom: 8px;
         text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 600;
       }
 
       .time-display {
         font-size: 1.6rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        font-weight: bold;
+        font-family: "SF Mono", "Menlo", "Cascadia Code", monospace;
+        font-weight: 700;
         color: var(--text);
         margin: 4px 0;
         text-align: center;
@@ -458,6 +517,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        text-shadow: 0 0 12px var(--glow);
       }
 
       .timer-controls-2 {
@@ -475,46 +535,59 @@
 
       .timer-btn {
         flex: 1;
-        padding: 4px;
-        background: var(--border);
-        border: 1px solid var(--border-light);
+        padding: 5px;
+        background: var(--panel-light);
+        border: 1px solid var(--border);
         color: var(--text);
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         font-size: 0.7rem;
         cursor: pointer;
         white-space: nowrap;
+        transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+      }
+
+      .timer-btn:hover {
+        border-color: var(--border-light);
+        background: var(--border);
+      }
+
+      .timer-btn:active {
+        transform: scale(0.96);
       }
 
       .timer-btn:disabled {
-        opacity: 0.3;
+        opacity: 0.25;
         cursor: not-allowed;
       }
 
       .timer-btn.active {
-        background: var(--border);
+        background: var(--panel-light);
         border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
       }
 
       /* Timer states */
       .timer-box.running {
         border-color: var(--accent);
         background: var(--panel-light);
+        box-shadow: 0 0 16px var(--glow-strong);
       }
 
       .timer-box.warning {
         border-color: var(--warning);
-        animation: pulse 1s infinite;
+        animation: pulse 1.5s ease-in-out infinite;
       }
 
       .timer-box.complete {
-        border-color: var(--accent);
-        background: var(--border);
+        border-color: var(--accent-dark);
+        background: var(--panel);
+        box-shadow: 0 0 6px var(--glow);
       }
 
       .settings-section {
-        margin-bottom: 10px;
+        margin-bottom: 14px;
+        padding-bottom: 14px;
         border-bottom: 1px solid var(--border);
-        padding-bottom: 10px;
       }
 
       .settings-section:last-child {
@@ -539,8 +612,9 @@
       /* Unified label for form controls */
       .control-label,
       .settings-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: var(--text-secondary);
+        letter-spacing: 0.02em;
       }
 
       .control-label {
@@ -552,74 +626,102 @@
       /* Base input field (consolidated) */
       .settings-input {
         background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
         color: var(--text);
-        padding: 4px 6px;
+        padding: 6px 8px;
         font-size: 0.8rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: inherit;
         flex: auto;
+        transition: border-color var(--transition), box-shadow var(--transition);
       }
 
       .settings-input:focus {
         outline: none;
         border-color: var(--accent);
+        box-shadow: 0 0 8px var(--glow);
       }
 
       .settings-input::placeholder {
-        color: var(--text);
-        opacity: 0.7;
+        color: var(--text-secondary);
+        opacity: 0.6;
       }
 
-      /* Unified list container - consolidates chemical-preset-list, shelf-life-list */
+      /* Unified list container */
       .shelf-life-list {
-        background: var(--panel-light);
+        background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         max-height: 200px;
         overflow-y: auto;
         margin-top: 10px;
         margin-bottom: 10px;
       }
 
-      /* Unified list item - replaces chemical-preset-item, shelf-life-item */
+      /* Unified list item */
       .shelf-life-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px;
+        padding: 8px 10px;
         border-bottom: 1px solid var(--border);
         font-size: 0.75rem;
+        transition: background var(--transition);
       }
 
       .shelf-life-item:last-child {
         border-bottom: none;
       }
 
+      .shelf-life-item:hover {
+        background: var(--panel-light);
+      }
+
       .shelf-life-item.active {
-        background: var(--border);
-        font-weight: bold;
+        background: var(--panel-light);
+        font-weight: 600;
+        border-left: 2px solid var(--accent);
       }
 
       .settings-btn {
-        background: var(--border);
-        border: 1px solid var(--border-light);
+        background: var(--panel-light);
+        border: 1px solid var(--border);
         color: var(--text);
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 0.8rem;
+        border-radius: var(--radius-sm);
+        padding: 7px 12px;
+        font-size: 0.78rem;
         cursor: pointer;
         width: 100%;
+        transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+      }
+
+      .settings-btn:hover {
+        background: var(--border);
+        border-color: var(--border-light);
+      }
+
+      .settings-btn:active {
+        transform: scale(0.97);
       }
 
       .settings-btn.primary {
-        background: var(--border-light);
+        background: var(--panel-light);
         border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
+      }
+
+      .settings-btn.primary:hover {
+        box-shadow: 0 0 10px var(--glow-strong);
       }
 
       .settings-btn.danger {
-        background: var(--border);
-        border-color: var(--accent);
+        background: var(--panel);
+        border-color: var(--warning);
+        color: var(--warning);
+      }
+
+      .settings-btn.danger:hover {
+        box-shadow: 0 0 8px rgba(255, 85, 0, 0.2);
       }
 
       .settings-btn-group {
@@ -644,8 +746,8 @@
       .switch {
         position: relative;
         display: inline-block;
-        width: 28px;
-        height: 14px;
+        width: 36px;
+        height: 20px;
       }
 
       .switch input {
@@ -662,28 +764,30 @@
         right: 0;
         bottom: 0;
         background-color: var(--border);
-        transition: 0.2s;
-        border-radius: 6px;
+        transition: 0.25s ease;
+        border-radius: 10px;
       }
 
       .slider-switch:before {
         position: absolute;
         content: "";
-        height: 10px;
-        width: 10px;
-        left: 2px;
-        bottom: 2px;
-        background-color: var(--bg);
-        transition: 0.2s;
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: var(--text-secondary);
+        transition: 0.25s ease;
         border-radius: 50%;
       }
 
       input:checked + .slider-switch {
         background-color: var(--accent);
+        box-shadow: 0 0 8px var(--glow);
       }
 
       input:checked + .slider-switch:before {
-        transform: translateX(14px);
+        transform: translateX(16px);
+        background-color: var(--bg);
       }
 
       /* chemical-result-box removed - using info-box instead */
@@ -696,8 +800,9 @@
         height: 60px;
         margin: 10px 0;
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         overflow: hidden;
+        box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
       }
 
       .test-step {
@@ -707,7 +812,7 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        transition: background-color 0.3s;
+        transition: background-color 0.3s, opacity 0.3s;
       }
 
       .test-step.active {
@@ -728,26 +833,27 @@
         margin-top: 2px;
       }
 
-      /* ===== FOOTER (EXACT MATCH) ===== */
+      /* ===== FOOTER ===== */
       footer {
         text-align: center;
-        margin-top: 10px;
-        padding-top: 6px;
-        border-top: 1px solid var(--border);
-        font-size: 0.6rem;
+        margin-top: 12px;
+        padding-top: 8px;
+        font-size: 0.55rem;
         color: var(--text-secondary);
+        opacity: 0.6;
+        letter-spacing: 0.15em;
       }
 
-      /* ===== ANIMATIONS (EXACT MATCH) ===== */
+      /* ===== ANIMATIONS ===== */
       @keyframes pulse {
         0% {
-          border-color: var(--warning);
+          box-shadow: 0 0 4px var(--glow);
         }
         50% {
-          border-color: var(--warning);
+          box-shadow: 0 0 16px var(--glow-strong);
         }
         100% {
-          border-color: var(--warning);
+          box-shadow: 0 0 4px var(--glow);
         }
       }
 
@@ -767,10 +873,11 @@
       /* Panel container for all panel-style sections */
       .incremental-timer {
         background: var(--panel);
-        padding: 10px;
-        border-radius: 6px;
+        padding: 12px;
+        border-radius: var(--radius-md);
         margin-top: 10px;
         margin-bottom: 10px;
+        border: 1px solid var(--border);
       }
 
       /* 2-column grid layouts */
@@ -784,19 +891,27 @@
       /* Base toggle button (consolidated for all variants) */
       .toggle-btn {
         padding: 8px;
-        background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
-        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
         cursor: pointer;
         text-align: center;
         font-size: 0.75rem;
+        transition: all var(--transition);
+      }
+
+      .toggle-btn:hover {
+        background: var(--panel-light);
+        border-color: var(--border-light);
       }
 
       .toggle-btn.active {
-        background: var(--border);
-        border-color: var(--border-light);
-        font-weight: bold;
+        background: var(--panel-light);
+        border-color: var(--accent);
+        color: var(--text);
+        font-weight: 600;
+        box-shadow: 0 0 8px var(--glow);
       }
 
       /* Chemical management styles */
@@ -822,13 +937,20 @@
       .custom-dilution input {
         flex: 1;
         text-align: center;
-        padding: 4px 6px;
+        padding: 5px 6px;
         background: var(--panel-light);
-        border: 1px solid var(--border-light);
-        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
         color: var(--text);
         font-size: 0.8rem;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: inherit;
+        transition: border-color var(--transition), box-shadow var(--transition);
+      }
+
+      .custom-dilution input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
       }
 
       /* Unified input focus already handled by .settings-input:focus */
@@ -839,20 +961,30 @@
         gap: 6px;
       }
 
-      /* Base action button - replaces .chemical-preset-btn, .shelf-life-btn */
+      /* Base action button */
       .btn-action {
-        background: var(--border);
-        border: 1px solid var(--border-light);
+        background: var(--panel-light);
+        border: 1px solid var(--border);
         color: var(--accent);
-        border-radius: 6px;
-        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        padding: 3px 8px;
         font-size: 0.65rem;
         cursor: pointer;
+        transition: all var(--transition);
+      }
+
+      .btn-action:hover {
+        background: var(--border);
+        border-color: var(--border-light);
       }
 
       .btn-action.delete {
-        border-color: var(--accent);
-        color: var(--accent);
+        border-color: var(--warning);
+        color: var(--warning);
+      }
+
+      .btn-action.delete:hover {
+        background: rgba(255, 85, 0, 0.1);
       }
 
       .btn-action {
@@ -860,9 +992,9 @@
       }
 
       .progress-container {
-        height: 8px;
-        background: var(--border);
-        border-radius: 6px;
+        height: 6px;
+        background: var(--panel-light);
+        border-radius: var(--radius-sm);
         overflow: hidden;
         margin: 10px 0;
         position: relative;
@@ -870,9 +1002,11 @@
 
       .progress-bar {
         height: 100%;
-        background: linear-gradient(90deg, var(--border-light), var(--accent));
+        background: linear-gradient(90deg, var(--accent-dark), var(--accent));
         width: 0%;
         transition: width 0.5s ease;
+        box-shadow: 0 0 8px var(--glow);
+        border-radius: var(--radius-sm);
       }
 
       .progress-labels {
@@ -902,18 +1036,18 @@
 
       .shelf-life-item.expiring {
         background: var(--panel-light);
-        border-left: 3px solid var(--accent);
+        border-left: 3px solid var(--warning);
       }
 
       .shelf-life-item.expired {
         background: var(--panel);
         border-left: 3px solid var(--accent);
-        animation: pulse 2s infinite;
+        animation: pulse 2s ease-in-out infinite;
       }
 
       .shelf-life-days {
-        font-weight: bold;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 600;
+        font-family: "SF Mono", "Menlo", "Cascadia Code", monospace;
       }
 
       .shelf-life-days.expiring {
@@ -959,9 +1093,9 @@
       }
 
       .test-progress-bar {
-        height: 6px;
-        background: var(--border);
-        border-radius: 6px;
+        height: 5px;
+        background: var(--panel-light);
+        border-radius: var(--radius-sm);
         overflow: hidden;
         position: relative;
       }
@@ -1081,7 +1215,7 @@
       /* Collapsible rows in CALC tab */
       .collapsible {
         border-top: 1px solid var(--border);
-        margin-top: 10px;
+        margin-top: 12px;
         padding-top: 6px;
       }
       .collapsible-header {
@@ -1090,26 +1224,31 @@
         background: transparent;
         border: none;
         color: var(--text);
-        font-weight: bold;
+        font-weight: 600;
         padding: 8px 6px;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.03em;
+        transition: color var(--transition);
+      }
+      .collapsible-header:hover {
+        color: var(--accent);
       }
       .collapsible-header::after {
         content: "▾";
-        transition: transform 0.2s ease;
+        transition: transform 0.25s ease;
         color: var(--text-secondary);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
       }
       .collapsible-header[aria-expanded="false"]::after {
         transform: rotate(-90deg);
       }
       .collapsible-content {
         overflow: hidden;
-        transition: max-height 0.28s ease;
+        transition: max-height 0.3s ease;
         max-height: 0;
       }
       .collapsible .exp-info {
@@ -1128,11 +1267,11 @@
       .segmented-control {
         display: inline-flex;
         border: 1px solid var(--border);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         overflow: hidden;
         background: var(--panel);
         align-items: center;
-        gap: 0; /* buttons are visually separated by borders */
+        gap: 0;
       }
 
       .segmented-control .segmented-btn {
@@ -1140,11 +1279,12 @@
         border: none;
         padding: 8px 12px;
         cursor: pointer;
-        color: var(--text);
-        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
         min-width: 44px;
         text-align: center;
         line-height: 1;
+        transition: all var(--transition);
       }
 
       .segmented-control .segmented-btn:not(:last-child) {
@@ -1153,8 +1293,15 @@
 
       .segmented-control .segmented-btn.active,
       .segmented-control .segmented-btn[aria-pressed="true"] {
-        background: var(--border-light);
+        background: var(--panel-light);
         color: var(--accent);
+        box-shadow: inset 0 0 8px var(--glow);
+        font-weight: 600;
+      }
+
+      .segmented-control .segmented-btn:hover:not(.active) {
+        background: var(--panel-light);
+        color: var(--text);
       }
 
       /* Prefer the more semantic :focus-visible when available */
@@ -1162,9 +1309,8 @@
         outline: none;
       }
       .segmented-control .segmented-btn:focus-visible {
-        /* Use accent color for the outline if available, with a subtle shadow for depth */
         outline: 2px solid var(--accent);
-        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 0 0 4px var(--glow);
         z-index: 1;
       }
 
@@ -1215,44 +1361,63 @@
       .custom-filter-row input[type="text"] {
         width: 100%;
         padding: 6px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: var(--panel);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: inherit;
+        transition: border-color var(--transition), box-shadow var(--transition);
+      }
+
+      .custom-filter-row input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
       }
 
       .custom-filter-row input[type="text"]::placeholder {
-        color: var(--text);
-        opacity: 0.7;
+        color: var(--text-secondary);
+        opacity: 0.5;
       }
 
       .custom-filter-row input[type="number"] {
         width: 100%;
         padding: 6px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: var(--panel);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: inherit;
+        transition: border-color var(--transition), box-shadow var(--transition);
+      }
+
+      .custom-filter-row input[type="number"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
       }
 
       .custom-filter-row input[type="number"]::placeholder {
-        color: var(--text);
-        opacity: 0.7;
+        color: var(--text-secondary);
+        opacity: 0.5;
       }
 
       .custom-filter-row button {
         padding: 6px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
-        background: var(--accent-muted);
+        background: var(--panel-light);
         color: var(--text);
         cursor: pointer;
+        transition: all var(--transition);
+      }
+
+      .custom-filter-row button:hover {
+        background: var(--border);
       }
 
       .custom-filter-row button:disabled {
-        opacity: 0.6;
+        opacity: 0.4;
         cursor: not-allowed;
       }
 
@@ -1398,14 +1563,14 @@
           gap: 2px;
           background: var(--border);
           padding: 4px;
-          border-radius: 8px;
+          border-radius: var(--radius-md);
         }
 
         .proof-cell {
           width: 100%;
           aspect-ratio: 1 / 1;
-          background: #111;
-          border: 1px solid #000;
+          background: var(--panel);
+          border: 1px solid var(--bg);
           border-radius: 2px;
         }
 
@@ -1418,19 +1583,19 @@
         }
 
         .proof-cell.proof-selected {
-          box-shadow: inset 0 0 0 3px #4A9EFF;
+          box-shadow: inset 0 0 0 3px var(--accent-highlight);
         }
 
         .proof-cell.proof-reference.proof-selected {
-          box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px #4A9EFF;
+          box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px var(--accent-highlight);
         }
 
         .proof-cell.proof-clipped-white {
-          outline: 2px solid #ccc;
+          outline: 2px solid var(--text-secondary);
         }
 
         .proof-cell.proof-clipped-black {
-          outline: 2px solid #111;
+          outline: 2px solid var(--panel);
         }
 
         .proof-legend {
@@ -1443,9 +1608,9 @@
 
         .proof-histogram {
           margin-top: 8px;
-          background: #0b0b0b;
-          border: 1px solid #000;
-          border-radius: 8px;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-md);
           padding: 6px;
         }
 
@@ -3524,7 +3689,7 @@
                       type="text"
                       class="settings-input"
                       id="relay1Name"
-                      value="Enlarger Timer"
+                      value="Enlarger"
                       placeholder="Relay name"
                     />
                   </div>
@@ -3578,7 +3743,7 @@
                       type="text"
                       class="settings-input"
                       id="relay3Name"
-                      value="Ventilation"
+                      value="Heater"
                       placeholder="Relay name"
                     />
                   </div>
@@ -4738,11 +4903,11 @@
               class="info-box"
               style="
                 margin-top: 10px;
-                background: rgba(50, 150, 255, 0.1);
-                border-color: rgba(50, 150, 255, 0.3);
+                background: var(--surface);
+                border-color: var(--border-light);
               "
             >
-              <div class="label-sm" style="color: #6699ff">
+              <div class="label-sm" style="color: var(--accent)">
                 ANALYSIS REASONING
               </div>
               <div
@@ -4934,11 +5099,11 @@
               class="info-box"
               style="
                 margin-top: 10px;
-                background: rgba(50, 150, 255, 0.1);
-                border-color: rgba(50, 150, 255, 0.3);
+                background: var(--surface);
+                border-color: var(--border-light);
               "
             >
-              <div class="label-sm" style="color: #6699ff">
+              <div class="label-sm" style="color: var(--accent)">
                 ANALYSIS REASONING
               </div>
               <div
@@ -5021,11 +5186,11 @@
               class="info-box"
               style="
                 margin-top: 15px;
-                background: rgba(50, 150, 255, 0.1);
-                border-color: rgba(50, 150, 255, 0.3);
+                background: var(--surface);
+                border-color: var(--border-light);
               "
             >
-              <div class="label-sm" style="color: #6699ff; text-align: center">
+              <div class="label-sm" style="color: var(--accent); text-align: center">
                 HOW TO USE
               </div>
               <div class="label-sm" style="text-align: center; margin-top: 5px">
@@ -5401,7 +5566,7 @@
       </div>
 
       <footer>
-        <div>CYANOWOOD DARKROOM TIMER v1.0.1</div>
+        <div>CYANOWOOD DARKROOM TIMER <span id="footerAppVersion">v0.0.0</span></div>
       </footer>
     </div>
 
@@ -10057,12 +10222,33 @@
         }
 
         loadVersion() {
-          // For now, version will come from server after first check
-          // This could also be stored in localStorage
+          // Attempt to load current version from server first
+          this.loadVersionFromServer();
+        }
+
+        async loadVersionFromServer() {
+          try {
+            const data = await apiClient.getJSON("/all", {
+              preferRelay: true,
+              timeoutMs: 5000,
+            });
+
+            if (data.version) {
+              // Server has current version - use it
+              this.currentVersion = data.version;
+              this.updateVersionDisplay();
+              return;
+            }
+          } catch (error) {
+            console.log("[UpdateStatusManager] Could not fetch version from server:", error);
+          }
+
+          // Fallback to localStorage if server unavailable
           try {
             const stored = localStorage.getItem("appVersion");
             if (stored) {
               this.currentVersion = stored;
+              this.updateVersionDisplay();
             }
           } catch (e) {
             console.log("[UpdateStatusManager] Could not load version from localStorage");
@@ -10073,6 +10259,7 @@
           try {
             localStorage.setItem("appVersion", version);
             this.currentVersion = version;
+            this.updateVersionDisplay();
           } catch (e) {
             console.log("[UpdateStatusManager] Could not save version to localStorage");
           }
@@ -10081,12 +10268,16 @@
         updateVersionDisplay() {
           const currentVersionEl = document.getElementById("currentAppVersion");
           const latestVersionEl = document.getElementById("latestAppVersion");
+          const footerVersionEl = document.getElementById("footerAppVersion");
 
           if (currentVersionEl) {
             currentVersionEl.textContent = this.currentVersion || "Unknown";
           }
           if (latestVersionEl) {
             latestVersionEl.textContent = this.latestVersion || "Checking...";
+          }
+          if (footerVersionEl) {
+            footerVersionEl.textContent = `v${this.currentVersion || "0.0.0"}`;
           }
         }
 

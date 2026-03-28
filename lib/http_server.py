@@ -10,6 +10,8 @@ import json
 import time
 import gc
 import os
+from lib.paper_database import get_paper_list, get_paper_data, get_paper_display_name
+from lib.light_sensor import TSL2591
 
 # Server Configuration
 HTTP_PORT = 80
@@ -51,6 +53,34 @@ class HTTPServer:
         self.update_manager = update_manager
         self.sock = None
         self.running = False
+        
+        # Route table: path -> handler(conn, params)
+        self._routes = {
+            '/ping':                          self._handle_ping,
+            '/relay':                         self._handle_relay,
+            '/timer':                         self._handle_timer,
+            '/status':                        self._handle_status,
+            '/all':                           self._handle_all,
+            '/auto-safelight':                self._handle_auto_safelight,
+            '/temperature':                   self._handle_temperature,
+            '/temperature-control':           self._handle_temperature_control,
+            '/temperature-enable':            self._handle_temperature_enable,
+            '/wifi-status':                   self._handle_wifi_status,
+            '/wifi-config':                   self._handle_wifi_config,
+            '/wifi-ap-force':                 self._handle_wifi_ap_force,
+            '/wifi-clear':                    self._handle_wifi_clear,
+            '/papers':                        self._handle_papers,
+            '/light-meter-paper':             self._handle_light_meter_paper,
+            '/light-meter':                   self._handle_light_meter,
+            '/light-meter-highlight':         self._handle_light_meter_highlight,
+            '/light-meter-shadow':            self._handle_light_meter_shadow,
+            '/light-meter-contrast':          self._handle_light_meter_contrast,
+            '/light-meter-split-grade-heiland': self._handle_light_meter_split_grade_heiland,
+            '/light-meter-virtual-proof':     self._handle_light_meter_virtual_proof,
+            '/light-meter-calibrate':         self._handle_light_meter_calibrate,
+            '/light-meter-config':            self._handle_light_meter_config,
+            '/update-check':                  self._handle_update_check,
+        }
     
     def _cors_headers(self):
         """Return CORS headers string."""
@@ -61,10 +91,22 @@ class HTTPServer:
             "Access-Control-Max-Age: 86400\r\n"
         )
     
+    async def _require_light_meter(self, conn):
+        """Send 400 if light meter is missing. Returns True when absent."""
+        if not self.light_meter:
+            response = self._json_response({
+                "error": "Light meter not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return True
+        return False
+    
+    _STATUS_TEXT = {200: "OK", 400: "Bad Request", 404: "Not Found", 500: "Internal Server Error"}
+
     def _json_response(self, data, status=200):
         """Build JSON response."""
         body = json.dumps(data)
-        status_text = "OK" if status == 200 else "Bad Request" if status == 400 else "Internal Server Error"
+        status_text = self._STATUS_TEXT.get(status, "Error")
         
         response = (
             f"HTTP/1.1 {status} {status_text}\r\n"
@@ -496,7 +538,6 @@ class HTTPServer:
     async def _handle_wifi_clear(self, conn, params):
         """Handle /wifi-clear endpoint - clear saved WiFi credentials."""
         try:
-            import os
             config_file = "wifi_config.json"
             
             # Try to delete the config file
@@ -640,85 +681,86 @@ class HTTPServer:
             }, 500)
             await self._sendall(conn, response)
     
+    def _build_paper_entry(self, paper_id, paper_data):
+        """Build a single paper dict for JSON serialization."""
+        manufacturer = paper_data.get('manufacturer', '')
+        is_ilford = 'ilford' in manufacturer.lower()
+        foma_names = {
+            '2xY': '2xY (Soft)', 'Y': 'Y', 'M1': 'M1',
+            '2xM1': '2xM1', 'M2': 'M2', '2xM2': '2xM2 (Hard)'
+        }
+        filters = {}
+        for grade, data in paper_data.get('filters', {}).items():
+            if grade in ('', 'none'):
+                name = 'No Filter'
+            elif is_ilford:
+                name = f"Grade {grade}"
+            else:
+                name = foma_names.get(grade, grade)
+            filters[grade] = {
+                'factor': data.get('factor', 1.0),
+                'name': name,
+                'iso_r': data.get('iso_r'),
+                'gamma': data.get('gamma')
+            }
+        return {
+            'id': paper_id,
+            'display_name': get_paper_display_name(paper_id),
+            'filters': filters
+        }
+
     async def _handle_papers(self, conn, params):
         """
-        Handle /papers endpoint - get list of available papers and their metadata.
+        Handle /papers endpoint - stream papers one at a time to limit RAM use.
         
-        Returns:
-            papers: List of paper objects with id, display_name, manufacturer, and filters
+        Sends the JSON envelope and each paper entry individually so only one
+        paper dict is alive in memory at a time.
         """
         try:
-            from lib.paper_database import get_paper_list, get_paper_data, get_paper_display_name
-            
-            papers = []
-            for paper_id in get_paper_list():
+            gc.collect()
+            paper_ids = get_paper_list()
+            count = len(paper_ids)
+
+            # Send HTTP headers (no Content-Length; Connection: close suffices)
+            header = (
+                f"HTTP/1.1 200 OK\r\n"
+                f"Content-Type: application/json\r\n"
+                f"{self._cors_headers()}"
+                f"Connection: close\r\n"
+                f"\r\n"
+            )
+            await self._sendall(conn, header.encode())
+
+            # Stream JSON: {"status":"success","count":N,"papers":[...]}
+            await self._sendall(conn, f'{{"status":"success","count":{count},"papers":['.encode())
+
+            first = True
+            for paper_id in paper_ids:
                 paper_data = get_paper_data(paper_id)
-                if paper_data:
-                    manufacturer = paper_data.get('manufacturer', '')
-                    
-                    # Build filter metadata for UI use
-                    # Include factor, iso_r, and gamma for client calculations
-                    # while keeping response size manageable for MicroPython
-                    filters = {}
-                    for grade, data in paper_data.get('filters', {}).items():
-                        if grade in ('', 'none'):
-                            name = 'No Filter'
-                        elif 'ilford' in manufacturer.lower():
-                            name = f"Grade {grade}"
-                        else:
-                            foma_names = {
-                                '2xY': '2xY (Soft)',
-                                'Y': 'Y',
-                                'M1': 'M1',
-                                '2xM1': '2xM1',
-                                'M2': 'M2',
-                                '2xM2': '2xM2 (Hard)'
-                            }
-                            name = foma_names.get(grade, grade)
-                        
-                        filters[grade] = {
-                            'factor': data.get('factor', 1.0),
-                            'name': name,
-                            'iso_r': data.get('iso_r'),
-                            'gamma': data.get('gamma')
-                        }
-                    
-                    # Only include essential fields to minimize response size for MicroPython
-                    papers.append({
-                        'id': paper_id,
-                        'display_name': get_paper_display_name(paper_id),
-                        'filters': filters
-                    })
-            
-            # Build response with minimal data
-            print(f"Built papers list with {len(papers)} papers")
-            
-            # Try to serialize JSON - might fail if too large for MicroPython
-            try:
-                import gc
-                gc.collect()  # Free memory before JSON serialization
-                
-                response_data = {
-                    "status": "success",
-                    "papers": papers,
-                    "count": len(papers)
-                }
-                response = self._json_response(response_data)
-                await self._sendall(conn, response)
-                
-            except MemoryError:
-                print("ERROR: Out of memory while building /papers response")
-                response = self._json_response({
-                    "error": "Response too large - memory error"
-                }, 500)
-                await self._sendall(conn, response)
-            
+                if not paper_data:
+                    continue
+                entry = self._build_paper_entry(paper_id, paper_data)
+                fragment = json.dumps(entry)
+                if not first:
+                    fragment = ',' + fragment
+                first = False
+                await self._sendall(conn, fragment.encode())
+                # Free per-paper objects immediately
+                del entry, fragment
+                gc.collect()
+
+            await self._sendall(conn, b']}')
+            print(f"Streamed {count} papers")
+
         except Exception as e:
             print(f"ERROR in _handle_papers: {e}")
-            response = self._json_response({
-                "error": f"Failed to get papers: {e}"
-            }, 500)
-            await self._sendall(conn, response)
+            try:
+                response = self._json_response({
+                    "error": f"Failed to get papers: {e}"
+                }, 500)
+                await self._sendall(conn, response)
+            except:
+                pass
     
     async def _handle_light_meter_paper(self, conn, params):
         """
@@ -733,11 +775,7 @@ class HTTPServer:
         
         Returns current paper information.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -748,7 +786,6 @@ class HTTPServer:
                 self.light_meter.set_current_paper(paper_id)
             
             # GET current paper
-            from lib.paper_database import get_paper_data, get_paper_display_name
             current_paper_id = self.light_meter.get_current_paper()
             paper_data = get_paper_data(current_paper_id)
             
@@ -792,11 +829,7 @@ class HTTPServer:
         
         Returns lux reading and calculated exposure time.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -828,7 +861,6 @@ class HTTPServer:
             )
             
             # Get current paper info
-            from lib.paper_database import get_paper_display_name
             current_paper_id = paper_id or self.light_meter.get_current_paper()
             
             response = self._json_response({
@@ -865,11 +897,7 @@ class HTTPServer:
         Stores the reading for contrast analysis.
         Place sensor at brightest area of projected image.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -909,11 +937,7 @@ class HTTPServer:
         Stores the reading for contrast analysis.
         Place sensor at darkest area of projected image.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -957,11 +981,7 @@ class HTTPServer:
         Returns ΔEV, recommended filter grade, and split-grade calculations
         based on stored highlight and shadow readings.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -990,7 +1010,6 @@ class HTTPServer:
                 return
             
             # Get current paper info
-            from lib.paper_database import get_paper_display_name
             current_paper_id = paper_id or self.light_meter.get_current_paper()
             
             response = self._json_response({
@@ -1026,11 +1045,7 @@ class HTTPServer:
         
         Returns Heiland-like split-grade calculation with dynamic filter selection.
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -1099,11 +1114,7 @@ class HTTPServer:
             paper_id: Paper ID to use for curves and filter data
             filter: Filter grade for gamma selection (optional)
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
 
         try:
@@ -1157,11 +1168,7 @@ class HTTPServer:
             constant: Calibration constant (lux × seconds)
             set_default: If 'true', set as default calibration
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -1222,11 +1229,7 @@ class HTTPServer:
             integration: 100, 200, 300, 400, 500, or 600 (ms)
             clear: 'true' to clear stored highlight/shadow readings
         """
-        if not self.light_meter:
-            response = self._json_response({
-                "error": "Light meter not configured"
-            }, 400)
-            await self._sendall(conn, response)
+        if await self._require_light_meter(conn):
             return
         
         try:
@@ -1240,13 +1243,11 @@ class HTTPServer:
             
             # Set paper (paper_id takes precedence over legacy filter_system)
             if paper_id:
-                from lib.paper_database import get_paper_data
                 try:
                     paper_data = get_paper_data(paper_id)
                     self.light_meter.set_current_paper(paper_id)
                     changes.append(f"paper_id={paper_id}")
                 except (KeyError, ValueError):
-                    from lib.paper_database import get_paper_list
                     valid_papers = get_paper_list()
                     response = self._json_response({
                         "error": f"Invalid paper_id. Use: {valid_papers}"
@@ -1261,7 +1262,7 @@ class HTTPServer:
                     'ilford_cooltone', 'ilford_iv_rc_portfolio',
                     'ilford_multigrade_rc_deluxe_new', 'ilford_multigrade_rc_portfolio_new',
                     'ilford_fb_classic', 'ilford_fb_warmtone', 'ilford_fb_cooltone',
-                    'foma_fomabrom', 'ilford_mg_iv', 'ilford_warmtone'
+                    'foma_fomabrom', 'ilford_multigrade_rc_deluxe_new'
                 ]
                 if filter_system in valid_systems:
                     self.light_meter.set_filter_system(filter_system)
@@ -1275,7 +1276,6 @@ class HTTPServer:
             
             # Set gain
             if gain:
-                from lib.light_sensor import TSL2591
                 gain_map = {
                     'low': TSL2591.GAIN_LOW,
                     'med': TSL2591.GAIN_MED,
@@ -1298,7 +1298,6 @@ class HTTPServer:
             
             # Set integration time
             if integration:
-                from lib.light_sensor import TSL2591
                 int_map = {
                     '100': TSL2591.INTEGRATIONTIME_100MS,
                     '200': TSL2591.INTEGRATIONTIME_200MS,
@@ -1378,64 +1377,18 @@ class HTTPServer:
             # Route request
             if path in ('/', '/index.html'):
                 await self._serve_html(conn)
-            elif path == '/ping':
-                await self._handle_ping(conn, params)
-            elif path == '/relay':
-                await self._handle_relay(conn, params)
-            elif path == '/timer':
-                await self._handle_timer(conn, params)
-            elif path == '/status':
-                await self._handle_status(conn, params)
-            elif path == '/all':
-                await self._handle_all(conn, params)
-            elif path == '/auto-safelight':
-                await self._handle_auto_safelight(conn, params)
-            elif path == '/temperature':
-                await self._handle_temperature(conn, params)
-            elif path == '/temperature-control':
-                await self._handle_temperature_control(conn, params)
-            elif path == '/temperature-enable':
-                await self._handle_temperature_enable(conn, params)
-            elif path == '/wifi-status':
-                await self._handle_wifi_status(conn, params)
-            elif path == '/wifi-config':
-                await self._handle_wifi_config(conn, params)
-            elif path == '/wifi-ap-force':
-                await self._handle_wifi_ap_force(conn, params)
-            elif path == '/wifi-clear':
-                await self._handle_wifi_clear(conn, params)
-            elif path == '/papers':
-                await self._handle_papers(conn, params)
-            elif path == '/light-meter-paper':
-                await self._handle_light_meter_paper(conn, params)
-            elif path == '/light-meter':
-                await self._handle_light_meter(conn, params)
-            elif path == '/light-meter-highlight':
-                await self._handle_light_meter_highlight(conn, params)
-            elif path == '/light-meter-shadow':
-                await self._handle_light_meter_shadow(conn, params)
-            elif path == '/light-meter-contrast':
-                await self._handle_light_meter_contrast(conn, params)
-            elif path == '/light-meter-split-grade-heiland':
-                await self._handle_light_meter_split_grade_heiland(conn, params)
-            elif path == '/light-meter-virtual-proof':
-                await self._handle_light_meter_virtual_proof(conn, params)
-            elif path == '/light-meter-calibrate':
-                await self._handle_light_meter_calibrate(conn, params)
-            elif path == '/light-meter-config':
-                await self._handle_light_meter_config(conn, params)
-            elif path == '/update-check':
-                await self._handle_update_check(conn, params)
             elif path == '/favicon.ico':
-                # Return empty response for favicon
                 response = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
                 await self._sendall(conn, response.encode())
             else:
-                # 404 Not Found
-                response = self._json_response({
-                    "error": f"Not found: {path}"
-                }, 404)
-                await self._sendall(conn, response)
+                handler = self._routes.get(path)
+                if handler:
+                    await handler(conn, params)
+                else:
+                    response = self._json_response({
+                        "error": f"Not found: {path}"
+                    }, 404)
+                    await self._sendall(conn, response)
                 
         except Exception as e:
             print(f"Request error: {e}")
@@ -1503,7 +1456,10 @@ class HTTPServer:
             # If update succeeded and restart is required, schedule restart
             if result.get('success') and result.get('restart_required'):
                 print("[HTTPServer] Update successful, scheduling restart in 3 seconds...")
-                asyncio.create_task(self.update_manager.trigger_restart(delay_ms=3000))
+                try:
+                    asyncio.create_task(self.update_manager.trigger_restart(delay_ms=3000))
+                except Exception as e:
+                    print(f"[HTTPServer] Failed to schedule restart: {e}")
         
         except Exception as e:
             print(f"[HTTPServer] Error in /update-check: {e}")
@@ -1526,11 +1482,20 @@ class HTTPServer:
                 # Try to accept connection
                 try:
                     conn, addr = self.sock.accept()
-                    # Handle request in background
-                    asyncio.create_task(self._handle_request(conn, addr))
                 except OSError:
                     # No connection available (EAGAIN)
                     await asyncio.sleep_ms(10)
+                    continue
+                # Handle request in background
+                try:
+                    asyncio.create_task(self._handle_request(conn, addr))
+                except Exception as e:
+                    print(f"Task creation error: {e}")
+                    try:
+                        conn.close()
+                    except:
+                        pass
+                    gc.collect()
                     
             except Exception as e:
                 print(f"Server loop error: {e}")

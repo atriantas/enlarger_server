@@ -41,6 +41,7 @@ class UpdateManager:
     FILES_TO_UPDATE = [
         "boot.py",
         "index.html",
+        "lib/exposure_calc.py",
         "lib/gpio_control.py",
         "lib/http_server.py",
         "lib/light_sensor.py",

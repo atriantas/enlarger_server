@@ -29,7 +29,7 @@ def test_paper_database():
         )
         
         # Test getting paper data
-        ilford_data = get_paper_data('ilford_mg_iv')
+        ilford_data = get_paper_data('ilford_multigrade_rc_deluxe_new')
         assert ilford_data is not None, "Failed to get Ilford paper data"
         assert ilford_data['manufacturer'] == 'Ilford'
         assert 'filters' in ilford_data
