@@ -149,6 +149,7 @@
         max-width: 480px;
         margin: 0 auto;
         height: calc(100vh - 12px); /* Account for body padding */
+        overflow-x: hidden;
         overflow-y: auto; /* Allow scrolling within container */
         scrollbar-width: none; /* Firefox */
         padding-bottom: max(8px, env(safe-area-inset-bottom));
@@ -314,6 +315,7 @@
 
       .tab-content.active {
         display: block;
+        overflow-x: hidden;
       }
 
       /* ===== CALCULATOR CONTROLS (EXACT MATCH) ===== */
@@ -10228,14 +10230,13 @@
 
         async loadVersionFromServer() {
           try {
-            const data = await apiClient.getJSON("/all", {
-              preferRelay: true,
+            const data = await apiClient.getJSON("/version", {
               timeoutMs: 5000,
             });
 
             if (data.version) {
-              // Server has current version - use it
               this.currentVersion = data.version;
+              this.saveVersion(data.version);
               this.updateVersionDisplay();
               return;
             }

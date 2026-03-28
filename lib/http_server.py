@@ -80,6 +80,7 @@ class HTTPServer:
             '/light-meter-calibrate':         self._handle_light_meter_calibrate,
             '/light-meter-config':            self._handle_light_meter_config,
             '/update-check':                  self._handle_update_check,
+            '/version':                       self._handle_version,
         }
     
     def _cors_headers(self):
@@ -1433,6 +1434,20 @@ class HTTPServer:
             self.sock = None
         print("HTTP server stopped")
     
+    async def _handle_version(self, conn, params):
+        """Handle GET /version - Return current installed version."""
+        if not self.update_manager:
+            response = self._json_response({
+                'version': '0.0.0'
+            })
+            await self._sendall(conn, response)
+            return
+
+        response = self._json_response({
+            'version': self.update_manager.current_version or '0.0.0'
+        })
+        await self._sendall(conn, response)
+
     async def _handle_update_check(self, conn, params):
         """Handle GET /update-check - Check for available updates from GitHub."""
         try:
