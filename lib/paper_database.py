@@ -924,7 +924,7 @@ OPTIMIZATION_PARAMS = {
     'min_exposure_time': 2.0,          # Minimum exposure in seconds
     'max_exposure_time': 120.0,        # Maximum exposure in seconds
     'max_exposure_ratio': 10.0,        # Max ratio between soft/hard exposures
-    'prefer_balanced_exposures': True  # Prefer similar exposure times
+    'prefer_balanced_exposures': False  # Raw ratios match Heiland behavior
 }
 
 def get_paper_data(paper_id):
@@ -970,7 +970,9 @@ def get_filter_selection(delta_ev, system='ilford'):
                 'contrast_level': level,
                 'description': rule['description'],
                 'delta_ev': delta_ev,
-                'system': system
+                'system': system,
+                'bin_min': rule['min'],
+                'bin_max': rule['max'],
             }
     
     # Fallback for extreme values
@@ -980,7 +982,9 @@ def get_filter_selection(delta_ev, system='ilford'):
         'contrast_level': 'extreme',
         'description': rules['extreme']['description'],
         'delta_ev': delta_ev,
-        'system': system
+        'system': system,
+        'bin_min': rules['extreme']['min'],
+        'bin_max': rules['extreme']['max'],
     }
 
 def get_filter_data(paper_id, filter_grade):
@@ -1013,6 +1017,8 @@ def validate_exposure_times(soft_time, hard_time, paper_id=None):
         tuple: (optimized_soft_time, optimized_hard_time, adjustments_applied)
     """
     params = OPTIMIZATION_PARAMS
+    orig_soft = soft_time
+    orig_hard = hard_time
     
     # Apply minimum exposure time
     soft_time = max(soft_time, params['min_exposure_time'])
@@ -1034,13 +1040,14 @@ def validate_exposure_times(soft_time, hard_time, paper_id=None):
     
     # If prefer_balanced_exposures is True, try to balance them more
     if params['prefer_balanced_exposures']:
-        avg_time = (soft_time + hard_time) / 2
-        if max(soft_time, hard_time) / min(soft_time, hard_time) > 3:
+        if min(soft_time, hard_time) > 0 and max(soft_time, hard_time) / min(soft_time, hard_time) > 3:
+            avg_time = (soft_time + hard_time) / 2
             # Bring them closer together (weighted average)
             soft_time = (soft_time * 0.7) + (avg_time * 0.3)
             hard_time = (hard_time * 0.7) + (avg_time * 0.3)
     
-    return soft_time, hard_time, True
+    adjusted = abs(soft_time - orig_soft) > 0.01 or abs(hard_time - orig_hard) > 0.01
+    return soft_time, hard_time, adjusted
 
 def get_paper_list():
     """
