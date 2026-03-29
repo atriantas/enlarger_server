@@ -2561,7 +2561,7 @@
 
           <div class="control">
             <div class="control-label">
-              <span>SHADOW BURN PERCENTAGE</span>
+              <span>SHADOW TIME ALLOCATION</span>
               <span class="value-display" id="burnPercentValue">50%</span>
             </div>
             <input
@@ -2592,6 +2592,14 @@
             <div class="value-display" id="totalResult" style="font-size: 1rem">
               -- s
             </div>
+            <div class="label-sm" style="margin-top: 6px">
+              SPLIT RATIO
+            </div>
+            <div class="value-display" id="splitRatioDisplay">—</div>
+            <div class="label-sm" style="margin-top: 6px">
+              EFFECTIVE CONTRAST GRADE
+            </div>
+            <div class="value-display" id="effectiveGradeDisplay">—</div>
           </div>
 
           <div class="settings-btn-group">
@@ -11259,33 +11267,32 @@
             5: 2.38,
           },
           ILFORD_FB_WARMTONE: {
-            "00": 2.17,
-            0: 2.17,
-            1: 2.17,
-            2: 2.17,
-            3: 2.17,
-            4: 2.38,
-            5: 2.38,
-          }, // Assuming same as FB Classic
+            "00": 2.0,
+            0: 2.0,
+            1: 2.0,
+            2: 2.0,
+            3: 2.0,
+            4: 4.0,
+            5: 4.0,
+          },
           ILFORD_FB_COOLTONE: {
-            "00": 2.17,
-            0: 2.17,
-            1: 2.17,
-            2: 2.17,
-            3: 2.17,
-            4: 2.38,
-            5: 2.38,
-          }, // Assuming same as FB Classic
+            "00": 2.36,
+            0: 2.36,
+            1: 2.36,
+            2: 2.36,
+            3: 2.36,
+            4: 2.62,
+            5: 2.62,
+          },
 
           // Legacy Ilford entry for backward compatibility
           Ilford: { "00": 2.5, 0: 2.5, 1: 2.5, 2: 2.5, 3: 2.5, 4: 5.0, 5: 5.0 },
 
-          FOMA: { "00": 1.6, 0: 1.4, 1: 1.0, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
+          FOMA: { "00": 1.6, 0: 1.4, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
           // FOMA paper-specific factors (will override base FOMA when selected)
           FOMASPEED: {
             "00": 1.6,
             0: 1.4,
-            1: 1.0,
             2: 1.4,
             3: 2.1,
             4: 2.6,
@@ -11294,7 +11301,6 @@
           FOMATONE: {
             "00": 2.0,
             0: 1.5,
-            1: 1.0,
             2: 1.5,
             3: 1.8,
             4: 2.0,
@@ -11320,6 +11326,9 @@
           },
           // Custom factors are stored in instance properties, not here
         };
+
+        /** Cached per-grade data (factor + gamma) from server, keyed by FILTER_FACTORS key */
+        static PAPER_DATA = {};
 
         /**
          * Initialize UI event listeners
@@ -11423,6 +11432,65 @@
           this.updateFilterLabels();
           this.calculate();
           this.updatePresetList();
+
+          // Fetch authoritative factors from server (non-blocking)
+          this.fetchFactorsFromServer();
+        }
+
+        /**
+         * Sync FILTER_FACTORS from server paper data so the client
+         * always uses the authoritative values in paper_database.py.
+         * @param {Array} papers - Array from /papers endpoint
+         */
+        static ID_TO_KEY = {
+          ilford_cooltone:                  "ILFORD_COOLTONE",
+          ilford_iv_rc_portfolio:           "ILFORD_PORTFOLIO",
+          ilford_multigrade_rc_deluxe_new:  "ILFORD_RC_DELUXE_NEW",
+          ilford_multigrade_rc_portfolio_new: "ILFORD_RC_PORTFOLIO_NEW",
+          ilford_fb_classic:                "ILFORD_FB_CLASSIC",
+          ilford_fb_warmtone:               "ILFORD_FB_WARMTONE",
+          ilford_fb_cooltone:               "ILFORD_FB_COOLTONE",
+          foma_fomaspeed:                   "FOMASPEED",
+          foma_fomabrom:                    "FOMASPEED",
+          foma_fomapastel_mg:               "FOMAPASTEL_MG",
+          fomatone_mg_classic_variant:      "FOMATONE_MG_CLASSIC_VARIANT",
+        };
+
+        syncFactorsFromPapers(papers) {
+          if (!papers || !papers.length) return;
+
+          for (const paper of papers) {
+            const key = SplitGradeCalculator.ID_TO_KEY[paper.id];
+            if (!key || !paper.filters) continue;
+
+            const factors = {};
+            const paperData = {};
+            for (const [grade, data] of Object.entries(paper.filters)) {
+              if (data && typeof data.factor === "number") {
+                factors[grade] = data.factor;
+                paperData[grade] = { factor: data.factor, gamma: data.gamma ?? null };
+              }
+            }
+            if (Object.keys(factors).length > 0) {
+              SplitGradeCalculator.FILTER_FACTORS[key] = factors;
+              SplitGradeCalculator.PAPER_DATA[key] = paperData;
+            }
+          }
+
+          this.calculate();
+        }
+
+        async fetchFactorsFromServer() {
+          try {
+            const response = await fetch("/papers");
+            if (!response.ok) return;
+            const data = JSON.parse(await response.text());
+            if (data.status === "success" && data.papers) {
+              this.syncFactorsFromPapers(data.papers);
+            }
+          } catch (_) {
+            // Offline — use hardcoded fallback silently
+          }
         }
 
         /**
@@ -11566,85 +11634,107 @@
          * - Ilford: Use predefined factors from FILTER_FACTORS
          * - FOMA: Use paper-specific factors (FOMASPEED or FOMATONE)
          */
+
+        /** Resolve the FILTER_FACTORS key for the current paper selection */
+        getCurrentPaperKey() {
+          if (this.paperBrand === "FOMA") {
+            if (this.fomaPaperType === "fomaspeed" || this.fomaPaperType === "fomabrom") return "FOMASPEED";
+            if (this.fomaPaperType === "fomapastel_mg") return "FOMAPASTEL_MG";
+            if (this.fomaPaperType === "fomatone_mg_classic_variant") return "FOMATONE_MG_CLASSIC_VARIANT";
+            return "FOMATONE";
+          }
+          if (this.ilfordPaperType === "cooltone") return "ILFORD_COOLTONE";
+          if (this.ilfordPaperType === "portfolio") return "ILFORD_PORTFOLIO";
+          if (this.ilfordPaperType === "rc_deluxe_new") return "ILFORD_RC_DELUXE_NEW";
+          if (this.ilfordPaperType === "rc_portfolio_new") return "ILFORD_RC_PORTFOLIO_NEW";
+          if (this.ilfordPaperType === "fb_classic") return "ILFORD_FB_CLASSIC";
+          if (this.ilfordPaperType === "fb_warmtone") return "ILFORD_FB_WARMTONE";
+          if (this.ilfordPaperType === "fb_cooltone") return "ILFORD_FB_COOLTONE";
+          return "Ilford";
+        }
+
+        /**
+         * Compute effective contrast grade via time-weighted gamma interpolation.
+         * Only works for Ilford papers with numeric grade keys; returns null for FOMA.
+         */
+        getEffectiveGrade(softTime, hardTime) {
+          if (this.paperBrand === "FOMA") return null;
+
+          const key = this.getCurrentPaperKey();
+          const pd = SplitGradeCalculator.PAPER_DATA[key];
+          if (!pd) return null;
+
+          // Build sorted grade→gamma pairs (numeric grades only)
+          const gradeGammas = [];
+          for (const [g, data] of Object.entries(pd)) {
+            const gNum = g === "00" ? -0.5 : parseFloat(g);
+            if (!isNaN(gNum) && data.gamma != null) {
+              gradeGammas.push({ grade: gNum, gamma: data.gamma });
+            }
+          }
+          if (gradeGammas.length < 2) return null;
+          gradeGammas.sort((a, b) => a.grade - b.grade);
+
+          // Look up gammas for selected filters
+          const softGamma = pd[this.softFilter]?.gamma ?? pd[String(this.softFilter)]?.gamma;
+          const hardGamma = pd[this.hardFilter]?.gamma ?? pd[String(this.hardFilter)]?.gamma;
+          if (softGamma == null || hardGamma == null) return null;
+
+          // Edge: one time is 0 → grade equals the other filter
+          if (softTime <= 0 && hardTime <= 0) return null;
+          if (softTime <= 0) {
+            const hg = this.hardFilter === "00" ? -0.5 : parseFloat(this.hardFilter);
+            return isNaN(hg) ? null : hg;
+          }
+          if (hardTime <= 0) {
+            const sg = this.softFilter === "00" ? -0.5 : parseFloat(this.softFilter);
+            return isNaN(sg) ? null : sg;
+          }
+
+          // Time-weighted average gamma
+          const totalTime = softTime + hardTime;
+          const effectiveGamma = (softTime * softGamma + hardTime * hardGamma) / totalTime;
+
+          // Interpolate effective gamma to grade
+          if (effectiveGamma <= gradeGammas[0].gamma) return gradeGammas[0].grade;
+          if (effectiveGamma >= gradeGammas[gradeGammas.length - 1].gamma) return gradeGammas[gradeGammas.length - 1].grade;
+
+          for (let i = 0; i < gradeGammas.length - 1; i++) {
+            const lo = gradeGammas[i];
+            const hi = gradeGammas[i + 1];
+            if (effectiveGamma >= lo.gamma && effectiveGamma <= hi.gamma) {
+              const t = (effectiveGamma - lo.gamma) / (hi.gamma - lo.gamma);
+              return lo.grade + t * (hi.grade - lo.grade);
+            }
+          }
+          return null;
+        }
+
         calculate() {
           let softFactor, hardFactor;
 
-          if (this.paperBrand === "FOMA") {
-            // Use paper-specific FOMA factors
-            let fomaKey;
-            if (
-              this.fomaPaperType === "fomaspeed" ||
-              this.fomaPaperType === "fomabrom"
-            ) {
-              fomaKey = "FOMASPEED";
-            } else if (this.fomaPaperType === "fomapastel_mg") {
-              fomaKey = "FOMAPASTEL_MG";
-            } else if (this.fomaPaperType === "fomatone_mg_classic_variant") {
-              fomaKey = "FOMATONE_MG_CLASSIC_VARIANT";
-            } else {
-              fomaKey = "FOMATONE"; // Fallback
-            }
+          const paperKey = this.getCurrentPaperKey();
+          const factorObj = SplitGradeCalculator.FILTER_FACTORS[paperKey];
 
-            // Get the factor object for this paper type
-            const factorObj = SplitGradeCalculator.FILTER_FACTORS[fomaKey];
-            if (!factorObj) {
-              softFactor = 1.0;
-              hardFactor = 1.0;
-            } else {
-              // Handle different key formats (Ilford numbers vs FOMA names)
-              let softKey = this.softFilter;
-              let hardKey = this.hardFilter;
-
-              // For FOMA papers using FOMA filter names, we need to map Ilford numbers to FOMA names
-              if (
-                fomaKey === "FOMAPASTEL_MG" ||
-                fomaKey === "FOMATONE_MG_CLASSIC_VARIANT"
-              ) {
-                // Map Ilford numbers to FOMA filter names
-                const ilfordToFomaMap = {
-                  "00": "2xY",
-                  0: "Y",
-                  1: "None",
-                  2: "M1",
-                  3: "2xM1",
-                  4: "M2",
-                  5: "2xM2",
-                };
-                softKey = ilfordToFomaMap[this.softFilter] || this.softFilter;
-                hardKey = ilfordToFomaMap[this.hardFilter] || this.hardFilter;
-              }
-
-              softFactor = factorObj[softKey] || 1.0;
-              hardFactor = factorObj[hardKey] || 1.0;
-            }
-          } else if (this.paperBrand === "Ilford") {
-            // Use paper-specific Ilford factors
-            let ilfordKey;
-            if (this.ilfordPaperType === "cooltone") {
-              ilfordKey = "ILFORD_COOLTONE";
-            } else if (this.ilfordPaperType === "portfolio") {
-              ilfordKey = "ILFORD_PORTFOLIO";
-            } else if (this.ilfordPaperType === "rc_deluxe_new") {
-              ilfordKey = "ILFORD_RC_DELUXE_NEW";
-            } else if (this.ilfordPaperType === "rc_portfolio_new") {
-              ilfordKey = "ILFORD_RC_PORTFOLIO_NEW";
-            } else if (this.ilfordPaperType === "fb_classic") {
-              ilfordKey = "ILFORD_FB_CLASSIC";
-            } else if (this.ilfordPaperType === "fb_warmtone") {
-              ilfordKey = "ILFORD_FB_WARMTONE";
-            } else if (this.ilfordPaperType === "fb_cooltone") {
-              ilfordKey = "ILFORD_FB_COOLTONE";
-            } else {
-              ilfordKey = "Ilford"; // Fallback to legacy entry
-            }
-
-            const factorObj = SplitGradeCalculator.FILTER_FACTORS[ilfordKey];
-            softFactor = factorObj ? factorObj[this.softFilter] || 1.0 : 1.0;
-            hardFactor = factorObj ? factorObj[this.hardFilter] || 1.0 : 1.0;
-          } else {
-            // Fallback for any other brand (should not happen)
+          if (!factorObj) {
             softFactor = 1.0;
             hardFactor = 1.0;
+          } else {
+            let softKey = this.softFilter;
+            let hardKey = this.hardFilter;
+
+            // FOMA papers with special filter names need key mapping
+            if (paperKey === "FOMAPASTEL_MG" || paperKey === "FOMATONE_MG_CLASSIC_VARIANT") {
+              const ilfordToFomaMap = {
+                "00": "2xY", 0: "Y", 1: "None", 2: "M1",
+                3: "2xM1", 4: "M2", 5: "2xM2",
+              };
+              softKey = ilfordToFomaMap[this.softFilter] || this.softFilter;
+              hardKey = ilfordToFomaMap[this.hardFilter] || this.hardFilter;
+            }
+
+            softFactor = factorObj[softKey] || 1.0;
+            hardFactor = factorObj[hardKey] || 1.0;
           }
 
           // Calculate base times based on burn percentage
@@ -11659,11 +11749,33 @@
           // Total exposure
           const totalTime = softTime + hardTime;
 
+          // Split ratio in EV
+          let splitRatioText = "—";
+          if (softTime > 0 && hardTime > 0) {
+            const ev = Math.log2(softTime / hardTime);
+            const sign = ev > 0.05 ? "+" : ev < -0.05 ? "" : "";
+            const label = ev > 0.05 ? " (soft bias)" : ev < -0.05 ? " (hard bias)" : " (balanced)";
+            splitRatioText = `${sign}${ev.toFixed(1)} EV${label}`;
+          }
+
+          // Effective contrast grade (Ilford numeric grades only)
+          const effectiveGrade = this.getEffectiveGrade(softTime, hardTime);
+          let effectiveGradeText = "—";
+          if (effectiveGrade !== null) {
+            if (effectiveGrade < 0) {
+              effectiveGradeText = "~Grade 00";
+            } else {
+              effectiveGradeText = `~Grade ${effectiveGrade.toFixed(1)}`;
+            }
+          }
+
           // Update display
           const splitDisplay = document.getElementById("splitTimeDisplay");
           const softResult = document.getElementById("softResult");
           const hardResult = document.getElementById("hardResult");
           const totalResult = document.getElementById("totalResult");
+          const splitRatioDisplay = document.getElementById("splitRatioDisplay");
+          const effectiveGradeDisplay = document.getElementById("effectiveGradeDisplay");
 
           if (splitDisplay)
             splitDisplay.textContent = `${highlightsBase.toFixed(
@@ -11673,6 +11785,10 @@
           if (hardResult) hardResult.textContent = `${hardTime.toFixed(2)} s`;
           if (totalResult)
             totalResult.textContent = `${totalTime.toFixed(2)} s`;
+          if (splitRatioDisplay)
+            splitRatioDisplay.textContent = splitRatioText;
+          if (effectiveGradeDisplay)
+            effectiveGradeDisplay.textContent = effectiveGradeText;
 
           return {
             highlightsBase,
@@ -15581,6 +15697,7 @@
           this.isPaused = false;
           this.isWaitingForNextStep = false;
           this.interval = null;
+          this.autoAdvanceTimeout = null;
           this.lastBeepSecond = null;
           this.currentStepTime = 0;
 
@@ -15937,64 +16054,49 @@
          * @description Step Structure:
          * - step: Step number (1-based)
          * - stop: F-stop value
-         * - time: Time for this step (incremental or cumulative)
-         * - cumulativeTime: Total time (cumulative method only)
-         * - incrementalTime: Time for this step (incremental method)
-         * - totalExposure: Total exposure on paper
+         * - time: Time the timer counts down (full exposure in cumulative, delta in incremental)
+         * - totalExposure: Total exposure on paper for this strip
          * @example
          * this.generateSteps(); // Regenerate steps after parameter change
          */
         generateSteps() {
           this.steps = [];
 
+          const denom = window.stopDenominator || 3;
+
           if (this.method === "cumulative") {
-            // Existing cumulative method
-            let totalTime = 0;
             for (let i = 0; i < this.numSteps; i++) {
-              const denom = window.stopDenominator || 3;
-              const stopValue = (i * this.stepIncrement) / denom; // Convert to stop value
+              const stopValue = (i * this.stepIncrement) / denom;
               const time = this.baseTime * Math.pow(2, stopValue);
-              totalTime += time;
 
               this.steps.push({
                 step: i + 1,
                 stop: stopValue,
                 time: time,
-                cumulativeTime: totalTime,
-                incrementalTime: time, // Same as time for cumulative
-                totalExposure: time, // Total exposure for this step
+                totalExposure: time,
               });
             }
           } else {
-            // New incremental method
-            let previousTotalTime = this.baseTime;
-
+            // Incremental method
             for (let i = 0; i < this.numSteps; i++) {
-              const denom = window.stopDenominator || 3;
               const stopValue = (i * this.stepIncrement) / denom;
               const totalExposure = this.baseTime * Math.pow(2, stopValue);
 
-              // For first step: incremental time = base time
-              // For subsequent steps: incremental time = difference between current and previous total
-              let incrementalTime;
+              let time;
               if (i === 0) {
-                incrementalTime = this.baseTime;
+                time = this.baseTime;
               } else {
                 const previousStop = ((i - 1) * this.stepIncrement) / denom;
                 const previousTotal = this.baseTime * Math.pow(2, previousStop);
-                incrementalTime = totalExposure - previousTotal;
+                time = totalExposure - previousTotal;
               }
 
               this.steps.push({
                 step: i + 1,
                 stop: stopValue,
-                time: incrementalTime, // Time to expose THIS step
-                cumulativeTime: 0, // Not used in incremental method
-                incrementalTime: incrementalTime,
-                totalExposure: totalExposure, // Total exposure on paper for this strip
+                time: time,
+                totalExposure: totalExposure,
               });
-
-              previousTotalTime = totalExposure;
             }
           }
         }
@@ -16070,9 +16172,9 @@
             this.progressEnd.textContent = `${maxTime.toFixed(1)}s`;
           } else {
             // For incremental method, show incremental times range
-            minTime = this.steps[0]?.incrementalTime || this.baseTime;
+            minTime = this.steps[0]?.time || this.baseTime;
             maxTime =
-              this.steps[this.steps.length - 1]?.incrementalTime ||
+              this.steps[this.steps.length - 1]?.time ||
               this.baseTime;
             this.testTimeRange.textContent = `Step times: ${minTime.toFixed(
               2,
@@ -16454,11 +16556,13 @@
               this.testTimerStatus.textContent = `Auto advancing in ${delaySec}s...`;
 
               // Start next step after configured delay
-              setTimeout(() => {
+              if (this.autoAdvanceTimeout) clearTimeout(this.autoAdvanceTimeout);
+              this.autoAdvanceTimeout = setTimeout(() => {
+                this.autoAdvanceTimeout = null;
                 if (this.isRunning && !this.isPaused) {
                   this.startStep();
                 }
-              }, this.autoAdvanceDelay); // Use configured delay
+              }, this.autoAdvanceDelay);
             } else {
               this.complete();
             }
@@ -16580,6 +16684,10 @@
           }
 
           clearInterval(this.interval);
+          if (this.autoAdvanceTimeout) {
+            clearTimeout(this.autoAdvanceTimeout);
+            this.autoAdvanceTimeout = null;
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.isWaitingForNextStep = false;
@@ -16882,6 +16990,10 @@
           }
 
           clearInterval(this.interval);
+          if (this.autoAdvanceTimeout) {
+            clearTimeout(this.autoAdvanceTimeout);
+            this.autoAdvanceTimeout = null;
+          }
           this.isRunning = false;
           this.isPaused = false;
           this.isWaitingForNextStep = false;
@@ -18561,6 +18673,11 @@
             if (data.status === "success" && data.papers) {
               this.papersList = data.papers;
               console.log(`Fetched ${data.count} papers from server`);
+
+              // Sync filter factors to SplitGradeCalculator from server data
+              if (window.splitGradeCalculator) {
+                window.splitGradeCalculator.syncFactorsFromPapers(this.papersList);
+              }
             } else if (data.error) {
               console.error("Server returned error:", data.error);
             }
