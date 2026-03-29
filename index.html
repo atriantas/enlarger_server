@@ -149,6 +149,7 @@
         max-width: 480px;
         margin: 0 auto;
         height: calc(100vh - 12px); /* Account for body padding */
+        overflow-x: hidden;
         overflow-y: auto; /* Allow scrolling within container */
         scrollbar-width: none; /* Firefox */
         padding-bottom: max(8px, env(safe-area-inset-bottom));
@@ -314,6 +315,7 @@
 
       .tab-content.active {
         display: block;
+        overflow-x: hidden;
       }
 
       /* ===== CALCULATOR CONTROLS (EXACT MATCH) ===== */
@@ -5328,6 +5330,7 @@
               <div class="label-sm" id="proofLastIsoR">ISO R: --</div>
               <div class="label-sm" id="proofLastEvRange">EV Range: --</div>
               <div class="label-sm" id="proofLastDensity">Density: --</div>
+              <div class="label-sm" id="proofLastExposure">Exposure: --</div>
               <div class="label-sm" id="proofLastClipping">Clipping: --</div>
             </div>
 
@@ -10228,14 +10231,13 @@
 
         async loadVersionFromServer() {
           try {
-            const data = await apiClient.getJSON("/all", {
-              preferRelay: true,
+            const data = await apiClient.getJSON("/version", {
               timeoutMs: 5000,
             });
 
             if (data.version) {
-              // Server has current version - use it
               this.currentVersion = data.version;
+              this.saveVersion(data.version);
               this.updateVersionDisplay();
               return;
             }
@@ -19013,7 +19015,11 @@
               result && typeof result.density === "number"
                 ? ` | D ${result.density.toFixed(2)}`
                 : "";
-            cell.title = `Zone ${result.zone.toFixed(1)}${densityLabel}`;
+            const exposureLabel =
+              result && typeof result.exposure_time === "number"
+                ? ` | ${result.exposure_time.toFixed(1)}s`
+                : "";
+            cell.title = `Zone ${result.zone.toFixed(1)}${densityLabel}${exposureLabel}`;
           } else if (hasSample) {
             cell.title = "Measured";
           } else {
@@ -19377,6 +19383,7 @@
           const isoDisplay = document.getElementById("proofLastIsoR");
           const evDisplay = document.getElementById("proofLastEvRange");
           const densityDisplay = document.getElementById("proofLastDensity");
+          const exposureDisplay = document.getElementById("proofLastExposure");
           const clippingDisplay = document.getElementById("proofLastClipping");
 
           if (luxDisplay) {
@@ -19410,6 +19417,13 @@
               densityDisplay.textContent = `Density: ${result.density.toFixed(2)}`;
             } else {
               densityDisplay.textContent = "Density: --";
+            }
+          }
+          if (exposureDisplay) {
+            if (result && typeof result.exposure_time === "number") {
+              exposureDisplay.textContent = `Exposure: ${result.exposure_time.toFixed(1)}s`;
+            } else {
+              exposureDisplay.textContent = "Exposure: --";
             }
           }
           if (clippingDisplay) {
@@ -19506,6 +19520,8 @@
           if (isoDisplay) isoDisplay.textContent = "ISO R: --";
           if (evDisplay) evDisplay.textContent = "EV Range: --";
           if (densityDisplay) densityDisplay.textContent = "Density: --";
+          const exposureDisplay = document.getElementById("proofLastExposure");
+          if (exposureDisplay) exposureDisplay.textContent = "Exposure: --";
           if (clippingDisplay) clippingDisplay.textContent = "Clipping: --";
           this.updateProofHistogram();
         }

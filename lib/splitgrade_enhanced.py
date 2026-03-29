@@ -88,23 +88,37 @@ def iso_r_to_ev(iso_r):
     return sorted_pairs[-1][1]
 
 
-def evaluate_split_match(delta_ev, total_printable_ev):
+def evaluate_split_match(delta_ev, filter_selection):
     """
-    Evaluate how well the split-grade filters match the negative contrast.
+    Evaluate how well the selected filter pair matches the negative contrast.
+
+    Checks how well delta_ev fits within the selected filter bin from
+    the filter selection rules. A delta_ev centered in its bin is excellent;
+    near the edges is good; outside is fair/poor.
 
     Args:
-        delta_ev: Measured contrast range
-        total_printable_ev: Combined printable EV range of filters
+        delta_ev: Measured contrast range in EV stops
+        filter_selection: Dict from get_filter_selection() with bin bounds
 
     Returns:
         str: Match quality ('excellent', 'good', 'fair', 'poor')
     """
-    diff = abs(delta_ev - total_printable_ev)
-    if diff < 0.5:
-        return 'excellent'
-    elif diff < 1.0:
+    bin_min = filter_selection.get('bin_min', 0.0)
+    bin_max = filter_selection.get('bin_max', 10.0)
+    bin_range = bin_max - bin_min
+
+    if bin_range <= 0:
         return 'good'
-    elif diff < 1.5:
+
+    # How far from center, normalized: 0.0 (center) to 0.5 (edge)
+    bin_center = (bin_min + bin_max) / 2.0
+    offset = abs(delta_ev - bin_center) / bin_range
+
+    if offset <= 0.25:
+        return 'excellent'
+    elif offset <= 0.5:
+        return 'good'
+    elif offset <= 0.75:
         return 'fair'
     else:
         return 'poor'
@@ -256,12 +270,7 @@ def calculate_split_grade_heiland(
         soft_percent = 50.0
         hard_percent = 50.0
 
-    soft_iso_r = filter_data[soft_filter]['iso_r']
-    hard_iso_r = filter_data[hard_filter]['iso_r']
-    soft_printable_ev = iso_r_to_ev(soft_iso_r)
-    hard_printable_ev = iso_r_to_ev(hard_iso_r)
-    total_printable_ev = soft_printable_ev + hard_printable_ev
-    match_quality = evaluate_split_match(delta_ev, total_printable_ev)
+    match_quality = evaluate_split_match(delta_ev, filter_selection)
 
     return {
         'soft_filter': soft_filter,
@@ -282,6 +291,8 @@ def calculate_split_grade_heiland(
         'shadow_lux': shadow_lux,
         'optimization_applied': optimization_applied,
         'system': system,
+        'bin_min': filter_selection.get('bin_min', 0.0),
+        'bin_max': filter_selection.get('bin_max', 10.0),
     }
 
 

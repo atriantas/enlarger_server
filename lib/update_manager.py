@@ -37,21 +37,10 @@ class UpdateManager:
     GITHUB_API_BASE = "api.github.com"
     RAW_HOST = "raw.githubusercontent.com"
     
-    # Files to update (path relative to Pico root)
-    FILES_TO_UPDATE = [
+    # Root-level files to always update
+    ROOT_FILES = [
         "boot.py",
         "index.html",
-        "lib/exposure_calc.py",
-        "lib/gpio_control.py",
-        "lib/http_server.py",
-        "lib/light_sensor.py",
-        "lib/paper_database.py",
-        "lib/splitgrade_enhanced.py",
-        "lib/temperature_sensor.py",
-        "lib/timer_manager.py",
-        "lib/update_manager.py",
-        "lib/wifi_ap.py",
-        "lib/wifi_sta.py",
     ]
     
     # Chunk size for downloads (matches HTML serving pattern)
@@ -292,6 +281,65 @@ class UpdateManager:
                 'current_version': self.current_version
             }
     
+    async def _list_remote_lib_files(self):
+        """
+        Query GitHub Contents API to discover all .py files in lib/ directory.
+        Uses the release tag so the file list matches the release being installed.
+        Returns list of paths like ['lib/http_server.py', ...] or [] on error.
+        """
+        try:
+            branch = self.release_tag if self.release_tag else 'main'
+            url = f"/repos/{self.repo_owner}/{self.repo_name}/contents/lib?ref={branch}"
+
+            sock = self._connect(self.GITHUB_API_BASE, 443, use_ssl=True)
+            request = (
+                f"GET {url} HTTP/1.1\r\n"
+                f"Host: {self.GITHUB_API_BASE}\r\n"
+                "User-Agent: Pico2W-Darkroom\r\n"
+                "Accept: application/json\r\n"
+                "Connection: close\r\n\r\n"
+            )
+            sock.send(request.encode())
+
+            status_code, headers, remainder = self._read_headers(sock)
+            if status_code != 200:
+                sock.close()
+                print(f"[UpdateManager] Contents API returned HTTP {status_code}")
+                return []
+
+            body_bytes = b""
+            if headers.get("transfer-encoding") == "chunked":
+                def _collect(chunk):
+                    nonlocal body_bytes
+                    body_bytes += chunk
+                self._read_chunked(sock, remainder, _collect)
+            else:
+                body_bytes = remainder
+                while True:
+                    chunk = sock.recv(512)
+                    if not chunk:
+                        break
+                    body_bytes += chunk
+            sock.close()
+
+            entries = json.loads(self._decode_bytes(body_bytes))
+            del body_bytes
+            gc.collect()
+
+            lib_files = []
+            for entry in entries:
+                if entry.get('type') == 'file' and entry.get('name', '').endswith('.py'):
+                    lib_files.append(entry['path'])
+            del entries
+            gc.collect()
+
+            print(f"[UpdateManager] Discovered {len(lib_files)} files in lib/")
+            return lib_files
+
+        except Exception as e:
+            print(f"[UpdateManager] Error listing lib files: {e}")
+            return []
+
     async def download_file(self, file_path):
         """
         Download a single file from GitHub raw content using the release tag.
@@ -387,11 +435,15 @@ class UpdateManager:
                     'message': 'Already on latest version'
                 }
             
-            # Step 2: Download all files
+            # Step 2: Discover lib/ files from GitHub, combine with root files
+            lib_files = await self._list_remote_lib_files()
+            files_to_update = list(self.ROOT_FILES) + lib_files
+            print(f"[UpdateManager] Will update {len(files_to_update)} files")
+
             updated_files = []
             failed_files = []
             
-            for file_path in self.FILES_TO_UPDATE:
+            for file_path in files_to_update:
                 result = await self.download_file(file_path)
                 
                 if not result['success']:
@@ -434,7 +486,7 @@ class UpdateManager:
                 'failed_files': failed_files,
                 'updated_count': len(updated_files),
                 'restart_required': all_succeeded and len(updated_files) > 0,
-                'message': f"Updated {len(updated_files)} files" if all_succeeded else f"Partial update: {len(updated_files)}/{len(self.FILES_TO_UPDATE)} files"
+                'message': f"Updated {len(updated_files)} files" if all_succeeded else f"Partial update: {len(updated_files)}/{len(files_to_update)} files"
             }
             
         except Exception as e:

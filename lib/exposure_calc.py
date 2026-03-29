@@ -155,17 +155,34 @@ def calculate_virtual_proof_sample(
     if shoulder_start <= toe_end:
         shoulder_start = toe_end + (loge_range - toe_end) * 0.5
 
+    # Control points for smooth curve (same anchor densities as before)
+    d0 = dmin
+    d1 = dmin + toe_slope * toe_end
+    d2 = d1 + straight_slope * (shoulder_start - toe_end)
+    d3 = d2 + shoulder_slope * (loge_range - shoulder_start)
+
+    def _hermite(t, p0, p1, m0, m1):
+        """Cubic Hermite interpolation, monotonic for matching slopes."""
+        t2 = t * t
+        t3 = t2 * t
+        return (2*t3 - 3*t2 + 1)*p0 + (t3 - 2*t2 + t)*m0 + (-2*t3 + 3*t2)*p1 + (t3 - t2)*m1
+
     def _curve_density(loge_value):
+        if loge_value <= 0:
+            return d0
+        if loge_value >= loge_range:
+            return d3
         if loge_value <= toe_end:
-            return dmin + toe_slope * loge_value
+            seg_len = toe_end
+            t = loge_value / seg_len if seg_len > 0 else 0
+            return _hermite(t, d0, d1, toe_slope * seg_len, straight_slope * seg_len)
         if loge_value <= shoulder_start:
-            return dmin + toe_slope * toe_end + straight_slope * (loge_value - toe_end)
-        return (
-            dmin
-            + toe_slope * toe_end
-            + straight_slope * (shoulder_start - toe_end)
-            + shoulder_slope * (loge_value - shoulder_start)
-        )
+            seg_len = shoulder_start - toe_end
+            t = (loge_value - toe_end) / seg_len if seg_len > 0 else 0
+            return _hermite(t, d1, d2, straight_slope * seg_len, straight_slope * seg_len)
+        seg_len = loge_range - shoulder_start
+        t = (loge_value - shoulder_start) / seg_len if seg_len > 0 else 0
+        return _hermite(t, d2, d3, straight_slope * seg_len, shoulder_slope * seg_len)
 
     density_raw = _curve_density(loge)
     density_at_max = _curve_density(loge_range)
@@ -196,6 +213,10 @@ def calculate_virtual_proof_sample(
     clipped_white = density <= dmin + 0.04
     clipped_black = density >= dmax - 0.01
 
+    # Compute exposure time for this cell
+    filter_factor = filter_data['factor'] if filter_data and 'factor' in filter_data else 1.0
+    exposure_time = round((calibration / lux) * filter_factor, 2) if calibration and lux > 0 else None
+
     return {
         "paper_id": paper_id,
         "filter_grade": filter_grade or "",
@@ -217,6 +238,7 @@ def calculate_virtual_proof_sample(
         "iso_r": iso_r,
         "printable_ev": printable_ev,
         "calibration": calibration,
+        "exposure_time": exposure_time,
         "source_of_loge_range": source_of_loge_range,
     }
 
