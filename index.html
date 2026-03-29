@@ -191,6 +191,30 @@
         margin-bottom: 10px;
       }
 
+      .sync-indicator {
+        position: absolute;
+        top: -14px;
+        right: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.6rem;
+        color: var(--text-secondary, #888);
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0.7;
+      }
+      .sync-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--text-secondary, #888);
+      }
+      .sync-dot.sync-ok { background: #4caf50; }
+      .sync-dot.sync-saving { background: #ff9800; }
+      .sync-dot.sync-pending { background: #ff9800; }
+      .sync-dot.sync-error { background: #f44336; }
+      .sync-dot.sync-offline { background: #9e9e9e; }
+
       .menu-button {
         display: flex;
         align-items: center;
@@ -1646,6 +1670,10 @@
 
       <!-- Collapsible Tab Navigation -->
       <div class="tab-nav-container">
+        <span id="syncIndicator" class="sync-indicator" title="Server sync status">
+          <span class="sync-dot"></span>
+          <span class="sync-label"></span>
+        </span>
         <button
           class="menu-button"
           id="menuButton"
@@ -5820,6 +5848,135 @@
 
       const apiClient = new ApiClient();
 
+      // ===== SERVER SYNC CLASS =====
+      class ServerSync {
+        constructor() {
+          this._saveTimer = null;
+          this._saving = false;
+          this._lastSave = 0;
+          this._minInterval = 5000; // Min 5s between saves (flash wear protection)
+          this._loaded = false;
+        }
+
+        async load() {
+          try {
+            const data = await apiClient.getJSON('/app-data', { timeoutMs: 6000 });
+            if (!data || Object.keys(data).length === 0) {
+              this._loaded = true;
+              this._updateIndicator('ok');
+              return;
+            }
+            // Restore each key into localStorage
+            const keyMap = {
+              settings: STORAGE_KEYS.SETTINGS,
+              colorScheme: STORAGE_KEYS.COLOR_SCHEME,
+              timerProfiles: STORAGE_KEYS.PROFILES,
+              currentProfile: STORAGE_KEYS.CURRENT_PROFILE,
+              chemicalPresets: STORAGE_KEYS.CHEMICAL_PRESETS,
+              capacityTracker: STORAGE_KEYS.CAPACITY_TRACKER,
+              shelfLifeData: STORAGE_KEYS.SHELF_LIFE,
+              customFilterBanks: STORAGE_KEYS.CUSTOM_FILTER_BANKS,
+              testStripProfiles: STORAGE_KEYS.TEST_STRIP_PROFILES,
+              currentTestStripProfile: STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE,
+              splitGradePresets: STORAGE_KEYS.SPLIT_GRADE_PRESETS,
+              currentSplitPreset: STORAGE_KEYS.CURRENT_SPLIT_PRESET,
+              lightMeterCalibrations: STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
+              tempSessions: STORAGE_KEYS.TEMP_SESSIONS,
+              permanentSessions: STORAGE_KEYS.PERMANENT_SESSIONS,
+            };
+            for (const [jsonKey, storageKey] of Object.entries(keyMap)) {
+              if (data[jsonKey] !== undefined) {
+                localStorage.setItem(storageKey, JSON.stringify(data[jsonKey]));
+              }
+            }
+            // Relay settings use their own keys
+            if (data.relaySettings !== undefined) {
+              localStorage.setItem('relaySettings', JSON.stringify(data.relaySettings));
+            }
+            if (data.relayNames !== undefined) {
+              localStorage.setItem('relayNames', JSON.stringify(data.relayNames));
+            }
+            this._loaded = true;
+            this._updateIndicator('ok');
+          } catch (e) {
+            console.warn('ServerSync load failed (offline?):', e.message);
+            this._loaded = true;
+            this._updateIndicator('offline');
+          }
+        }
+
+        scheduleSave() {
+          if (this._saveTimer) clearTimeout(this._saveTimer);
+          const elapsed = Date.now() - this._lastSave;
+          const delay = Math.max(0, this._minInterval - elapsed);
+          this._saveTimer = setTimeout(() => this._doSave(), delay);
+          this._updateIndicator('pending');
+        }
+
+        async _doSave() {
+          if (this._saving) return;
+          this._saving = true;
+          this._updateIndicator('saving');
+          try {
+            const payload = this._buildPayload();
+            const body = JSON.stringify(payload);
+            await apiClient.request('/app-data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: body,
+              parse: 'json',
+              timeoutMs: 10000,
+            });
+            this._lastSave = Date.now();
+            this._updateIndicator('ok');
+          } catch (e) {
+            console.warn('ServerSync save failed:', e.message);
+            this._updateIndicator('error');
+          } finally {
+            this._saving = false;
+          }
+        }
+
+        _buildPayload() {
+          return {
+            settings: StorageManager.loadJSON(STORAGE_KEYS.SETTINGS, null),
+            colorScheme: StorageManager.loadJSON(STORAGE_KEYS.COLOR_SCHEME, null),
+            timerProfiles: StorageManager.loadJSON(STORAGE_KEYS.PROFILES, []),
+            currentProfile: StorageManager.loadJSON(STORAGE_KEYS.CURRENT_PROFILE, null),
+            chemicalPresets: StorageManager.loadJSON(STORAGE_KEYS.CHEMICAL_PRESETS, []),
+            capacityTracker: StorageManager.loadJSON(STORAGE_KEYS.CAPACITY_TRACKER, null),
+            shelfLifeData: StorageManager.loadJSON(STORAGE_KEYS.SHELF_LIFE, []),
+            customFilterBanks: StorageManager.loadJSON(STORAGE_KEYS.CUSTOM_FILTER_BANKS, null),
+            testStripProfiles: StorageManager.loadJSON(STORAGE_KEYS.TEST_STRIP_PROFILES, []),
+            currentTestStripProfile: StorageManager.loadJSON(STORAGE_KEYS.CURRENT_TEST_STRIP_PROFILE, null),
+            splitGradePresets: StorageManager.loadJSON(STORAGE_KEYS.SPLIT_GRADE_PRESETS, []),
+            currentSplitPreset: StorageManager.loadJSON(STORAGE_KEYS.CURRENT_SPLIT_PRESET, null),
+            lightMeterCalibrations: StorageManager.loadJSON(STORAGE_KEYS.LIGHT_METER_CALIBRATIONS, {}),
+            tempSessions: StorageManager.loadJSON(STORAGE_KEYS.TEMP_SESSIONS, []),
+            permanentSessions: StorageManager.loadJSON(STORAGE_KEYS.PERMANENT_SESSIONS, []),
+            relaySettings: (function () {
+              try { return JSON.parse(localStorage.getItem('relaySettings') || 'null'); } catch (e) { return null; }
+            })(),
+            relayNames: (function () {
+              try { return JSON.parse(localStorage.getItem('relayNames') || 'null'); } catch (e) { return null; }
+            })(),
+          };
+        }
+
+        _updateIndicator(state) {
+          const el = document.getElementById('syncIndicator');
+          if (!el) return;
+          const dot = el.querySelector('.sync-dot');
+          const label = el.querySelector('.sync-label');
+          if (!dot || !label) return;
+          dot.className = 'sync-dot sync-' + state;
+          const labels = { ok: 'Synced', saving: 'Saving…', pending: 'Pending', error: 'Sync error', offline: 'Offline' };
+          label.textContent = labels[state] || '';
+        }
+      }
+
+      let serverSync = null;
+
       // ===== AUDIO SERVICE CLASS =====
       /**
        * AudioService - Manages Web Audio API for sound feedback
@@ -7337,6 +7494,7 @@
         static saveJSON(key, value) {
           try {
             localStorage.setItem(key, JSON.stringify(value));
+            if (serverSync) serverSync.scheduleSave();
             return true;
           } catch (e) {
             console.error(`Failed to save ${key}:`, e);
@@ -9629,6 +9787,9 @@
               "success",
             );
 
+            // Sync imported data to server
+            if (serverSync) serverSync.scheduleSave();
+
             return true;
           } catch (error) {
             this.showAllProfilesFeedback(
@@ -11752,6 +11913,12 @@
           this.calculate();
           this.updatePresetList();
 
+          // Auto-load last-used preset if one was saved
+          if (this.currentSplitPreset) {
+            const preset = this.splitPresets.find(p => p.name === this.currentSplitPreset);
+            if (preset) this.loadPreset(preset);
+          }
+
           // Fetch authoritative factors from server (non-blocking)
           this.fetchFactorsFromServer();
         }
@@ -12655,6 +12822,7 @@
           }
           try {
             localStorage.setItem("relayNames", JSON.stringify(names));
+            if (serverSync) serverSync.scheduleSave();
           } catch (e) {
             console.error("Failed to save relay names:", e);
           }
@@ -16125,6 +16293,11 @@
 
           // Initialize test strip profile list
           this.updateTestStripProfileList();
+
+          // Auto-load last-used profile if one was saved
+          if (appState.persistent.currentTestStripProfile) {
+            this.loadProfile(appState.persistent.currentTestStripProfile);
+          }
         }
 
         /**
@@ -21248,6 +21421,11 @@
       }
 
       document.addEventListener("DOMContentLoaded", () => {
+        // Load server data first, then initialize everything
+        (async () => {
+        serverSync = new ServerSync();
+        await serverSync.load();
+
         // Initialize audio service first (for all sound functionality)
         audioService = new AudioService();
         audioService.init();
@@ -22029,6 +22207,7 @@
             }
           });
 
+        })(); // End async init
       });
     </script>
   </body>
