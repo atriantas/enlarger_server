@@ -7031,7 +7031,7 @@
           }
         } else if (tabId === "relay") {
           if (window.relayManager) {
-            window.relayManager.updateRelayButtons();
+            window.relayManager.syncRelayStatesFromServer();
           }
           // Update temperature display if enabled
           if (
@@ -12476,8 +12476,71 @@
 
           // Relay toggle buttons now use delegation - no init needed
 
-          // Update UI
+          // Persist relay names on change
+          for (let i = 1; i <= 4; i++) {
+            const nameInput = document.getElementById(`relay${i}Name`);
+            if (nameInput) {
+              nameInput.addEventListener("change", () => this.saveRelayNames());
+            }
+          }
+          this.loadRelayNames();
+
+          // Update UI then sync actual hardware states from server
           this.updateRelayButtons();
+          this.syncRelayStatesFromServer();
+        }
+
+        async syncRelayStatesFromServer() {
+          const baseUrl = this.getRelayBaseUrl();
+          try {
+            const data = await apiClient.getJSON("/status", {
+              baseUrl,
+              mode: "cors",
+              cache: "no-cache",
+            });
+            if (data.relays) {
+              // Server returns {14: true, 15: false, ...} — map to relay numbers
+              for (let i = 1; i <= 4; i++) {
+                const pin = this.getGPIOPin(i);
+                if (typeof data.relays[pin] === "boolean") {
+                  this.relayStates[i] = data.relays[pin];
+                }
+              }
+              localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
+              this.updateRelayButtons();
+            }
+          } catch (e) {
+            // Silently fail — cached states serve as fallback
+            console.log("Relay state sync failed:", e);
+          }
+        }
+
+        saveRelayNames() {
+          const names = {};
+          for (let i = 1; i <= 4; i++) {
+            const el = document.getElementById(`relay${i}Name`);
+            if (el) names[i] = el.value;
+          }
+          try {
+            localStorage.setItem("relayNames", JSON.stringify(names));
+          } catch (e) {
+            console.error("Failed to save relay names:", e);
+          }
+        }
+
+        loadRelayNames() {
+          try {
+            const saved = localStorage.getItem("relayNames");
+            if (saved) {
+              const names = JSON.parse(saved);
+              for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById(`relay${i}Name`);
+                if (el && names[i]) el.value = names[i];
+              }
+            }
+          } catch (e) {
+            console.error("Failed to load relay names:", e);
+          }
         }
 
         getRelayBaseUrl() {
@@ -12485,16 +12548,9 @@
         }
 
         /**
-         * @method shutdownPi
-         * @description Initiates a graceful shutdown of the Raspberry Pi.
-         * Sends a shutdown command to the server with user confirmation.
-         * Provides visual feedback during the shutdown process.
-         * @returns {Promise<void>} Resolves when shutdown command is sent (or fails)
-         * @throws {Error} If shutdown command fails to send
-         * @fires updateStatus - Updates UI with shutdown progress
-         * @fires playBeep - Audio feedback on success
-         * @example
-         * await relayManager.connectWifi(); // Connects to configured WiFi
+         * @method connectWifi
+         * @description Connects the Pico to a WiFi network using provided credentials.
+         * @returns {Promise<void>}
          */
         async connectWifi() {
           const ssidInput = document.getElementById("wifiSSID");
@@ -12746,10 +12802,10 @@
         saveSettings() {
           this.serverIP = this.relayServerIP
             ? this.relayServerIP.value
-            : "192.168.1.100";
+            : "192.168.4.1";
           this.serverPort = this.relayServerPort
             ? parseInt(this.relayServerPort.value)
-            : 5000;
+            : 80;
           this.autoTrigger = this.autoTriggerRelay
             ? this.autoTriggerRelay.checked
             : true;
@@ -12850,32 +12906,19 @@
               error,
             );
 
-            // Fallback 1: Try with no-cors mode
+            // Fallback: Try with no-cors mode (network-level check only)
             try {
-              await fetch(fullUrl, {
+              const resp = await fetch(fullUrl, {
                 method: "GET",
                 mode: "no-cors",
                 cache: "no-cache",
               });
-              return true; // Assume success (we can't read response in no-cors mode)
+              // no-cors gives opaque response; treat as success only if fetch didn't throw
+              // (still can't verify HTTP status, but at least the server was reachable)
+              return resp.type === "opaque" || resp.ok;
             } catch (noCorsError) {
-              console.warn("No-cors fetch failed:", noCorsError);
-
-              // Fallback 2: Use Image object (works for GET requests, no CORS)
-              return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => resolve(true);
-                img.onerror = () => resolve(false);
-
-                // Add cache-busting parameter
-                const cacheBuster = `&_=${Date.now()}`;
-                img.src =
-                  fullUrl +
-                  (fullUrl.includes("?") ? cacheBuster : "?" + cacheBuster);
-
-                // Timeout after 3 seconds
-                setTimeout(() => resolve(false), 3000);
-              });
+              console.warn("No-cors fetch also failed:", noCorsError);
+              return false;
             }
           }
         }
@@ -13089,12 +13132,16 @@
          * await relayManager.allRelaysOn();
          */
         async allRelaysOn() {
-          for (let i = 1; i <= 4; i++) {
-            await this.setRelay(i, true);
+          const success = await this.sendRequest("all", { state: "on" });
+          if (success) {
+            for (let i = 1; i <= 4; i++) this.relayStates[i] = true;
+            localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
+            this.updateRelayButtons();
+            this.updateStatus("All relays ON", "success");
+            playBeep(800, 0.5, 0.3);
+          } else {
+            this.updateStatus("Failed to turn all relays ON", "error");
           }
-
-          this.updateStatus("All relays ON", "success");
-          playBeep(800, 0.5, 0.3);
         }
 
         /**
@@ -13108,11 +13155,16 @@
          * await relayManager.allRelaysOff();
          */
         async allRelaysOff() {
-          for (let i = 1; i <= 4; i++) {
-            await this.setRelay(i, false);
+          const success = await this.sendRequest("all", { state: "off" });
+          if (success) {
+            for (let i = 1; i <= 4; i++) this.relayStates[i] = false;
+            localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
+            this.updateRelayButtons();
+            this.updateStatus("All relays OFF", "success");
+            playBeep(400, 0.5, 0.3);
+          } else {
+            this.updateStatus("Failed to turn all relays OFF", "error");
           }
-          this.updateStatus("All relays OFF", "success");
-          playBeep(400, 0.5, 0.3);
         }
 
         /**
