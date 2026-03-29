@@ -3961,7 +3961,7 @@
               <button class="toggle-btn active" data-scheme="dark">
                 Darkroom (Default)
               </button>
-              <button class="toggle-btn" data-scheme="light">Day</button>
+              <button class="toggle-btn" data-scheme="light">Light</button>
               <button class="toggle-btn" data-scheme="day">Night</button>
             </div>
           </div>
@@ -6908,6 +6908,16 @@
         );
       }
 
+      function escapeHTML(str) {
+        if (!str) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       /**
        * @function renderSoundSettings
        * @description Renders sound settings checkboxes from appState.
@@ -7651,6 +7661,12 @@
             STORAGE_KEYS.SPLIT_GRADE_PRESETS,
             STORAGE_KEYS.CURRENT_SPLIT_PRESET,
             STORAGE_KEYS.TEST_TRANSFER_DESTINATION,
+            STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
+            STORAGE_KEYS.TEMP_SESSIONS,
+            STORAGE_KEYS.PERMANENT_SESSIONS,
+            "relaySettings",
+            "relayStates",
+            "relayNames",
           ]);
         }
       }
@@ -8533,6 +8549,14 @@
               return 3;
             })(),
           };
+
+          // Clamp slider limits to prevent min >= max
+          if (this.settings.baseTimeMin >= this.settings.baseTimeMax) {
+            this.settings.baseTimeMin = Math.max(0.1, this.settings.baseTimeMax - 1);
+          }
+          if (this.settings.testBaseTimeMin >= this.settings.testBaseTimeMax) {
+            this.settings.testBaseTimeMin = Math.max(0.5, this.settings.testBaseTimeMax - 1);
+          }
         }
 
         /**
@@ -8624,22 +8648,15 @@
               }
             });
 
-            // Update existing timer instances
+            // Update existing timer instances (skip running timers to avoid disrupting active darkroom processes)
             timerManager.timers.forEach((timer) => {
               const newTime = mapping[timer.name];
               if (typeof newTime === "number" && !isNaN(newTime)) {
                 const roundedTime = Math.round(newTime);
                 if (!timer.isRunning) {
-                  // Reset to new default
                   timer.setTime(roundedTime);
-                } else {
-                  // If running, update total and remaining time without interrupting display logic
-                  timer.totalTime = roundedTime;
-                  timer.timeLeft = roundedTime;
-                  timer.warningPlayed = false;
-                  timer.updateDisplay();
-                  timer.updateButtonStates();
                 }
+                // Running timers keep their current countdown — new default applies on next reset
               }
             });
           }
@@ -9082,6 +9099,23 @@
                   localStorage.getItem(STORAGE_KEYS.LIGHT_METER_CALIBRATIONS) ||
                     "{}",
                 ),
+            relaySettings: (function () {
+              try {
+                return JSON.parse(localStorage.getItem("relaySettings") || "null");
+              } catch (e) { return null; }
+            })(),
+            relayNames: (function () {
+              try {
+                return JSON.parse(localStorage.getItem("relayNames") || "null");
+              } catch (e) { return null; }
+            })(),
+            exposureLogs: {
+              tempSessions: StorageManager.loadJSON(STORAGE_KEYS.TEMP_SESSIONS, []),
+              permanentSessions: StorageManager.loadJSON(STORAGE_KEYS.PERMANENT_SESSIONS, []),
+            },
+            currentProfile: StorageManager.loadCurrentProfile(),
+            currentTestStripProfile: StorageManager.loadCurrentTestStripProfile(),
+            currentSplitPreset: StorageManager.loadCurrentSplitPreset(),
           };
 
           const jsonStr = JSON.stringify(exportData, null, 2);
@@ -9245,8 +9279,10 @@
               Array.isArray(data.shelfLifeData) &&
               window.chemicalManager
             ) {
-              // First, clear existing shelf life data
-              window.chemicalManager.shelfLifeData = [];
+              // Merge with existing shelf life data (deduplicate by id)
+              const existingIds = new Set(
+                window.chemicalManager.shelfLifeData.map((c) => c.id),
+              );
 
               // Validate and import each chemical
               data.shelfLifeData.forEach((chemical) => {
@@ -9257,15 +9293,18 @@
                   chemical.dateMixed &&
                   chemical.shelfLifeDays
                 ) {
-                  // Add the chemical to shelf life data
-                  window.chemicalManager.shelfLifeData.push({
-                    id: chemical.id || Date.now() + Math.random(),
-                    type: chemical.type || "custom",
-                    name: chemical.name,
-                    dateMixed: chemical.dateMixed,
-                    shelfLifeDays: chemical.shelfLifeDays,
-                    dateAdded: chemical.dateAdded || new Date().toISOString(),
-                  });
+                  const id = chemical.id || Date.now() + Math.random();
+                  if (!existingIds.has(id)) {
+                    window.chemicalManager.shelfLifeData.push({
+                      id: id,
+                      type: chemical.type || "custom",
+                      name: chemical.name,
+                      dateMixed: chemical.dateMixed,
+                      shelfLifeDays: chemical.shelfLifeDays,
+                      dateAdded: chemical.dateAdded || new Date().toISOString(),
+                    });
+                    existingIds.add(id);
+                  }
                 }
               });
 
@@ -9341,7 +9380,22 @@
                 }));
 
               if (validPresets.length > 0) {
-                // Merge or overwrite based on strategy
+                const existingSplitNames = window.splitGradeCalculator.splitPresets.map((p) => p.name);
+                const dupSplitNames = validPresets.map((p) => p.name).filter((name) => existingSplitNames.includes(name));
+
+                let splitMergeStrategy = "skip";
+                if (dupSplitNames.length > 0) {
+                  splitMergeStrategy =
+                    prompt(
+                      `Found ${dupSplitNames.length} duplicate split-grade preset(s): ${dupSplitNames.join(", ")}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+                  if (!["overwrite", "skip"].includes(splitMergeStrategy)) {
+                    splitMergeStrategy = "skip";
+                  }
+                }
+
                 validPresets.forEach((newPreset) => {
                   const existingIndex =
                     window.splitGradeCalculator.splitPresets.findIndex(
@@ -9349,7 +9403,7 @@
                     );
 
                   if (existingIndex >= 0) {
-                    if (mergeStrategy === "overwrite") {
+                    if (splitMergeStrategy === "overwrite") {
                       window.splitGradeCalculator.splitPresets[existingIndex] =
                         {
                           ...newPreset,
@@ -9485,6 +9539,69 @@
               importedCount++;
             }
 
+            // Import relay settings
+            if (data.relaySettings && typeof data.relaySettings === "object") {
+              try {
+                localStorage.setItem("relaySettings", JSON.stringify(data.relaySettings));
+                if (window.relayManager) {
+                  window.relayManager.loadSettings();
+                }
+                importedCount++;
+              } catch (e) {
+                console.error("Failed to import relay settings:", e);
+              }
+            }
+
+            // Import relay names
+            if (data.relayNames && typeof data.relayNames === "object") {
+              try {
+                localStorage.setItem("relayNames", JSON.stringify(data.relayNames));
+                if (window.relayManager) {
+                  window.relayManager.loadRelayNames();
+                }
+                importedCount++;
+              } catch (e) {
+                console.error("Failed to import relay names:", e);
+              }
+            }
+
+            // Import current profile/preset pointers
+            if (typeof data.currentProfile === "string") {
+              StorageManager.saveCurrentProfile(data.currentProfile);
+              if (settingsManager) settingsManager.setCurrentProfile(data.currentProfile);
+            }
+            if (typeof data.currentTestStripProfile === "string") {
+              StorageManager.saveCurrentTestStripProfile(data.currentTestStripProfile);
+            }
+            if (typeof data.currentSplitPreset === "string") {
+              StorageManager.saveCurrentSplitPreset(data.currentSplitPreset);
+            }
+
+            // Import exposure log sessions
+            if (data.exposureLogs && typeof data.exposureLogs === "object") {
+              if (Array.isArray(data.exposureLogs.permanentSessions)) {
+                const existingPerm = StorageManager.loadJSON(STORAGE_KEYS.PERMANENT_SESSIONS, []);
+                const existingPermIds = new Set(existingPerm.map((s) => s.id));
+                const newPerm = data.exposureLogs.permanentSessions.filter((s) => s && s.id && !existingPermIds.has(s.id));
+                const mergedPerm = [...newPerm, ...existingPerm];
+                StorageManager.saveJSON(STORAGE_KEYS.PERMANENT_SESSIONS, mergedPerm);
+                importedCount += newPerm.length;
+              }
+              if (Array.isArray(data.exposureLogs.tempSessions)) {
+                const existingTemp = StorageManager.loadJSON(STORAGE_KEYS.TEMP_SESSIONS, []);
+                const existingTempIds = new Set(existingTemp.map((s) => s.id));
+                const newTemp = data.exposureLogs.tempSessions.filter((s) => s && s.id && !existingTempIds.has(s.id));
+                const mergedTemp = [...newTemp, ...existingTemp];
+                StorageManager.saveJSON(STORAGE_KEYS.TEMP_SESSIONS, mergedTemp);
+                importedCount += newTemp.length;
+              }
+              // Refresh log UI if manager exists
+              if (window.exposureLogManager) {
+                window.exposureLogManager.loadSessions();
+                window.exposureLogManager.updateUI();
+              }
+            }
+
             // Refresh the chemical tab if it's currently active
             const currentTab = document
               .querySelector(".tab-button.active")
@@ -9563,9 +9680,11 @@
                     )}×</div>`
                   : "";
 
+              const safeName = escapeHTML(profile.name);
+              const safeAttrName = safeName.replace(/'/g, "&#39;");
               return `
                         <div>
-                            <strong>${profile.name}</strong>
+                            <strong>${safeName}</strong>
                             <div style="font-size: 0.65rem; color: var(--text-secondary);">${new Date(
                               profile.date,
                             ).toLocaleDateString()}</div>
@@ -9574,10 +9693,10 @@
                         </div>
                         <div class="shelf-life-actions">
                             <button class="btn-action load-btn" data-context="profile" data-name="${
-                              profile.name
+                              safeAttrName
                             }">Load</button>
                             <button class="btn-action delete-btn" data-context="profile" data-name="${
-                              profile.name
+                              safeAttrName
                             }">Delete</button>
                         </div>
                     `;
@@ -9793,12 +9912,6 @@
           this.showNotification(
             `Session "${session.name}" saved to temporary list`,
           );
-
-          // Automatically start a new session
-          setTimeout(() => {
-            this.startSession("manual", "session");
-            this.showNotification("New session started automatically");
-          }, 500);
         }
 
         /**
@@ -9829,6 +9942,12 @@
           }
 
           appState.logging.permanentSessions.unshift(permanentSession);
+
+          // Clear active session if this was it
+          if (appState.logging.activeSession === sessionId) {
+            appState.logging.activeSession = null;
+            appState.logging.autoSessionActive = false;
+          }
 
           // Remove from temp
           appState.logging.tempSessions.splice(tempIndex, 1);
@@ -9920,7 +10039,7 @@
                   calc.baseTime
                 },${calc.stopAdjustment},${
                   calc.finalTime
-                },${filterContext},N/A,N/A,"${calc.notes.replace(
+                },${filterContext},N/A,N/A,"${(calc.notes || "").replace(
                   /,/g,
                   ";",
                 )}"\n`;
@@ -9984,15 +10103,19 @@
                 const data = JSON.parse(event.target.result);
 
                 if (data.permanentSessions) {
+                  const existingPermIds = new Set(appState.logging.permanentSessions.map(s => s.id));
+                  const newPerm = data.permanentSessions.filter(s => !existingPermIds.has(s.id));
                   appState.logging.permanentSessions = [
-                    ...data.permanentSessions,
+                    ...newPerm,
                     ...appState.logging.permanentSessions,
                   ];
                 }
 
                 if (data.tempSessions) {
+                  const existingTempIds = new Set(appState.logging.tempSessions.map(s => s.id));
+                  const newTemp = data.tempSessions.filter(s => !existingTempIds.has(s.id));
                   appState.logging.tempSessions = [
-                    ...data.tempSessions,
+                    ...newTemp,
                     ...appState.logging.tempSessions,
                   ];
                 }
@@ -10097,6 +10220,8 @@
               const date = new Date(session.created).toLocaleString();
               const calcTotal = this.calculateCalcTotal(session);
               const isActive = session.id === appState.logging.activeSession;
+              const safeName = this.escapeHTML(session.name);
+              const calcLabel = calcTotal === "0.00" ? "No exposures" : `EXPOSURE Total: ${calcTotal}s`;
 
               return `
               <div class="shelf-life-item ${
@@ -10104,9 +10229,9 @@
               }" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                   <div>
-                    <strong>${session.name}</strong>
+                    <strong>${safeName}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">${calcLabel}</div>
                   </div>
                   <div class="shelf-life-actions">
                     <button class="btn-action" onclick="exposureLogManager.viewSession('${
@@ -10144,17 +10269,20 @@
               const date = new Date(session.created).toLocaleString();
               const savedDate = new Date(session.savedAt).toLocaleString();
               const calcTotal = this.calculateCalcTotal(session);
+              const safeName = this.escapeHTML(session.name);
+              const safeNotes = this.escapeHTML(session.notes);
+              const calcLabel = calcTotal === "0.00" ? "No exposures" : `EXPOSURE Total: ${calcTotal}s`;
 
               return `
               <div class="shelf-life-item" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                   <div>
-                    <strong>${session.name}</strong>
+                    <strong>${safeName}</strong>
                     <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
-                    <div style="font-size: 0.65rem; color: var(--accent);">EXPOSURE Total: ${calcTotal}s</div>
+                    <div style="font-size: 0.65rem; color: var(--accent);">${calcLabel}</div>
                     ${
-                      session.notes
-                        ? `<div style="font-size: 0.65rem; color: var(--text); margin-top: 2px;">${session.notes}</div>`
+                      safeNotes
+                        ? `<div style="font-size: 0.65rem; color: var(--text); margin-top: 2px;">${safeNotes}</div>`
                         : ""
                     }
                     <div style="font-size: 0.6rem; color: var(--text-secondary); margin-top: 2px;">Saved: ${savedDate}</div>
@@ -10179,10 +10307,14 @@
          */
         calculateCalcTotal(session) {
           if (!session.phases.calc || session.phases.calc.length === 0)
-            return 0;
+            return "0.00";
           return session.phases.calc
             .reduce((sum, calc) => sum + calc.finalTime, 0)
             .toFixed(2);
+        }
+
+        escapeHTML(str) {
+          return escapeHTML(str);
         }
 
         /**
@@ -13281,12 +13413,6 @@
         document.getElementById("safelightAutoOff").checked =
           settingsManager.settings.safelightAutoOff !== false;
 
-        // Apply auto advance to F-Stop Test generator
-        if (window.fstopTestGenerator) {
-          window.fstopTestGenerator.setAutoAdvance(
-            settingsManager.settings.autoAdvance,
-          );
-        }
         document.getElementById("settingAutoAdvanceDelay").value =
           settingsManager.settings.autoAdvanceDelay || 1;
 
