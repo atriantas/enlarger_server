@@ -13483,7 +13483,7 @@
         const frac = absVal - whole;
         const tol = 1e-6;
 
-        if (Math.abs(frac) < tol) return `${sign}${whole}.0`;
+        if (denom === 1 || Math.abs(frac) < tol) return `${sign}${whole}`;
 
         if (denom === 2) {
           if (Math.abs(frac - 0.5) < tol) return `${sign}${whole}½`;
@@ -14438,6 +14438,50 @@
         }
 
         /**
+         * Map from server paper_database IDs to local paperTypes keys.
+         */
+        static SERVER_ID_MAP = {
+          ilford_cooltone:                    "cooltone",
+          ilford_iv_rc_portfolio:             "portfolio",
+          ilford_multigrade_rc_deluxe_new:    "rc_deluxe_new",
+          ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
+          ilford_fb_classic:                  "fb_classic",
+          ilford_fb_warmtone:                 "fb_warmtone",
+          ilford_fb_cooltone:                 "fb_cooltone",
+          foma_fomaspeed:                     "fomaspeed",
+          foma_fomabrom:                      "fomabrom",
+          foma_fomapastel_mg:                 "fomapastel_mg",
+          fomatone_mg_classic_variant:        "fomatone_mg_classic_variant",
+        };
+
+        /**
+         * Sync paperTypes from server paper data so the client
+         * always uses the authoritative values in paper_database.py.
+         * Preserves the local "none" filter entries (server doesn't send them).
+         */
+        syncPaperTypesFromServer(papers) {
+          if (!papers || !papers.length) return;
+
+          for (const paper of papers) {
+            const localKey = EnlargerHeightCalculator.SERVER_ID_MAP[paper.id];
+            if (!localKey || !paper.filters || !this.paperTypes[localKey]) continue;
+
+            for (const [grade, data] of Object.entries(paper.filters)) {
+              if (grade === "" || grade === "none") continue;
+              if (data && typeof data.factor === "number") {
+                this.paperTypes[localKey].filters[grade] = {
+                  iso: data.iso_r ?? this.paperTypes[localKey].filters[grade]?.iso ?? 0,
+                  factor: data.factor,
+                };
+              }
+            }
+          }
+
+          this.updateCalculations();
+          this.updateDisplay();
+        }
+
+        /**
          * @method init
          * @description Initializes UI elements and event listeners for the calculator.
          * Binds all sliders, dropdowns, and buttons to their respective handler functions.
@@ -15104,7 +15148,7 @@
         applyNewTime() {
           const newBaseTime = this.newAdjustedTime;
           const baseTimeSlider = document.getElementById("baseTimeSlider");
-          const clampedTime = Math.max(1, Math.min(50, newBaseTime));
+          const clampedTime = Math.max(0.4, Math.min(50, newBaseTime));
           baseTimeSlider.value = clampedTime.toFixed(1);
 
           this.incrementalTimer.updateFromSliders();
@@ -18677,6 +18721,11 @@
               // Sync filter factors to SplitGradeCalculator from server data
               if (window.splitGradeCalculator) {
                 window.splitGradeCalculator.syncFactorsFromPapers(this.papersList);
+              }
+
+              // Sync filter factors to EnlargerHeightCalculator from server data
+              if (window.heightCalculator) {
+                window.heightCalculator.syncPaperTypesFromServer(this.papersList);
               }
             } else if (data.error) {
               console.error("Server returned error:", data.error);
