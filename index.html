@@ -3489,6 +3489,7 @@
           <div class="timer-box" id="timerDev">
             <div class="title-sm">Developer</div>
             <div class="time-display" id="displayDev">01:00</div>
+            <div class="label-sm" id="elapsedDev" style="text-align:center;font-size:0.6rem;color:var(--text-secondary);min-height:0.8rem"></div>
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Dev" data-action="minus">
@@ -3516,6 +3517,7 @@
           <div class="timer-box" id="timerStop">
             <div class="title-sm">Stop Bath</div>
             <div class="time-display" id="displayStop">00:30</div>
+            <div class="label-sm" id="elapsedStop" style="text-align:center;font-size:0.6rem;color:var(--text-secondary);min-height:0.8rem"></div>
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Stop" data-action="minus">
@@ -3543,6 +3545,7 @@
           <div class="timer-box" id="timerFix">
             <div class="title-sm">Fixer</div>
             <div class="time-display" id="displayFix">05:00</div>
+            <div class="label-sm" id="elapsedFix" style="text-align:center;font-size:0.6rem;color:var(--text-secondary);min-height:0.8rem"></div>
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Fix" data-action="minus">
@@ -3570,6 +3573,7 @@
           <div class="timer-box" id="timerFlo">
             <div class="title-sm">Photo Wash</div>
             <div class="time-display" id="displayFlo">01:00</div>
+            <div class="label-sm" id="elapsedFlo" style="text-align:center;font-size:0.6rem;color:var(--text-secondary);min-height:0.8rem"></div>
             <div class="timer-controls-2">
               <div class="adjust-row">
                 <button class="timer-btn" data-timer="Flo" data-action="minus">
@@ -6592,24 +6596,28 @@
             timeLeft: 60,
             totalTime: 60,
             isRunning: false,
+            isPaused: false,
             isEnabled: true,
           },
           Stop: {
             timeLeft: 30,
             totalTime: 30,
             isRunning: false,
+            isPaused: false,
             isEnabled: true,
           },
           Fix: {
             timeLeft: 60,
             totalTime: 60,
             isRunning: false,
+            isPaused: false,
             isEnabled: true,
           },
           Flo: {
             timeLeft: 30,
             totalTime: 30,
             isRunning: false,
+            isPaused: false,
             isEnabled: true,
           },
         },
@@ -6810,6 +6818,19 @@
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
         }
 
+        // Update elapsed time display
+        const elapsedEl = document.getElementById(`elapsed${timerName}`);
+        if (elapsedEl) {
+          if (state.isRunning || state.isPaused) {
+            const elapsed = state.totalTime - state.timeLeft;
+            const eMin = Math.floor(elapsed / 60);
+            const eSec = elapsed % 60;
+            elapsedEl.textContent = `elapsed ${eMin.toString().padStart(2, "0")}:${eSec.toString().padStart(2, "0")}`;
+          } else {
+            elapsedEl.textContent = "";
+          }
+        }
+
         // Update button states
         if (!state.isEnabled) {
           if (button) button.disabled = true;
@@ -6822,13 +6843,20 @@
 
         if (button) {
           button.disabled = false;
-          button.textContent = state.isRunning ? "Pause" : "Start";
+          if (state.isRunning) {
+            button.textContent = "Pause";
+          } else if (state.isPaused) {
+            button.textContent = "Resume";
+          } else {
+            button.textContent = "Start";
+          }
           button.classList.toggle("active", state.isRunning);
         }
 
+        const timerBusy = state.isRunning || state.isPaused;
         if (resetButton) resetButton.disabled = state.isRunning;
-        if (plusButton) plusButton.disabled = state.isRunning;
-        if (minusButton) minusButton.disabled = state.isRunning;
+        if (plusButton) plusButton.disabled = timerBusy;
+        if (minusButton) minusButton.disabled = timerBusy;
 
         // Update box state
         if (box) {
@@ -7753,8 +7781,9 @@
           }
 
           this.state.isRunning = true;
+          this.state.isPaused = false;
           this.warningPlayed = false;
-          this.isPartOfSequence = isSequence; // NEW: Store sequence flag
+          this.isPartOfSequence = isSequence;
           this.render();
 
           // Use drift-corrected timer
@@ -7795,8 +7824,58 @@
             this.driftTimer.stop();
           }
           this.state.isRunning = false;
-          this.isPartOfSequence = false; // NEW: Reset sequence flag
+          this.state.isPaused = false;
+          this.isPartOfSequence = false;
           this.render();
+        }
+
+        /**
+         * Pause the timer, preserving remaining time
+         * @returns {void}
+         */
+        pause() {
+          if (!this.state.isRunning) return;
+
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
+          this.state.isRunning = false;
+          this.state.isPaused = true;
+          this.render();
+        }
+
+        /**
+         * Resume a paused timer
+         * @returns {void}
+         */
+        resume() {
+          if (!this.state.isPaused || this.state.timeLeft <= 0) return;
+
+          this.state.isRunning = true;
+          this.state.isPaused = false;
+          this.render();
+
+          this.driftTimer = new DriftCorrectedTimer(() => {
+            this.state.timeLeft--;
+            this.render();
+
+            if (
+              this.state.timeLeft === 10 &&
+              appState.settings.timerWarningBeep &&
+              this.state.isEnabled
+            ) {
+              const box = document.getElementById(`timer${this.name}`);
+              if (box) box.classList.add("warning");
+              playPreset("timerWarning");
+              this.warningPlayed = true;
+            }
+
+            if (this.state.timeLeft <= 0) {
+              this.complete();
+            }
+          }, 1000);
+
+          this.driftTimer.start();
         }
 
         /**
@@ -7807,7 +7886,12 @@
         reset() {
           if (this.state.isRunning || !this.state.isEnabled) return;
 
-          this.stop();
+          if (this.driftTimer) {
+            this.driftTimer.stop();
+          }
+          this.state.isRunning = false;
+          this.state.isPaused = false;
+          this.isPartOfSequence = false;
           this.state.timeLeft = this.state.totalTime;
           this.warningPlayed = false;
           this.render();
@@ -7860,13 +7944,17 @@
         toggle() {
           if (!this.state.isEnabled) return;
 
+          // Prevent individual toggle while a sequence is running
+          if (window.startAllState?.isRunning || window.startAllState?.isPaused) return;
+
           if (this.state.isRunning) {
-            this.stop();
+            this.pause();
+          } else if (this.state.isPaused) {
+            this.resume();
           } else {
             if (this.state.timeLeft <= 0) {
               this.reset();
             }
-            // NEW: Individual start is NOT part of a sequence
             this.start(false);
           }
         }
@@ -17806,7 +17894,9 @@
           // For tracking
           this.devTimer = null;
           this.targetTime = null; // Current Dev timer setting
-          this.elapsedTime = 0; // Current elapsed time
+          this.elapsedTime = 0; // Current elapsed time (seconds, from timer)
+          this.startedAtMs = null; // Date.now() when current running segment started
+          this.accumulatedMs = 0; // Accumulated running time across pause/resume cycles
           this.trackingInterval = null;
 
           // UI refs
@@ -17885,12 +17975,24 @@
             // Update target time from current Dev setting
             this.targetTime = state.totalTime;
 
-            // Calculate elapsed time if running
+            // Track when timer starts/resumes for fine-grained elapsed timing
+            if (state.isRunning && this.startedAtMs === null) {
+              this.startedAtMs = Date.now();
+            }
+
+            // Accumulate elapsed on pause/stop (before checking completion/reset)
+            if (!state.isRunning && this.startedAtMs !== null) {
+              this.accumulatedMs += Date.now() - this.startedAtMs;
+              this.startedAtMs = null;
+            }
+
+            // Calculate elapsed time if running (coarse, for display)
             if (state.isRunning) {
               this.elapsedTime = state.totalTime - state.timeLeft;
             } else if (state.timeLeft === 0 && state.totalTime > 0) {
               // Timer just completed
               this.elapsedTime = state.totalTime;
+              this.accumulatedMs = 0;
 
               // Apply pending new time if exists
               if (this.pendingNewTime !== null) {
@@ -17904,6 +18006,7 @@
             } else if (state.timeLeft === state.totalTime) {
               // Timer reset
               this.elapsedTime = 0;
+              this.accumulatedMs = 0;
             }
 
             this.updateStatusDisplay();
@@ -17935,10 +18038,13 @@
           // Get the target time (what Dev timer was set to)
           const target = this.targetTime;
 
-          // Get elapsed time (when black appeared)
-          const elapsed = this.elapsedTime;
+          // Fine-grained elapsed: accumulated paused chunks + current running segment
+          const elapsed =
+            (this.accumulatedMs +
+              (this.startedAtMs ? Date.now() - this.startedAtMs : 0)) /
+            1000 || this.elapsedTime;
 
-          if (elapsed === 0) {
+          if (elapsed < 0.5) {
             this.updateStatus("❌ Wait for black to appear!", "error");
             return;
           }
@@ -17952,7 +18058,7 @@
           this.updateStatus(
             `✓ Multiplier set: ${this.multiplier.toFixed(
               2,
-            )} (${target}s / ${elapsed}s)`,
+            )} (${target}s / ${elapsed.toFixed(1)}s)`,
             "success",
           );
 
@@ -17982,10 +18088,13 @@
             return;
           }
 
-          // Get elapsed time (when black appeared for this print)
-          const elapsed = this.elapsedTime;
+          // Fine-grained elapsed: accumulated paused chunks + current running segment
+          const elapsed =
+            (this.accumulatedMs +
+              (this.startedAtMs ? Date.now() - this.startedAtMs : 0)) /
+            1000 || this.elapsedTime;
 
-          if (elapsed === 0) {
+          if (elapsed < 0.5) {
             this.updateStatus("❌ Wait for black to appear!", "error");
             return;
           }
@@ -18000,7 +18109,7 @@
           this.updateStatus(
             `✓ Next Dev time: ${newTarget.toFixed(
               1,
-            )}s (${elapsed}s × ${this.multiplier.toFixed(2)})`,
+            )}s (${elapsed.toFixed(1)}s × ${this.multiplier.toFixed(2)})`,
             "success",
           );
 
@@ -18023,6 +18132,8 @@
           this.multiplier = null;
           this.isCalibrated = false;
           this.elapsedTime = 0;
+          this.startedAtMs = null;
+          this.accumulatedMs = 0;
           this.pendingNewTime = null;
 
           this.updateMultiplierDisplay();
@@ -18154,11 +18265,12 @@
         }
 
         /**
-         * Clean up
+         * Clean up tracking interval
          */
         destroy() {
           if (this.trackingInterval) {
             clearInterval(this.trackingInterval);
+            this.trackingInterval = null;
           }
         }
       }
@@ -21367,26 +21479,38 @@
         });
 
         // Hold-to-adjust functionality for timer +/- buttons
-        const holdIntervals = new Map(); // Store interval IDs for each button
+        const holdTimers = new Map(); // Store timeout+interval IDs for each button
 
         function startHoldAdjustment(button, timer, adjustment) {
-          // Initial adjustment
+          // Fire once immediately on press
           timer.adjustTime(adjustment);
 
-          // Start continuous adjustment after 500ms delay
-          const intervalId = setInterval(() => {
-            timer.adjustTime(adjustment);
-          }, 200); // Adjust every 200ms while holding
+          // After 500ms initial delay, begin repeating at 150ms
+          const delayId = setTimeout(() => {
+            const intervalId = setInterval(() => {
+              timer.adjustTime(adjustment);
+            }, 150);
+            holdTimers.set(button, { delayId: null, intervalId });
+          }, 500);
 
-          holdIntervals.set(button, intervalId);
+          holdTimers.set(button, { delayId, intervalId: null });
         }
 
         function stopHoldAdjustment(button) {
-          const intervalId = holdIntervals.get(button);
-          if (intervalId) {
-            clearInterval(intervalId);
-            holdIntervals.delete(button);
+          const ids = holdTimers.get(button);
+          if (ids) {
+            if (ids.delayId) clearTimeout(ids.delayId);
+            if (ids.intervalId) clearInterval(ids.intervalId);
+            holdTimers.delete(button);
           }
+        }
+
+        function stopAllHolds() {
+          holdTimers.forEach((ids) => {
+            if (ids.delayId) clearTimeout(ids.delayId);
+            if (ids.intervalId) clearInterval(ids.intervalId);
+          });
+          holdTimers.clear();
         }
 
         // Mouse events for desktop
@@ -21418,11 +21542,7 @@
         });
 
         document.addEventListener("mouseleave", (e) => {
-          // Stop all holds if mouse leaves any button
-          holdIntervals.forEach((intervalId, button) => {
-            clearInterval(intervalId);
-          });
-          holdIntervals.clear();
+          stopAllHolds();
         });
 
         // Touch events for mobile
@@ -21456,11 +21576,7 @@
         });
 
         document.addEventListener("touchcancel", (e) => {
-          // Stop all holds on touch cancel
-          holdIntervals.forEach((intervalId, button) => {
-            clearInterval(intervalId);
-          });
-          holdIntervals.clear();
+          stopAllHolds();
         });
 
         // Event delegation for segmented controls (f-stop denominator)
