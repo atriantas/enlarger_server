@@ -3074,18 +3074,43 @@
 
               <div class="control">
                 <div class="control-label">
-                  <span>CAPACITY (m² per liter)</span>
-                  <span class="value-display" id="capacityValue">0.5</span>
+                  <span>BOTTLE SPEC (m²/L concentrate)</span>
+                  <span class="value-display" id="bottleCapValue">5.0</span>
                 </div>
                 <input
                   type="range"
-                  min="0.1"
-                  max="40"
-                  step="0.1"
-                  value="0.5"
+                  min="0.5"
+                  max="30"
+                  step="0.5"
+                  value="5"
                   class="slider"
-                  id="capacitySlider"
+                  id="bottleCapSlider"
                 />
+              </div>
+
+              <div class="control">
+                <div class="control-label">
+                  <span>DILUTION</span>
+                  <span class="value-display" id="capDilutionDisplay">1+9</span>
+                </div>
+                <div class="dilution-selector">
+                  <button class="toggle-btn" data-cap-ratio="1+4">1+4</button>
+                  <button class="toggle-btn active" data-cap-ratio="1+9">1+9</button>
+                  <button class="toggle-btn" data-cap-ratio="1+14">1+14</button>
+                  <button class="toggle-btn" data-cap-ratio="1+19">1+19</button>
+                  <button class="toggle-btn" data-cap-ratio="1+29">1+29</button>
+                  <button class="toggle-btn" data-cap-ratio="1+39">1+39</button>
+                </div>
+                <div class="custom-dilution">
+                  <input type="number" min="1" max="99" value="1" class="settings-input" id="capCustomStock" placeholder="Stock" style="width: 60px" />
+                  <span style="color: var(--text-secondary)">+</span>
+                  <input type="number" min="1" max="99" value="9" class="settings-input" id="capCustomWater" placeholder="Water" style="width: 60px" />
+                </div>
+              </div>
+
+              <div class="info-box" style="margin: 6px 0">
+                <div class="label-sm">WORKING CAPACITY</div>
+                <div class="value-display" id="workingCapDisplay" style="font-size: 1rem">0.50 m²/L</div>
               </div>
 
               <div class="control">
@@ -3429,7 +3454,7 @@
                 <div
                   style="
                     font-size: 0.6rem;
-                    color: --text-secondary;
+                    color: var(--text-secondary);
                     text-align: center;
                     margin-top: 8px;
                   "
@@ -10540,7 +10565,12 @@
           this.chemicalPresets = StorageManager.loadChemicalPresets();
           this.currentPaperSize = this.capacityData.paperSize || 0.08;
 
+          // Capacity dilution state (restore from saved data)
+          this.capDilutionStock = this.capacityData.capDilutionStock || 1;
+          this.capDilutionWater = this.capacityData.capDilutionWater || 9;
+
           this.init();
+          this.restoreCapacityState();
           this.updateMixCalculator();
           this.updateCapacityDisplay();
           this.updateShelfLifeList();
@@ -10605,8 +10635,13 @@
           );
 
           // Capacity tracker elements - UPDATED
-          this.capacitySlider = document.getElementById("capacitySlider");
-          this.capacityValue = document.getElementById("capacityValue");
+          this.bottleCapSlider = document.getElementById("bottleCapSlider");
+          this.bottleCapValue = document.getElementById("bottleCapValue");
+          this.capDilutionDisplay = document.getElementById("capDilutionDisplay");
+          this.workingCapDisplay = document.getElementById("workingCapDisplay");
+          this.capDilutionBtns = document.querySelectorAll(".toggle-btn[data-cap-ratio]");
+          this.capCustomStockInput = document.getElementById("capCustomStock");
+          this.capCustomWaterInput = document.getElementById("capCustomWater");
           this.trayVolumeSlider = document.getElementById("trayVolumeSlider");
           this.trayVolumeValue = document.getElementById("trayVolumeValue");
           this.maxPrintsValue = document.getElementById("maxPrintsValue");
@@ -10661,6 +10696,7 @@
             this.customStockParts =
               parseInt(this.customStockPartsInput.value) || 1;
             this.dilutionBtns.forEach((b) => b.classList.remove("active"));
+            this.dilutionRatio = null;
             this.updateMixCalculator();
           });
 
@@ -10668,16 +10704,29 @@
             this.customWaterParts =
               parseInt(this.customWaterPartsInput.value) || 1;
             this.dilutionBtns.forEach((b) => b.classList.remove("active"));
+            this.dilutionRatio = null;
             this.updateMixCalculator();
           });
 
           // Capacity tracker slider events
-          this.capacitySlider.addEventListener("input", () =>
+          this.bottleCapSlider.addEventListener("input", () =>
             this.updateCapacityDisplay(),
           );
           this.trayVolumeSlider.addEventListener("input", () =>
             this.updateCapacityDisplay(),
           );
+
+          // Capacity dilution custom inputs
+          this.capCustomStockInput.addEventListener("input", () => {
+            this.capDilutionStock = parseInt(this.capCustomStockInput.value) || 1;
+            this.capDilutionBtns.forEach((b) => b.classList.remove("active"));
+            this.updateCapacityDisplay();
+          });
+          this.capCustomWaterInput.addEventListener("input", () => {
+            this.capDilutionWater = parseInt(this.capCustomWaterInput.value) || 1;
+            this.capDilutionBtns.forEach((b) => b.classList.remove("active"));
+            this.updateCapacityDisplay();
+          });
 
           // Button click events now handled via delegation
           this.addPrintBtn.addEventListener("click", () => this.addPrints(1));
@@ -10896,13 +10945,51 @@
           StorageManager.saveCapacityTracker(this.capacityData);
         }
 
+        restoreCapacityState() {
+          // Restore bottle spec slider
+          const savedBottleCap = this.capacityData.bottleCapacity;
+          if (savedBottleCap != null) {
+            this.bottleCapSlider.value = savedBottleCap;
+          }
+
+          // Restore dilution button/custom state
+          const ratio = this.capDilutionStock + "+" + this.capDilutionWater;
+          let matched = false;
+          this.capDilutionBtns.forEach((btn) => {
+            btn.classList.remove("active");
+            if (btn.getAttribute("data-cap-ratio") === ratio) {
+              btn.classList.add("active");
+              matched = true;
+            }
+          });
+          this.capCustomStockInput.value = this.capDilutionStock;
+          this.capCustomWaterInput.value = this.capDilutionWater;
+        }
+
+        setCapDilution(stock, water) {
+          this.capDilutionStock = stock;
+          this.capDilutionWater = water;
+          this.capCustomStockInput.value = stock;
+          this.capCustomWaterInput.value = water;
+          this.updateCapacityDisplay();
+        }
+
         updateCapacityDisplay() {
-          const capacityPerLiter = parseFloat(this.capacitySlider.value); // m² per liter
+          const bottleCap = parseFloat(this.bottleCapSlider.value); // m²/L concentrate
+          const totalParts = this.capDilutionStock + this.capDilutionWater;
+          const capacityPerLiter = bottleCap / totalParts; // m²/L working solution
           const trayVolume = parseInt(this.trayVolumeSlider.value); // ml
           const trayVolumeLiters = trayVolume / 1000;
 
-          this.capacityValue.textContent = capacityPerLiter.toFixed(1);
+          this.bottleCapValue.textContent = bottleCap.toFixed(1);
+          this.capDilutionDisplay.textContent = this.capDilutionStock + "+" + this.capDilutionWater;
+          this.workingCapDisplay.textContent = capacityPerLiter.toFixed(2) + " m²/L";
           this.trayVolumeValue.textContent = trayVolume;
+
+          // Persist capacity settings
+          this.capacityData.bottleCapacity = bottleCap;
+          this.capacityData.capDilutionStock = this.capDilutionStock;
+          this.capacityData.capDilutionWater = this.capDilutionWater;
 
           // Calculate maximum area and prints
           const maxArea = capacityPerLiter * trayVolumeLiters; // m²
@@ -10992,6 +11079,9 @@
               printsDone: 0,
               areaUsed: 0,
               paperSize: this.currentPaperSize,
+              bottleCapacity: this.capacityData.bottleCapacity,
+              capDilutionStock: this.capDilutionStock,
+              capDilutionWater: this.capDilutionWater,
               lastReset: new Date().toISOString(),
             };
             StorageManager.saveCapacityTracker(this.capacityData);
@@ -11087,13 +11177,17 @@
         updateShelfLifeList() {
           this.shelfLifeList.innerHTML = "";
 
-          const today = new Date();
+          // Normalize today to local midnight to avoid timezone issues
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           this.shelfLifeData.forEach((chemical, index) => {
-            const mixedDate = new Date(chemical.dateMixed);
+            // Parse date as local (YYYY-MM-DD string parsed as UTC; re-construct as local)
+            const parts = chemical.dateMixed.split("-");
+            const mixedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             const expiryDate = new Date(mixedDate);
             expiryDate.setDate(expiryDate.getDate() + chemical.shelfLifeDays);
 
-            const daysLeft = Math.ceil(
+            const daysLeft = Math.round(
               (expiryDate - today) / (1000 * 60 * 60 * 24),
             );
 
@@ -11111,9 +11205,12 @@
             if (daysLeft < 0) {
               statusClass = "expired";
               statusText = "EXPIRED";
+            } else if (daysLeft === 0) {
+              statusClass = "expiring";
+              statusText = "TODAY";
             } else if (daysLeft <= 3) {
               statusClass = "expiring";
-              statusText = "EXPIRING";
+              statusText = `${daysLeft} DAY${daysLeft > 1 ? "S" : ""}`;
             } else {
               statusText = `${daysLeft} days`;
             }
@@ -11178,15 +11275,17 @@
 
         clearExpired() {
           if (confirm("Remove all expired chemicals?")) {
-            const today = new Date();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             this.shelfLifeData = this.shelfLifeData.filter((chemical) => {
-              const mixedDate = new Date(chemical.dateMixed);
+              const parts = chemical.dateMixed.split("-");
+              const mixedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
               const expiryDate = new Date(mixedDate);
               expiryDate.setDate(expiryDate.getDate() + chemical.shelfLifeDays);
-              const daysLeft = Math.ceil(
+              const daysLeft = Math.round(
                 (expiryDate - today) / (1000 * 60 * 60 * 24),
               );
-              return daysLeft > 0;
+              return daysLeft >= 0;
             });
 
             StorageManager.saveShelfLife(this.shelfLifeData);
@@ -21450,6 +21549,17 @@
             window.chemicalManager.dilutionRatio =
               dilutionBtn.getAttribute("data-ratio");
             window.chemicalManager.updateMixCalculator();
+            return;
+          }
+
+          // Capacity dilution buttons
+          const capDilutionBtn = e.target.closest(".toggle-btn[data-cap-ratio]");
+          if (capDilutionBtn && window.chemicalManager) {
+            e.preventDefault();
+            document.querySelectorAll(".toggle-btn[data-cap-ratio]").forEach((b) => b.classList.remove("active"));
+            capDilutionBtn.classList.add("active");
+            const parts = capDilutionBtn.getAttribute("data-cap-ratio").split("+");
+            window.chemicalManager.setCapDilution(parseInt(parts[0]), parseInt(parts[1]));
             return;
           }
 
