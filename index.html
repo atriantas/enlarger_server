@@ -675,6 +675,75 @@
         opacity: 0.6;
       }
 
+      /* Custom dropdown (replaces native <select>) */
+      .custom-select-wrap {
+        position: relative;
+        width: 100%;
+      }
+      .custom-select-wrap select { display: none; }
+      .custom-select-trigger {
+        background: var(--panel-light);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        padding: 6px 28px 6px 8px;
+        font-size: 0.8rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: border-color var(--transition), box-shadow var(--transition);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .custom-select-trigger::after {
+        content: '';
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid var(--text-secondary);
+        pointer-events: none;
+      }
+      .custom-select-trigger:hover,
+      .custom-select-wrap.open .custom-select-trigger {
+        border-color: var(--accent);
+        box-shadow: 0 0 8px var(--glow);
+      }
+      .custom-select-opts {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        background: var(--panel);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      }
+      .custom-select-wrap.open .custom-select-opts { display: block; }
+      .custom-select-wrap.drop-up .custom-select-opts {
+        /* position set dynamically via JS */
+      }
+      .custom-select-opt {
+        padding: 7px 10px;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: background var(--transition);
+      }
+      .custom-select-opt:hover {
+        background: var(--panel-light);
+        color: var(--text);
+      }
+      .custom-select-opt.selected {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
       /* Unified list container */
       .shelf-life-list {
         background: var(--panel);
@@ -5989,6 +6058,119 @@
         document.getElementById("appModalOverlay")?.addEventListener("click", (e) => {
           if (e.target.id === "appModalOverlay") _closeAppModal(null);
         });
+      });
+
+      // ===== CUSTOM SELECT DROPDOWN (replaces native <select>) =====
+      const _selValueSetters = new WeakMap();
+
+      function _wrapSelect(sel) {
+        if (sel.closest(".custom-select-wrap")) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "custom-select-wrap";
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(sel);
+
+        const trigger = document.createElement("div");
+        trigger.className = "custom-select-trigger";
+        wrap.insertBefore(trigger, sel);
+
+        const optsList = document.createElement("div");
+        optsList.className = "custom-select-opts";
+        wrap.appendChild(optsList);
+
+        function buildOpts() {
+          optsList.innerHTML = "";
+          Array.from(sel.options).forEach((opt) => {
+            const div = document.createElement("div");
+            div.className = "custom-select-opt" + (opt.selected ? " selected" : "");
+            div.textContent = opt.textContent;
+            div.dataset.value = opt.value;
+            div.addEventListener("click", (e) => {
+              e.stopPropagation();
+              sel.value = opt.value;
+              sel.dispatchEvent(new Event("change", { bubbles: true }));
+              syncTrigger();
+              _closeAllSelects();
+            });
+            optsList.appendChild(div);
+          });
+        }
+
+        function syncTrigger() {
+          const selected = sel.options[sel.selectedIndex];
+          trigger.textContent = selected ? selected.textContent : "";
+          optsList.querySelectorAll(".custom-select-opt").forEach((d) => {
+            d.classList.toggle("selected", d.dataset.value === sel.value);
+          });
+        }
+
+        // Observe dynamic option changes
+        const observer = new MutationObserver(() => { buildOpts(); syncTrigger(); });
+        observer.observe(sel, { childList: true, subtree: true, attributes: true });
+
+        // Intercept programmatic .value = assignments
+        if (!_selValueSetters.has(sel)) {
+          const proto = Object.getPrototypeOf(sel);
+          const desc = Object.getOwnPropertyDescriptor(proto, "value") ||
+                       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+          if (desc && desc.set) {
+            const origGet = desc.get;
+            const origSet = desc.set;
+            _selValueSetters.set(sel, origSet);
+            Object.defineProperty(sel, "value", {
+              get() { return origGet.call(this); },
+              set(v) { origSet.call(this, v); syncTrigger(); },
+              configurable: true,
+            });
+          }
+        }
+
+        // Listen for change events fired by other code
+        sel.addEventListener("change", syncTrigger);
+
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const wasOpen = wrap.classList.contains("open");
+          _closeAllSelects();
+          if (!wasOpen) {
+            const rect = trigger.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const dropUp = spaceBelow < 210;
+            wrap.classList.toggle("drop-up", dropUp);
+            // Position the fixed dropdown relative to viewport
+            optsList.style.left = rect.left + "px";
+            optsList.style.width = rect.width + "px";
+            if (dropUp) {
+              optsList.style.bottom = (window.innerHeight - rect.top + 2) + "px";
+              optsList.style.top = "auto";
+            } else {
+              optsList.style.top = (rect.bottom + 2) + "px";
+              optsList.style.bottom = "auto";
+            }
+            wrap.classList.add("open");
+            const selOpt = optsList.querySelector(".custom-select-opt.selected");
+            if (selOpt) selOpt.scrollIntoView({ block: "nearest" });
+          }
+        });
+
+        buildOpts();
+        syncTrigger();
+      }
+
+      function _closeAllSelects() {
+        document.querySelectorAll(".custom-select-wrap.open").forEach((w) =>
+          w.classList.remove("open", "drop-up")
+        );
+      }
+
+      function initCustomSelects() {
+        document.querySelectorAll("select.settings-input").forEach(_wrapSelect);
+      }
+
+      document.addEventListener("click", _closeAllSelects);
+      document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(initCustomSelects, 100);
       });
 
       // Storage keys - UPDATED
