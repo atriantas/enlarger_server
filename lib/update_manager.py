@@ -264,11 +264,17 @@ class UpdateManager:
             print(f"[UpdateManager] Latest version: {version} (current: {self.current_version})")
             print(f"[UpdateManager] Update available: {is_newer}")
             
+            # Truncate release notes for memory-constrained device
+            release_notes = release_data.get('body', '') or ''
+            if len(release_notes) > 500:
+                release_notes = release_notes[:500] + '...'
+
             return {
                 'success': True,
                 'version': version,
                 'tag_name': tag_name,
                 'published_at': release_data.get('published_at', ''),
+                'release_notes': release_notes,
                 'available': is_newer,
                 'current_version': self.current_version
             }

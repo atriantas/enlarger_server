@@ -80,7 +80,9 @@ class HTTPServer:
             '/light-meter-calibrate':         self._handle_light_meter_calibrate,
             '/light-meter-config':            self._handle_light_meter_config,
             '/update-check':                  self._handle_update_check,
+            '/update-check-only':             self._handle_update_check_only,
             '/version':                       self._handle_version,
+            '/app-data':                      self._handle_app_data,
         }
     
     def _cors_headers(self):
@@ -156,19 +158,27 @@ class HTTPServer:
         return params
     
     def _parse_request(self, data):
-        """Parse HTTP request."""
+        """Parse HTTP request, returning method, path, params, headers, and body bytes."""
         try:
-            # Decode request
-            request = data.decode('utf-8')
+            # Find header/body boundary in raw bytes
+            boundary = data.find(b'\r\n\r\n')
+            if boundary < 0:
+                header_bytes = data
+                body = b''
+            else:
+                header_bytes = data[:boundary]
+                body = data[boundary + 4:]
+
+            request = header_bytes.decode('utf-8')
             lines = request.split('\r\n')
             
             if not lines:
-                return None, None, None, None
+                return None, None, None, None, b''
             
             # Parse request line
             parts = lines[0].split(' ')
             if len(parts) < 2:
-                return None, None, None, None
+                return None, None, None, None, b''
             
             method = parts[0]
             path_with_query = parts[1]
@@ -191,11 +201,11 @@ class HTTPServer:
                 elif line == '':
                     break
             
-            return method, path, params, headers
+            return method, path, params, headers, body
             
         except Exception as e:
             print(f"Parse error: {e}")
-            return None, None, None, None
+            return None, None, None, None, b''
     
     async def _sendall(self, conn, data):
         """Send all data with retry logic for buffer management."""
@@ -1363,10 +1373,27 @@ class HTTPServer:
                 return
             
             # Parse request
-            method, path, params, headers = self._parse_request(data)
+            method, path, params, headers, body = self._parse_request(data)
             
             if not method:
                 return
+            
+            # For POST requests, read the full body based on Content-Length
+            if method == 'POST' and headers:
+                content_length = int(headers.get('content-length', 0))
+                # Cap at 64 KB to protect memory
+                if content_length > 65536:
+                    response = self._json_response({'error': 'Payload too large'}, 413)
+                    await self._sendall(conn, response)
+                    return
+                while len(body) < content_length:
+                    remaining = content_length - len(body)
+                    chunk = conn.recv(min(2048, remaining))
+                    if not chunk:
+                        break
+                    body += chunk
+                    await asyncio.sleep_ms(0)
+                params['__body__'] = body
             
             print(f"{method} {path} from {addr[0]}")
             
@@ -1434,6 +1461,80 @@ class HTTPServer:
             self.sock = None
         print("HTTP server stopped")
     
+    async def _handle_app_data(self, conn, params):
+        """Handle /app-data endpoint - GET to load, POST to save app data on flash."""
+        body = params.get('__body__')
+        
+        if body is not None:
+            # POST - save data to flash
+            try:
+                # Validate JSON by parsing (also catches corrupt data)
+                json.loads(body)
+                
+                # Atomic write: write to temp file, then rename
+                try:
+                    os.remove('app_data.tmp')
+                except OSError:
+                    pass
+                
+                with open('app_data.tmp', 'wb') as f:
+                    # Write in chunks to avoid large memory allocation
+                    offset = 0
+                    while offset < len(body):
+                        f.write(body[offset:offset + CHUNK_SIZE])
+                        offset += CHUNK_SIZE
+                
+                # Rename temp to final (atomic on most filesystems)
+                try:
+                    os.remove('app_data.json')
+                except OSError:
+                    pass
+                os.rename('app_data.tmp', 'app_data.json')
+                
+                gc.collect()
+                response = self._json_response({
+                    'success': True,
+                    'size': len(body),
+                    'timestamp': time.ticks_ms()
+                })
+                await self._sendall(conn, response)
+                
+            except ValueError:
+                response = self._json_response({'error': 'Invalid JSON'}, 400)
+                await self._sendall(conn, response)
+            except Exception as e:
+                print(f"[HTTPServer] app-data save error: {e}")
+                response = self._json_response({'error': str(e)}, 500)
+                await self._sendall(conn, response)
+        else:
+            # GET - load data from flash
+            try:
+                stat = os.stat('app_data.json')
+                file_size = stat[6]
+                
+                headers = (
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: application/json\r\n"
+                    f"Content-Length: {file_size}\r\n"
+                    f"{self._cors_headers()}"
+                    "Connection: close\r\n"
+                    "\r\n"
+                )
+                await self._sendall(conn, headers.encode())
+                
+                # Stream file in chunks (same pattern as _serve_html)
+                with open('app_data.json', 'rb') as f:
+                    while True:
+                        chunk = f.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        await self._sendall(conn, chunk)
+                        
+            except OSError:
+                # File doesn't exist yet - return empty object
+                response = self._json_response({})
+                await self._sendall(conn, response)
+
     async def _handle_version(self, conn, params):
         """Handle GET /version - Return current installed version."""
         if not self.update_manager:
@@ -1447,6 +1548,30 @@ class HTTPServer:
             'version': self.update_manager.current_version or '0.0.0'
         })
         await self._sendall(conn, response)
+
+    async def _handle_update_check_only(self, conn, params):
+        """Handle GET /update-check-only - Check for updates without downloading."""
+        try:
+            if not self.update_manager:
+                response = self._json_response({
+                    'success': False,
+                    'error': 'UpdateManager not initialized'
+                }, 400)
+                await self._sendall(conn, response)
+                return
+
+            result = await self.update_manager.check_latest_release()
+            status = 200 if result.get('success', False) else 400
+            response = self._json_response(result, status)
+            await self._sendall(conn, response)
+
+        except Exception as e:
+            print(f"[HTTPServer] Error in /update-check-only: {e}")
+            response = self._json_response({
+                'success': False,
+                'error': str(e)
+            }, 500)
+            await self._sendall(conn, response)
 
     async def _handle_update_check(self, conn, params):
         """Handle GET /update-check - Check for available updates from GitHub."""

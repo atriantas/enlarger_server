@@ -215,7 +215,23 @@
       .sync-dot.sync-error { background: #f44336; }
       .sync-dot.sync-offline { background: #9e9e9e; }
 
-
+      .mute-btn {
+        position: absolute;
+        top: -16px;
+        left: 4px;
+        z-index: 2;
+        background: none;
+        border: none;
+        color: var(--text-secondary, #888);
+        font-size: 0.85rem;
+        padding: 2px 4px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        line-height: 1;
+      }
+      .mute-btn:hover { opacity: 1; }
+      .mute-btn.muted { color: var(--accent, #ff6b35); opacity: 0.9; }
 
       .menu-button {
         display: flex;
@@ -673,75 +689,6 @@
       .settings-input::placeholder {
         color: var(--text-secondary);
         opacity: 0.6;
-      }
-
-      /* Custom dropdown (replaces native <select>) */
-      .custom-select-wrap {
-        position: relative;
-        width: 100%;
-      }
-      .custom-select-wrap select { display: none; }
-      .custom-select-trigger {
-        background: var(--panel-light);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        color: var(--text);
-        padding: 6px 28px 6px 8px;
-        font-size: 0.8rem;
-        font-family: inherit;
-        cursor: pointer;
-        transition: border-color var(--transition), box-shadow var(--transition);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .custom-select-trigger::after {
-        content: '';
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        border-left: 4px solid transparent;
-        border-right: 4px solid transparent;
-        border-top: 5px solid var(--text-secondary);
-        pointer-events: none;
-      }
-      .custom-select-trigger:hover,
-      .custom-select-wrap.open .custom-select-trigger {
-        border-color: var(--accent);
-        box-shadow: 0 0 8px var(--glow);
-      }
-      .custom-select-opts {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        background: var(--panel);
-        border: 1px solid var(--accent);
-        border-radius: var(--radius-sm);
-        max-height: 200px;
-        overflow-y: auto;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      }
-      .custom-select-wrap.open .custom-select-opts { display: block; }
-      .custom-select-wrap.drop-up .custom-select-opts {
-        /* position set dynamically via JS */
-      }
-      .custom-select-opt {
-        padding: 7px 10px;
-        font-size: 0.78rem;
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: background var(--transition);
-      }
-      .custom-select-opt:hover {
-        background: var(--panel-light);
-        color: var(--text);
-      }
-      .custom-select-opt.selected {
-        color: var(--accent);
-        font-weight: 600;
       }
 
       /* Unified list container */
@@ -1883,6 +1830,9 @@
 
       <!-- Collapsible Tab Navigation -->
       <div class="tab-nav-container">
+        <button id="muteBtn" class="mute-btn" title="Toggle mute" aria-label="Toggle mute">
+          &#x1f50a;
+        </button>
         <span id="syncIndicator" class="sync-indicator" title="Server sync status">
           <span class="sync-dot"></span>
           <span class="sync-label"></span>
@@ -5976,7 +5926,6 @@
             <div class="session-modal-footer" id="sessionModalFooter"></div>
           </div>
         </div>
-
       </div>
 
       <footer>
@@ -5984,195 +5933,7 @@
       </footer>
     </div>
 
-    <!-- App-wide Modal (replaces native alert/confirm/prompt) -->
-    <div class="session-modal-overlay" id="appModalOverlay">
-      <div class="session-modal">
-        <div class="session-modal-header">
-          <div class="title-sm" id="appModalTitle"></div>
-          <button class="session-modal-close" id="appModalClose">&times;</button>
-        </div>
-        <div class="session-modal-body" id="appModalBody"></div>
-        <div class="session-modal-footer" id="appModalFooter"></div>
-      </div>
-    </div>
-
     <script>
-      // ===== APP MODAL HELPERS (replaces native alert/confirm/prompt) =====
-      let _appModalResolve = null;
-
-      function _openAppModal(title, bodyHtml, footerHtml) {
-        const overlay = document.getElementById("appModalOverlay");
-        document.getElementById("appModalTitle").textContent = title;
-        document.getElementById("appModalBody").innerHTML = bodyHtml;
-        document.getElementById("appModalFooter").innerHTML = footerHtml;
-        overlay.classList.add("open");
-      }
-
-      function _closeAppModal(value) {
-        const overlay = document.getElementById("appModalOverlay");
-        if (overlay) overlay.classList.remove("open");
-        if (_appModalResolve) {
-          _appModalResolve(value);
-          _appModalResolve = null;
-        }
-      }
-
-      function appAlert(title, message) {
-        return new Promise((resolve) => {
-          _appModalResolve = () => resolve();
-          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
-          const footer = `<div style="display:flex;justify-content:flex-end"><button class="btn-action" onclick="_closeAppModal()">OK</button></div>`;
-          _openAppModal(title, body, footer);
-        });
-      }
-
-      function appConfirm(title, message, opts = {}) {
-        const { confirmText = "Confirm", cancelText = "Cancel", destructive = false } = opts;
-        return new Promise((resolve) => {
-          _appModalResolve = resolve;
-          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
-          const confirmClass = destructive ? "btn-action delete" : "btn-action";
-          const footer = `<div style="display:flex;justify-content:flex-end;gap:8px">` +
-            `<button class="btn-action" onclick="_closeAppModal(false)">${cancelText}</button>` +
-            `<button class="${confirmClass}" onclick="_closeAppModal(true)">${confirmText}</button></div>`;
-          _openAppModal(title, body, footer);
-        });
-      }
-
-      function appChoice(title, message, choices) {
-        return new Promise((resolve) => {
-          _appModalResolve = resolve;
-          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
-          const btns = choices.map(
-            (c) => `<button class="btn-action" onclick="_closeAppModal('${c.value}')">${c.label}</button>`
-          ).join("");
-          const footer = `<div style="display:flex;justify-content:flex-end;gap:8px">` +
-            `<button class="btn-action" onclick="_closeAppModal(null)">Cancel</button>${btns}</div>`;
-          _openAppModal(title, body, footer);
-        });
-      }
-
-      // Wire up app modal close handlers after DOM ready
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("appModalClose")?.addEventListener("click", () => _closeAppModal(null));
-        document.getElementById("appModalOverlay")?.addEventListener("click", (e) => {
-          if (e.target.id === "appModalOverlay") _closeAppModal(null);
-        });
-      });
-
-      // ===== CUSTOM SELECT DROPDOWN (replaces native <select>) =====
-      const _selValueSetters = new WeakMap();
-
-      function _wrapSelect(sel) {
-        if (sel.closest(".custom-select-wrap")) return;
-
-        const wrap = document.createElement("div");
-        wrap.className = "custom-select-wrap";
-        sel.parentNode.insertBefore(wrap, sel);
-        wrap.appendChild(sel);
-
-        const trigger = document.createElement("div");
-        trigger.className = "custom-select-trigger";
-        wrap.insertBefore(trigger, sel);
-
-        const optsList = document.createElement("div");
-        optsList.className = "custom-select-opts";
-        wrap.appendChild(optsList);
-
-        function buildOpts() {
-          optsList.innerHTML = "";
-          Array.from(sel.options).forEach((opt) => {
-            const div = document.createElement("div");
-            div.className = "custom-select-opt" + (opt.selected ? " selected" : "");
-            div.textContent = opt.textContent;
-            div.dataset.value = opt.value;
-            div.addEventListener("click", (e) => {
-              e.stopPropagation();
-              sel.value = opt.value;
-              sel.dispatchEvent(new Event("change", { bubbles: true }));
-              syncTrigger();
-              _closeAllSelects();
-            });
-            optsList.appendChild(div);
-          });
-        }
-
-        function syncTrigger() {
-          const selected = sel.options[sel.selectedIndex];
-          trigger.textContent = selected ? selected.textContent : "";
-          optsList.querySelectorAll(".custom-select-opt").forEach((d) => {
-            d.classList.toggle("selected", d.dataset.value === sel.value);
-          });
-        }
-
-        // Observe dynamic option changes
-        const observer = new MutationObserver(() => { buildOpts(); syncTrigger(); });
-        observer.observe(sel, { childList: true, subtree: true, attributes: true });
-
-        // Intercept programmatic .value = assignments
-        if (!_selValueSetters.has(sel)) {
-          const proto = Object.getPrototypeOf(sel);
-          const desc = Object.getOwnPropertyDescriptor(proto, "value") ||
-                       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
-          if (desc && desc.set) {
-            const origGet = desc.get;
-            const origSet = desc.set;
-            _selValueSetters.set(sel, origSet);
-            Object.defineProperty(sel, "value", {
-              get() { return origGet.call(this); },
-              set(v) { origSet.call(this, v); syncTrigger(); },
-              configurable: true,
-            });
-          }
-        }
-
-        // Listen for change events fired by other code
-        sel.addEventListener("change", syncTrigger);
-
-        trigger.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const wasOpen = wrap.classList.contains("open");
-          _closeAllSelects();
-          if (!wasOpen) {
-            const rect = trigger.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const dropUp = spaceBelow < 210;
-            wrap.classList.toggle("drop-up", dropUp);
-            // Position the fixed dropdown relative to viewport
-            optsList.style.left = rect.left + "px";
-            optsList.style.width = rect.width + "px";
-            if (dropUp) {
-              optsList.style.bottom = (window.innerHeight - rect.top + 2) + "px";
-              optsList.style.top = "auto";
-            } else {
-              optsList.style.top = (rect.bottom + 2) + "px";
-              optsList.style.bottom = "auto";
-            }
-            wrap.classList.add("open");
-            const selOpt = optsList.querySelector(".custom-select-opt.selected");
-            if (selOpt) selOpt.scrollIntoView({ block: "nearest" });
-          }
-        });
-
-        buildOpts();
-        syncTrigger();
-      }
-
-      function _closeAllSelects() {
-        document.querySelectorAll(".custom-select-wrap.open").forEach((w) =>
-          w.classList.remove("open", "drop-up")
-        );
-      }
-
-      function initCustomSelects() {
-        document.querySelectorAll("select.settings-input").forEach(_wrapSelect);
-      }
-
-      document.addEventListener("click", _closeAllSelects);
-      document.addEventListener("DOMContentLoaded", () => {
-        setTimeout(initCustomSelects, 100);
-      });
-
       // Storage keys - UPDATED
       const STORAGE_KEYS = {
         SETTINGS: "darkroom_timer_settings",
@@ -6525,17 +6286,14 @@
           this.presets = {
             // Timer presets
             timerWarning: { frequency: 440, duration: 0.25, volume: 0.35, type: "sine" },
-            timerComplete: { frequency: 1000, duration: 0.3, volume: 0.5, type: "sine" },
 
             // Calculator presets
             calcWarning: { frequency: 550, duration: 0.25, volume: 0.35, type: "sine" },
-            calcComplete: { frequency: 1100, duration: 0.3, volume: 0.5, type: "sine" },
 
             // Countdown presets
             countdown: { frequency: 400, duration: 0.15, volume: 0.2, type: "sine" },
             countdownMid: { frequency: 600, duration: 0.2, volume: 0.3, type: "sine" },
             countdownUrgent: { frequency: 800, duration: 0.15, volume: 0.4, type: "sine" },
-            countdownComplete: { frequency: 1000, duration: 0.3, volume: 0.5, type: "sine" },
 
             // UI feedback presets
             softClick: { frequency: 500, duration: 0.04, volume: 0.15, type: "triangle" },
@@ -6552,6 +6310,27 @@
 
           // Multi-tone pattern definitions
           this.patterns = {
+            timerComplete: [
+              { frequency: 600, duration: 0.1, volume: 0.4, type: "sine" },
+              { delay: 0.12 },
+              { frequency: 800, duration: 0.1, volume: 0.45, type: "sine" },
+              { delay: 0.12 },
+              { frequency: 1200, duration: 0.2, volume: 0.5, type: "sine" },
+            ],
+            calcComplete: [
+              { frequency: 700, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 900, duration: 0.08, volume: 0.45, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 1300, duration: 0.18, volume: 0.5, type: "sine" },
+            ],
+            countdownComplete: [
+              { frequency: 800, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 800, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 1200, duration: 0.25, volume: 0.5, type: "sine" },
+            ],
             errorPattern: [
               { frequency: 500, duration: 0.15, volume: 0.3, type: "square" },
               { delay: 0.1 },
@@ -7638,6 +7417,9 @@
         setChecked("settingSoundTimerEnd", settings.timerEndBeep !== false);
         setChecked("settingSoundCalcWarning", settings.calcWarningBeep !== false);
         setChecked("settingSoundCalcEnd", settings.calcEndBeep !== false);
+
+        // Sync mute button
+        if (window._updateMuteBtn) window._updateMuteBtn();
       }
 
       // Tab management - Updated for collapsible navigation
@@ -7811,7 +7593,6 @@
         const dropdownItem = e.target.closest(".tab-dropdown-item[data-tab]");
         if (dropdownItem) {
           e.preventDefault();
-          playUIFeedback("softClick");
           switchTab(dropdownItem.getAttribute("data-tab"));
         }
       });
@@ -7820,7 +7601,6 @@
       if (menuButton) {
         menuButton.addEventListener("click", (e) => {
           e.preventDefault();
-          playUIFeedback("softClick");
           toggleMenu();
         });
       }
@@ -7932,7 +7712,6 @@
         const transferBtn = document.getElementById("transferToTimer");
         if (transferBtn) {
           transferBtn.addEventListener("click", () => {
-            playUIFeedback("actionConfirm");
             switchTab("timer");
 
             // Scroll to top using container (same as SPLIT tab's "Send to CALC" button)
@@ -9500,7 +9279,7 @@
             if (feedbackMethod) {
               feedbackMethod("Please enter a name", "error");
             } else {
-              appAlert("Validation", "Please enter a name");
+              alert("Please enter a name");
             }
             return false;
           }
@@ -9523,7 +9302,7 @@
           if (storageMethod(collection)) {
             if (updateListMethod) updateListMethod();
 
-            playUIBeep(800, 0.3, 0.3);
+            playBeep(800, 0.3, 0.3);
 
             // Feedback handling
             if (feedbackMethod) {
@@ -9532,7 +9311,7 @@
                 "success",
               );
             } else if (feedbackButton) {
-              playUIBeep(800, 0.3, 0.3);
+              playBeep(800, 0.3, 0.3);
               const originalText = feedbackButton.textContent;
               feedbackButton.textContent = "Saved!";
               feedbackButton.classList.add("active");
@@ -9547,7 +9326,7 @@
         }
 
         // Generic delete preset/profile helper
-        async deletePreset(config) {
+        deletePreset(config) {
           const {
             name,
             collection,
@@ -9559,7 +9338,7 @@
             onDeleteCallback,
           } = config;
 
-          if (await appConfirm("Delete", confirmMessage || `Delete "${name}"?`, { confirmText: "Delete", destructive: true })) {
+          if (confirm(confirmMessage || `Delete "${name}"?`)) {
             const newCollection = collection.filter((p) => p.name !== name);
             collection.length = 0;
             collection.push(...newCollection);
@@ -9574,7 +9353,7 @@
                   "success",
                 );
               }
-              playUIBeep(400, 0.3, 0.3);
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -9614,7 +9393,7 @@
         }
 
         // Generic clear all presets helper
-        async clearAllPresets(config) {
+        clearAllPresets(config) {
           const {
             collection,
             storageMethod,
@@ -9626,7 +9405,9 @@
           } = config;
 
           if (
-            await appConfirm("Delete All", confirmMessage || "Delete ALL items? This cannot be undone!", { confirmText: "Delete All", destructive: true })
+            confirm(
+              confirmMessage || "Delete ALL items? This cannot be undone!",
+            )
           ) {
             collection.length = 0;
 
@@ -9640,7 +9421,7 @@
                   "success",
                 );
               }
-              playUIBeep(400, 0.3, 0.3);
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -9719,7 +9500,7 @@
           this.setCurrentProfile(profile.name);
           this.updateTimerProfileListUI();
 
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           this.showAllProfilesFeedback(
             `Profile "${profile.name}" loaded!`,
             "success",
@@ -9756,9 +9537,11 @@
           });
         }
 
-        async resetAllSettings() {
+        resetAllSettings() {
           if (
-            await appConfirm("Reset Settings", "Reset all settings to defaults? This will delete all profiles and settings!", { confirmText: "Reset All", destructive: true })
+            confirm(
+              "Reset all settings to defaults? This will delete all profiles and settings!",
+            )
           ) {
             StorageManager.clearAll();
             this.settings = { ...DEFAULT_SETTINGS };
@@ -9851,7 +9634,7 @@
           );
         }
 
-        async importAllData(jsonData) {
+        importAllData(jsonData) {
           try {
             const data = JSON.parse(jsonData);
             let importedCount = 0;
@@ -9893,11 +9676,19 @@
                 let mergeStrategy = "skip";
                 if (duplicates.length > 0) {
                   mergeStrategy =
-                    (await appChoice(
-                      "Duplicate Timer Profiles",
-                      `Found ${duplicates.length} duplicate timer profile(s): ${duplicates.join(", ")}`,
-                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
-                    )) || "skip";
+                    prompt(
+                      `Found ${
+                        duplicates.length
+                      } duplicate timer profile(s): ${duplicates.join(
+                        ", ",
+                      )}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+
+                  if (!["overwrite", "skip"].includes(mergeStrategy)) {
+                    mergeStrategy = "skip";
+                  }
                 }
 
                 validProfiles.forEach((newProfile) => {
@@ -10091,11 +9882,14 @@
                 let splitMergeStrategy = "skip";
                 if (dupSplitNames.length > 0) {
                   splitMergeStrategy =
-                    (await appChoice(
-                      "Duplicate Split-Grade Presets",
-                      `Found ${dupSplitNames.length} duplicate split-grade preset(s): ${dupSplitNames.join(", ")}`,
-                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
-                    )) || "skip";
+                    prompt(
+                      `Found ${dupSplitNames.length} duplicate split-grade preset(s): ${dupSplitNames.join(", ")}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+                  if (!["overwrite", "skip"].includes(splitMergeStrategy)) {
+                    splitMergeStrategy = "skip";
+                  }
                 }
 
                 validPresets.forEach((newPreset) => {
@@ -10166,11 +9960,22 @@
                 let testStripMergeStrategy = "skip";
                 if (duplicates.length > 0) {
                   testStripMergeStrategy =
-                    (await appChoice(
-                      "Duplicate Test Strip Profiles",
-                      `Found ${duplicates.length} duplicate test strip profile(s): ${duplicates.join(", ")}`,
-                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
-                    )) || "skip";
+                    prompt(
+                      `Found ${
+                        duplicates.length
+                      } duplicate test strip profile(s): ${duplicates.join(
+                        ", ",
+                      )}\n\n` +
+                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
+                      "skip",
+                    )?.toLowerCase() || "skip";
+
+                  if (![
+                    "overwrite",
+                    "skip",
+                  ].includes(testStripMergeStrategy)) {
+                    testStripMergeStrategy = "skip";
+                  }
                 }
 
                 validTestStripProfiles.forEach((newProfile) => {
@@ -10686,8 +10491,8 @@
         /**
          * Clear all sessions
          */
-        async clearAll() {
-          if (!(await appConfirm("Clear Sessions", "Delete ALL sessions? This cannot be undone.", { confirmText: "Delete All", destructive: true }))) return;
+        clearAll() {
+          if (!confirm("Delete ALL sessions? This cannot be undone.")) return;
 
           appState.logging.tempSessions = [];
           appState.logging.permanentSessions = [];
@@ -10731,7 +10536,7 @@
           const allSessions = appState.logging.permanentSessions;
 
           if (allSessions.length === 0) {
-            appAlert("Export", "No permanent sessions to export");
+            alert("No permanent sessions to export");
             return;
           }
 
@@ -10896,7 +10701,7 @@
 
                 this.showNotification("Sessions imported successfully");
               } catch (error) {
-                appAlert("Import Error", "Invalid JSON file");
+                alert("Invalid JSON file");
               }
             };
             reader.readAsText(file);
@@ -11440,66 +11245,37 @@
           this.showProgress(false);
 
           try {
-            // Phase 1: Check only — no download yet
-            const checkResult = await apiClient.getJSON("/update-check-only", {
-              headers: { "Content-Type": "application/json" },
+            const result = await apiClient.getJSON("/update-check", {
+              headers: {
+                "Content-Type": "application/json",
+              },
               preferRelay: true,
             });
 
-            if (!checkResult.success) {
-              this.setUpdateStatus(`Error: ${checkResult.error || "Unknown error"}`, "error");
-              console.error("[UpdateStatusManager] Update check failed:", checkResult.error);
+            if (!result.success) {
+              this.setUpdateStatus(`Error: ${result.error || "Unknown error"}`, "error");
+              console.error("[UpdateStatusManager] Update check failed:", result.error);
               return;
             }
 
             // Update version display
-            this.latestVersion = checkResult.latest_version || checkResult.version || "Unknown";
+            this.latestVersion = result.latest_version || result.version || "Unknown";
             this.updateVersionDisplay();
 
-            // No update available — done
-            if (!checkResult.available) {
+            // Check if update available
+            if (!result.available) {
               this.setUpdateStatus("Already on latest version", "success");
               return;
             }
 
-            // Phase 2: Update available — ask user to confirm
+            // Update available
             this.setUpdateStatus(`Update available: ${this.latestVersion}`, "success");
-
-            let body = `<p>A new version <b>${this.latestVersion}</b> is available (current: ${checkResult.current_version || "unknown"}).</p>`;
-            if (checkResult.release_notes) {
-              body += `<p style="margin-top:8px;font-size:0.92em;color:var(--text-secondary);white-space:pre-wrap;max-height:200px;overflow-y:auto">${checkResult.release_notes.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>`;
-            }
-            body += `<p style="margin-top:8px">Download and install the update?</p>`;
-
-            const confirmed = await appConfirm("Update Available", body, {
-              confirmText: "Update",
-              cancelText: "Cancel",
-            });
-
-            if (!confirmed) {
-              this.setUpdateStatus(`Update ${this.latestVersion} available`, "info");
-              return;
-            }
-
-            // Phase 3: User confirmed — download and install
-            this.isUpdating = true;
             this.showProgress(true);
-            this.updateProgress(25);
+            this.updateProgress(50);
+
+            // Download and install
             this.setUpdateStatus("Downloading and installing update...", "info");
-
-            if (btnEl) btnEl.textContent = "Updating...";
-
-            const result = await apiClient.getJSON("/update-check", {
-              headers: { "Content-Type": "application/json" },
-              preferRelay: true,
-            });
-
             this.updateProgress(75);
-
-            if (!result.success) {
-              this.setUpdateStatus(`Error: ${result.error || "Update failed"}`, "error");
-              return;
-            }
 
             // Update complete, display results
             if (result.updated_files && result.updated_files.length > 0) {
@@ -11531,7 +11307,6 @@
             );
           } finally {
             this.isChecking = false;
-            this.isUpdating = false;
             const btnEl = document.getElementById("checkUpdatesBtn");
             if (btnEl) {
               btnEl.disabled = false;
@@ -11869,7 +11644,7 @@
 
           this.updateMixCalculator();
           this.updateChemicalPresetList();
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Preset "${preset.name}" loaded!`,
             "success",
@@ -12082,11 +11857,11 @@
             (this.capacityData.areaUsed || 0) + areaToAdd;
           StorageManager.saveCapacityTracker(this.capacityData);
           this.updateCapacityDisplay();
-          if (!silent) playUIBeep(600, 0.2, 0.3);
+          if (!silent) playBeep(600, 0.2, 0.3);
         }
 
-        async resetPrints() {
-          if (await appConfirm("Reset Counter", "Reset print counter? This will start a fresh batch.", { confirmText: "Reset", destructive: true })) {
+        resetPrints() {
+          if (confirm("Reset print counter? This will start a fresh batch.")) {
             this.capacityData = {
               printsDone: 0,
               areaUsed: 0,
@@ -12098,7 +11873,7 @@
             };
             StorageManager.saveCapacityTracker(this.capacityData);
             this.updateCapacityDisplay();
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           }
         }
 
@@ -12109,7 +11884,7 @@
           const date = this.chemicalDateInput.value;
 
           if (!date) {
-            appAlert("Validation", "Please select a date");
+            alert("Please select a date");
             return;
           }
 
@@ -12117,7 +11892,7 @@
           if (type === "custom") {
             chemicalName = this.customChemicalNameInput.value.trim();
             if (!chemicalName) {
-              appAlert("Validation", "Please enter a custom chemical name");
+              alert("Please enter a custom chemical name");
               return;
             }
           } else {
@@ -12141,7 +11916,7 @@
           this.chemicalDateInput.value = new Date().toISOString().split("T")[0];
           this.customChemicalNameInput.value = "";
 
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
         }
 
         getChemicalName(type) {
@@ -12258,9 +12033,11 @@
           // Event handlers now via delegation - no individual listeners needed
         }
 
-        async renewChemical(id) {
+        renewChemical(id) {
           if (
-            await appConfirm("Renew Chemical", "Renew this chemical? This will reset its shelf life from today.", { confirmText: "Renew" })
+            confirm(
+              "Renew this chemical? This will reset its shelf life from today.",
+            )
           ) {
             const index = this.shelfLifeData.findIndex((c) => c.id === id);
             if (index !== -1) {
@@ -12269,22 +12046,22 @@
                 .split("T")[0];
               StorageManager.saveShelfLife(this.shelfLifeData);
               this.updateShelfLifeList();
-              playUIBeep(600, 0.3, 0.3);
+              playBeep(600, 0.3, 0.3);
             }
           }
         }
 
-        async deleteChemical(id) {
-          if (await appConfirm("Delete Chemical", "Delete this chemical from tracking?", { confirmText: "Delete", destructive: true })) {
+        deleteChemical(id) {
+          if (confirm("Delete this chemical from tracking?")) {
             this.shelfLifeData = this.shelfLifeData.filter((c) => c.id !== id);
             StorageManager.saveShelfLife(this.shelfLifeData);
             this.updateShelfLifeList();
-            playUIBeep(400, 0.3, 0.3);
+            playBeep(400, 0.3, 0.3);
           }
         }
 
-        async clearExpired() {
-          if (await appConfirm("Clear Expired", "Remove all expired chemicals?", { confirmText: "Clear Expired", destructive: true })) {
+        clearExpired() {
+          if (confirm("Remove all expired chemicals?")) {
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             this.shelfLifeData = this.shelfLifeData.filter((chemical) => {
@@ -12300,7 +12077,7 @@
 
             StorageManager.saveShelfLife(this.shelfLifeData);
             this.updateShelfLifeList();
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           }
         }
 
@@ -12707,8 +12484,6 @@
             const btn = e.target.closest(".segmented-btn");
             if (!btn) return;
 
-            playUIFeedback("softClick");
-
             // Remove active from all
             container
               .querySelectorAll(".segmented-btn")
@@ -12962,7 +12737,7 @@
           }
 
           // Show feedback
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Split-grade sent: ${result.softTime.toFixed(
               2,
@@ -13138,7 +12913,7 @@
           this.updatePresetList();
           this.calculate();
 
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Split preset "${preset.name}" loaded!`,
             "success",
@@ -13615,7 +13390,9 @@
           const baseUrl = this.getRelayBaseUrl();
 
           if (
-            !(await appConfirm("Switch to Hotspot", "Switch to Hotspot mode? This will disconnect from the current WiFi network.", { confirmText: "Switch", destructive: true }))
+            !confirm(
+              "Switch to Hotspot mode? This will disconnect from the current WiFi network.",
+            )
           ) {
             return;
           }
@@ -13643,7 +13420,9 @@
                 this.relayServerIP.value = this.serverIP;
               this.saveSettings();
 
-              appAlert("Hotspot Mode", `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`);
+              alert(
+                `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`,
+              );
             } else {
               if (statusElement) {
                 statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
@@ -13658,7 +13437,9 @@
               statusElement.style.color = "#f00";
             }
             // Provide instructions since connection likely dropped
-            appAlert("Connection Lost", "Connection lost. Connect to WiFi 'DarkroomTimer' (password: darkroom123) and access http://192.168.4.1/");
+            alert(
+              "Connection lost. Connect to WiFi 'DarkroomTimer' (password: darkroom123) and access http://192.168.4.1/",
+            );
           }
         }
 
@@ -13673,7 +13454,9 @@
           const baseUrl = this.getRelayBaseUrl();
 
           if (
-            !(await appConfirm("Clear WiFi Credentials", "Clear saved WiFi credentials? The Pico will start in Hotspot mode on next boot.", { confirmText: "Clear", destructive: true }))
+            !confirm(
+              "Clear saved WiFi credentials? The Pico will start in Hotspot mode on next boot.",
+            )
           ) {
             return;
           }
@@ -13696,7 +13479,9 @@
               if (ssidInput) ssidInput.value = "";
               if (passwordInput) passwordInput.value = "";
 
-              appAlert("Credentials Cleared", "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.");
+              alert(
+                "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.",
+              );
             } else {
               if (statusElement) {
                 statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
@@ -13887,7 +13672,7 @@
               `Relay ${relayNum} ${newState ? "ON" : "OFF"}`,
               "success",
             );
-            playUIBeep(newState ? 800 : 400, 0.1, 0.3);
+            playBeep(newState ? 800 : 400, 0.1, 0.3);
           }
         }
 
@@ -14017,7 +13802,7 @@
 
           if (success) {
             this.updateStatus("Connected successfully!", "success");
-            playUIBeep(600, 0.3, 0.3);
+            playBeep(600, 0.3, 0.3);
           } else {
             this.updateStatus("Connection failed", "error");
           }
@@ -14062,7 +13847,7 @@
             localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
             this.updateRelayButtons();
             this.updateStatus("All relays ON", "success");
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           } else {
             this.updateStatus("Failed to turn all relays ON", "error");
           }
@@ -14085,7 +13870,7 @@
             localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
             this.updateRelayButtons();
             this.updateStatus("All relays OFF", "success");
-            playUIBeep(400, 0.5, 0.3);
+            playBeep(400, 0.5, 0.3);
           } else {
             this.updateStatus("Failed to turn all relays OFF", "error");
           }
@@ -14586,7 +14371,6 @@
 
           // Reset All button - NEW: Stop/Reset functionality
           document.getElementById("resetAll").addEventListener("click", () => {
-            playUIFeedback("resetTone");
             // If countdown is running, cancel it
             if (
               window.startAllState.isCountdown &&
@@ -16058,7 +15842,7 @@
 
           this.updateCalculations();
           this.updateDisplay();
-          playUIBeep(600, 0.3, 0.2);
+          playBeep(600, 0.3, 0.2);
         }
 
         /**
@@ -16316,7 +16100,7 @@
           baseTimeSlider.value = clampedTime.toFixed(1);
 
           this.incrementalTimer.updateFromSliders();
-          playUIBeep(800, 0.1, 0.3);
+          playBeep(800, 0.1, 0.3);
 
           const btn = this.applyHeightTimeBtn;
           const originalText = btn.textContent;
@@ -16659,7 +16443,6 @@
         cont.addEventListener("click", (e) => {
           const btn = e.target.closest(".segmented-btn");
           if (!btn) return;
-          playUIFeedback("softClick");
           const d = parseInt(btn.dataset.denom, 10);
           setActiveSeg(cont, d);
           applyDenomChange(d);
@@ -17051,7 +16834,6 @@
             transferSeg.addEventListener("click", (e) => {
               const btn = e.target.closest(".segmented-btn");
               if (btn && btn.dataset.destination) {
-                playUIFeedback("softClick");
                 this.setTransferDestination(btn.dataset.destination);
               }
             });
@@ -17609,7 +17391,7 @@
 
           // Play start beep (if sound controls exist)
           if (this.testStepBeep && this.testStepBeep.checked) {
-            playUIBeep(600, 0.1, 0.3);
+            playBeep(600, 0.1, 0.3);
           }
         }
 
@@ -17718,7 +17500,7 @@
                   currentSecond > 0
                 ) {
                   this.lastBeepSecond = currentSecond;
-                  playUIBeep(400, 0.1, 0.3);
+                  playBeep(400, 0.1, 0.3);
                   this.testTimerDisplay.classList.add("warning");
 
                   setTimeout(() => {
@@ -17749,7 +17531,7 @@
 
           // Play step complete beep (if sound controls exist)
           if (this.testStepBeep && this.testStepBeep.checked) {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
 
           // Update preview to show completed step
@@ -17846,7 +17628,7 @@
           this.startTestStripBtn.textContent = "Resume";
           this.testTimerDisplay.classList.remove("warning");
 
-          playUIBeep(400, 0.1, 0.2);
+          playBeep(400, 0.1, 0.2);
         }
 
         /**
@@ -17938,7 +17720,7 @@
 
           this.updatePreview();
 
-          playUIBeep(600, 0.1, 0.2);
+          playBeep(600, 0.1, 0.2);
         }
 
         /**
@@ -18144,7 +17926,7 @@
 
           // Play end beep (if sound controls exist)
           if (this.testEndBeep && this.testEndBeep.checked) {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
 
           this.testTimerStatus.textContent = "TEST STRIP COMPLETE";
@@ -18319,7 +18101,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
         }
 
@@ -18371,7 +18153,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
         }
 
@@ -18424,7 +18206,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(600, 0.1, 0.2);
+            playBeep(600, 0.1, 0.2);
           }
 
           // Visual feedback via settings manager if available
@@ -18578,7 +18360,7 @@
           this.updateTestStripProfileList();
 
           // Visual feedback
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
         }
 
         /**
@@ -19026,19 +18808,13 @@
           // Mark Baseline button (Phase 1)
           const markBtn = document.getElementById("markBaseline");
           if (markBtn) {
-            markBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.markBaseline();
-            });
+            markBtn.addEventListener("click", () => this.markBaseline());
           }
 
           // Black Point button (Phase 2)
           const blackBtn = document.getElementById("blackPoint");
           if (blackBtn) {
-            blackBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.blackPoint();
-            });
+            blackBtn.addEventListener("click", () => this.blackPoint());
           }
 
           // Reset multiplier
@@ -19988,10 +19764,7 @@
           // Send to CALC button
           const sendBtn = document.getElementById("sendExposureToCalc");
           if (sendBtn) {
-            sendBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.sendExposureToCalc();
-            });
+            sendBtn.addEventListener("click", () => this.sendExposureToCalc());
           }
 
           // Filter grade change
@@ -20051,10 +19824,9 @@
           // Clear button
           const clearBtn = document.getElementById("clearContrastBtn");
           if (clearBtn) {
-            clearBtn.addEventListener("click", () => {
-              playUIFeedback("resetTone");
-              this.clearContrastReadings();
-            });
+            clearBtn.addEventListener("click", () =>
+              this.clearContrastReadings(),
+            );
           }
         }
 
@@ -20098,19 +19870,15 @@
           // Send to CALC buttons
           const sendBothBtn = document.getElementById("sendSplitBothToCalc");
           if (sendBothBtn) {
-            sendBothBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.sendSplitBothToCalc();
-            });
+            sendBothBtn.addEventListener("click", () =>
+              this.sendSplitBothToCalc(),
+            );
           }
 
           // Clear button
           const clearBtn = document.getElementById("clearSplitBtn");
           if (clearBtn) {
-            clearBtn.addEventListener("click", () => {
-              playUIFeedback("resetTone");
-              this.clearSplitReadings();
-            });
+            clearBtn.addEventListener("click", () => this.clearSplitReadings());
           }
         }
 
@@ -20612,7 +20380,7 @@
             if (stableCount >= minStableCount) {
               this.setProofScanStatus("Stable");
               if (stability.beepOnStable) {
-                playUIBeep(600, 0.1, 0.2);
+                playBeep(600, 0.1, 0.2);
               }
               return { stable: true, lux: currentLux, cancelled: false };
             }
@@ -20695,7 +20463,7 @@
               }
               this.updateProofStatus();
               if (!stability.enabled) {
-                playUIBeep(800, 0.3, 0.2);
+                playBeep(800, 0.3, 0.2);
               }
               this.setProofScanStatus("Captured");
               return true;
@@ -21019,7 +20787,7 @@
               )} lux (geometric mean)`,
               "success",
             );
-            playUIBeep(1000, 0.3, 0.3);
+            playBeep(1000, 0.3, 0.3);
           }
         }
 
@@ -21188,7 +20956,7 @@
               // Enable send button
               document.getElementById("sendExposureToCalc").disabled = false;
 
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21280,7 +21048,7 @@
               luxDisplay.textContent = data.lux.toFixed(1) + " lux";
 
               this.updateContrastButtons(mode);
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21329,7 +21097,7 @@
               luxDisplay.textContent = data.lux.toFixed(1) + " lux";
 
               this.updateContrastButtons(mode);
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21449,7 +21217,7 @@
                 }
               }
 
-              playUIBeep(1000, 0.3, 0.3);
+              playBeep(1000, 0.3, 0.3);
             } else {
               this.showFeedback("Analysis error: " + data.error, "error");
             }
@@ -21672,7 +21440,7 @@
               // Enable send button
               document.getElementById("sendSplitBothToCalc").disabled = false;
 
-              playUIBeep(1000, 0.3, 0.3);
+              playBeep(1000, 0.3, 0.3);
             } else {
               console.error("Server returned non-success response:", data);
               this.showFeedback(
@@ -21765,7 +21533,7 @@
             hardFactor: this.splitGradeResult.hard_factor,
           });
 
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
           this.showFeedback(
             `Split-grade sent: ${softTime.toFixed(2)}s + ${hardTime.toFixed(
               2,
@@ -21811,7 +21579,7 @@
           window.scrollTo(0, 0);
 
           // Audio feedback
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
 
           // Show feedback
           this.showFeedback(
@@ -22080,7 +21848,27 @@
         // Initialize settings manager first
         settingsManager = new SettingsManager();
 
-
+        // Initialize mute button
+        const muteBtn = document.getElementById("muteBtn");
+        if (muteBtn) {
+          const updateMuteBtn = () => {
+            const muted = appState.settings.globalMute;
+            muteBtn.innerHTML = muted ? "&#x1f507;" : "&#x1f50a;";
+            muteBtn.classList.toggle("muted", muted);
+            muteBtn.title = muted ? "Unmute" : "Mute";
+          };
+          updateMuteBtn();
+          muteBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            appState.settings.globalMute = !appState.settings.globalMute;
+            if (settingsManager) {
+              settingsManager.settings.globalMute = appState.settings.globalMute;
+              settingsManager.saveSettings();
+            }
+            updateMuteBtn();
+          });
+          window._updateMuteBtn = updateMuteBtn;
+        }
 
         // Bind static UI handlers that require DOM + settings manager
         bindBaseTimeAndTransferHandlers();
@@ -22157,6 +21945,13 @@
             setTimeout(() => playCountdownBeep(4), 300);
             setTimeout(() => playCountdownBeep(3), 600);
             setTimeout(() => playPreset("countdownComplete"), 900);
+          });
+
+        // Sync mute button when Sound Settings mute toggle changes
+        document
+          .getElementById("settingGlobalMute")
+          ?.addEventListener("change", () => {
+            if (window._updateMuteBtn) setTimeout(window._updateMuteBtn, 200);
           });
 
         // Settings panel event listeners
@@ -22313,7 +22108,7 @@
                 if (window.incrementalTimer) {
                   window.incrementalTimer.reset();
                 }
-                playUIBeep(800, 0.3, 0.3);
+                playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Highlights (F${
                     appState.calculator.splitGrade.softFilter
@@ -22340,7 +22135,7 @@
                 if (window.incrementalTimer) {
                   window.incrementalTimer.reset();
                 }
-                playUIBeep(800, 0.3, 0.3);
+                playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Shadows (F${
                     appState.calculator.splitGrade.hardFilter
@@ -22354,7 +22149,6 @@
         document
           .getElementById("clearSplitData")
           ?.addEventListener("click", () => {
-            playUIFeedback("resetTone");
             appState.calculator.splitGrade = {
               enabled: false,
               neutralTime: null,
@@ -22373,7 +22167,7 @@
             };
             const display = document.getElementById("splitGradeDisplay");
             if (display) display.style.display = "none";
-            playUIBeep(400, 0.3, 0.3);
+            playBeep(400, 0.3, 0.3);
             settingsManager.showAllProfilesFeedback(
               "Split-grade data cleared",
               "success",
@@ -22400,8 +22194,8 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async (event) => {
-              await settingsManager.importAllData(event.target.result);
+            reader.onload = (event) => {
+              settingsManager.importAllData(event.target.result);
               e.target.value = "";
             };
             reader.onerror = () => {
@@ -22417,7 +22211,6 @@
         document
           .getElementById("resetAllSettings")
           .addEventListener("click", () => {
-            playUIFeedback("destructiveWarning");
             settingsManager.resetAllSettings();
           });
 
@@ -22455,10 +22248,7 @@
             );
             if (timer) {
               e.preventDefault();
-              if (action === "reset") {
-                playUIFeedback("resetTone");
-                timer.reset();
-              }
+              if (action === "reset") timer.reset();
               // plus/minus actions are handled by hold-to-adjust events
             }
             return;
@@ -22472,19 +22262,16 @@
           }
           if (e.target.id === "stopCalcTimer" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("pause");
             window.incrementalTimer.stopCurrentExposure();
             return;
           }
           if (e.target.id === "resetCalcTimer" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("resetTone");
             window.incrementalTimer.reset();
             return;
           }
           if (e.target.id === "repeatExposure" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("actionConfirm");
             window.incrementalTimer.repeatLast();
             return;
           }
@@ -22508,7 +22295,6 @@
             const context = loadBtn.getAttribute("data-context");
             const name = loadBtn.getAttribute("data-name");
             e.preventDefault();
-            playUIFeedback("actionConfirm");
 
             if (context === "profile" && settingsManager) {
               const profile = settingsManager.profiles.find(
@@ -22542,7 +22328,6 @@
           if (deleteBtn) {
             const context = deleteBtn.getAttribute("data-context");
             e.preventDefault();
-            playUIFeedback("destructiveWarning");
 
             if (context === "profile" && settingsManager) {
               const profileName = deleteBtn.getAttribute("data-name");
@@ -22570,7 +22355,6 @@
           if (renewBtn && window.chemicalManager) {
             const id = parseInt(renewBtn.getAttribute("data-id"));
             e.preventDefault();
-            playUIFeedback("actionConfirm");
             window.chemicalManager.renewChemical(id);
             return;
           }
@@ -22579,7 +22363,6 @@
           const dilutionBtn = e.target.closest(".toggle-btn[data-ratio]");
           if (dilutionBtn && window.chemicalManager) {
             e.preventDefault();
-            playUIFeedback("softClick");
             document
               .querySelectorAll(".toggle-btn[data-ratio]")
               .forEach((b) => b.classList.remove("active"));
@@ -22594,7 +22377,6 @@
           const capDilutionBtn = e.target.closest(".toggle-btn[data-cap-ratio]");
           if (capDilutionBtn && window.chemicalManager) {
             e.preventDefault();
-            playUIFeedback("softClick");
             document.querySelectorAll(".toggle-btn[data-cap-ratio]").forEach((b) => b.classList.remove("active"));
             capDilutionBtn.classList.add("active");
             const parts = capDilutionBtn.getAttribute("data-cap-ratio").split("+");
@@ -22608,7 +22390,6 @@
             const size = parseFloat(paperSizeBtn.getAttribute("data-size"));
             if (size) {
               e.preventDefault();
-              playUIFeedback("softClick");
               window.chemicalManager.setPaperSize(size);
               if (window.chemicalManager.customPaperSizeInput) {
                 window.chemicalManager.customPaperSizeInput.value =
@@ -22623,7 +22404,6 @@
           if (colorSchemeBtn && settingsManager) {
             const scheme = colorSchemeBtn.getAttribute("data-scheme");
             e.preventDefault();
-            playUIFeedback("softClick");
             settingsManager.setColorScheme(scheme);
             return;
           }
@@ -22741,7 +22521,6 @@
                 10,
               );
               e.preventDefault();
-              playUIFeedback("softClick");
 
               // Update all buttons in this container
               container.querySelectorAll(".segmented-btn").forEach((btn) => {
@@ -22821,7 +22600,6 @@
               : content.scrollHeight + "px";
 
             header.addEventListener("click", () => {
-              playUIFeedback("softClick");
               const expanded = header.getAttribute("aria-expanded") === "true";
               header.setAttribute("aria-expanded", expanded ? "false" : "true");
               if (expanded) {
