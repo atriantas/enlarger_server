@@ -215,7 +215,23 @@
       .sync-dot.sync-error { background: #f44336; }
       .sync-dot.sync-offline { background: #9e9e9e; }
 
-
+      .mute-btn {
+        position: absolute;
+        top: -16px;
+        left: 4px;
+        z-index: 2;
+        background: none;
+        border: none;
+        color: var(--text-secondary, #888);
+        font-size: 0.85rem;
+        padding: 2px 4px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        line-height: 1;
+      }
+      .mute-btn:hover { opacity: 1; }
+      .mute-btn.muted { color: var(--accent, #ff6b35); opacity: 0.9; }
 
       .menu-button {
         display: flex;
@@ -1814,6 +1830,9 @@
 
       <!-- Collapsible Tab Navigation -->
       <div class="tab-nav-container">
+        <button id="muteBtn" class="mute-btn" title="Toggle mute" aria-label="Toggle mute">
+          &#x1f50a;
+        </button>
         <span id="syncIndicator" class="sync-indicator" title="Server sync status">
           <span class="sync-dot"></span>
           <span class="sync-label"></span>
@@ -6267,17 +6286,14 @@
           this.presets = {
             // Timer presets
             timerWarning: { frequency: 440, duration: 0.25, volume: 0.35, type: "sine" },
-            timerComplete: { frequency: 1000, duration: 0.3, volume: 0.5, type: "sine" },
 
             // Calculator presets
             calcWarning: { frequency: 550, duration: 0.25, volume: 0.35, type: "sine" },
-            calcComplete: { frequency: 1100, duration: 0.3, volume: 0.5, type: "sine" },
 
             // Countdown presets
             countdown: { frequency: 400, duration: 0.15, volume: 0.2, type: "sine" },
             countdownMid: { frequency: 600, duration: 0.2, volume: 0.3, type: "sine" },
             countdownUrgent: { frequency: 800, duration: 0.15, volume: 0.4, type: "sine" },
-            countdownComplete: { frequency: 1000, duration: 0.3, volume: 0.5, type: "sine" },
 
             // UI feedback presets
             softClick: { frequency: 500, duration: 0.04, volume: 0.15, type: "triangle" },
@@ -6294,6 +6310,27 @@
 
           // Multi-tone pattern definitions
           this.patterns = {
+            timerComplete: [
+              { frequency: 600, duration: 0.1, volume: 0.4, type: "sine" },
+              { delay: 0.12 },
+              { frequency: 800, duration: 0.1, volume: 0.45, type: "sine" },
+              { delay: 0.12 },
+              { frequency: 1200, duration: 0.2, volume: 0.5, type: "sine" },
+            ],
+            calcComplete: [
+              { frequency: 700, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 900, duration: 0.08, volume: 0.45, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 1300, duration: 0.18, volume: 0.5, type: "sine" },
+            ],
+            countdownComplete: [
+              { frequency: 800, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 800, duration: 0.08, volume: 0.4, type: "sine" },
+              { delay: 0.1 },
+              { frequency: 1200, duration: 0.25, volume: 0.5, type: "sine" },
+            ],
             errorPattern: [
               { frequency: 500, duration: 0.15, volume: 0.3, type: "square" },
               { delay: 0.1 },
@@ -7380,6 +7417,9 @@
         setChecked("settingSoundTimerEnd", settings.timerEndBeep !== false);
         setChecked("settingSoundCalcWarning", settings.calcWarningBeep !== false);
         setChecked("settingSoundCalcEnd", settings.calcEndBeep !== false);
+
+        // Sync mute button
+        if (window._updateMuteBtn) window._updateMuteBtn();
       }
 
       // Tab management - Updated for collapsible navigation
@@ -7553,7 +7593,6 @@
         const dropdownItem = e.target.closest(".tab-dropdown-item[data-tab]");
         if (dropdownItem) {
           e.preventDefault();
-          playUIFeedback("softClick");
           switchTab(dropdownItem.getAttribute("data-tab"));
         }
       });
@@ -7562,7 +7601,6 @@
       if (menuButton) {
         menuButton.addEventListener("click", (e) => {
           e.preventDefault();
-          playUIFeedback("softClick");
           toggleMenu();
         });
       }
@@ -7674,7 +7712,6 @@
         const transferBtn = document.getElementById("transferToTimer");
         if (transferBtn) {
           transferBtn.addEventListener("click", () => {
-            playUIFeedback("actionConfirm");
             switchTab("timer");
 
             // Scroll to top using container (same as SPLIT tab's "Send to CALC" button)
@@ -9265,7 +9302,7 @@
           if (storageMethod(collection)) {
             if (updateListMethod) updateListMethod();
 
-            playUIBeep(800, 0.3, 0.3);
+            playBeep(800, 0.3, 0.3);
 
             // Feedback handling
             if (feedbackMethod) {
@@ -9274,7 +9311,7 @@
                 "success",
               );
             } else if (feedbackButton) {
-              playUIBeep(800, 0.3, 0.3);
+              playBeep(800, 0.3, 0.3);
               const originalText = feedbackButton.textContent;
               feedbackButton.textContent = "Saved!";
               feedbackButton.classList.add("active");
@@ -9316,7 +9353,7 @@
                   "success",
                 );
               }
-              playUIBeep(400, 0.3, 0.3);
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -9384,7 +9421,7 @@
                   "success",
                 );
               }
-              playUIBeep(400, 0.3, 0.3);
+              playBeep(400, 0.3, 0.3);
               return true;
             }
           }
@@ -9463,7 +9500,7 @@
           this.setCurrentProfile(profile.name);
           this.updateTimerProfileListUI();
 
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           this.showAllProfilesFeedback(
             `Profile "${profile.name}" loaded!`,
             "success",
@@ -11607,7 +11644,7 @@
 
           this.updateMixCalculator();
           this.updateChemicalPresetList();
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Preset "${preset.name}" loaded!`,
             "success",
@@ -11820,7 +11857,7 @@
             (this.capacityData.areaUsed || 0) + areaToAdd;
           StorageManager.saveCapacityTracker(this.capacityData);
           this.updateCapacityDisplay();
-          if (!silent) playUIBeep(600, 0.2, 0.3);
+          if (!silent) playBeep(600, 0.2, 0.3);
         }
 
         resetPrints() {
@@ -11836,7 +11873,7 @@
             };
             StorageManager.saveCapacityTracker(this.capacityData);
             this.updateCapacityDisplay();
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           }
         }
 
@@ -11879,7 +11916,7 @@
           this.chemicalDateInput.value = new Date().toISOString().split("T")[0];
           this.customChemicalNameInput.value = "";
 
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
         }
 
         getChemicalName(type) {
@@ -12009,7 +12046,7 @@
                 .split("T")[0];
               StorageManager.saveShelfLife(this.shelfLifeData);
               this.updateShelfLifeList();
-              playUIBeep(600, 0.3, 0.3);
+              playBeep(600, 0.3, 0.3);
             }
           }
         }
@@ -12019,7 +12056,7 @@
             this.shelfLifeData = this.shelfLifeData.filter((c) => c.id !== id);
             StorageManager.saveShelfLife(this.shelfLifeData);
             this.updateShelfLifeList();
-            playUIBeep(400, 0.3, 0.3);
+            playBeep(400, 0.3, 0.3);
           }
         }
 
@@ -12040,7 +12077,7 @@
 
             StorageManager.saveShelfLife(this.shelfLifeData);
             this.updateShelfLifeList();
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           }
         }
 
@@ -12447,8 +12484,6 @@
             const btn = e.target.closest(".segmented-btn");
             if (!btn) return;
 
-            playUIFeedback("softClick");
-
             // Remove active from all
             container
               .querySelectorAll(".segmented-btn")
@@ -12702,7 +12737,7 @@
           }
 
           // Show feedback
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Split-grade sent: ${result.softTime.toFixed(
               2,
@@ -12878,7 +12913,7 @@
           this.updatePresetList();
           this.calculate();
 
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
           settingsManager.showAllProfilesFeedback(
             `Split preset "${preset.name}" loaded!`,
             "success",
@@ -13637,7 +13672,7 @@
               `Relay ${relayNum} ${newState ? "ON" : "OFF"}`,
               "success",
             );
-            playUIBeep(newState ? 800 : 400, 0.1, 0.3);
+            playBeep(newState ? 800 : 400, 0.1, 0.3);
           }
         }
 
@@ -13767,7 +13802,7 @@
 
           if (success) {
             this.updateStatus("Connected successfully!", "success");
-            playUIBeep(600, 0.3, 0.3);
+            playBeep(600, 0.3, 0.3);
           } else {
             this.updateStatus("Connection failed", "error");
           }
@@ -13812,7 +13847,7 @@
             localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
             this.updateRelayButtons();
             this.updateStatus("All relays ON", "success");
-            playUIBeep(800, 0.5, 0.3);
+            playBeep(800, 0.5, 0.3);
           } else {
             this.updateStatus("Failed to turn all relays ON", "error");
           }
@@ -13835,7 +13870,7 @@
             localStorage.setItem("relayStates", JSON.stringify(this.relayStates));
             this.updateRelayButtons();
             this.updateStatus("All relays OFF", "success");
-            playUIBeep(400, 0.5, 0.3);
+            playBeep(400, 0.5, 0.3);
           } else {
             this.updateStatus("Failed to turn all relays OFF", "error");
           }
@@ -14336,7 +14371,6 @@
 
           // Reset All button - NEW: Stop/Reset functionality
           document.getElementById("resetAll").addEventListener("click", () => {
-            playUIFeedback("resetTone");
             // If countdown is running, cancel it
             if (
               window.startAllState.isCountdown &&
@@ -15808,7 +15842,7 @@
 
           this.updateCalculations();
           this.updateDisplay();
-          playUIBeep(600, 0.3, 0.2);
+          playBeep(600, 0.3, 0.2);
         }
 
         /**
@@ -16066,7 +16100,7 @@
           baseTimeSlider.value = clampedTime.toFixed(1);
 
           this.incrementalTimer.updateFromSliders();
-          playUIBeep(800, 0.1, 0.3);
+          playBeep(800, 0.1, 0.3);
 
           const btn = this.applyHeightTimeBtn;
           const originalText = btn.textContent;
@@ -16409,7 +16443,6 @@
         cont.addEventListener("click", (e) => {
           const btn = e.target.closest(".segmented-btn");
           if (!btn) return;
-          playUIFeedback("softClick");
           const d = parseInt(btn.dataset.denom, 10);
           setActiveSeg(cont, d);
           applyDenomChange(d);
@@ -16801,7 +16834,6 @@
             transferSeg.addEventListener("click", (e) => {
               const btn = e.target.closest(".segmented-btn");
               if (btn && btn.dataset.destination) {
-                playUIFeedback("softClick");
                 this.setTransferDestination(btn.dataset.destination);
               }
             });
@@ -17359,7 +17391,7 @@
 
           // Play start beep (if sound controls exist)
           if (this.testStepBeep && this.testStepBeep.checked) {
-            playUIBeep(600, 0.1, 0.3);
+            playBeep(600, 0.1, 0.3);
           }
         }
 
@@ -17468,7 +17500,7 @@
                   currentSecond > 0
                 ) {
                   this.lastBeepSecond = currentSecond;
-                  playUIBeep(400, 0.1, 0.3);
+                  playBeep(400, 0.1, 0.3);
                   this.testTimerDisplay.classList.add("warning");
 
                   setTimeout(() => {
@@ -17499,7 +17531,7 @@
 
           // Play step complete beep (if sound controls exist)
           if (this.testStepBeep && this.testStepBeep.checked) {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
 
           // Update preview to show completed step
@@ -17596,7 +17628,7 @@
           this.startTestStripBtn.textContent = "Resume";
           this.testTimerDisplay.classList.remove("warning");
 
-          playUIBeep(400, 0.1, 0.2);
+          playBeep(400, 0.1, 0.2);
         }
 
         /**
@@ -17688,7 +17720,7 @@
 
           this.updatePreview();
 
-          playUIBeep(600, 0.1, 0.2);
+          playBeep(600, 0.1, 0.2);
         }
 
         /**
@@ -17894,7 +17926,7 @@
 
           // Play end beep (if sound controls exist)
           if (this.testEndBeep && this.testEndBeep.checked) {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
 
           this.testTimerStatus.textContent = "TEST STRIP COMPLETE";
@@ -18069,7 +18101,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
         }
 
@@ -18121,7 +18153,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(800, 0.1, 0.3);
+            playBeep(800, 0.1, 0.3);
           }
         }
 
@@ -18174,7 +18206,7 @@
 
           // Audio feedback
           if (typeof playBeep === "function") {
-            playUIBeep(600, 0.1, 0.2);
+            playBeep(600, 0.1, 0.2);
           }
 
           // Visual feedback via settings manager if available
@@ -18328,7 +18360,7 @@
           this.updateTestStripProfileList();
 
           // Visual feedback
-          playUIBeep(600, 0.3, 0.3);
+          playBeep(600, 0.3, 0.3);
         }
 
         /**
@@ -18776,19 +18808,13 @@
           // Mark Baseline button (Phase 1)
           const markBtn = document.getElementById("markBaseline");
           if (markBtn) {
-            markBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.markBaseline();
-            });
+            markBtn.addEventListener("click", () => this.markBaseline());
           }
 
           // Black Point button (Phase 2)
           const blackBtn = document.getElementById("blackPoint");
           if (blackBtn) {
-            blackBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.blackPoint();
-            });
+            blackBtn.addEventListener("click", () => this.blackPoint());
           }
 
           // Reset multiplier
@@ -19738,10 +19764,7 @@
           // Send to CALC button
           const sendBtn = document.getElementById("sendExposureToCalc");
           if (sendBtn) {
-            sendBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.sendExposureToCalc();
-            });
+            sendBtn.addEventListener("click", () => this.sendExposureToCalc());
           }
 
           // Filter grade change
@@ -19801,10 +19824,9 @@
           // Clear button
           const clearBtn = document.getElementById("clearContrastBtn");
           if (clearBtn) {
-            clearBtn.addEventListener("click", () => {
-              playUIFeedback("resetTone");
-              this.clearContrastReadings();
-            });
+            clearBtn.addEventListener("click", () =>
+              this.clearContrastReadings(),
+            );
           }
         }
 
@@ -19848,19 +19870,15 @@
           // Send to CALC buttons
           const sendBothBtn = document.getElementById("sendSplitBothToCalc");
           if (sendBothBtn) {
-            sendBothBtn.addEventListener("click", () => {
-              playUIFeedback("actionConfirm");
-              this.sendSplitBothToCalc();
-            });
+            sendBothBtn.addEventListener("click", () =>
+              this.sendSplitBothToCalc(),
+            );
           }
 
           // Clear button
           const clearBtn = document.getElementById("clearSplitBtn");
           if (clearBtn) {
-            clearBtn.addEventListener("click", () => {
-              playUIFeedback("resetTone");
-              this.clearSplitReadings();
-            });
+            clearBtn.addEventListener("click", () => this.clearSplitReadings());
           }
         }
 
@@ -20362,7 +20380,7 @@
             if (stableCount >= minStableCount) {
               this.setProofScanStatus("Stable");
               if (stability.beepOnStable) {
-                playUIBeep(600, 0.1, 0.2);
+                playBeep(600, 0.1, 0.2);
               }
               return { stable: true, lux: currentLux, cancelled: false };
             }
@@ -20445,7 +20463,7 @@
               }
               this.updateProofStatus();
               if (!stability.enabled) {
-                playUIBeep(800, 0.3, 0.2);
+                playBeep(800, 0.3, 0.2);
               }
               this.setProofScanStatus("Captured");
               return true;
@@ -20769,7 +20787,7 @@
               )} lux (geometric mean)`,
               "success",
             );
-            playUIBeep(1000, 0.3, 0.3);
+            playBeep(1000, 0.3, 0.3);
           }
         }
 
@@ -20938,7 +20956,7 @@
               // Enable send button
               document.getElementById("sendExposureToCalc").disabled = false;
 
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21030,7 +21048,7 @@
               luxDisplay.textContent = data.lux.toFixed(1) + " lux";
 
               this.updateContrastButtons(mode);
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21079,7 +21097,7 @@
               luxDisplay.textContent = data.lux.toFixed(1) + " lux";
 
               this.updateContrastButtons(mode);
-              playUIBeep(800, 0.3, 0.2);
+              playBeep(800, 0.3, 0.2);
             } else {
               luxDisplay.textContent = "Error";
               this.showFeedback("Measurement error: " + data.error, "error");
@@ -21199,7 +21217,7 @@
                 }
               }
 
-              playUIBeep(1000, 0.3, 0.3);
+              playBeep(1000, 0.3, 0.3);
             } else {
               this.showFeedback("Analysis error: " + data.error, "error");
             }
@@ -21422,7 +21440,7 @@
               // Enable send button
               document.getElementById("sendSplitBothToCalc").disabled = false;
 
-              playUIBeep(1000, 0.3, 0.3);
+              playBeep(1000, 0.3, 0.3);
             } else {
               console.error("Server returned non-success response:", data);
               this.showFeedback(
@@ -21515,7 +21533,7 @@
             hardFactor: this.splitGradeResult.hard_factor,
           });
 
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
           this.showFeedback(
             `Split-grade sent: ${softTime.toFixed(2)}s + ${hardTime.toFixed(
               2,
@@ -21561,7 +21579,7 @@
           window.scrollTo(0, 0);
 
           // Audio feedback
-          playUIBeep(800, 0.3, 0.3);
+          playBeep(800, 0.3, 0.3);
 
           // Show feedback
           this.showFeedback(
@@ -21830,7 +21848,27 @@
         // Initialize settings manager first
         settingsManager = new SettingsManager();
 
-
+        // Initialize mute button
+        const muteBtn = document.getElementById("muteBtn");
+        if (muteBtn) {
+          const updateMuteBtn = () => {
+            const muted = appState.settings.globalMute;
+            muteBtn.innerHTML = muted ? "&#x1f507;" : "&#x1f50a;";
+            muteBtn.classList.toggle("muted", muted);
+            muteBtn.title = muted ? "Unmute" : "Mute";
+          };
+          updateMuteBtn();
+          muteBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            appState.settings.globalMute = !appState.settings.globalMute;
+            if (settingsManager) {
+              settingsManager.settings.globalMute = appState.settings.globalMute;
+              settingsManager.saveSettings();
+            }
+            updateMuteBtn();
+          });
+          window._updateMuteBtn = updateMuteBtn;
+        }
 
         // Bind static UI handlers that require DOM + settings manager
         bindBaseTimeAndTransferHandlers();
@@ -21907,6 +21945,13 @@
             setTimeout(() => playCountdownBeep(4), 300);
             setTimeout(() => playCountdownBeep(3), 600);
             setTimeout(() => playPreset("countdownComplete"), 900);
+          });
+
+        // Sync mute button when Sound Settings mute toggle changes
+        document
+          .getElementById("settingGlobalMute")
+          ?.addEventListener("change", () => {
+            if (window._updateMuteBtn) setTimeout(window._updateMuteBtn, 200);
           });
 
         // Settings panel event listeners
@@ -22063,7 +22108,7 @@
                 if (window.incrementalTimer) {
                   window.incrementalTimer.reset();
                 }
-                playUIBeep(800, 0.3, 0.3);
+                playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Highlights (F${
                     appState.calculator.splitGrade.softFilter
@@ -22090,7 +22135,7 @@
                 if (window.incrementalTimer) {
                   window.incrementalTimer.reset();
                 }
-                playUIBeep(800, 0.3, 0.3);
+                playBeep(800, 0.3, 0.3);
                 settingsManager.showAllProfilesFeedback(
                   `Applied Shadows (F${
                     appState.calculator.splitGrade.hardFilter
@@ -22104,7 +22149,6 @@
         document
           .getElementById("clearSplitData")
           ?.addEventListener("click", () => {
-            playUIFeedback("resetTone");
             appState.calculator.splitGrade = {
               enabled: false,
               neutralTime: null,
@@ -22123,7 +22167,7 @@
             };
             const display = document.getElementById("splitGradeDisplay");
             if (display) display.style.display = "none";
-            playUIBeep(400, 0.3, 0.3);
+            playBeep(400, 0.3, 0.3);
             settingsManager.showAllProfilesFeedback(
               "Split-grade data cleared",
               "success",
@@ -22167,7 +22211,6 @@
         document
           .getElementById("resetAllSettings")
           .addEventListener("click", () => {
-            playUIFeedback("destructiveWarning");
             settingsManager.resetAllSettings();
           });
 
@@ -22205,10 +22248,7 @@
             );
             if (timer) {
               e.preventDefault();
-              if (action === "reset") {
-                playUIFeedback("resetTone");
-                timer.reset();
-              }
+              if (action === "reset") timer.reset();
               // plus/minus actions are handled by hold-to-adjust events
             }
             return;
@@ -22222,19 +22262,16 @@
           }
           if (e.target.id === "stopCalcTimer" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("pause");
             window.incrementalTimer.stopCurrentExposure();
             return;
           }
           if (e.target.id === "resetCalcTimer" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("resetTone");
             window.incrementalTimer.reset();
             return;
           }
           if (e.target.id === "repeatExposure" && window.incrementalTimer) {
             e.preventDefault();
-            playUIFeedback("actionConfirm");
             window.incrementalTimer.repeatLast();
             return;
           }
@@ -22258,7 +22295,6 @@
             const context = loadBtn.getAttribute("data-context");
             const name = loadBtn.getAttribute("data-name");
             e.preventDefault();
-            playUIFeedback("actionConfirm");
 
             if (context === "profile" && settingsManager) {
               const profile = settingsManager.profiles.find(
@@ -22292,7 +22328,6 @@
           if (deleteBtn) {
             const context = deleteBtn.getAttribute("data-context");
             e.preventDefault();
-            playUIFeedback("destructiveWarning");
 
             if (context === "profile" && settingsManager) {
               const profileName = deleteBtn.getAttribute("data-name");
@@ -22320,7 +22355,6 @@
           if (renewBtn && window.chemicalManager) {
             const id = parseInt(renewBtn.getAttribute("data-id"));
             e.preventDefault();
-            playUIFeedback("actionConfirm");
             window.chemicalManager.renewChemical(id);
             return;
           }
@@ -22329,7 +22363,6 @@
           const dilutionBtn = e.target.closest(".toggle-btn[data-ratio]");
           if (dilutionBtn && window.chemicalManager) {
             e.preventDefault();
-            playUIFeedback("softClick");
             document
               .querySelectorAll(".toggle-btn[data-ratio]")
               .forEach((b) => b.classList.remove("active"));
@@ -22344,7 +22377,6 @@
           const capDilutionBtn = e.target.closest(".toggle-btn[data-cap-ratio]");
           if (capDilutionBtn && window.chemicalManager) {
             e.preventDefault();
-            playUIFeedback("softClick");
             document.querySelectorAll(".toggle-btn[data-cap-ratio]").forEach((b) => b.classList.remove("active"));
             capDilutionBtn.classList.add("active");
             const parts = capDilutionBtn.getAttribute("data-cap-ratio").split("+");
@@ -22358,7 +22390,6 @@
             const size = parseFloat(paperSizeBtn.getAttribute("data-size"));
             if (size) {
               e.preventDefault();
-              playUIFeedback("softClick");
               window.chemicalManager.setPaperSize(size);
               if (window.chemicalManager.customPaperSizeInput) {
                 window.chemicalManager.customPaperSizeInput.value =
@@ -22373,7 +22404,6 @@
           if (colorSchemeBtn && settingsManager) {
             const scheme = colorSchemeBtn.getAttribute("data-scheme");
             e.preventDefault();
-            playUIFeedback("softClick");
             settingsManager.setColorScheme(scheme);
             return;
           }
@@ -22491,7 +22521,6 @@
                 10,
               );
               e.preventDefault();
-              playUIFeedback("softClick");
 
               // Update all buttons in this container
               container.querySelectorAll(".segmented-btn").forEach((btn) => {
@@ -22571,7 +22600,6 @@
               : content.scrollHeight + "px";
 
             header.addEventListener("click", () => {
-              playUIFeedback("softClick");
               const expanded = header.getAttribute("aria-expanded") === "true";
               header.setAttribute("aria-expanded", expanded ? "false" : "true");
               if (expanded) {
