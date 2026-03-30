@@ -1017,6 +1017,148 @@
         min-width: 50px;
       }
 
+      /* Session modal */
+      .session-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+      }
+      .session-modal-overlay.open {
+        display: flex;
+      }
+      .session-modal {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        width: 100%;
+        max-width: 460px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .session-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .session-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+      }
+      .session-modal-close:hover {
+        color: var(--text);
+      }
+      .session-modal-body {
+        padding: 12px 14px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .session-modal-footer {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+      }
+      .session-modal-footer:empty {
+        display: none;
+      }
+
+      /* Phase cards inside modal */
+      .phase-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 10px;
+        margin-bottom: 8px;
+      }
+      .phase-card-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .phase-card-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        padding: 2px 0;
+        color: var(--text-secondary);
+      }
+      .phase-card-row span:last-child {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .phase-card-divider {
+        border-top: 1px solid var(--border);
+        margin: 4px 0;
+      }
+      .session-meta {
+        font-size: 0.68rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+      }
+      .session-meta div {
+        padding: 1px 0;
+      }
+
+      /* Phase badges */
+      .phase-badge {
+        display: inline-block;
+        font-size: 0.55rem;
+        font-weight: 700;
+        padding: 1px 4px;
+        border-radius: 3px;
+        letter-spacing: 0.04em;
+        line-height: 1.4;
+        vertical-align: middle;
+      }
+      .phase-badge-t { background: #2a4a3a; color: #5fd89a; }
+      .phase-badge-s { background: #2a3a5a; color: #5db8f0; }
+      .phase-badge-e { background: #4a3a2a; color: #f0c05d; }
+      .phase-badge-c { background: #4a2a3a; color: #e07a9a; }
+
+      /* Save-to-permanent form in modal */
+      .save-perm-form input,
+      .save-perm-form textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        font-family: inherit;
+        margin-top: 4px;
+        box-sizing: border-box;
+      }
+      .save-perm-form textarea {
+        resize: vertical;
+        min-height: 50px;
+      }
+      .save-perm-form label {
+        font-size: 0.68rem;
+        color: var(--text-secondary);
+        display: block;
+        margin-top: 8px;
+      }
+      .save-perm-form .settings-btn-group {
+        margin-top: 10px;
+      }
+
       .progress-container {
         height: 6px;
         background: var(--panel-light);
@@ -2620,14 +2762,6 @@
             <div class="value-display" id="totalResult" style="font-size: 1rem">
               -- s
             </div>
-            <div class="label-sm" style="margin-top: 6px">
-              SPLIT RATIO
-            </div>
-            <div class="value-display" id="splitRatioDisplay">—</div>
-            <div class="label-sm" style="margin-top: 6px">
-              EFFECTIVE CONTRAST GRADE
-            </div>
-            <div class="value-display" id="effectiveGradeDisplay">—</div>
           </div>
 
           <div class="settings-btn-group">
@@ -5629,6 +5763,18 @@
             <button class="settings-btn danger" id="clearAllLogs">
               Clear All Logs
             </button>
+          </div>
+        </div>
+
+        <!-- Session Detail Modal -->
+        <div class="session-modal-overlay" id="sessionModalOverlay">
+          <div class="session-modal">
+            <div class="session-modal-header">
+              <div class="title-sm" id="sessionModalTitle">Session Details</div>
+              <button class="session-modal-close" id="sessionModalClose">&times;</button>
+            </div>
+            <div class="session-modal-body" id="sessionModalBody"></div>
+            <div class="session-modal-footer" id="sessionModalFooter"></div>
           </div>
         </div>
       </div>
@@ -10164,7 +10310,30 @@
         // ===== EXPORT/IMPORT =====
 
         /**
-         * Export sessions as CSV
+         * RFC 4180 CSV field escaping
+         */
+        csvField(value) {
+          if (value == null) return "";
+          const str = String(value);
+          if (str === "") return "";
+          if (/[",\r\n]/.test(str)) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        }
+
+        /**
+         * Format ISO date as YYYY-MM-DD HH:MM:SS
+         */
+        isoDateStr(isoString) {
+          if (!isoString) return "";
+          const d = new Date(isoString);
+          const pad = (n) => String(n).padStart(2, "0");
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        /**
+         * Export sessions as CSV with SESSION summary + EXPOSURE detail rows
          */
         exportCSV() {
           const allSessions = appState.logging.permanentSessions;
@@ -10174,47 +10343,90 @@
             return;
           }
 
-          let csv =
-            "Session,Date,Time,Phase,BaseTime,Stop,FinalTime,SoftFilter,HardFilter,FilterBrand,Notes\n";
+          const headers = [
+            "RowType", "SessionName", "Date", "Duration", "Source",
+            "TestBase", "TestMethod", "TestSelected", "TestSelectedStop",
+            "SplitNeutral", "SplitPaper", "SplitSoftFilter", "SplitHardFilter",
+            "SplitSoftTime", "SplitHardTime", "SplitTotal", "SplitBurn%",
+            "CalcCount", "CalcTotal",
+            "CalcBaseTime", "CalcStop", "CalcFinalTime", "CalcFilter", "CalcNotes",
+            "TimerDev", "TimerStop", "TimerFix", "TimerFlo",
+            "Notes"
+          ];
+
+          const rows = [headers.join(",")];
 
           allSessions.forEach((session) => {
-            const sessionName = session.name.replace(/,/g, ";");
-            const sessionDate = new Date(session.created).toLocaleDateString();
-            const sessionTime = new Date(session.created).toLocaleTimeString();
+            const f = this.csvField.bind(this);
+            const duration = this.formatDuration(session.created, session.ended) || "";
+            const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", manual: "Session" };
+            const calcCount = session.phases.calc ? session.phases.calc.length : 0;
+            const calcTotal = this.calculateCalcTotal(session);
 
-            // TEST phase
-            if (session.phases.test) {
-              csv += `${sessionName},${sessionDate},${sessionTime},TEST,${session.phases.test.baseTime},N/A,N/A,N/A,N/A,N/A,"${session.phases.test.transferDestination}"\n`;
-            }
+            // SESSION summary row
+            const summaryRow = [
+              f("SESSION"),
+              f(session.name),
+              f(this.isoDateStr(session.created)),
+              f(duration),
+              f(sourceLabels[session.source] || session.source),
+              // Test
+              f(session.phases.test?.baseTime),
+              f(session.phases.test?.method),
+              f(session.phases.test?.selectedStep),
+              f(session.phases.test?.selectedStop),
+              // Split
+              f(session.phases.split?.neutralTime),
+              f(session.phases.split?.paperBrand),
+              f(session.phases.split?.softFilter),
+              f(session.phases.split?.hardFilter),
+              f(session.phases.split?.softTime),
+              f(session.phases.split?.hardTime),
+              f(session.phases.split?.totalTime),
+              f(session.phases.split?.burnPercent),
+              // Calc summary
+              f(calcCount > 0 ? calcCount : ""),
+              f(calcTotal !== "0.00" ? calcTotal : ""),
+              // Calc detail (empty on summary row)
+              "", "", "", "", "",
+              // Timer
+              f(session.phases.timer?.dev),
+              f(session.phases.timer?.stop),
+              f(session.phases.timer?.fix),
+              f(session.phases.timer?.flo),
+              // Notes
+              f(session.notes),
+            ];
+            rows.push(summaryRow.join(","));
 
-            // SPLIT phase
-            if (session.phases.split) {
-              csv += `${sessionName},${sessionDate},${sessionTime},SPLIT,${session.phases.split.neutralTime},N/A,${session.phases.split.totalTime},${session.phases.split.softFilter},${session.phases.split.hardFilter},${session.phases.split.filterBrand},N/A\n`;
-            }
-
-            // CALC phases
+            // EXPOSURE detail rows
             if (session.phases.calc && session.phases.calc.length > 0) {
               session.phases.calc.forEach((calc) => {
-                const filterContext = calc.filterContext || "N/A";
-                csv += `${sessionName},${sessionDate},${sessionTime},CALC,${
-                  calc.baseTime
-                },${calc.stopAdjustment},${
-                  calc.finalTime
-                },${filterContext},N/A,N/A,"${(calc.notes || "").replace(
-                  /,/g,
-                  ";",
-                )}"\n`;
+                const stopDisplay = formatStop(calc.stopAdjustment);
+                const detailRow = [
+                  f("EXPOSURE"),
+                  f(session.name),
+                  f(calc.timestamp ? this.isoDateStr(calc.timestamp) : ""),
+                  "", "", // duration, source
+                  "", "", "", "", // test fields
+                  "", "", "", "", "", "", "", "", // split fields
+                  "", "", // calc summary
+                  f(calc.baseTime),
+                  f(stopDisplay),
+                  f(calc.finalTime),
+                  f(calc.filterContext),
+                  f(calc.notes),
+                  "", "", "", "", // timer fields
+                  "", // notes
+                ];
+                rows.push(detailRow.join(","));
               });
-            }
-
-            // TIMER phase
-            if (session.phases.timer) {
-              csv += `${sessionName},${sessionDate},${sessionTime},TIMER,N/A,N/A,N/A,N/A,N/A,N/A,"Dev:${session.phases.timer.dev},Stop:${session.phases.timer.stop},Fix:${session.phases.timer.fix},Flo:${session.phases.timer.flo}"\n`;
             }
           });
 
-          // Download
-          const blob = new Blob([csv], { type: "text/csv" });
+          // UTF-8 BOM + CSV content
+          const csv = "\uFEFF" + rows.join("\n") + "\n";
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -10379,10 +10591,11 @@
           list.innerHTML = appState.logging.tempSessions
             .map((session) => {
               const date = new Date(session.created).toLocaleString();
-              const calcTotal = this.calculateCalcTotal(session);
               const isActive = session.id === appState.logging.activeSession;
               const safeName = this.escapeHTML(session.name);
-              const calcLabel = calcTotal === "0.00" ? "No exposures" : `EXPOSURE Total: ${calcTotal}s`;
+              const badges = this.phaseBadges(session);
+              const calcLabel = this.calcSummaryLabel(session);
+              const duration = this.formatDuration(session.created, session.ended);
 
               return `
               <div class="shelf-life-item ${
@@ -10390,8 +10603,8 @@
               }" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                   <div>
-                    <strong>${safeName}</strong>
-                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
+                    <strong>${safeName}</strong> ${badges}
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}${duration ? ` &middot; ${duration}` : ""}</div>
                     <div style="font-size: 0.65rem; color: var(--accent);">${calcLabel}</div>
                   </div>
                   <div class="shelf-life-actions">
@@ -10429,17 +10642,18 @@
             .map((session) => {
               const date = new Date(session.created).toLocaleString();
               const savedDate = new Date(session.savedAt).toLocaleString();
-              const calcTotal = this.calculateCalcTotal(session);
               const safeName = this.escapeHTML(session.name);
               const safeNotes = this.escapeHTML(session.notes);
-              const calcLabel = calcTotal === "0.00" ? "No exposures" : `EXPOSURE Total: ${calcTotal}s`;
+              const badges = this.phaseBadges(session);
+              const calcLabel = this.calcSummaryLabel(session);
+              const duration = this.formatDuration(session.created, session.ended);
 
               return `
               <div class="shelf-life-item" style="flex-direction: column; align-items: flex-start;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                   <div>
-                    <strong>${safeName}</strong>
-                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}</div>
+                    <strong>${safeName}</strong> ${badges}
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">${date}${duration ? ` &middot; ${duration}` : ""}</div>
                     <div style="font-size: 0.65rem; color: var(--accent);">${calcLabel}</div>
                     ${
                       safeNotes
@@ -10497,8 +10711,56 @@
           stats.textContent = `${tempCount} Temp | ${permCount} Perm | ${totalExposures} Total Exposures`;
         }
 
+        // ===== MODAL HELPERS =====
+
+        openModal(title, bodyHtml, footerHtml = "") {
+          const overlay = document.getElementById("sessionModalOverlay");
+          const titleEl = document.getElementById("sessionModalTitle");
+          const bodyEl = document.getElementById("sessionModalBody");
+          const footerEl = document.getElementById("sessionModalFooter");
+          if (!overlay) return;
+          titleEl.textContent = title;
+          bodyEl.innerHTML = bodyHtml;
+          footerEl.innerHTML = footerHtml;
+          overlay.classList.add("open");
+        }
+
+        closeModal() {
+          const overlay = document.getElementById("sessionModalOverlay");
+          if (overlay) overlay.classList.remove("open");
+        }
+
+        formatDuration(startISO, endISO) {
+          if (!startISO || !endISO) return null;
+          const ms = new Date(endISO) - new Date(startISO);
+          if (ms < 0) return null;
+          const totalSec = Math.floor(ms / 1000);
+          const h = Math.floor(totalSec / 3600);
+          const m = Math.floor((totalSec % 3600) / 60);
+          const s = totalSec % 60;
+          if (h > 0) return `${h}h ${m}m ${s}s`;
+          if (m > 0) return `${m}m ${s}s`;
+          return `${s}s`;
+        }
+
+        phaseBadges(session) {
+          let html = "";
+          if (session.phases.test) html += '<span class="phase-badge phase-badge-t">T</span> ';
+          if (session.phases.split) html += '<span class="phase-badge phase-badge-s">S</span> ';
+          if (session.phases.calc && session.phases.calc.length > 0) html += '<span class="phase-badge phase-badge-e">E</span> ';
+          if (session.phases.timer) html += '<span class="phase-badge phase-badge-c">C</span> ';
+          return html;
+        }
+
+        calcSummaryLabel(session) {
+          const total = this.calculateCalcTotal(session);
+          if (total === "0.00") return "No exposures";
+          const count = session.phases.calc ? session.phases.calc.length : 0;
+          return `${count} exposure${count !== 1 ? "s" : ""}, ${total}s total`;
+        }
+
         /**
-         * View session details
+         * View session details in modal
          */
         viewSession(sessionId, isPermanent) {
           const sessions = isPermanent
@@ -10507,77 +10769,89 @@
           const session = sessions.find((s) => s.id === sessionId);
           if (!session) return;
 
-          const sourceLabels = {
-            test: "Test Strip",
-            split: "Split Grade",
-            calc: "Exposure",
-            manual: "Session",
-          };
+          const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", manual: "Session" };
           const sourceLabel = sourceLabels[session.source] || session.source;
+          const duration = this.formatDuration(session.created, session.ended);
 
-          let details = `Session: ${session.name}\n`;
-          details += `Created: ${new Date(session.created).toLocaleString()}\n`;
-          details += `Source: ${sourceLabel}\n\n`;
+          let body = '<div class="session-meta">';
+          body += `<div><strong>Source:</strong> ${sourceLabel}</div>`;
+          body += `<div><strong>Created:</strong> ${new Date(session.created).toLocaleString()}</div>`;
+          if (session.ended) body += `<div><strong>Ended:</strong> ${new Date(session.ended).toLocaleString()}</div>`;
+          if (duration) body += `<div><strong>Duration:</strong> ${duration}</div>`;
+          if (session.notes) body += `<div style="margin-top:4px"><strong>Notes:</strong> ${this.escapeHTML(session.notes)}</div>`;
+          body += "</div>";
 
+          // TEST phase card
           if (session.phases.test) {
-            const transferLabel =
-              session.phases.test.transferDestination === "split"
-                ? "Split Grade"
-                : "Exposure";
-            details += `TEST STRIP PHASE:\n`;
-            details += `  Base Time: ${session.phases.test.baseTime}s\n`;
-            details += `  Method: ${session.phases.test.method}\n`;
-            details += `  Selected: ${session.phases.test.selectedStep}s (${session.phases.test.selectedStop} stops)\n`;
-            details += `  Transfer: ${transferLabel}\n\n`;
+            const t = session.phases.test;
+            const transferLabel = t.transferDestination === "split" ? "Split Grade" : "Exposure";
+            body += '<div class="phase-card">';
+            body += '<div class="phase-card-header"><span class="phase-badge phase-badge-t">T</span> Test Strip</div>';
+            body += `<div class="phase-card-row"><span>Base Time</span><span>${t.baseTime}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Method</span><span>${this.escapeHTML(t.method)}</span></div>`;
+            if (t.selectedStep != null) body += `<div class="phase-card-row"><span>Selected</span><span>${t.selectedStep}s (${formatStop(t.selectedStop)} stops)</span></div>`;
+            body += `<div class="phase-card-row"><span>Transfer</span><span>${transferLabel}</span></div>`;
+            if (t.steps && t.steps.length > 0) {
+              body += '<div class="phase-card-divider"></div>';
+              body += `<div class="phase-card-row"><span>Steps</span><span>${t.steps.map(s => s + "s").join(", ")}</span></div>`;
+            }
+            if (t.notes) body += `<div class="phase-card-row"><span>Notes</span><span>${this.escapeHTML(t.notes)}</span></div>`;
+            body += "</div>";
           }
 
+          // SPLIT phase card
           if (session.phases.split) {
-            details += `SPLIT GRADE PHASE:\n`;
-            details += `  Neutral: ${session.phases.split.neutralTime}s\n`;
-            details += `  Paper: ${session.phases.split.paperBrand}\n`;
-            details += `  Soft Filter: ${session.phases.split.softFilter} (${session.phases.split.filterBrand})\n`;
-            details += `  Hard Filter: ${session.phases.split.hardFilter} (${session.phases.split.filterBrand})\n`;
-            details += `  Highlights: ${session.phases.split.softTime}s\n`;
-            details += `  Shadows: ${session.phases.split.hardTime}s\n`;
-            details += `  Total: ${session.phases.split.totalTime}s\n\n`;
+            const sp = session.phases.split;
+            body += '<div class="phase-card">';
+            body += '<div class="phase-card-header"><span class="phase-badge phase-badge-s">S</span> Split Grade</div>';
+            body += `<div class="phase-card-row"><span>Neutral Time</span><span>${sp.neutralTime}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Paper</span><span>${this.escapeHTML(sp.paperBrand)}</span></div>`;
+            body += `<div class="phase-card-row"><span>Soft Filter</span><span>${this.escapeHTML(sp.softFilter)} (${this.escapeHTML(sp.filterBrand)})</span></div>`;
+            body += `<div class="phase-card-row"><span>Hard Filter</span><span>${this.escapeHTML(sp.hardFilter)} (${this.escapeHTML(sp.filterBrand)})</span></div>`;
+            body += '<div class="phase-card-divider"></div>';
+            body += `<div class="phase-card-row"><span>Highlights (soft)</span><span>${sp.softTime}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Shadows (hard)</span><span>${sp.hardTime}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Total</span><span>${sp.totalTime}s</span></div>`;
+            if (sp.burnPercent != null) body += `<div class="phase-card-row"><span>Burn %</span><span>${sp.burnPercent}%</span></div>`;
+            if (sp.highlightsBase != null) body += `<div class="phase-card-row"><span>Highlights Base</span><span>${sp.highlightsBase}</span></div>`;
+            if (sp.shadowsBase != null) body += `<div class="phase-card-row"><span>Shadows Base</span><span>${sp.shadowsBase}</span></div>`;
+            body += "</div>";
           }
 
+          // CALC phase card
           if (session.phases.calc && session.phases.calc.length > 0) {
-            details += `EXPOSURE PHASE:\n`;
+            body += '<div class="phase-card">';
+            body += '<div class="phase-card-header"><span class="phase-badge phase-badge-e">E</span> Exposures</div>';
             session.phases.calc.forEach((calc, i) => {
-              // Format the stop adjustment for display
+              if (i > 0) body += '<div class="phase-card-divider"></div>';
               const stopDisplay = formatStop(calc.stopAdjustment);
-              details += `  Exposure ${i + 1}: ${
-                calc.baseTime
-              }s + ${stopDisplay} = ${calc.finalTime}s`;
-              if (calc.filterContext) details += ` [${calc.filterContext}]`;
-              if (calc.notes) details += ` - ${calc.notes}`;
-              details += `\n`;
+              body += `<div class="phase-card-row"><span>Exposure ${i + 1}</span><span>${calc.baseTime}s ${stopDisplay} &rarr; ${calc.finalTime}s</span></div>`;
+              if (calc.filterContext) body += `<div class="phase-card-row"><span>Filter</span><span>${this.escapeHTML(calc.filterContext)}</span></div>`;
+              if (calc.notes) body += `<div class="phase-card-row"><span>Notes</span><span>${this.escapeHTML(calc.notes)}</span></div>`;
+              if (calc.timestamp) body += `<div class="phase-card-row"><span>Time</span><span>${new Date(calc.timestamp).toLocaleTimeString()}</span></div>`;
             });
-            details += `  EXPOSURE Total: ${this.calculateCalcTotal(session)}s\n\n`;
+            body += '<div class="phase-card-divider"></div>';
+            body += `<div class="phase-card-row"><span><strong>Total</strong></span><span><strong>${this.calculateCalcTotal(session)}s</strong></span></div>`;
+            body += "</div>";
           }
 
+          // TIMER phase card
           if (session.phases.timer) {
-            details += `TIMER PHASE:\n`;
-            details += `  Dev: ${session.phases.timer.dev}s\n`;
-            details += `  Stop: ${session.phases.timer.stop}s\n`;
-            details += `  Fix: ${session.phases.timer.fix}s\n`;
-            details += `  Flo: ${session.phases.timer.flo}s\n\n`;
+            const tm = session.phases.timer;
+            body += '<div class="phase-card">';
+            body += '<div class="phase-card-header"><span class="phase-badge phase-badge-c">C</span> Chemical Timer</div>';
+            body += `<div class="phase-card-row"><span>Developer</span><span>${tm.dev}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Stop Bath</span><span>${tm.stop}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Fixer</span><span>${tm.fix}s</span></div>`;
+            body += `<div class="phase-card-row"><span>Final Wash</span><span>${tm.flo}s</span></div>`;
+            body += "</div>";
           }
 
-          if (session.notes) {
-            details += `NOTES: ${session.notes}\n`;
-          }
-
-          if (session.ended) {
-            details += `\nEnded: ${new Date(session.ended).toLocaleString()}`;
-          }
-
-          alert(details);
+          this.openModal(session.name, body);
         }
 
         /**
-         * Save to permanent with prompt
+         * Save to permanent with in-modal form
          */
         saveToPermanentPrompt(sessionId) {
           const session = appState.logging.tempSessions.find(
@@ -10585,16 +10859,39 @@
           );
           if (!session) return;
 
-          const name = prompt("Enter custom name (optional):", session.name);
-          if (name === null) return;
+          const safeName = this.escapeHTML(session.name);
+          const safeNotes = this.escapeHTML(session.notes || "");
 
-          const notes = prompt(
-            "Enter session notes (optional):",
-            session.notes || "",
-          );
-          if (notes === null) return;
+          const body = `
+            <div class="save-perm-form" id="savePermanentForm">
+              <label>Session Name
+                <input type="text" id="savePermName" value="${safeName}" maxlength="80">
+              </label>
+              <label>Notes
+                <textarea id="savePermNotes" rows="3" maxlength="500">${safeNotes}</textarea>
+              </label>
+            </div>`;
 
-          this.saveToPermanent(sessionId, notes, name);
+          const footer = `
+            <div class="settings-btn-group" style="display:flex; gap:8px;">
+              <button class="settings-btn" id="savePermConfirm">Save Permanently</button>
+              <button class="settings-btn" id="savePermCancel">Cancel</button>
+            </div>`;
+
+          this.openModal("Save Session", body, footer);
+
+          // Bind after DOM update
+          setTimeout(() => {
+            document.getElementById("savePermConfirm")?.addEventListener("click", () => {
+              const name = document.getElementById("savePermName")?.value || "";
+              const notes = document.getElementById("savePermNotes")?.value || "";
+              this.closeModal();
+              this.saveToPermanent(sessionId, notes, name);
+            });
+            document.getElementById("savePermCancel")?.addEventListener("click", () => {
+              this.closeModal();
+            });
+          }, 0);
         }
 
         /**
@@ -12139,63 +12436,6 @@
           return "Ilford";
         }
 
-        /**
-         * Compute effective contrast grade via time-weighted gamma interpolation.
-         * Only works for Ilford papers with numeric grade keys; returns null for FOMA.
-         */
-        getEffectiveGrade(softTime, hardTime) {
-          if (this.paperBrand === "FOMA") return null;
-
-          const key = this.getCurrentPaperKey();
-          const pd = SplitGradeCalculator.PAPER_DATA[key];
-          if (!pd) return null;
-
-          // Build sorted grade→gamma pairs (numeric grades only)
-          const gradeGammas = [];
-          for (const [g, data] of Object.entries(pd)) {
-            const gNum = g === "00" ? -0.5 : parseFloat(g);
-            if (!isNaN(gNum) && data.gamma != null) {
-              gradeGammas.push({ grade: gNum, gamma: data.gamma });
-            }
-          }
-          if (gradeGammas.length < 2) return null;
-          gradeGammas.sort((a, b) => a.grade - b.grade);
-
-          // Look up gammas for selected filters
-          const softGamma = pd[this.softFilter]?.gamma ?? pd[String(this.softFilter)]?.gamma;
-          const hardGamma = pd[this.hardFilter]?.gamma ?? pd[String(this.hardFilter)]?.gamma;
-          if (softGamma == null || hardGamma == null) return null;
-
-          // Edge: one time is 0 → grade equals the other filter
-          if (softTime <= 0 && hardTime <= 0) return null;
-          if (softTime <= 0) {
-            const hg = this.hardFilter === "00" ? -0.5 : parseFloat(this.hardFilter);
-            return isNaN(hg) ? null : hg;
-          }
-          if (hardTime <= 0) {
-            const sg = this.softFilter === "00" ? -0.5 : parseFloat(this.softFilter);
-            return isNaN(sg) ? null : sg;
-          }
-
-          // Time-weighted average gamma
-          const totalTime = softTime + hardTime;
-          const effectiveGamma = (softTime * softGamma + hardTime * hardGamma) / totalTime;
-
-          // Interpolate effective gamma to grade
-          if (effectiveGamma <= gradeGammas[0].gamma) return gradeGammas[0].grade;
-          if (effectiveGamma >= gradeGammas[gradeGammas.length - 1].gamma) return gradeGammas[gradeGammas.length - 1].grade;
-
-          for (let i = 0; i < gradeGammas.length - 1; i++) {
-            const lo = gradeGammas[i];
-            const hi = gradeGammas[i + 1];
-            if (effectiveGamma >= lo.gamma && effectiveGamma <= hi.gamma) {
-              const t = (effectiveGamma - lo.gamma) / (hi.gamma - lo.gamma);
-              return lo.grade + t * (hi.grade - lo.grade);
-            }
-          }
-          return null;
-        }
-
         calculate() {
           let softFactor, hardFactor;
 
@@ -12235,34 +12475,11 @@
           // Total exposure
           const totalTime = softTime + hardTime;
 
-          // Split ratio in EV
-          let splitRatioText = "—";
-          if (softTime > 0 && hardTime > 0) {
-            const ev = Math.log2(softTime / hardTime);
-            const sign = ev > 0.05 ? "+" : ev < -0.05 ? "" : "";
-            const label = ev > 0.05 ? " (soft bias)" : ev < -0.05 ? " (hard bias)" : " (balanced)";
-            splitRatioText = `${sign}${ev.toFixed(1)} EV${label}`;
-          }
-
-          // Effective contrast grade (Ilford numeric grades only)
-          const effectiveGrade = this.getEffectiveGrade(softTime, hardTime);
-          let effectiveGradeText = "—";
-          if (effectiveGrade !== null) {
-            if (effectiveGrade < 0) {
-              effectiveGradeText = "~Grade 00";
-            } else {
-              effectiveGradeText = `~Grade ${effectiveGrade.toFixed(1)}`;
-            }
-          }
-
           // Update display
           const splitDisplay = document.getElementById("splitTimeDisplay");
           const softResult = document.getElementById("softResult");
           const hardResult = document.getElementById("hardResult");
           const totalResult = document.getElementById("totalResult");
-          const splitRatioDisplay = document.getElementById("splitRatioDisplay");
-          const effectiveGradeDisplay = document.getElementById("effectiveGradeDisplay");
-
           if (splitDisplay)
             splitDisplay.textContent = `${highlightsBase.toFixed(
               2,
@@ -12271,11 +12488,6 @@
           if (hardResult) hardResult.textContent = `${hardTime.toFixed(2)} s`;
           if (totalResult)
             totalResult.textContent = `${totalTime.toFixed(2)} s`;
-          if (splitRatioDisplay)
-            splitRatioDisplay.textContent = splitRatioText;
-          if (effectiveGradeDisplay)
-            effectiveGradeDisplay.textContent = effectiveGradeText;
-
           return {
             highlightsBase,
             shadowsBase,
@@ -16649,7 +16861,7 @@
           if (this.method === "cumulative") {
             for (let i = 0; i < this.numSteps; i++) {
               const stopValue = (i * this.stepIncrement) / denom;
-              const time = this.baseTime * Math.pow(2, stopValue);
+              const time = parseFloat((this.baseTime * Math.pow(2, stopValue)).toFixed(1));
 
               this.steps.push({
                 step: i + 1,
@@ -16662,15 +16874,15 @@
             // Incremental method
             for (let i = 0; i < this.numSteps; i++) {
               const stopValue = (i * this.stepIncrement) / denom;
-              const totalExposure = this.baseTime * Math.pow(2, stopValue);
+              const totalExposure = parseFloat((this.baseTime * Math.pow(2, stopValue)).toFixed(1));
 
               let time;
               if (i === 0) {
-                time = this.baseTime;
+                time = parseFloat(this.baseTime.toFixed(1));
               } else {
                 const previousStop = ((i - 1) * this.stepIncrement) / denom;
-                const previousTotal = this.baseTime * Math.pow(2, previousStop);
-                time = totalExposure - previousTotal;
+                const previousTotal = parseFloat((this.baseTime * Math.pow(2, previousStop)).toFixed(1));
+                time = parseFloat((totalExposure - previousTotal).toFixed(1));
               }
 
               this.steps.push({
@@ -16742,8 +16954,8 @@
             minTime = this.baseTime;
             maxTime = this.steps[this.steps.length - 1]?.time || this.baseTime;
             this.testTimeRange.textContent = `${minTime.toFixed(
-              2,
-            )}s to ${maxTime.toFixed(2)}s`;
+              1,
+            )}s to ${maxTime.toFixed(1)}s`;
 
             // Update progress labels
             this.progressStart.textContent = `${minTime.toFixed(1)}s`;
@@ -16759,8 +16971,8 @@
               this.steps[this.steps.length - 1]?.time ||
               this.baseTime;
             this.testTimeRange.textContent = `Step times: ${minTime.toFixed(
-              2,
-            )}s to ${maxTime.toFixed(2)}s`;
+              1,
+            )}s to ${maxTime.toFixed(1)}s`;
 
             // Show total exposure range for incremental method
             const minTotal = this.baseTime;
@@ -16797,10 +17009,10 @@
               !this.isWaitingForNextStep
             ) {
               const firstStep = this.steps[0];
-              this.testTimerDisplay.textContent = firstStep.time.toFixed(2);
+              this.testTimerDisplay.textContent = firstStep.time.toFixed(1);
               this.currentStepDisplay.textContent = `1/${this.steps.length}`;
               this.currentTimeDisplay.textContent = `${firstStep.time.toFixed(
-                2,
+                1,
               )}s`;
               this.currentStopDisplay.textContent =
                 this.method === "cumulative"
@@ -17011,7 +17223,7 @@
           }`;
 
           if (this.method === "cumulative") {
-            this.currentTimeDisplay.textContent = `${step.time.toFixed(2)}s`;
+            this.currentTimeDisplay.textContent = `${step.time.toFixed(1)}s`;
             this.currentStopDisplay.textContent = `${this.formatStop(
               step.stop,
             )}`;
@@ -17020,7 +17232,7 @@
               step.stop,
             ).toFixed(2)}×`;
           } else {
-            this.currentTimeDisplay.textContent = `${step.time.toFixed(2)}s`;
+            this.currentTimeDisplay.textContent = `${step.time.toFixed(1)}s`;
             this.currentStopDisplay.textContent = `+${this.getIncrementLabel(
               this.stepIncrement,
             )}`;
@@ -17031,7 +17243,7 @@
             )}s total`;
           }
 
-          this.testTimerDisplay.textContent = step.time.toFixed(2);
+          this.testTimerDisplay.textContent = step.time.toFixed(1);
 
           this.updatePreview();
 
@@ -17282,7 +17494,7 @@
           this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = true;
           this.resetTestTimerBtn.disabled = false;
-          this.testTimerDisplay.textContent = "0.00";
+          this.testTimerDisplay.textContent = "0.0";
           this.testTimerDisplay.classList.remove("warning");
 
           // Reset step display
@@ -17290,7 +17502,7 @@
             const firstStep = this.steps[0];
             this.currentStepDisplay.textContent = `1/${this.steps.length}`;
             this.currentTimeDisplay.textContent = `${firstStep.time.toFixed(
-              2,
+              1,
             )}s`;
             this.currentStopDisplay.textContent =
               this.method === "cumulative"
@@ -17300,7 +17512,7 @@
               this.method === "cumulative"
                 ? `${Math.pow(2, firstStep.stop).toFixed(2)}×`
                 : `${firstStep.totalExposure.toFixed(1)}s total`;
-            this.testTimerDisplay.textContent = firstStep.time.toFixed(2);
+            this.testTimerDisplay.textContent = firstStep.time.toFixed(1);
           }
 
           this.updatePreview();
@@ -17587,7 +17799,7 @@
           this.startTestStripBtn.disabled = false;
           this.stopTestTimerBtn.disabled = true;
           this.resetTestTimerBtn.disabled = false;
-          this.testTimerDisplay.textContent = "0.00";
+          this.testTimerDisplay.textContent = "0.0";
           this.testTimerDisplay.classList.remove("warning");
 
           // Reset step display
@@ -17595,7 +17807,7 @@
             const firstStep = this.steps[0];
             this.currentStepDisplay.textContent = `1/${this.steps.length}`;
             this.currentTimeDisplay.textContent = `${firstStep.time.toFixed(
-              2,
+              1,
             )}s`;
             this.currentStopDisplay.textContent =
               this.method === "cumulative"
@@ -17605,7 +17817,7 @@
               this.method === "cumulative"
                 ? `${Math.pow(2, firstStep.stop).toFixed(2)}×`
                 : `${firstStep.totalExposure.toFixed(1)}s total`;
-            this.testTimerDisplay.textContent = firstStep.time.toFixed(2);
+            this.testTimerDisplay.textContent = firstStep.time.toFixed(1);
           }
 
           this.updatePreview();
@@ -22184,6 +22396,16 @@
         document.getElementById("exportCSV")?.addEventListener("click", () => {
           if (window.exposureLogManager) {
             window.exposureLogManager.exportCSV();
+          }
+        });
+
+        // Modal close button and overlay click
+        document.getElementById("sessionModalClose")?.addEventListener("click", () => {
+          if (window.exposureLogManager) window.exposureLogManager.closeModal();
+        });
+        document.getElementById("sessionModalOverlay")?.addEventListener("click", (e) => {
+          if (e.target.id === "sessionModalOverlay" && window.exposureLogManager) {
+            window.exposureLogManager.closeModal();
           }
         });
 
