@@ -11440,37 +11440,66 @@
           this.showProgress(false);
 
           try {
-            const result = await apiClient.getJSON("/update-check", {
-              headers: {
-                "Content-Type": "application/json",
-              },
+            // Phase 1: Check only — no download yet
+            const checkResult = await apiClient.getJSON("/update-check-only", {
+              headers: { "Content-Type": "application/json" },
               preferRelay: true,
             });
 
-            if (!result.success) {
-              this.setUpdateStatus(`Error: ${result.error || "Unknown error"}`, "error");
-              console.error("[UpdateStatusManager] Update check failed:", result.error);
+            if (!checkResult.success) {
+              this.setUpdateStatus(`Error: ${checkResult.error || "Unknown error"}`, "error");
+              console.error("[UpdateStatusManager] Update check failed:", checkResult.error);
               return;
             }
 
             // Update version display
-            this.latestVersion = result.latest_version || result.version || "Unknown";
+            this.latestVersion = checkResult.latest_version || checkResult.version || "Unknown";
             this.updateVersionDisplay();
 
-            // Check if update available
-            if (!result.available) {
+            // No update available — done
+            if (!checkResult.available) {
               this.setUpdateStatus("Already on latest version", "success");
               return;
             }
 
-            // Update available
+            // Phase 2: Update available — ask user to confirm
             this.setUpdateStatus(`Update available: ${this.latestVersion}`, "success");
-            this.showProgress(true);
-            this.updateProgress(50);
 
-            // Download and install
+            let body = `<p>A new version <b>${this.latestVersion}</b> is available (current: ${checkResult.current_version || "unknown"}).</p>`;
+            if (checkResult.release_notes) {
+              body += `<p style="margin-top:8px;font-size:0.92em;color:var(--text-secondary);white-space:pre-wrap;max-height:200px;overflow-y:auto">${checkResult.release_notes.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>`;
+            }
+            body += `<p style="margin-top:8px">Download and install the update?</p>`;
+
+            const confirmed = await appConfirm("Update Available", body, {
+              confirmText: "Update",
+              cancelText: "Cancel",
+            });
+
+            if (!confirmed) {
+              this.setUpdateStatus(`Update ${this.latestVersion} available`, "info");
+              return;
+            }
+
+            // Phase 3: User confirmed — download and install
+            this.isUpdating = true;
+            this.showProgress(true);
+            this.updateProgress(25);
             this.setUpdateStatus("Downloading and installing update...", "info");
+
+            if (btnEl) btnEl.textContent = "Updating...";
+
+            const result = await apiClient.getJSON("/update-check", {
+              headers: { "Content-Type": "application/json" },
+              preferRelay: true,
+            });
+
             this.updateProgress(75);
+
+            if (!result.success) {
+              this.setUpdateStatus(`Error: ${result.error || "Update failed"}`, "error");
+              return;
+            }
 
             // Update complete, display results
             if (result.updated_files && result.updated_files.length > 0) {
@@ -11502,6 +11531,7 @@
             );
           } finally {
             this.isChecking = false;
+            this.isUpdating = false;
             const btnEl = document.getElementById("checkUpdatesBtn");
             if (btnEl) {
               btnEl.disabled = false;

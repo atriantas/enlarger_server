@@ -80,6 +80,7 @@ class HTTPServer:
             '/light-meter-calibrate':         self._handle_light_meter_calibrate,
             '/light-meter-config':            self._handle_light_meter_config,
             '/update-check':                  self._handle_update_check,
+            '/update-check-only':             self._handle_update_check_only,
             '/version':                       self._handle_version,
             '/app-data':                      self._handle_app_data,
         }
@@ -1547,6 +1548,30 @@ class HTTPServer:
             'version': self.update_manager.current_version or '0.0.0'
         })
         await self._sendall(conn, response)
+
+    async def _handle_update_check_only(self, conn, params):
+        """Handle GET /update-check-only - Check for updates without downloading."""
+        try:
+            if not self.update_manager:
+                response = self._json_response({
+                    'success': False,
+                    'error': 'UpdateManager not initialized'
+                }, 400)
+                await self._sendall(conn, response)
+                return
+
+            result = await self.update_manager.check_latest_release()
+            status = 200 if result.get('success', False) else 400
+            response = self._json_response(result, status)
+            await self._sendall(conn, response)
+
+        except Exception as e:
+            print(f"[HTTPServer] Error in /update-check-only: {e}")
+            response = self._json_response({
+                'success': False,
+                'error': str(e)
+            }, 500)
+            await self._sendall(conn, response)
 
     async def _handle_update_check(self, conn, params):
         """Handle GET /update-check - Check for available updates from GitHub."""
