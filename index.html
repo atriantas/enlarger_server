@@ -1562,6 +1562,75 @@
         justify-content: center;
       }
 
+      /* Virtual Proof Grid */
+      .proof-grid {
+        display: grid;
+        gap: 2px;
+        background: var(--border);
+        padding: 4px;
+        border-radius: var(--radius-md);
+      }
+
+      .proof-cell {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: var(--panel);
+        border: 1px solid var(--bg);
+        border-radius: 2px;
+      }
+
+      .proof-cell.proof-cursor {
+        outline: 2px solid var(--accent);
+      }
+
+      .proof-cell.proof-reference {
+        box-shadow: inset 0 0 0 2px var(--warning);
+      }
+
+      .proof-cell.proof-selected {
+        box-shadow: inset 0 0 0 3px var(--accent-highlight);
+      }
+
+      .proof-cell.proof-reference.proof-selected {
+        box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px var(--accent-highlight);
+      }
+
+      .proof-cell.proof-clipped-white {
+        outline: 2px solid var(--text-secondary);
+      }
+
+      .proof-cell.proof-clipped-black {
+        outline: 2px solid var(--panel);
+      }
+
+      .proof-legend {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        margin-top: 6px;
+      }
+
+      .proof-histogram {
+        margin-top: 8px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 6px;
+      }
+
+      .proof-histogram-label {
+        text-align: center;
+        margin-bottom: 4px;
+        color: var(--text-secondary);
+      }
+
+      .proof-histogram-canvas {
+        width: 100%;
+        height: 90px;
+        display: block;
+      }
+
       /* Accessibility helper: visually-hidden */
       .visually-hidden {
         position: absolute !important;
@@ -1795,74 +1864,6 @@
         }
         .segmented-control-container {
           gap: 6px;
-        }
-
-        .proof-grid {
-          display: grid;
-          gap: 2px;
-          background: var(--border);
-          padding: 4px;
-          border-radius: var(--radius-md);
-        }
-
-        .proof-cell {
-          width: 100%;
-          aspect-ratio: 1 / 1;
-          background: var(--panel);
-          border: 1px solid var(--bg);
-          border-radius: 2px;
-        }
-
-        .proof-cell.proof-cursor {
-          outline: 2px solid var(--accent);
-        }
-
-        .proof-cell.proof-reference {
-          box-shadow: inset 0 0 0 2px var(--warning);
-        }
-
-        .proof-cell.proof-selected {
-          box-shadow: inset 0 0 0 3px var(--accent-highlight);
-        }
-
-        .proof-cell.proof-reference.proof-selected {
-          box-shadow: inset 0 0 0 2px var(--warning), inset 0 0 0 4px var(--accent-highlight);
-        }
-
-        .proof-cell.proof-clipped-white {
-          outline: 2px solid var(--text-secondary);
-        }
-
-        .proof-cell.proof-clipped-black {
-          outline: 2px solid var(--panel);
-        }
-
-        .proof-legend {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.6rem;
-          color: var(--text-secondary);
-          margin-top: 6px;
-        }
-
-        .proof-histogram {
-          margin-top: 8px;
-          background: var(--panel);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          padding: 6px;
-        }
-
-        .proof-histogram-label {
-          text-align: center;
-          margin-bottom: 4px;
-          color: var(--text-secondary);
-        }
-
-        .proof-histogram-canvas {
-          width: 100%;
-          height: 90px;
-          display: block;
         }
       }
     </style>
