@@ -5907,6 +5907,7 @@
             <div class="session-modal-footer" id="sessionModalFooter"></div>
           </div>
         </div>
+
       </div>
 
       <footer>
@@ -5914,7 +5915,82 @@
       </footer>
     </div>
 
+    <!-- App-wide Modal (replaces native alert/confirm/prompt) -->
+    <div class="session-modal-overlay" id="appModalOverlay">
+      <div class="session-modal">
+        <div class="session-modal-header">
+          <div class="title-sm" id="appModalTitle"></div>
+          <button class="session-modal-close" id="appModalClose">&times;</button>
+        </div>
+        <div class="session-modal-body" id="appModalBody"></div>
+        <div class="session-modal-footer" id="appModalFooter"></div>
+      </div>
+    </div>
+
     <script>
+      // ===== APP MODAL HELPERS (replaces native alert/confirm/prompt) =====
+      let _appModalResolve = null;
+
+      function _openAppModal(title, bodyHtml, footerHtml) {
+        const overlay = document.getElementById("appModalOverlay");
+        document.getElementById("appModalTitle").textContent = title;
+        document.getElementById("appModalBody").innerHTML = bodyHtml;
+        document.getElementById("appModalFooter").innerHTML = footerHtml;
+        overlay.classList.add("open");
+      }
+
+      function _closeAppModal(value) {
+        const overlay = document.getElementById("appModalOverlay");
+        if (overlay) overlay.classList.remove("open");
+        if (_appModalResolve) {
+          _appModalResolve(value);
+          _appModalResolve = null;
+        }
+      }
+
+      function appAlert(title, message) {
+        return new Promise((resolve) => {
+          _appModalResolve = () => resolve();
+          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
+          const footer = `<div style="display:flex;justify-content:flex-end"><button class="btn-action" onclick="_closeAppModal()">OK</button></div>`;
+          _openAppModal(title, body, footer);
+        });
+      }
+
+      function appConfirm(title, message, opts = {}) {
+        const { confirmText = "Confirm", cancelText = "Cancel", destructive = false } = opts;
+        return new Promise((resolve) => {
+          _appModalResolve = resolve;
+          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
+          const confirmClass = destructive ? "btn-action delete" : "btn-action";
+          const footer = `<div style="display:flex;justify-content:flex-end;gap:8px">` +
+            `<button class="btn-action" onclick="_closeAppModal(false)">${cancelText}</button>` +
+            `<button class="${confirmClass}" onclick="_closeAppModal(true)">${confirmText}</button></div>`;
+          _openAppModal(title, body, footer);
+        });
+      }
+
+      function appChoice(title, message, choices) {
+        return new Promise((resolve) => {
+          _appModalResolve = resolve;
+          const body = `<div style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-line">${message}</div>`;
+          const btns = choices.map(
+            (c) => `<button class="btn-action" onclick="_closeAppModal('${c.value}')">${c.label}</button>`
+          ).join("");
+          const footer = `<div style="display:flex;justify-content:flex-end;gap:8px">` +
+            `<button class="btn-action" onclick="_closeAppModal(null)">Cancel</button>${btns}</div>`;
+          _openAppModal(title, body, footer);
+        });
+      }
+
+      // Wire up app modal close handlers after DOM ready
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("appModalClose")?.addEventListener("click", () => _closeAppModal(null));
+        document.getElementById("appModalOverlay")?.addEventListener("click", (e) => {
+          if (e.target.id === "appModalOverlay") _closeAppModal(null);
+        });
+      });
+
       // Storage keys - UPDATED
       const STORAGE_KEYS = {
         SETTINGS: "darkroom_timer_settings",
@@ -9242,7 +9318,7 @@
             if (feedbackMethod) {
               feedbackMethod("Please enter a name", "error");
             } else {
-              alert("Please enter a name");
+              appAlert("Validation", "Please enter a name");
             }
             return false;
           }
@@ -9289,7 +9365,7 @@
         }
 
         // Generic delete preset/profile helper
-        deletePreset(config) {
+        async deletePreset(config) {
           const {
             name,
             collection,
@@ -9301,7 +9377,7 @@
             onDeleteCallback,
           } = config;
 
-          if (confirm(confirmMessage || `Delete "${name}"?`)) {
+          if (await appConfirm("Delete", confirmMessage || `Delete "${name}"?`, { confirmText: "Delete", destructive: true })) {
             const newCollection = collection.filter((p) => p.name !== name);
             collection.length = 0;
             collection.push(...newCollection);
@@ -9356,7 +9432,7 @@
         }
 
         // Generic clear all presets helper
-        clearAllPresets(config) {
+        async clearAllPresets(config) {
           const {
             collection,
             storageMethod,
@@ -9368,9 +9444,7 @@
           } = config;
 
           if (
-            confirm(
-              confirmMessage || "Delete ALL items? This cannot be undone!",
-            )
+            await appConfirm("Delete All", confirmMessage || "Delete ALL items? This cannot be undone!", { confirmText: "Delete All", destructive: true })
           ) {
             collection.length = 0;
 
@@ -9500,11 +9574,9 @@
           });
         }
 
-        resetAllSettings() {
+        async resetAllSettings() {
           if (
-            confirm(
-              "Reset all settings to defaults? This will delete all profiles and settings!",
-            )
+            await appConfirm("Reset Settings", "Reset all settings to defaults? This will delete all profiles and settings!", { confirmText: "Reset All", destructive: true })
           ) {
             StorageManager.clearAll();
             this.settings = { ...DEFAULT_SETTINGS };
@@ -9597,7 +9669,7 @@
           );
         }
 
-        importAllData(jsonData) {
+        async importAllData(jsonData) {
           try {
             const data = JSON.parse(jsonData);
             let importedCount = 0;
@@ -9639,19 +9711,11 @@
                 let mergeStrategy = "skip";
                 if (duplicates.length > 0) {
                   mergeStrategy =
-                    prompt(
-                      `Found ${
-                        duplicates.length
-                      } duplicate timer profile(s): ${duplicates.join(
-                        ", ",
-                      )}\n\n` +
-                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
-                      "skip",
-                    )?.toLowerCase() || "skip";
-
-                  if (!["overwrite", "skip"].includes(mergeStrategy)) {
-                    mergeStrategy = "skip";
-                  }
+                    (await appChoice(
+                      "Duplicate Timer Profiles",
+                      `Found ${duplicates.length} duplicate timer profile(s): ${duplicates.join(", ")}`,
+                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
+                    )) || "skip";
                 }
 
                 validProfiles.forEach((newProfile) => {
@@ -9845,14 +9909,11 @@
                 let splitMergeStrategy = "skip";
                 if (dupSplitNames.length > 0) {
                   splitMergeStrategy =
-                    prompt(
-                      `Found ${dupSplitNames.length} duplicate split-grade preset(s): ${dupSplitNames.join(", ")}\n\n` +
-                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
-                      "skip",
-                    )?.toLowerCase() || "skip";
-                  if (!["overwrite", "skip"].includes(splitMergeStrategy)) {
-                    splitMergeStrategy = "skip";
-                  }
+                    (await appChoice(
+                      "Duplicate Split-Grade Presets",
+                      `Found ${dupSplitNames.length} duplicate split-grade preset(s): ${dupSplitNames.join(", ")}`,
+                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
+                    )) || "skip";
                 }
 
                 validPresets.forEach((newPreset) => {
@@ -9923,22 +9984,11 @@
                 let testStripMergeStrategy = "skip";
                 if (duplicates.length > 0) {
                   testStripMergeStrategy =
-                    prompt(
-                      `Found ${
-                        duplicates.length
-                      } duplicate test strip profile(s): ${duplicates.join(
-                        ", ",
-                      )}\n\n` +
-                        `Enter 'overwrite' to replace duplicates, or 'skip' to keep existing:`,
-                      "skip",
-                    )?.toLowerCase() || "skip";
-
-                  if (![
-                    "overwrite",
-                    "skip",
-                  ].includes(testStripMergeStrategy)) {
-                    testStripMergeStrategy = "skip";
-                  }
+                    (await appChoice(
+                      "Duplicate Test Strip Profiles",
+                      `Found ${duplicates.length} duplicate test strip profile(s): ${duplicates.join(", ")}`,
+                      [{ label: "Overwrite", value: "overwrite" }, { label: "Skip", value: "skip" }]
+                    )) || "skip";
                 }
 
                 validTestStripProfiles.forEach((newProfile) => {
@@ -10454,8 +10504,8 @@
         /**
          * Clear all sessions
          */
-        clearAll() {
-          if (!confirm("Delete ALL sessions? This cannot be undone.")) return;
+        async clearAll() {
+          if (!(await appConfirm("Clear Sessions", "Delete ALL sessions? This cannot be undone.", { confirmText: "Delete All", destructive: true }))) return;
 
           appState.logging.tempSessions = [];
           appState.logging.permanentSessions = [];
@@ -10499,7 +10549,7 @@
           const allSessions = appState.logging.permanentSessions;
 
           if (allSessions.length === 0) {
-            alert("No permanent sessions to export");
+            appAlert("Export", "No permanent sessions to export");
             return;
           }
 
@@ -10664,7 +10714,7 @@
 
                 this.showNotification("Sessions imported successfully");
               } catch (error) {
-                alert("Invalid JSON file");
+                appAlert("Import Error", "Invalid JSON file");
               }
             };
             reader.readAsText(file);
@@ -11823,8 +11873,8 @@
           if (!silent) playUIBeep(600, 0.2, 0.3);
         }
 
-        resetPrints() {
-          if (confirm("Reset print counter? This will start a fresh batch.")) {
+        async resetPrints() {
+          if (await appConfirm("Reset Counter", "Reset print counter? This will start a fresh batch.", { confirmText: "Reset", destructive: true })) {
             this.capacityData = {
               printsDone: 0,
               areaUsed: 0,
@@ -11847,7 +11897,7 @@
           const date = this.chemicalDateInput.value;
 
           if (!date) {
-            alert("Please select a date");
+            appAlert("Validation", "Please select a date");
             return;
           }
 
@@ -11855,7 +11905,7 @@
           if (type === "custom") {
             chemicalName = this.customChemicalNameInput.value.trim();
             if (!chemicalName) {
-              alert("Please enter a custom chemical name");
+              appAlert("Validation", "Please enter a custom chemical name");
               return;
             }
           } else {
@@ -11996,11 +12046,9 @@
           // Event handlers now via delegation - no individual listeners needed
         }
 
-        renewChemical(id) {
+        async renewChemical(id) {
           if (
-            confirm(
-              "Renew this chemical? This will reset its shelf life from today.",
-            )
+            await appConfirm("Renew Chemical", "Renew this chemical? This will reset its shelf life from today.", { confirmText: "Renew" })
           ) {
             const index = this.shelfLifeData.findIndex((c) => c.id === id);
             if (index !== -1) {
@@ -12014,8 +12062,8 @@
           }
         }
 
-        deleteChemical(id) {
-          if (confirm("Delete this chemical from tracking?")) {
+        async deleteChemical(id) {
+          if (await appConfirm("Delete Chemical", "Delete this chemical from tracking?", { confirmText: "Delete", destructive: true })) {
             this.shelfLifeData = this.shelfLifeData.filter((c) => c.id !== id);
             StorageManager.saveShelfLife(this.shelfLifeData);
             this.updateShelfLifeList();
@@ -12023,8 +12071,8 @@
           }
         }
 
-        clearExpired() {
-          if (confirm("Remove all expired chemicals?")) {
+        async clearExpired() {
+          if (await appConfirm("Clear Expired", "Remove all expired chemicals?", { confirmText: "Clear Expired", destructive: true })) {
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             this.shelfLifeData = this.shelfLifeData.filter((chemical) => {
@@ -13355,9 +13403,7 @@
           const baseUrl = this.getRelayBaseUrl();
 
           if (
-            !confirm(
-              "Switch to Hotspot mode? This will disconnect from the current WiFi network.",
-            )
+            !(await appConfirm("Switch to Hotspot", "Switch to Hotspot mode? This will disconnect from the current WiFi network.", { confirmText: "Switch", destructive: true }))
           ) {
             return;
           }
@@ -13385,9 +13431,7 @@
                 this.relayServerIP.value = this.serverIP;
               this.saveSettings();
 
-              alert(
-                `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`,
-              );
+              appAlert("Hotspot Mode", `Switched to Hotspot mode!\nConnect to WiFi: DarkroomTimer\nPassword: darkroom123\nThen access: http://${this.serverIP}/`);
             } else {
               if (statusElement) {
                 statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
@@ -13402,9 +13446,7 @@
               statusElement.style.color = "#f00";
             }
             // Provide instructions since connection likely dropped
-            alert(
-              "Connection lost. Connect to WiFi 'DarkroomTimer' (password: darkroom123) and access http://192.168.4.1/",
-            );
+            appAlert("Connection Lost", "Connection lost. Connect to WiFi 'DarkroomTimer' (password: darkroom123) and access http://192.168.4.1/");
           }
         }
 
@@ -13419,9 +13461,7 @@
           const baseUrl = this.getRelayBaseUrl();
 
           if (
-            !confirm(
-              "Clear saved WiFi credentials? The Pico will start in Hotspot mode on next boot.",
-            )
+            !(await appConfirm("Clear WiFi Credentials", "Clear saved WiFi credentials? The Pico will start in Hotspot mode on next boot.", { confirmText: "Clear", destructive: true }))
           ) {
             return;
           }
@@ -13444,9 +13484,7 @@
               if (ssidInput) ssidInput.value = "";
               if (passwordInput) passwordInput.value = "";
 
-              alert(
-                "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.",
-              );
+              appAlert("Credentials Cleared", "WiFi credentials cleared. The Pico will start in Hotspot mode on next reboot.");
             } else {
               if (statusElement) {
                 statusElement.textContent = `Failed: ${data.error || "Unknown error"}`;
@@ -22150,8 +22188,8 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (event) => {
-              settingsManager.importAllData(event.target.result);
+            reader.onload = async (event) => {
+              await settingsManager.importAllData(event.target.result);
               e.target.value = "";
             };
             reader.onerror = () => {
