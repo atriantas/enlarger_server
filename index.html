@@ -4480,6 +4480,24 @@
             </div>
           </section>
 
+          <!-- CHEMICAL SETTINGS Collapsible Section -->
+          <section class="collapsible" data-id="chemical-settings">
+            <button class="collapsible-header" aria-expanded="false">
+              CHEMICAL SETTINGS
+            </button>
+            <div class="collapsible-content">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">Auto-track Prints</div>
+                  <label class="switch">
+                    <input type="checkbox" id="settingAutoTrackPrints" />
+                    <span class="slider-switch"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- CONTROLLER SETTINGS Collapsible Section -->
           <section class="collapsible" data-id="controller-settings">
             <button class="collapsible-header" aria-expanded="false">
@@ -5838,6 +5856,7 @@
         autoAdvance: false,
         autoAdvanceDelay: 1,
         safelightAutoOff: true, // Auto safelight control (server-side)
+        autoTrackPrints: false, // Auto-increment developer capacity on session end
         stopDenominator: 3, // Denominator for f-stop fractions (2, 3, or 4)
         proofStabilityEnabled: true,
         proofStabilityBeep: true,
@@ -6963,6 +6982,7 @@
           autoAdvance: false,
           autoAdvanceDelay: 1,
           safelightAutoOff: true,
+          autoTrackPrints: false,
           stopDenominator: 3,
           testTransferDestination: "calc",
         },
@@ -8852,6 +8872,7 @@
               if (t) return parseInt(t.value, 10) || 3;
               return 3;
             })(),
+            autoTrackPrints: document.getElementById("settingAutoTrackPrints")?.checked || false,
           };
 
           // Clamp slider limits to prevent min >= max
@@ -10214,6 +10235,11 @@
 
           this.saveSessions();
           this.updateUI();
+
+          // Auto-increment developer capacity tracker if enabled
+          if (appState.settings.autoTrackPrints && window.chemicalManager) {
+            window.chemicalManager.addPrints(1, true);
+          }
 
           // Show notification
           this.showNotification(
@@ -11652,7 +11678,7 @@
           }
         }
 
-        addPrints(count) {
+        addPrints(count, silent) {
           const areaToAdd = count * this.currentPaperSize;
           this.capacityData.printsDone =
             (this.capacityData.printsDone || 0) + count;
@@ -11660,7 +11686,7 @@
             (this.capacityData.areaUsed || 0) + areaToAdd;
           StorageManager.saveCapacityTracker(this.capacityData);
           this.updateCapacityDisplay();
-          playBeep(600, 0.2, 0.3);
+          if (!silent) playBeep(600, 0.2, 0.3);
         }
 
         resetPrints() {
@@ -13792,6 +13818,10 @@
         // Safelight auto-off setting
         document.getElementById("safelightAutoOff").checked =
           settingsManager.settings.safelightAutoOff !== false;
+
+        // Auto-track prints setting
+        const autoTrackEl = document.getElementById("settingAutoTrackPrints");
+        if (autoTrackEl) autoTrackEl.checked = !!settingsManager.settings.autoTrackPrints;
 
         document.getElementById("settingAutoAdvanceDelay").value =
           settingsManager.settings.autoAdvanceDelay || 1;
@@ -21745,6 +21775,7 @@
             { id: "proofStabilityMinStable", evt: "input" },
             { id: "proofStabilityMaxWait", evt: "input" },
             { id: "proofStabilityMinDelta", evt: "input" },
+            { id: "settingAutoTrackPrints", evt: "change" },
           ];
           toBind.forEach(({ id, evt }) => {
             const el = document.getElementById(id);
