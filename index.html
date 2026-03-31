@@ -6397,17 +6397,35 @@
           this._lastSave = 0;
           this._minInterval = 5000; // Min 5s between saves (flash wear protection)
           this._loaded = false;
+          this._ready = false; // Block saves until initialization is complete
+        }
+
+        // All localStorage keys managed by ServerSync
+        static get MANAGED_KEYS() {
+          return [
+            ...Object.values(STORAGE_KEYS),
+            'relaySettings',
+            'relayNames',
+          ];
         }
 
         async load() {
           try {
             const data = await apiClient.getJSON('/app-data', { timeoutMs: 6000 });
+
+            // Clear ALL managed localStorage keys BEFORE loading server data.
+            // This prevents stale browser data from persisting for keys
+            // not present in the server payload.
+            ServerSync.MANAGED_KEYS.forEach(key => {
+              try { localStorage.removeItem(key); } catch (e) {}
+            });
+
             if (!data || Object.keys(data).length === 0) {
               this._loaded = true;
               this._updateIndicator('ok');
               return;
             }
-            // Restore each key into localStorage
+            // Restore each key into localStorage from server data
             const keyMap = {
               settings: STORAGE_KEYS.SETTINGS,
               colorScheme: STORAGE_KEYS.COLOR_SCHEME,
@@ -6426,27 +6444,40 @@
               permanentSessions: STORAGE_KEYS.PERMANENT_SESSIONS,
             };
             for (const [jsonKey, storageKey] of Object.entries(keyMap)) {
-              if (data[jsonKey] !== undefined) {
+              if (data[jsonKey] !== undefined && data[jsonKey] !== null) {
                 localStorage.setItem(storageKey, JSON.stringify(data[jsonKey]));
               }
             }
             // Relay settings use their own keys
-            if (data.relaySettings !== undefined) {
+            if (data.relaySettings !== undefined && data.relaySettings !== null) {
               localStorage.setItem('relaySettings', JSON.stringify(data.relaySettings));
             }
-            if (data.relayNames !== undefined) {
+            if (data.relayNames !== undefined && data.relayNames !== null) {
               localStorage.setItem('relayNames', JSON.stringify(data.relayNames));
             }
             this._loaded = true;
             this._updateIndicator('ok');
           } catch (e) {
             console.warn('ServerSync load failed (offline?):', e.message);
+            // On load failure, clear localStorage to prevent stale data from
+            // being treated as current. Defaults will be used instead.
+            ServerSync.MANAGED_KEYS.forEach(key => {
+              try { localStorage.removeItem(key); } catch (ex) {}
+            });
             this._loaded = true;
             this._updateIndicator('offline');
           }
         }
 
+        // Enable saves after initialization is complete
+        setReady() {
+          this._ready = true;
+          // Trigger an initial save to persist current state (including any defaults)
+          this.scheduleSave();
+        }
+
         scheduleSave() {
+          if (!this._ready) return; // Block saves during initialization
           if (this._saveTimer) clearTimeout(this._saveTimer);
           const elapsed = Date.now() - this._lastSave;
           const delay = Math.max(0, this._minInterval - elapsed);
@@ -10227,6 +10258,7 @@
                   STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
                   JSON.stringify(merged),
                 );
+                if (serverSync) serverSync.scheduleSave();
               }
               importedCount++;
             }
@@ -13744,6 +13776,7 @@
                 autoTrigger: this.autoTrigger,
               }),
             );
+            if (serverSync) serverSync.scheduleSave();
           } catch (e) {
             console.error("Failed to save relay settings:", e);
           }
@@ -21997,6 +22030,7 @@
             STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
             JSON.stringify(data),
           );
+          if (serverSync) serverSync.scheduleSave();
         }
 
         /**
@@ -22132,6 +22166,9 @@
         // Initialize Real-Time Auto Factorial Development manager
         window.realTimeAutoFactorial = new RealTimeAutoFactorial(timerManager);
         window.realTimeAutoFactorial.init();
+
+        // All managers initialized - enable server sync saves
+        if (serverSync) serverSync.setReady();
 
         // Color scheme selector
         document.querySelectorAll(".toggle-btn[data-scheme]").forEach((btn) => {
