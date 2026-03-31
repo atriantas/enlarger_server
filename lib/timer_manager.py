@@ -7,9 +7,13 @@ MicroPython v1.27.0 compatible
 
 import asyncio
 import time
+import json
 
 # Fixed delay for network latency compensation (milliseconds)
 SYNC_DELAY_MS = 150
+
+# Heating config persistence file
+HEATING_CONFIG_FILE = "heating_config.json"
 
 
 class TimerManager:
@@ -41,7 +45,34 @@ class TimerManager:
         self.heating_pin = 16  # GP16 for heating element
         self.heating_enabled = False  # Temperature control disabled by default
         self.last_temperature = None  # Last read temperature
+        self._load_heating_config()
     
+    def _load_heating_config(self):
+        """Load persisted heating settings from file."""
+        try:
+            with open(HEATING_CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                self.heating_hysteresis = config.get('deadzone', 0.5)
+                self.target_temperature = config.get('target', 20.0)
+                print(f"Loaded heating config: deadzone={self.heating_hysteresis}, target={self.target_temperature}")
+        except OSError:
+            print("No saved heating config, using defaults")
+        except Exception as e:
+            print(f"Error loading heating config: {e}")
+
+    def _save_heating_config(self):
+        """Save heating settings to file."""
+        try:
+            config = {
+                'deadzone': self.heating_hysteresis,
+                'target': self.target_temperature
+            }
+            with open(HEATING_CONFIG_FILE, 'w') as f:
+                json.dump(config, f)
+            print(f"Saved heating config: deadzone={self.heating_hysteresis}, target={self.target_temperature}")
+        except Exception as e:
+            print(f"Error saving heating config: {e}")
+
     def get_current_time_ms(self):
         """Get current time in milliseconds since boot."""
         return time.ticks_ms()
@@ -325,6 +356,7 @@ class TimerManager:
             target_celsius (float): Target temperature in Celsius
         """
         self.target_temperature = target_celsius
+        self._save_heating_config()
         print(f"Target temperature set to {target_celsius}°C")
     
     def get_heating_status(self):

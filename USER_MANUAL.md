@@ -1068,6 +1068,29 @@ The SETTINGS tab centralizes all application preferences. Changes are persisted 
 | **Toggle Fullscreen** | Button | Enters or exits browser fullscreen mode. Maximizes screen real estate on mobile devices |
 | **Color Scheme** | Darkroom / Light / Night | Sets the visual theme for the entire application |
 
+### Sound Settings
+
+A dedicated collapsible section that centralizes all audio and feedback controls in one place.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Global Mute** | Off | Master mute switch — silences all application sounds when enabled |
+| **Master Volume** | 70% | Slider (0–100, step 5) — controls the volume level of all sounds |
+| **UI Feedback Sounds** | On | Toggle — enables short audio feedback for button taps and UI interactions |
+| **Haptic Feedback** | Off | Toggle — enables vibration feedback on supported devices (phones/tablets) |
+
+**Timer Sounds** (sub-heading within Sound Settings):
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Countdown Beep** | On | Toggle — enables beeps during the pre-exposure countdown |
+| **Beep Pattern** | every-second | Select: every-second, last 3 seconds only, last 5 seconds only, none |
+| **Timer 10s Warning** | On | Toggle — audio alert 10 seconds before a chemistry timer completes |
+| **Timer End Beep** | On | Toggle — audio confirmation when a chemistry timer completes |
+| **Exposure 3s Warning** | On | Toggle — audio alert 3 seconds before an exposure completes |
+| **Exposure End Beep** | On | Toggle — audio confirmation when an exposure completes |
+| **Test Beep** | Button | Plays a preview beep at the current volume level |
+
 ### Global Settings
 
 | Setting | Default | Range | Description |
@@ -1116,8 +1139,8 @@ Under the "Virtual Proof Stability" heading:
 |---------|---------|-------|-------------|
 | **Base Time Min** | 0.4s | 0.1–10s (step 0.1) | Lower limit for the exposure base time slider |
 | **Base Time Max** | 50s | 10–300s (step 1) | Upper limit for the exposure base time slider |
-| **3-Second Warning Beep** | On | Toggle | Audio alert 3 seconds before an exposure completes |
-| **End Beep** | On | Toggle | Audio confirmation when an exposure completes |
+| **3-Second Warning Beep** | On | Toggle | Audio alert 3 seconds before an exposure completes. Also controllable from Sound Settings |
+| **End Beep** | On | Toggle | Audio confirmation when an exposure completes. Also controllable from Sound Settings |
 
 **Tip:** Setting the base time min/max to your typical working range (e.g., 5–30 seconds) makes the slider more sensitive and easier to adjust precisely.
 
@@ -1127,10 +1150,16 @@ Under the "Virtual Proof Stability" heading:
 |---------|---------|-------|-------------|
 | **Default Dev Time** | 60s (1:00) | 5–600s (step 5) | Default developer timer duration |
 | **Default Stop Time** | 30s (0:30) | 5–300s (step 5) | Default stop bath timer duration |
-| **Default Fix Time** | 60s (1:00) | 5–600s (step 5) | Default fixer timer duration |
-| **Default Flo Time** | 30s (0:30) | 5–300s (step 5) | Default photo wash timer duration |
-| **10-Second Warning Beep** | On | Toggle | Audio alert 10 seconds before a chemistry timer completes |
-| **End Beep** | On | Toggle | Audio confirmation when a chemistry timer completes |
+| **Default Fix Time** | 300s (5:00) | 5–600s (step 5) | Default fixer timer duration |
+| **Default Flo Time** | 60s (1:00) | 5–300s (step 5) | Default photo wash timer duration |
+| **10-Second Warning Beep** | On | Toggle | Audio alert 10 seconds before a chemistry timer completes. Also controllable from Sound Settings |
+| **End Beep** | On | Toggle | Audio confirmation when a chemistry timer completes. Also controllable from Sound Settings |
+
+### Chemical Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Auto-track Prints** | Off | When enabled, automatically increments the developer capacity print counter each time an exposure session ends. This keeps the capacity tracker in sync with your actual printing without manual counting. |
 
 ### Controller Settings
 
@@ -2516,154 +2545,184 @@ This appendix provides a numbered reference for every visible UI element, organi
 | 4 | Light button | Toggle | "Light" bright theme |
 | 5 | Night button | Toggle | "Night" neutral dark theme |
 
+#### Sound Settings (collapsible)
+
+| # | Element | Type | Description |
+|---|---------|------|-------------|
+| 6 | Section header | Collapsible | "SOUND SETTINGS" |
+| 7 | Global Mute label | Text | "Global Mute" |
+| 8 | Global Mute toggle | Checkbox | Silences all application sounds |
+| 9 | Master Volume label | Text | "Master Volume" |
+| 10 | Master Volume slider | Range (0–100, step 5) | Controls volume level, default 70 |
+| 11 | UI Feedback label | Text | "UI Feedback Sounds" |
+| 12 | UI Feedback toggle | Checkbox (checked) | Audio feedback for button taps |
+| 13 | Haptic Feedback label | Text | "Haptic Feedback" |
+| 14 | Haptic Feedback toggle | Checkbox | Vibration feedback on supported devices |
+| 15 | Timer Sounds title | Text | "Timer Sounds" |
+| 16 | Countdown Beep toggle | Checkbox (checked) | Enables countdown beeps |
+| 17 | Beep Pattern select | Dropdown | every-second, last3, last5, none |
+| 18 | Timer 10s Warning toggle | Checkbox (checked) | Beep at 10 seconds remaining |
+| 19 | Timer End Beep toggle | Checkbox (checked) | Beep on timer completion |
+| 20 | Exposure 3s Warning toggle | Checkbox (checked) | Beep at 3 seconds remaining |
+| 21 | Exposure End Beep toggle | Checkbox (checked) | Beep on exposure completion |
+| 22 | Test Beep button | Button | Plays sample beep |
+
 #### Global Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 6 | Section header | Collapsible | "GLOBAL SETTINGS" |
-| 7 | Expand arrow | Icon | Expand/collapse |
-| 8 | Base time label | Text | "Default Base Time (s)" |
-| 9 | Base time input | Number | 1–50, step 0.5, default 10 |
-| 10 | Stop increment label | Text | "Default Stop Increment" |
-| 11 | Stop increment select | Dropdown | 1, 1/2, 1/3, 1/4, 1/6 (default 1/3) |
-| 12 | Countdown delay label | Text | "Countdown Delay (s)" |
-| 13 | Countdown delay input | Number | 0–30, step 1, default 5 |
-| 14 | Countdown beep label | Text | "Countdown Beep" |
-| 15 | Countdown beep toggle | Checkbox (checked) | Enables countdown audio |
-| 16 | Beep pattern label | Text | "Beep Pattern" |
-| 17 | Beep pattern select | Dropdown | every-second, last3, last5, none |
-| 18 | Test Beep button | Button | Plays sample sound |
+| 23 | Section header | Collapsible | "GLOBAL SETTINGS" |
+| 24 | Expand arrow | Icon | Expand/collapse |
+| 25 | Base time label | Text | "Default Base Time (s)" |
+| 26 | Base time input | Number | 1–50, step 0.5, default 10 |
+| 27 | Stop increment label | Text | "Default Stop Increment" |
+| 28 | Stop increment select | Dropdown | 1, 1/2, 1/3, 1/4, 1/6 (default 1/3) |
+| 29 | Countdown delay label | Text | "Countdown Delay (s)" |
+| 30 | Countdown delay input | Number | 0–30, step 1, default 5 |
+| 31 | Countdown beep label | Text | "Countdown Beep" |
+| 32 | Countdown beep toggle | Checkbox (checked) | Enables countdown audio |
+| 33 | Beep pattern label | Text | "Beep Pattern" |
+| 34 | Beep pattern select | Dropdown | every-second, last3, last5, none |
+| 35 | Test Beep button | Button | Plays sample sound |
 
 #### Metering Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 19 | Section header | Collapsible | "METERING SETTINGS" |
-| 20 | Expand arrow | Icon | Expand/collapse |
-| 21 | Proof stability title | Text | "Virtual Proof Stability" |
-| 22 | Stability detection label | Text | "Stability Detection" |
-| 23 | Stability detection toggle | Checkbox | Enables stability algorithm |
-| 24 | Beep on stable label | Text | "Beep On Stable" |
-| 25 | Beep on stable toggle | Checkbox | Audio on stable reading |
-| 26 | Tolerance label | Text | "Tolerance (%)" |
-| 27 | Tolerance input | Number | 0.5–10, step 0.1, default 2.5 |
-| 28 | Min stable reads label | Text | "Min Stable Reads" |
-| 29 | Min stable reads input | Number | 1–5, default 2 |
-| 30 | Max wait label | Text | "Max Wait (ms)" |
-| 31 | Max wait input | Number | 300–3000, step 50, default 900 |
-| 32 | Min delta label | Text | "Min Delta (lux)" |
-| 33 | Min delta input | Number | 0.05–5, step 0.05, default 0.2 |
+| 36 | Section header | Collapsible | "METERING SETTINGS" |
+| 37 | Expand arrow | Icon | Expand/collapse |
+| 38 | Proof stability title | Text | "Virtual Proof Stability" |
+| 39 | Stability detection label | Text | "Stability Detection" |
+| 40 | Stability detection toggle | Checkbox | Enables stability algorithm |
+| 41 | Beep on stable label | Text | "Beep On Stable" |
+| 42 | Beep on stable toggle | Checkbox | Audio on stable reading |
+| 43 | Tolerance label | Text | "Tolerance (%)" |
+| 44 | Tolerance input | Number | 0.5–10, step 0.1, default 2.5 |
+| 45 | Min stable reads label | Text | "Min Stable Reads" |
+| 46 | Min stable reads input | Number | 1–5, default 2 |
+| 47 | Max wait label | Text | "Max Wait (ms)" |
+| 48 | Max wait input | Number | 300–3000, step 50, default 900 |
+| 49 | Min delta label | Text | "Min Delta (lux)" |
+| 50 | Min delta input | Number | 0.05–5, step 0.05, default 0.2 |
 
 #### Test Strip Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 34 | Section header | Collapsible | "TEST STRIP SETTINGS" |
-| 35 | Expand arrow | Icon | Expand/collapse |
-| 36 | Auto advance label | Text | "Auto Advance" |
-| 37 | Auto advance toggle | Checkbox | Enables auto-progression |
-| 38 | Advance delay label | Text | "Auto Advance Delay (s)" |
-| 39 | Advance delay input | Number | 0–30, step 1, default 1 |
-| 40 | Base time min label | Text | "Test Base Time Min (s)" |
-| 41 | Base time min input | Number | 0.5–10, step 0.5, default 1 |
-| 42 | Base time max label | Text | "Test Base Time Max (s)" |
-| 43 | Base time max input | Number | 10–300, step 1, default 50 |
+| 51 | Section header | Collapsible | "TEST STRIP SETTINGS" |
+| 52 | Expand arrow | Icon | Expand/collapse |
+| 53 | Auto advance label | Text | "Auto Advance" |
+| 54 | Auto advance toggle | Checkbox | Enables auto-progression |
+| 55 | Advance delay label | Text | "Auto Advance Delay (s)" |
+| 56 | Advance delay input | Number | 0–30, step 1, default 1 |
+| 57 | Base time min label | Text | "Test Base Time Min (s)" |
+| 58 | Base time min input | Number | 0.5–10, step 0.5, default 1 |
+| 59 | Base time max label | Text | "Test Base Time Max (s)" |
+| 60 | Base time max input | Number | 10–300, step 1, default 50 |
 
 #### Exposure Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 44 | Section header | Collapsible | "EXPOSURE SETTINGS" |
-| 45 | Expand arrow | Icon | Expand/collapse |
-| 46 | Base time min label | Text | "Base Time Min (s)" |
-| 47 | Base time min input | Number | 0.1–10, step 0.1, default 0.4 |
-| 48 | Base time max label | Text | "Base Time Max (s)" |
-| 49 | Base time max input | Number | 10–300, step 1, default 50 |
-| 50 | Warning beep label | Text | "Exposure 3s Beep" |
-| 51 | Warning beep toggle | Checkbox (checked) | Beep at 3 seconds remaining |
-| 52 | End beep label | Text | "Exposure End Beep" |
-| 53 | End beep toggle | Checkbox (checked) | Beep on completion |
+| 61 | Section header | Collapsible | "EXPOSURE SETTINGS" |
+| 62 | Expand arrow | Icon | Expand/collapse |
+| 63 | Base time min label | Text | "Base Time Min (s)" |
+| 64 | Base time min input | Number | 0.1–10, step 0.1, default 0.4 |
+| 65 | Base time max label | Text | "Base Time Max (s)" |
+| 66 | Base time max input | Number | 10–300, step 1, default 50 |
+| 67 | Warning beep label | Text | "Exposure 3s Beep" |
+| 68 | Warning beep toggle | Checkbox (checked) | Beep at 3 seconds remaining |
+| 69 | End beep label | Text | "Exposure End Beep" |
+| 70 | End beep toggle | Checkbox (checked) | Beep on completion |
 
 #### Timer Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 54 | Section header | Collapsible | "TIMER SETTINGS" |
-| 55 | Expand arrow | Icon | Expand/collapse |
-| 56 | Dev time label | Text | "Default Developer (s)" |
-| 57 | Dev time input | Number | 5–600, step 5, default 60 |
-| 58 | Stop time label | Text | "Default Stop Bath (s)" |
-| 59 | Stop time input | Number | 5–300, step 5, default 30 |
-| 60 | Fix time label | Text | "Default Fixer (s)" |
-| 61 | Fix time input | Number | 5–600, step 5, default 60 |
-| 62 | Flo time label | Text | "Default Photo Wash (s)" |
-| 63 | Flo time input | Number | 5–300, step 5, default 30 |
-| 64 | Timer warning label | Text | "Timer 10s Beep" |
-| 65 | Timer warning toggle | Checkbox (checked) | Beep at 10 seconds remaining |
-| 66 | Timer end label | Text | "Timer End Beep" |
-| 67 | Timer end toggle | Checkbox (checked) | Beep on completion |
+| 71 | Section header | Collapsible | "TIMER SETTINGS" |
+| 72 | Expand arrow | Icon | Expand/collapse |
+| 73 | Dev time label | Text | "Default Developer (s)" |
+| 74 | Dev time input | Number | 5–600, step 5, default 60 |
+| 75 | Stop time label | Text | "Default Stop Bath (s)" |
+| 76 | Stop time input | Number | 5–300, step 5, default 30 |
+| 77 | Fix time label | Text | "Default Fixer (s)" |
+| 78 | Fix time input | Number | 5–600, step 5, default 300 |
+| 79 | Flo time label | Text | "Default Photo Wash (s)" |
+| 80 | Flo time input | Number | 5–300, step 5, default 60 |
+| 81 | Timer warning label | Text | "Timer 10s Beep" |
+| 82 | Timer warning toggle | Checkbox (checked) | Beep at 10 seconds remaining |
+| 83 | Timer end label | Text | "Timer End Beep" |
+| 84 | Timer end toggle | Checkbox (checked) | Beep on completion |
+
+#### Chemical Settings (collapsible)
+
+| # | Element | Type | Description |
+|---|---------|------|-------------|
+| 85 | Section header | Collapsible | "CHEMICAL SETTINGS" |
+| 86 | Auto-track label | Text | "Auto-track Prints" |
+| 87 | Auto-track toggle | Checkbox | Auto-increments developer capacity print counter when a session ends |
 
 #### Controller Settings (collapsible)
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 68 | Section header | Collapsible | "CONTROLLER SETTINGS" |
-| 69 | Expand arrow | Icon | Expand/collapse |
-| 70 | Auto control subtitle | Text | "Auto - Manual Enlarger Control" |
-| 71 | Auto-trigger label | Text | "Auto-trigger Enlarger" |
-| 72 | Auto-trigger toggle | Checkbox (checked) | Enlarger relay during timers |
-| 73 | Auto safelight label | Text | "Auto Safelight Control" |
-| 74 | Auto safelight toggle | Checkbox (checked) | Safelight off during exposure |
-| 75 | Auto control note | Text | Help text about behavior |
-| 76 | Manager subtitle | Text | "Controller Manager" |
-| 77 | Server IP label | Text | "Server IP (auto-detected)" |
-| 78 | Server IP input | Text (readonly) | Auto-detected address |
-| 79 | Server port label | Text | "Server Port" |
-| 80 | Server port input | Number (readonly) | Default 80 |
-| 81 | Test Connection label | Text | "Test Connection" |
-| 82 | Test button | Button | Validates server connection |
-| 83 | Status label | Text | "Status" |
-| 84 | Status display | Text | "Not connected" etc. |
-| 85 | Test Timer label | Text | "Test Timer Relay" |
-| 86 | Timer seconds input | Number | 0.1–60, step 0.1, default 5 |
-| 87 | Timer test button | Button | Triggers relay for set duration |
-| 88 | WiFi subtitle | Text | "WiFi Configuration" |
-| 89 | WiFi help text | Text | "Connect to WiFi router for mDNS…" |
-| 90 | SSID label | Text | "WiFi SSID" |
-| 91 | SSID input | Text input | Network name |
-| 92 | Password label | Text | "WiFi Password" |
-| 93 | Password input | Password | Network password |
-| 94 | Connect to WiFi button | Button (primary) | Connects to network |
-| 95 | WiFi status label | Text | "WiFi Status" |
-| 96 | WiFi status display | Text | "AP Mode (192.168.4.1)" |
-| 97 | Force Hotspot button | Button | Reactivates access point |
-| 98 | Clear WiFi button | Button | Removes saved credentials |
-| 99 | WiFi note | Text | "After connecting, access via darkroom.local" |
-| 100 | Updates subtitle | Text | "Updates" |
-| 101 | Updates help text | Text | "Check for new versions from GitHub…" |
-| 102 | Current version label | Text | "Current Version" |
-| 103 | Current version display | Text | Installed version |
-| 104 | Latest version label | Text | "Latest Version" |
-| 105 | Latest version display | Text | "Unknown" / version number |
-| 106 | Check for Updates button | Button (primary) | Checks GitHub |
-| 107 | Update status | Text | "Ready" etc. |
-| 108 | Progress bar | Bar | Download progress (hidden by default) |
-| 109 | Progress percentage | Text | "0%" etc. |
-| 110 | Updates note | Text | "Pico will restart after update" |
+| 88 | Section header | Collapsible | "CONTROLLER SETTINGS" |
+| 89 | Expand arrow | Icon | Expand/collapse |
+| 90 | Auto control subtitle | Text | "Auto - Manual Enlarger Control" |
+| 91 | Auto-trigger label | Text | "Auto-trigger Enlarger" |
+| 92 | Auto-trigger toggle | Checkbox (checked) | Enlarger relay during timers |
+| 93 | Auto safelight label | Text | "Auto Safelight Control" |
+| 94 | Auto safelight toggle | Checkbox (checked) | Safelight off during exposure |
+| 95 | Auto control note | Text | Help text about behavior |
+| 96 | Manager subtitle | Text | "Controller Manager" |
+| 97 | Server IP label | Text | "Server IP (auto-detected)" |
+| 98 | Server IP input | Text (readonly) | Auto-detected address |
+| 99 | Server port label | Text | "Server Port" |
+| 100 | Server port input | Number (readonly) | Default 80 |
+| 101 | Test Connection label | Text | "Test Connection" |
+| 102 | Test button | Button | Validates server connection |
+| 103 | Status label | Text | "Status" |
+| 104 | Status display | Text | "Not connected" etc. |
+| 105 | Test Timer label | Text | "Test Timer Relay" |
+| 106 | Timer seconds input | Number | 0.1–60, step 0.1, default 5 |
+| 107 | Timer test button | Button | Triggers relay for set duration |
+| 108 | WiFi subtitle | Text | "WiFi Configuration" |
+| 109 | WiFi help text | Text | "Connect to WiFi router for mDNS…" |
+| 110 | SSID label | Text | "WiFi SSID" |
+| 111 | SSID input | Text input | Network name |
+| 112 | Password label | Text | "WiFi Password" |
+| 113 | Password input | Password | Network password |
+| 114 | Connect to WiFi button | Button (primary) | Connects to network |
+| 115 | WiFi status label | Text | "WiFi Status" |
+| 116 | WiFi status display | Text | "AP Mode (192.168.4.1)" |
+| 117 | Force Hotspot button | Button | Reactivates access point |
+| 118 | Clear WiFi button | Button | Removes saved credentials |
+| 119 | WiFi note | Text | "After connecting, access via darkroom.local" |
+| 120 | Updates subtitle | Text | "Updates" |
+| 121 | Updates help text | Text | "Check for new versions from GitHub…" |
+| 122 | Current version label | Text | "Current Version" |
+| 123 | Current version display | Text | Installed version |
+| 124 | Latest version label | Text | "Latest Version" |
+| 125 | Latest version display | Text | "Unknown" / version number |
+| 126 | Check for Updates button | Button (primary) | Checks GitHub |
+| 127 | Update status | Text | "Ready" etc. |
+| 128 | Progress bar | Bar | Download progress (hidden by default) |
+| 129 | Progress percentage | Text | "0%" etc. |
+| 130 | Updates note | Text | "Pico will restart after update" |
 
 #### Save, Sharing & Reset
 
 | # | Element | Type | Description |
 |---|---------|------|-------------|
-| 111 | Save All Settings button | Button (primary) | Persists all configuration |
-| 112 | Save feedback | Text | Confirmation message |
-| 113 | Sharing title | Text | "Profile & Settings Sharing" |
-| 114 | Export All Data button | Button | Downloads JSON backup |
-| 115 | Import All Data button | Button | Uploads JSON data |
-| 116 | Sharing note | Text | "Exports Timer Profiles, Chemical Presets…" |
-| 117 | Reset title | Text | "Reset" |
-| 118 | Reset All Settings button | Button (danger) | Clears everything — cannot be undone |
-| 119 | Reset warning | Text | "This will reset all settings to defaults…" |
+| 131 | Save All Settings button | Button (primary) | Persists all configuration |
+| 132 | Save feedback | Text | Confirmation message |
+| 133 | Sharing title | Text | "Profile & Settings Sharing" |
+| 134 | Export All Data button | Button | Downloads JSON backup |
+| 135 | Import All Data button | Button | Uploads JSON data |
+| 136 | Sharing note | Text | "Exports Timer Profiles, Chemical Presets…" |
+| 137 | Reset title | Text | "Reset" |
+| 138 | Reset All Settings button | Button (danger) | Clears everything — cannot be undone |
+| 139 | Reset warning | Text | "This will reset all settings to defaults…" |
 
 ---
 

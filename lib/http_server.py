@@ -65,6 +65,7 @@ class HTTPServer:
             '/temperature':                   self._handle_temperature,
             '/temperature-control':           self._handle_temperature_control,
             '/temperature-enable':            self._handle_temperature_enable,
+            '/temperature-deadzone':          self._handle_temperature_deadzone,
             '/wifi-status':                   self._handle_wifi_status,
             '/wifi-config':                   self._handle_wifi_config,
             '/wifi-ap-force':                 self._handle_wifi_ap_force,
@@ -596,6 +597,7 @@ class HTTPServer:
                 "relay_on": status.get("relay_on"),
                 "connected": status.get("connected"),
                 "enabled": status.get("enabled"),
+                "deadzone": self.timer.heating_hysteresis,
                 "timestamp": time.ticks_ms()
             })
             await self._sendall(conn, response)
@@ -689,6 +691,59 @@ class HTTPServer:
         except Exception as e:
             response = self._json_response({
                 "error": f"Failed to set temperature enable: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+    
+    async def _handle_temperature_deadzone(self, conn, params):
+        """Handle /temperature-deadzone endpoint - get or set heating dead zone (hysteresis)."""
+        if not self.timer.temperature_sensor:
+            response = self._json_response({
+                "error": "Temperature sensor not configured"
+            }, 400)
+            await self._sendall(conn, response)
+            return
+        
+        try:
+            deadzone_str = params.get('value', '').strip()
+            
+            if not deadzone_str:
+                # GET - return current dead zone
+                response = self._json_response({
+                    "status": "success",
+                    "deadzone": self.timer.heating_hysteresis,
+                    "timestamp": time.ticks_ms()
+                })
+                await self._sendall(conn, response)
+                return
+            
+            deadzone = float(deadzone_str)
+            
+            if deadzone < 0.1 or deadzone > 5.0:
+                response = self._json_response({
+                    "error": "Dead zone out of range. Valid range: 0.1 - 5.0°C"
+                }, 400)
+                await self._sendall(conn, response)
+                return
+            
+            self.timer.heating_hysteresis = deadzone
+            self.timer._save_heating_config()
+            
+            response = self._json_response({
+                "status": "success",
+                "message": f"Dead zone set to +/-{deadzone}C",
+                "deadzone": deadzone,
+                "timestamp": time.ticks_ms()
+            })
+            await self._sendall(conn, response)
+            
+        except ValueError:
+            response = self._json_response({
+                "error": f"Invalid dead zone value: {params.get('value')}. Must be a number."
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Failed to set dead zone: {e}"
             }, 500)
             await self._sendall(conn, response)
     
