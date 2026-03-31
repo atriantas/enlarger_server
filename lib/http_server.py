@@ -726,7 +726,6 @@ class HTTPServer:
                 return
             
             self.timer.heating_hysteresis = deadzone
-            self.timer._save_heating_config()
             
             response = self._json_response({
                 "status": "success",
