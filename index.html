@@ -4148,6 +4148,7 @@
                 height="150"
                 style="
                   width: 100%;
+                  height: 150px;
                   border: 1px solid var(--border);
                   background: var(--bg-darker);
                   margin-top: 4px;
@@ -4717,6 +4718,40 @@
                 Note: Auto-trigger controls enlarger relay during timers. Auto Safelight automatically turns off safelight when enlarger is on.
               </div>
 
+              </div>
+
+              <!-- Temperature Dead Zone Setting -->
+              <div class="settings-section" style="margin-top: 16px;">
+                <div class="title-md">Temperature Control</div>
+                <div class="settings-group">
+                  <div class="settings-item">
+                    <div class="settings-label">Dead Zone (±°C)</div>
+                    <input
+                      type="number"
+                      class="settings-input"
+                      id="deadZoneInput"
+                      value="0.5"
+                      min="0.1"
+                      max="5.0"
+                      step="0.1"
+                    />
+                  </div>
+                  <div class="settings-item">
+                    <div class="settings-label">&nbsp;</div>
+                    <button class="settings-btn primary" id="setDeadZoneBtn">
+                      Set
+                    </button>
+                  </div>
+                </div>
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    color: var(--text-secondary);
+                    margin-top: 10px;
+                  "
+                >
+                  Dead zone controls heating hysteresis. Heater turns ON when temperature drops below target minus dead zone, and OFF when it reaches the target. Larger values reduce relay cycling.
+                </div>
               </div>
 
               <div class="settings-section" style="margin-top: 16px;">
@@ -6821,14 +6856,17 @@
           this.dataBuffer = []; // Circular buffer (max 60 points)
           this.maxDataPoints = 60; // 15 minutes at 15sec intervals
           this.enabled = false;
+          this.deadzone = 0.5; // Current dead zone value
 
           // Storage keys
           this.storageKey = "temperature_target";
           this.enabledKey = "temperature_enabled";
+          this.deadzoneKey = "temperature_deadzone";
 
           // Load settings from localStorage
           this.targetTemperature = this.loadTargetTemperature();
           this.enabled = this.loadEnabled();
+          this.deadzone = this.loadDeadzone();
 
           // Initialize UI elements
           this.initUI();
@@ -6881,6 +6919,24 @@
             content.style.display = this.enabled ? "block" : "none";
           }
 
+          // Dead zone settings UI
+          const deadZoneInput = document.getElementById("deadZoneInput");
+          const setDeadZoneBtn = document.getElementById("setDeadZoneBtn");
+          if (deadZoneInput) {
+            deadZoneInput.value = this.deadzone.toFixed(1);
+          }
+          if (setDeadZoneBtn) {
+            setDeadZoneBtn.addEventListener("click", () => this.setDeadzone());
+          }
+          if (deadZoneInput) {
+            deadZoneInput.addEventListener("keypress", (e) => {
+              if (e.key === "Enter") this.setDeadzone();
+            });
+          }
+
+          // Set initial dead zone display
+          this.updateDeadzoneDisplay(this.deadzone);
+
           // If enabled from localStorage, sync with backend and start polling
           if (this.enabled) {
             this.syncAndStartPolling();
@@ -6896,6 +6952,15 @@
             });
 
             if (data.status === "success") {
+              // Sync dead zone to backend
+              try {
+                await apiClient.getJSON("/temperature-deadzone", {
+                  params: { value: this.deadzone },
+                  preferRelay: true,
+                });
+              } catch (e) {
+                console.warn("Failed to sync dead zone:", e);
+              }
               this.startPolling();
               this.pollTemperature();
             } else {
@@ -6938,6 +7003,52 @@
 
         saveEnabled(enabled) {
           localStorage.setItem(this.enabledKey, enabled.toString());
+        }
+
+        loadDeadzone() {
+          const saved = localStorage.getItem(this.deadzoneKey);
+          return saved ? parseFloat(saved) : 0.5;
+        }
+
+        saveDeadzone(value) {
+          localStorage.setItem(this.deadzoneKey, value.toFixed(1));
+        }
+
+        async setDeadzone() {
+          const input = document.getElementById("deadZoneInput");
+          if (!input) return;
+
+          const value = parseFloat(input.value);
+          if (isNaN(value) || value < 0.1 || value > 5.0) {
+            notifyUser("Dead zone must be between 0.1°C and 5.0°C", "error");
+            input.value = this.deadzone.toFixed(1);
+            return;
+          }
+
+          try {
+            const data = await apiClient.getJSON("/temperature-deadzone", {
+              params: { value },
+              preferRelay: true,
+            });
+
+            if (data.status === "success") {
+              this.deadzone = value;
+              this.saveDeadzone(value);
+              this.updateDeadzoneDisplay(value);
+              notifyUser(`Dead zone set to ±${value.toFixed(1)}°C`, "success");
+            } else {
+              notifyUser(data.error || "Failed to set dead zone", "error");
+              input.value = this.deadzone.toFixed(1);
+            }
+          } catch (e) {
+            console.error("Error setting dead zone:", e);
+            notifyUser("Failed to set dead zone: server unreachable?", "error");
+          }
+        }
+
+        updateDeadzoneDisplay(value) {
+          const el = document.getElementById("hysteresisInfo");
+          if (el) el.textContent = `±${value.toFixed(1)}°C`;
         }
 
         isEnabled() {
@@ -7075,13 +7186,19 @@
         }
 
         updateDisplay(data) {
+          // Sync dead zone from server if provided
+          if (data.deadzone !== undefined && data.deadzone !== null) {
+            this.deadzone = data.deadzone;
+            this.updateDeadzoneDisplay(data.deadzone);
+          }
+
           // Update current temperature
           const tempDisplay = document.getElementById("temperatureDisplay");
           if (tempDisplay && data.temperature !== null) {
             tempDisplay.textContent = `${data.temperature.toFixed(1)} °C`;
 
-            // Color code based on status
-            if (data.temperature < data.target - 0.5) {
+            // Color code based on status using actual dead zone
+            if (data.temperature < data.target - this.deadzone) {
               tempDisplay.style.color = "#74b9ff"; // Blue - heating
             } else if (data.temperature >= data.target) {
               tempDisplay.style.color = "#00b894"; // Green - at target
@@ -7152,22 +7269,30 @@
           if (!canvas || this.dataBuffer.length === 0) return;
 
           const ctx = canvas.getContext("2d");
-          const width = canvas.offsetWidth;
-          const height = canvas.height;
+          // Sync internal canvas resolution with CSS display size
+          const dpr = window.devicePixelRatio || 1;
+          const displayWidth = canvas.offsetWidth;
+          const displayHeight = canvas.offsetHeight || 150;
+          canvas.width = displayWidth * dpr;
+          canvas.height = displayHeight * dpr;
+          ctx.scale(dpr, dpr);
+          const width = displayWidth;
+          const height = displayHeight;
 
-          // Clear canvas
-          ctx.fillStyle = "var(--bg-darker)";
+          // Clear canvas - resolve CSS variable since canvas can't use var()
+          const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-darker').trim() || '#1a1a2e';
+          ctx.fillStyle = bgColor;
           ctx.fillRect(0, 0, width, height);
 
-          // Find min/max temps for scaling
-          let minTemp = Math.min(...this.dataBuffer.map((p) => p.temp));
-          let maxTemp = Math.max(...this.dataBuffer.map((p) => p.temp));
-          const targetTemp = this.dataBuffer[0].target;
+          // Find min/max temps for scaling (include target so it's always visible)
+          let minTemp = Math.min(...this.dataBuffer.map((p) => p.temp), this.targetTemperature - this.deadzone);
+          let maxTemp = Math.max(...this.dataBuffer.map((p) => p.temp), this.targetTemperature + this.deadzone);
+          const targetTemp = this.dataBuffer[this.dataBuffer.length - 1].target || this.targetTemperature;
 
           // Add some padding
           const tempRange = maxTemp - minTemp || 1;
-          minTemp = Math.floor(minTemp - tempRange * 0.1);
-          maxTemp = Math.ceil(maxTemp + tempRange * 0.1);
+          minTemp = Math.floor(minTemp - tempRange * 0.15);
+          maxTemp = Math.ceil(maxTemp + tempRange * 0.15);
 
           const tempScale = maxTemp - minTemp || 1;
 
@@ -7190,6 +7315,13 @@
           // Draw target line
           const targetY =
             height - ((targetTemp - minTemp) / tempScale) * height;
+
+          // Draw dead zone band
+          const dzTopY = height - ((targetTemp + this.deadzone - minTemp) / tempScale) * height;
+          const dzBottomY = height - ((targetTemp - this.deadzone - minTemp) / tempScale) * height;
+          ctx.fillStyle = "rgba(0, 184, 148, 0.08)";
+          ctx.fillRect(0, dzTopY, width, dzBottomY - dzTopY);
+
           ctx.strokeStyle = "rgba(0, 184, 148, 0.3)"; // Green dashed
           ctx.setLineDash([5, 5]);
           ctx.lineWidth = 2;
@@ -7230,6 +7362,45 @@
             ctx.beginPath();
             ctx.arc(x, y, 4, 0, Math.PI * 2);
             ctx.fill();
+          }
+
+          // Draw time axis labels
+          if (this.dataBuffer.length >= 2) {
+            const newest = this.dataBuffer[this.dataBuffer.length - 1].timestamp;
+            const oldest = this.dataBuffer[0].timestamp;
+            const spanMs = newest - oldest;
+            ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
+            ctx.font = "10px sans-serif";
+            ctx.textAlign = "center";
+
+            // Pick label interval: 1m, 2m, 5m, or 10m depending on span
+            const spanMin = spanMs / 60000;
+            let stepMin;
+            if (spanMin <= 3) stepMin = 1;
+            else if (spanMin <= 8) stepMin = 2;
+            else stepMin = 5;
+
+            // Label from right (now=0) going left
+            for (let m = stepMin; m * 60000 <= spanMs; m += stepMin) {
+              const msAgo = m * 60000;
+              const ratio = 1 - msAgo / spanMs; // 0=oldest, 1=newest
+              const x = ratio * width;
+              if (x < 25) continue; // skip if too close to left edge
+
+              // Small tick
+              ctx.strokeStyle = "rgba(200, 200, 200, 0.25)";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(x, height);
+              ctx.lineTo(x, height - 5);
+              ctx.stroke();
+
+              ctx.fillText(`-${m}m`, x, height - 7);
+            }
+
+            // "now" label at right
+            ctx.textAlign = "right";
+            ctx.fillText("now", width - 2, height - 7);
           }
         }
 
