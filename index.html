@@ -6229,6 +6229,10 @@
         // Logging tool storage keys
         TEMP_SESSIONS: "darkroom_timer_temp_sessions",
         PERMANENT_SESSIONS: "darkroom_timer_permanent_sessions",
+        // Temperature controller settings
+        TEMPERATURE_TARGET: "temperature_target",
+        TEMPERATURE_ENABLED: "temperature_enabled",
+        TEMPERATURE_DEADZONE: "temperature_deadzone",
       };
 
       // Application configuration - constants to eliminate magic numbers
@@ -6477,6 +6481,9 @@
               lightMeterCalibrations: STORAGE_KEYS.LIGHT_METER_CALIBRATIONS,
               tempSessions: STORAGE_KEYS.TEMP_SESSIONS,
               permanentSessions: STORAGE_KEYS.PERMANENT_SESSIONS,
+              temperatureTarget: STORAGE_KEYS.TEMPERATURE_TARGET,
+              temperatureEnabled: STORAGE_KEYS.TEMPERATURE_ENABLED,
+              temperatureDeadzone: STORAGE_KEYS.TEMPERATURE_DEADZONE,
             };
             for (const [jsonKey, storageKey] of Object.entries(keyMap)) {
               if (data[jsonKey] !== undefined && data[jsonKey] !== null) {
@@ -6561,6 +6568,9 @@
             lightMeterCalibrations: StorageManager.loadJSON(STORAGE_KEYS.LIGHT_METER_CALIBRATIONS, {}),
             tempSessions: StorageManager.loadJSON(STORAGE_KEYS.TEMP_SESSIONS, []),
             permanentSessions: StorageManager.loadJSON(STORAGE_KEYS.PERMANENT_SESSIONS, []),
+            temperatureTarget: StorageManager.loadJSON(STORAGE_KEYS.TEMPERATURE_TARGET, null),
+            temperatureEnabled: StorageManager.loadJSON(STORAGE_KEYS.TEMPERATURE_ENABLED, null),
+            temperatureDeadzone: StorageManager.loadJSON(STORAGE_KEYS.TEMPERATURE_DEADZONE, null),
             relaySettings: (function () {
               try { return JSON.parse(localStorage.getItem('relaySettings') || 'null'); } catch (e) { return null; }
             })(),
@@ -6859,9 +6869,9 @@
           this.deadzone = 0.5; // Current dead zone value
 
           // Storage keys
-          this.storageKey = "temperature_target";
-          this.enabledKey = "temperature_enabled";
-          this.deadzoneKey = "temperature_deadzone";
+          this.storageKey = STORAGE_KEYS.TEMPERATURE_TARGET;
+          this.enabledKey = STORAGE_KEYS.TEMPERATURE_ENABLED;
+          this.deadzoneKey = STORAGE_KEYS.TEMPERATURE_DEADZONE;
 
           // Load settings from localStorage
           this.targetTemperature = this.loadTargetTemperature();
@@ -6995,6 +7005,7 @@
 
         saveTargetTemperature(target) {
           localStorage.setItem(this.storageKey, target.toFixed(1));
+          if (serverSync) serverSync.scheduleSave();
         }
 
         loadEnabled() {
@@ -7003,6 +7014,7 @@
 
         saveEnabled(enabled) {
           localStorage.setItem(this.enabledKey, enabled.toString());
+          if (serverSync) serverSync.scheduleSave();
         }
 
         loadDeadzone() {
@@ -7012,6 +7024,7 @@
 
         saveDeadzone(value) {
           localStorage.setItem(this.deadzoneKey, value.toFixed(1));
+          if (serverSync) serverSync.scheduleSave();
         }
 
         async setDeadzone() {
@@ -7330,6 +7343,45 @@
           ctx.lineTo(width, targetY);
           ctx.stroke();
           ctx.setLineDash([]);
+
+          // Draw time axis labels
+          if (this.dataBuffer.length >= 2) {
+            ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
+            ctx.font = "9px sans-serif";
+            ctx.textAlign = "center";
+            const now = this.dataBuffer[this.dataBuffer.length - 1].timestamp;
+            const first = this.dataBuffer[0].timestamp;
+            const spanMs = now - first;
+            const pointSpacing = width / Math.max(this.dataBuffer.length - 1, 1);
+
+            // Pick label interval: every 1m, 2m, or 5m depending on span
+            const spanMin = spanMs / 60000;
+            let stepMin = 1;
+            if (spanMin > 10) stepMin = 5;
+            else if (spanMin > 5) stepMin = 2;
+
+            for (let m = stepMin; m <= Math.floor(spanMin); m += stepMin) {
+              const labelMs = now - m * 60000;
+              // Find closest data point index
+              let closest = 0, bestDiff = Infinity;
+              for (let j = 0; j < this.dataBuffer.length; j++) {
+                const d = Math.abs(this.dataBuffer[j].timestamp - labelMs);
+                if (d < bestDiff) { bestDiff = d; closest = j; }
+              }
+              const x = closest * pointSpacing;
+              // Tick mark
+              ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(x, height - 10);
+              ctx.lineTo(x, height);
+              ctx.stroke();
+              ctx.fillText(`-${m}m`, x, height - 1);
+            }
+            // "now" label
+            ctx.fillText("now", width - 10, height - 1);
+            ctx.textAlign = "start";
+          }
 
           // Draw temperature line
           ctx.strokeStyle = "#74b9ff"; // Blue

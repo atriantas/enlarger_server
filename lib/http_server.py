@@ -109,19 +109,18 @@ class HTTPServer:
 
     def _json_response(self, data, status=200):
         """Build JSON response."""
-        body = json.dumps(data)
+        body_bytes = json.dumps(data).encode()
         status_text = self._STATUS_TEXT.get(status, "Error")
         
-        response = (
+        header = (
             f"HTTP/1.1 {status} {status_text}\r\n"
-            f"Content-Type: application/json\r\n"
-            f"Content-Length: {len(body)}\r\n"
+            f"Content-Type: application/json; charset=utf-8\r\n"
+            f"Content-Length: {len(body_bytes)}\r\n"
             f"{self._cors_headers()}"
             f"Connection: close\r\n"
             f"\r\n"
-            f"{body}"
         )
-        return response.encode()
+        return header.encode() + body_bytes
     
     def _url_decode(self, s):
         """Decode URL-encoded string."""
