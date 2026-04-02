@@ -39,7 +39,6 @@ except ImportError:
 AP_GRACE_PERIOD = 5  # Seconds to wait before disabling AP after STA connects
 LIGHT_METER_SDA_PIN = 0  # GP0 for I2C SDA
 LIGHT_METER_SCL_PIN = 1  # GP1 for I2C SCL
-LIGHT_METER_INT_PIN = 2  # GP2 for TSL2591 INT box-open detection
 AUTORUN_BLOCK_PIN = 6  # GP6, pull to GND to skip autorun
 
 
@@ -71,8 +70,7 @@ class DarkroomTimer:
             try:
                 self.light_meter = DarkroomLightMeter(
                     sda_pin=LIGHT_METER_SDA_PIN,
-                    scl_pin=LIGHT_METER_SCL_PIN,
-                    int_pin=LIGHT_METER_INT_PIN,
+                    scl_pin=LIGHT_METER_SCL_PIN
                 )
                 if self.light_meter.sensor.connected:
                     print("✓ Light meter initialized successfully")
