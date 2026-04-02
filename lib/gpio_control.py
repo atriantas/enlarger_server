@@ -5,6 +5,7 @@ Active-LOW logic: Pin.value(0) = ON, Pin.value(1) = OFF
 MicroPython v1.27.0 compatible
 """
 
+import json
 from machine import Pin
 
 # GPIO Pin Configuration for Pico 2 W
@@ -32,7 +33,7 @@ class GPIOControl:
         """Initialize GPIO pins as outputs with relays OFF."""
         self.pins = {}
         self.states = {}
-        self.auto_safelight = True  # Enable automatic safelight control by default
+        self.auto_safelight = self._load_settings()
         
         for pin_num in RELAY_PINS:
             # Initialize pin as output
@@ -43,7 +44,8 @@ class GPIOControl:
             print(f"GPIO {pin_num} ({RELAY_PINS[pin_num]['name']}): initialized OFF")
         
         print("GPIO setup complete")
-        print("Automatic safelight control: ENABLED")
+        status_str = "ENABLED" if self.auto_safelight else "DISABLED"
+        print(f"Automatic safelight control: {status_str}")
     
     def set_relay_state(self, pin, state, skip_auto_safelight=False):
         """
@@ -144,6 +146,33 @@ class GPIOControl:
             return RELAY_PINS[pin]["name"]
         return "Unknown"
     
+    def _load_settings(self):
+        """
+        Load auto_safelight setting from settings.json on the Pico filesystem.
+        
+        Returns:
+            bool: The saved auto_safelight value, or True as default if file
+                  is missing or corrupt.
+        """
+        try:
+            with open("settings.json", "r") as f:
+                settings = json.load(f)
+            return settings.get("auto_safelight", True)
+        except (OSError, ValueError):
+            # File doesn't exist or is corrupt - use default
+            return True
+    
+    def _save_settings(self):
+        """
+        Save auto_safelight setting to settings.json on the Pico filesystem.
+        """
+        try:
+            settings = {"auto_safelight": self.auto_safelight}
+            with open("settings.json", "w") as f:
+                json.dump(settings, f)
+        except OSError as e:
+            print(f"Warning: Could not save settings.json: {e}")
+    
     def set_auto_safelight(self, enabled):
         """
         Enable or disable automatic safelight control.
@@ -156,6 +185,7 @@ class GPIOControl:
             enabled (bool): True to enable, False to disable
         """
         self.auto_safelight = enabled
+        self._save_settings()
         status = "ENABLED" if enabled else "DISABLED"
         print(f"Automatic safelight control: {status}")
     
