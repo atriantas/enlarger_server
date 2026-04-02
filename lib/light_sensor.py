@@ -552,7 +552,7 @@ class DarkroomLightMeter:
     # Default calibration constant (lux × seconds)
     DEFAULT_CALIBRATION = 1000.0
     
-    def __init__(self, sensor=None, i2c=None, sda_pin=0, scl_pin=1, int_pin=None):
+    def __init__(self, sensor=None, i2c=None, sda_pin=0, scl_pin=1):
         """
         Initialize darkroom light meter.
         
@@ -561,12 +561,11 @@ class DarkroomLightMeter:
             i2c: Existing I2C bus (optional)
             sda_pin: SDA GPIO pin (default: GP0)
             scl_pin: SCL GPIO pin (default: GP1)
-            int_pin: Optional GPIO pin number for TSL2591 INT box-open detection
         """
         if sensor:
             self.sensor = sensor
         else:
-            self.sensor = TSL2591(i2c=i2c, sda_pin=sda_pin, scl_pin=scl_pin, int_pin=int_pin)
+            self.sensor = TSL2591(i2c=i2c, sda_pin=sda_pin, scl_pin=scl_pin)
         
         # Calibration storage (paper_id -> calibration_constant)
         self.calibrations = {}
