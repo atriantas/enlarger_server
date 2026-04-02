@@ -5887,10 +5887,6 @@
                   <div class="label-sm">CONNECTION</div>
                   <div class="value-display" id="sensorConnection">I²C</div>
                 </div>
-                <div class="info-box">
-                  <div class="label-sm">BOX STATUS</div>
-                  <div class="value-display" id="boxStatus">Closed</div>
-                </div>
               </div>
               <div class="exp-info" style="margin-top: 10px">
                 <div class="info-box">
@@ -7922,14 +7918,6 @@
        * switchTab("calc"); // Switch to calculator tab
        */
       function switchTab(tabId) {
-        if (
-          tabId !== "light-meter" &&
-          window.lightMeterManager?.boxOpen
-        ) {
-          window.lightMeterManager.openBoxOpenModal();
-          return;
-        }
-
         // Update dropdown items
         tabDropdownItems.forEach((item) => item.classList.remove("active"));
         tabContents.forEach((content) => content.classList.remove("active"));
@@ -19647,9 +19635,6 @@
           // Sensor status
           this.sensorConnected = false;
           this.lastLux = null;
-          this.boxOpen = false;
-          this.boxOpenModalActive = false;
-          this.boxStatePollTask = null;
 
           // Stored readings for contrast analysis
           this.highlightLux = null;
@@ -21327,112 +21312,20 @@
                   sensor.gain || "Unknown";
                 document.getElementById("sensorIntegration").textContent =
                   (sensor.integration_ms || 300) + "ms";
-                this.boxOpen = !!sensor.box_open;
-                this.updateBoxStatus(this.boxOpen);
-                this.startBoxStatePolling();
               } else {
                 statusDisplay.textContent = "Not Connected";
                 statusDisplay.style.color = "var(--danger)";
-                this.updateBoxStatus(false);
-                this.stopBoxStatePolling();
               }
             } else {
               statusDisplay.textContent = "Not Available";
               statusDisplay.style.color = "var(--danger)";
               this.sensorConnected = false;
-              this.updateBoxStatus(false);
             }
           } catch (error) {
             statusDisplay.textContent = "Error: " + error.message;
             statusDisplay.style.color = "var(--danger)";
             this.sensorConnected = false;
-            this.updateBoxStatus(false);
           }
-        }
-
-        startBoxStatePolling() {
-          if (this.boxStatePollTask) {
-            return;
-          }
-
-          this.boxStatePollTask = setInterval(() => {
-            this.pollBoxState();
-          }, 2000);
-        }
-
-        stopBoxStatePolling() {
-          if (!this.boxStatePollTask) {
-            return;
-          }
-          clearInterval(this.boxStatePollTask);
-          this.boxStatePollTask = null;
-        }
-
-        async pollBoxState() {
-          try {
-            const response = await fetch("/light-meter-config");
-            if (!response.ok) {
-              return;
-            }
-            const data = await response.json();
-            const isOpen = !!(
-              data?.light_meter?.sensor?.box_open === true ||
-              data?.light_meter?.sensor?.box_open === 1
-            );
-            this.updateBoxStatus(isOpen);
-          } catch (error) {
-            console.warn("Box state poll failed:", error);
-          }
-        }
-
-        updateBoxStatus(isOpen) {
-          const previousValue = this.boxOpen;
-          this.boxOpen = Boolean(isOpen);
-
-          const statusEl = document.getElementById("boxStatus");
-          if (statusEl) {
-            statusEl.textContent = this.boxOpen ? "Open" : "Closed";
-            statusEl.style.color = this.boxOpen
-              ? "var(--danger)"
-              : "var(--accent)";
-          }
-
-          if (this.boxOpen && !previousValue) {
-            const activeTab = document.querySelector(".tab-content.active");
-            if (activeTab?.id !== "light-meter") {
-              playUIFeedback("actionConfirm");
-              switchTab("light-meter");
-            }
-          }
-
-          if (!this.boxOpen && this.boxOpenModalActive) {
-            this.closeBoxOpenModal();
-          }
-        }
-
-        openBoxOpenModal() {
-          if (this.boxOpenModalActive) {
-            return;
-          }
-
-          this.boxOpenModalActive = true;
-          const body =
-            "<div style=\"font-size:0.8rem;color:var(--text-secondary);white-space:pre-line\">" +
-            "The light meter box is still open. Close the box before switching tabs." +
-            "</div>";
-          const footer =
-            "<div style=\"display:flex;justify-content:flex-end\">" +
-            "<button class=\"btn-action\" onclick=\"window.lightMeterManager?.closeBoxOpenModal()\">OK</button>" +
-            "</div>";
-          _openAppModal("Close the box", body, footer);
-        }
-
-        closeBoxOpenModal() {
-          if (!this.boxOpenModalActive) {
-            return;
-          }
-          this.boxOpenModalActive = false;
-          _closeAppModal(null);
         }
 
         /**

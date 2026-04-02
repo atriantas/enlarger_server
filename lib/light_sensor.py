@@ -102,7 +102,7 @@ class TSL2591:
     LUX_COEFF_C = 0.59
     LUX_COEFF_D = 0.86
     
-    def __init__(self, i2c=None, sda_pin=0, scl_pin=1, address=ADDR, int_pin=None):
+    def __init__(self, i2c=None, sda_pin=0, scl_pin=1, address=ADDR):
         """
         Initialize TSL2591 sensor.
         
@@ -111,7 +111,6 @@ class TSL2591:
             sda_pin: SDA GPIO pin number (default: GP0)
             scl_pin: SCL GPIO pin number (default: GP1)
             address: I2C device address (default: 0x29)
-            int_pin: Optional GPIO pin number for TSL2591 INT box-open detection
         """
         self.address = address
         self.last_lux = None
@@ -119,9 +118,6 @@ class TSL2591:
         self.last_ir = None
         self.last_error = None
         self.connected = False
-        self.int_pin_num = int_pin
-        self.int_pin = None
-        self.box_open = False
         
         # Default settings
         self._gain = self.GAIN_MED  # Start with medium gain
@@ -138,7 +134,6 @@ class TSL2591:
             if self._verify_sensor():
                 self._enable()
                 self._set_timing(self._gain, self._integration)
-                self._init_int_pin(self.int_pin_num)
                 self.connected = True
                 print(f"✓ TSL2591 initialized on I2C (SDA=GP{sda_pin}, SCL=GP{scl_pin})")
             else:
@@ -199,39 +194,7 @@ class TSL2591:
         self._gain = gain
         self._integration = integration
         self._write_register(self.REG_CONTROL, gain | integration)
-
-    def _init_int_pin(self, pin_num):
-        """Configure the TSL2591 INT pin as a box-open indicator input."""
-        if pin_num is None:
-            return
-
-        try:
-            self.int_pin = Pin(pin_num, Pin.IN, Pin.PULL_UP)
-            self.box_open = self.int_pin.value() == 0
-            self.int_pin.irq(
-                trigger=Pin.IRQ_FALLING | Pin.IRQ_RISING,
-                handler=self._handle_int_pin_change,
-            )
-        except Exception as e:
-            self.last_error = f"INT pin init failed: {e}"
-            self.int_pin = None
-
-    def _handle_int_pin_change(self, pin):
-        """Update box-open state when the INT pin changes."""
-        try:
-            self.box_open = pin.value() == 0
-        except Exception:
-            pass
-
-    def is_interrupt_active(self):
-        """Return True when the configured INT pin is active (box open)."""
-        if self.int_pin is None:
-            return False
-        try:
-            return self.int_pin.value() == 0
-        except Exception:
-            return False
-
+    
     def set_gain(self, gain):
         """
         Set sensor gain.
@@ -522,9 +485,6 @@ class TSL2591:
             'last_lux': self.last_lux,
             'last_visible': self.last_visible,
             'last_ir': self.last_ir,
-            'int_pin': self.int_pin_num,
-            'int_enabled': self.int_pin is not None,
-            'box_open': self.is_interrupt_active(),
             'last_error': self.last_error
         }
 
@@ -594,12 +554,6 @@ class DarkroomLightMeter:
     def get_current_paper(self):
         """Get the current paper ID."""
         return self.current_paper_id
-
-    def is_box_open(self):
-        """Return True when the light meter box is currently open."""
-        if not self.sensor:
-            return False
-        return self.sensor.is_interrupt_active()
     
     def set_filter_system(self, system):
         """Set the active filter system (legacy, deprecated)."""
