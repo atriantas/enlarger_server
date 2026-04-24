@@ -179,7 +179,7 @@ class TimerManager:
             if "task" in timer_info and timer_info["task"] not in (None,):
                 try:
                     timer_info["task"].cancel()
-                except:
+                except Exception:
                     pass
             del self.active_timers[pin]
         

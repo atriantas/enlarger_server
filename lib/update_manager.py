@@ -536,7 +536,7 @@ class UpdateManager:
             # Clean up temp file if it exists
             try:
                 os.remove(tmp_path)
-            except:
+            except OSError:
                 pass
             print(f"[UpdateManager] Error committing {file_path}: {e}")
             return {'success': False, 'error': str(e)}

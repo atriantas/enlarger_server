@@ -83,7 +83,7 @@ class WiFiSTA:
         # Disable power saving mode (can cause connectivity issues)
         try:
             self.sta.config(pm=0xa11140)
-        except:
+        except (AttributeError, ValueError):
             pass  # Older firmware may not support this
         return ssid, password
     
@@ -114,7 +114,7 @@ class WiFiSTA:
             print(f"WiFi connected: IP={ip}")
             print(f"  Gateway: {gateway}, DNS: {dns}")
             print(f"  MAC: {mac}")
-        except:
+        except (AttributeError, ValueError):
             print(f"WiFi connected: IP={ip}")
             print(f"  Gateway: {gateway}, DNS: {dns}")
         if save:
@@ -246,7 +246,7 @@ class WiFiSTA:
             import os
             os.remove(CONFIG_FILE)
             print("WiFi credentials cleared")
-        except:
+        except OSError:
             pass
     
     def get_rssi(self):
@@ -259,7 +259,7 @@ class WiFiSTA:
         if self.sta and self.sta.isconnected():
             try:
                 return self.sta.status('rssi')
-            except:
+            except (AttributeError, OSError):
                 pass
         return None
 

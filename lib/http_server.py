@@ -132,7 +132,7 @@ class HTTPServer:
                     result.append(chr(int(s[i+1:i+3], 16)))
                     i += 3
                     continue
-                except:
+                except (ValueError, IndexError):
                     pass
             elif s[i] == '+':
                 result.append(' ')
@@ -823,9 +823,9 @@ class HTTPServer:
                     "error": f"Failed to get papers: {e}"
                 }, 500)
                 await self._sendall(conn, response)
-            except:
+            except Exception:
                 pass
-    
+
     async def _handle_light_meter_paper(self, conn, params):
         """
         Handle /light-meter-paper endpoint - get/set current paper selection.
@@ -1476,9 +1476,9 @@ class HTTPServer:
         finally:
             try:
                 conn.close()
-            except:
+            except OSError:
                 pass
-    
+
     def start(self, port=HTTP_PORT):
         """Start HTTP server (creates socket)."""
         try:
@@ -1509,7 +1509,7 @@ class HTTPServer:
         if self.sock:
             try:
                 self.sock.close()
-            except:
+            except OSError:
                 pass
             self.sock = None
         print("HTTP server stopped")
@@ -1686,7 +1686,7 @@ class HTTPServer:
                     print(f"Task creation error: {e}")
                     try:
                         conn.close()
-                    except:
+                    except OSError:
                         pass
                     gc.collect()
                     
