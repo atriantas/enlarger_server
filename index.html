@@ -21798,7 +21798,7 @@
 
               // Update displays - CONTRAST AND GRADE ONLY, NO EXPOSURE TIME
               document.getElementById("deltaEVDisplay").textContent =
-                data.delta_ev.toFixed(1) + " EV";
+                data.delta_ev.toFixed(2) + " EV";
 
               if (data.recommended_grade) {
                 const grade = data.recommended_grade;

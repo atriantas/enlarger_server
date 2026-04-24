@@ -275,6 +275,8 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
 
     best_match = None
     best_diff = float('inf')
+    min_iso_r = float('inf')
+    max_iso_r = float('-inf')
 
     available_filters = get_available_filters(paper_id)
 
@@ -289,6 +291,11 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
         iso_r = filter_data.get('iso_r')
         if iso_r is None:
             continue
+
+        if iso_r < min_iso_r:
+            min_iso_r = iso_r
+        if iso_r > max_iso_r:
+            max_iso_r = iso_r
 
         diff = abs(iso_r_target - iso_r)
         if diff < best_diff:
@@ -311,11 +318,30 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
     else:
         match_quality = 'approximate'
 
+    out_of_range = None
+    if iso_r_target > max_iso_r:
+        out_of_range = 'too_flat'
+    elif iso_r_target < min_iso_r:
+        out_of_range = 'too_contrasty'
+
     best_match['match_quality'] = match_quality
-    best_match['reasoning'] = (
+    best_match['out_of_range'] = out_of_range
+
+    reasoning = (
         f"ISO R target {iso_r_target:.0f} matches grade {best_match['grade']} "
         f"(ISO R {best_match['iso_r']}) with a {best_diff:.0f} difference"
     )
+    if out_of_range == 'too_contrasty':
+        reasoning += (
+            f"; negative exceeds paper range (min ISO R {min_iso_r:.0f}) — "
+            f"consider split-grade printing, pre-flashing, or dodging/burning"
+        )
+    elif out_of_range == 'too_flat':
+        reasoning += (
+            f"; negative is flatter than paper range (max ISO R {max_iso_r:.0f}) — "
+            f"softest grade will still print with reduced contrast"
+        )
+    best_match['reasoning'] = reasoning
 
     return best_match
 
@@ -362,7 +388,7 @@ def calculate_midpoint_exposure_time(
 
     return {
         'suggested_time': round(suggested_time, 2),
-        'midpoint_lux': round(lux_mid, 1),
+        'midpoint_lux': round(lux_mid, 2),
         'notes': (
             "Midpoint exposure based on highlight/shadow geometric mean, "
             "using calibration constant and filter factor."
