@@ -80,6 +80,8 @@ class HTTPServer:
             '/light-meter-virtual-proof':     self._handle_light_meter_virtual_proof,
             '/light-meter-calibrate':         self._handle_light_meter_calibrate,
             '/light-meter-config':            self._handle_light_meter_config,
+            '/light-meter-dark-offset':       self._handle_light_meter_dark_offset,
+            '/light-meter-gain-calibrate':    self._handle_light_meter_gain_calibrate,
             '/update-check':                  self._handle_update_check,
             '/update-check-only':             self._handle_update_check_only,
             '/version':                       self._handle_version,
@@ -1402,7 +1404,136 @@ class HTTPServer:
                 "error": f"Configuration error: {e}"
             }, 500)
             await self._sendall(conn, response)
-    
+
+    async def _handle_light_meter_dark_offset(self, conn, params):
+        """
+        Handle /light-meter-dark-offset endpoint — manage dark-signal offsets.
+
+        The dark offset is the ch0/ch1 count read when no light reaches the
+        sensor. Subtracting it from live reads dramatically improves shadow
+        accuracy. Offsets are stored per (gain, integration) because the
+        electrical baseline scales with both.
+
+        Query params:
+            action: 'calibrate' (capture for current gain+int, CALLER must
+                     ensure darkness), 'clear' (remove all stored offsets),
+                     or 'status' (default — just return stored offsets).
+            samples: Number of samples to average when calibrating (default 16).
+        """
+        if await self._require_light_meter(conn):
+            return
+
+        action = params.get('action', 'status').strip().lower()
+
+        try:
+            if action == 'calibrate':
+                samples = int(params.get('samples', 16))
+                result = await self.light_meter.sensor.calibrate_dark_offset(samples=samples)
+                if 'error' in result:
+                    response = self._json_response({
+                        "status": "error",
+                        "error": result['error'],
+                    }, 500)
+                    await self._sendall(conn, response)
+                    return
+                self.light_meter._save_sensor_calibration()
+                response = self._json_response({
+                    "status": "success",
+                    "action": "calibrate",
+                    "captured": result,
+                    "dark_offsets": self.light_meter.sensor.get_dark_offsets(),
+                })
+            elif action == 'clear':
+                self.light_meter.sensor.clear_dark_offsets()
+                self.light_meter._save_sensor_calibration()
+                response = self._json_response({
+                    "status": "success",
+                    "action": "clear",
+                    "dark_offsets": {},
+                })
+            else:
+                response = self._json_response({
+                    "status": "success",
+                    "action": "status",
+                    "dark_offsets": self.light_meter.sensor.get_dark_offsets(),
+                })
+
+            await self._sendall(conn, response)
+
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Dark-offset error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+
+    async def _handle_light_meter_gain_calibrate(self, conn, params):
+        """
+        Handle /light-meter-gain-calibrate endpoint — measure per-device gain
+        ratios. CALLER must point the sensor at a STEADY light source bright
+        enough for LOW gain to register but not so bright that MED saturates.
+
+        Query params:
+            action: 'calibrate', 'clear', or 'status' (default).
+            samples: Samples per gain stage (default 8).
+        """
+        if await self._require_light_meter(conn):
+            return
+
+        action = params.get('action', 'status').strip().lower()
+
+        try:
+            if action == 'calibrate':
+                samples = int(params.get('samples', 8))
+                result = await self.light_meter.sensor.calibrate_gain_factors(samples=samples)
+                if 'error' in result:
+                    response = self._json_response({
+                        "status": "error",
+                        "error": result['error'],
+                    }, 500)
+                    await self._sendall(conn, response)
+                    return
+                self.light_meter._save_sensor_calibration()
+                response = self._json_response({
+                    "status": "success",
+                    "action": "calibrate",
+                    "factors": self.light_meter.sensor.get_gain_factors(),
+                    "calibrated": True,
+                })
+            elif action == 'clear':
+                self.light_meter.sensor.clear_gain_factors()
+                self.light_meter._save_sensor_calibration()
+                response = self._json_response({
+                    "status": "success",
+                    "action": "clear",
+                    "factors": self.light_meter.sensor.get_gain_factors(),
+                    "calibrated": False,
+                })
+            else:
+                response = self._json_response({
+                    "status": "success",
+                    "action": "status",
+                    "factors": self.light_meter.sensor.get_gain_factors(),
+                    "calibrated": bool(self.light_meter.sensor._gain_factors_override),
+                })
+
+            await self._sendall(conn, response)
+
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Gain calibration error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+
     async def _handle_options(self, conn):
         """Handle OPTIONS preflight request."""
         response = (

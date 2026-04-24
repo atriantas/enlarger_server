@@ -18,6 +18,7 @@ Technical Specifications (TSL2591):
 """
 
 import asyncio
+import json
 import time
 import math
 from machine import Pin, I2C
@@ -59,12 +60,16 @@ class TSL2591:
     REG_ENABLE = 0x00
     REG_CONTROL = 0x01
     REG_ID = 0x12
+    REG_STATUS = 0x13   # Status register (AVALID in bit 0)
     REG_C0DATAL = 0x14  # Channel 0 data (visible + IR)
     REG_C1DATAL = 0x16  # Channel 1 data (IR only)
-    
+
     # Enable register bits
     ENABLE_PON = 0x01   # Power ON
     ENABLE_AEN = 0x02   # ALS Enable
+
+    # Status register bits
+    STATUS_AVALID = 0x01   # ALS data valid (new integration completed)
     
     # Gain settings
     GAIN_LOW = 0x00     # 1x gain
@@ -124,6 +129,17 @@ class TSL2591:
         self._gain = self.GAIN_MED  # Start with medium gain
         self._integration = self.INTEGRATIONTIME_300MS  # 300ms integration
         self._needs_settle = False  # True right after a gain/integration change
+
+        # Dark-offset subtraction: { (gain_reg, int_reg): (ch0_offset, ch1_offset) }
+        # Populated by calibrate_dark_offset() and loaded from persistent storage.
+        self._dark_offsets = {}
+
+        # Per-device gain factor overrides (keyed by gain register value).
+        # Empty = use GAIN_FACTORS defaults. Populated by calibrate_gain_factors().
+        self._gain_factors_override = {}
+
+        # Hysteresis state for auto_gain (last ch0 used to decide direction)
+        self._last_auto_gain_ch0 = None
         
         try:
             # Use provided I2C or create new instance
@@ -134,6 +150,9 @@ class TSL2591:
             
             # Verify sensor presence
             if self._verify_sensor():
+                # Datasheet power-up sequence: PON first, wait >=2.7ms, then PON|AEN.
+                self._write_register(self.REG_ENABLE, self.ENABLE_PON)
+                time.sleep_ms(3)
                 self._enable()
                 self._set_timing(self._gain, self._integration)
                 self.connected = True
@@ -227,54 +246,121 @@ class TSL2591:
         """
         self._set_timing(self._gain, integration)
     
+    def _is_avalid(self):
+        """Check status register AVALID bit (new integration completed)."""
+        try:
+            return bool(self._read_register(self.REG_STATUS) & self.STATUS_AVALID)
+        except Exception:
+            return False
+
+    def _apply_dark_offset(self, ch0, ch1):
+        """Subtract stored dark offsets for the current gain/integration."""
+        key = (self._gain, self._integration)
+        offsets = self._dark_offsets.get(key)
+        if offsets is None:
+            return ch0, ch1
+        off0, off1 = offsets
+        adj0 = ch0 - off0
+        adj1 = ch1 - off1
+        if adj0 < 0:
+            adj0 = 0
+        if adj1 < 0:
+            adj1 = 0
+        return adj0, adj1
+
     def get_raw_data(self):
         """
-        Read raw channel data from sensor.
-        
+        Read raw channel data from sensor. Polls AVALID for fresh data.
+
         Returns:
-            tuple: (channel0, channel1) raw ADC values
-            channel0 = visible + IR light
-            channel1 = IR only
+            tuple: (channel0, channel1) ADC values with dark offset applied
         """
         if not self.connected:
             return None, None
-        
+
         try:
-            # Wait for integration to complete
             integration_ms = self.INTEGRATION_TIMES_MS[self._integration]
-            time.sleep_ms(integration_ms + 10)  # Add 10ms margin
-            
-            # Read both channels
+            # Poll AVALID; give up after 2x integration as a hard timeout.
+            deadline = time.ticks_add(time.ticks_ms(), integration_ms * 2 + 20)
+            while not self._is_avalid():
+                if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
+                    self.last_error = "AVALID timeout"
+                    return None, None
+                time.sleep_ms(5)
+
             ch0 = self._read_u16(self.REG_C0DATAL)
             ch1 = self._read_u16(self.REG_C1DATAL)
-            
-            return ch0, ch1
-            
+            return self._apply_dark_offset(ch0, ch1)
+
         except Exception as e:
             self.last_error = str(e)
             return None, None
-    
+
     async def get_raw_data_async(self):
+        """Async version of get_raw_data() — non-blocking AVALID poll."""
+        if not self.connected:
+            return None, None
+
+        try:
+            integration_ms = self.INTEGRATION_TIMES_MS[self._integration]
+            # Sleep for most of the integration period before polling — the
+            # AVALID bit can't go high before the integration completes, so
+            # polling early just wastes I²C traffic.
+            await asyncio.sleep_ms(max(0, integration_ms - 10))
+
+            deadline = time.ticks_add(time.ticks_ms(), integration_ms + 20)
+            while not self._is_avalid():
+                if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
+                    self.last_error = "AVALID timeout"
+                    return None, None
+                await asyncio.sleep_ms(5)
+
+            ch0 = self._read_u16(self.REG_C0DATAL)
+            ch1 = self._read_u16(self.REG_C1DATAL)
+            return self._apply_dark_offset(ch0, ch1)
+
+        except Exception as e:
+            self.last_error = str(e)
+            return None, None
+
+    def get_raw_data_unadjusted(self):
         """
-        Async version of get_raw_data() - non-blocking.
-        
-        Returns:
-            tuple: (channel0, channel1) raw ADC values
+        Read raw channel data WITHOUT dark-offset subtraction.
+        Used by calibrate_dark_offset() to capture the baseline.
         """
         if not self.connected:
             return None, None
-        
         try:
-            # Wait for integration to complete (non-blocking)
             integration_ms = self.INTEGRATION_TIMES_MS[self._integration]
-            await asyncio.sleep_ms(integration_ms + 10)
-            
-            # Read both channels
+            deadline = time.ticks_add(time.ticks_ms(), integration_ms * 2 + 20)
+            while not self._is_avalid():
+                if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
+                    self.last_error = "AVALID timeout"
+                    return None, None
+                time.sleep_ms(5)
             ch0 = self._read_u16(self.REG_C0DATAL)
             ch1 = self._read_u16(self.REG_C1DATAL)
-            
             return ch0, ch1
-            
+        except Exception as e:
+            self.last_error = str(e)
+            return None, None
+
+    async def get_raw_data_unadjusted_async(self):
+        """Async version of get_raw_data_unadjusted()."""
+        if not self.connected:
+            return None, None
+        try:
+            integration_ms = self.INTEGRATION_TIMES_MS[self._integration]
+            await asyncio.sleep_ms(max(0, integration_ms - 10))
+            deadline = time.ticks_add(time.ticks_ms(), integration_ms + 20)
+            while not self._is_avalid():
+                if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
+                    self.last_error = "AVALID timeout"
+                    return None, None
+                await asyncio.sleep_ms(5)
+            ch0 = self._read_u16(self.REG_C0DATAL)
+            ch1 = self._read_u16(self.REG_C1DATAL)
+            return ch0, ch1
         except Exception as e:
             self.last_error = str(e)
             return None, None
@@ -295,16 +381,18 @@ class TSL2591:
         """
         if ch0 is None or ch1 is None:
             return None
-        
-        # Get current gain factor
-        gain_factor = self.GAIN_FACTORS.get(self._gain, 25.0)
-        
-        # Get integration time in ms
+
+        # Gain factor: per-device calibrated override takes precedence.
+        gain_factor = self._gain_factors_override.get(
+            self._gain,
+            self.GAIN_FACTORS.get(self._gain, 25.0),
+        )
+
         integration_ms = self.INTEGRATION_TIMES_MS.get(self._integration, 300)
-        
-        # Check for saturation. The 100ms integration saturates at 36863,
-        # every longer step saturates at 65535. Use the lower bound to be safe.
-        sat_limit = 36863 if self._integration == self.INTEGRATIONTIME_100MS else 65535
+
+        # Saturation limits per datasheet: 100ms = 37888 full-scale,
+        # 200–600ms = 65535 full-scale. Trip one count before to be safe.
+        sat_limit = 37887 if self._integration == self.INTEGRATIONTIME_100MS else 65535
         if ch0 >= sat_limit or ch1 >= sat_limit:
             self.last_error = "Sensor saturated - lower gain or shorten integration"
             return None
@@ -445,45 +533,212 @@ class TSL2591:
             'variance': variance
         }
     
+    # Gain ordering, used by auto_gain and calibrate_gain_factors.
+    _GAIN_ORDER = (GAIN_LOW, GAIN_MED, GAIN_HIGH, GAIN_MAX)
+
     def auto_gain(self):
         """
-        Automatically adjust gain for optimal sensitivity.
-        
-        Reads current light level and adjusts gain to maximize
-        dynamic range without saturation.
-        
+        Adjust gain for optimal sensitivity, one step per call, with
+        hysteresis: step DOWN only when ch0 is clearly saturated, step UP
+        only when ch0 is clearly below the noise floor. The dead-zone
+        between 5000 and 55000 means steady scenes don't ping-pong.
+
         Returns:
             int: New gain setting
         """
         ch0, ch1 = self.get_raw_data()
-        
         if ch0 is None:
             return self._gain
-        
-        # If saturated, decrease gain
-        if ch0 >= 60000 or ch1 >= 60000:
-            if self._gain == self.GAIN_MAX:
-                self.set_gain(self.GAIN_HIGH)
-            elif self._gain == self.GAIN_HIGH:
-                self.set_gain(self.GAIN_MED)
-            elif self._gain == self.GAIN_MED:
-                self.set_gain(self.GAIN_LOW)
-        
-        # If too low, increase gain
-        elif ch0 < 1000 and ch1 < 1000:
-            if self._gain == self.GAIN_LOW:
-                self.set_gain(self.GAIN_MED)
-            elif self._gain == self.GAIN_MED:
-                self.set_gain(self.GAIN_HIGH)
-            elif self._gain == self.GAIN_HIGH:
-                self.set_gain(self.GAIN_MAX)
-        
+
+        # Step down (reduce gain) if saturated
+        if ch0 >= 55000 or ch1 >= 55000:
+            idx = self._GAIN_ORDER.index(self._gain)
+            if idx > 0:
+                self.set_gain(self._GAIN_ORDER[idx - 1])
+
+        # Step up (increase gain) if well below useful range
+        elif ch0 < 5000 and ch1 < 5000:
+            idx = self._GAIN_ORDER.index(self._gain)
+            if idx < len(self._GAIN_ORDER) - 1:
+                self.set_gain(self._GAIN_ORDER[idx + 1])
+
         return self._gain
+
+    # ── Dark-offset calibration ─────────────────────────────────────────
+
+    async def calibrate_dark_offset(self, samples=16):
+        """
+        Capture the dark-signal baseline for the CURRENT (gain, integration)
+        pair. Caller MUST ensure the sensor is in darkness (enlarger OFF,
+        sensor covered or in the closed darkroom).
+
+        The offset is averaged across `samples` reads and stored in
+        self._dark_offsets keyed by (gain_reg, int_reg). Subsequent reads
+        automatically subtract it.
+
+        Returns:
+            dict: {'ch0': float, 'ch1': float, 'samples': int} or
+                  {'error': str} on failure.
+        """
+        if not self.connected:
+            return {'error': 'Sensor not connected'}
+
+        # Discard any stale integration first.
+        if self._needs_settle:
+            await self.get_raw_data_unadjusted_async()
+            self._needs_settle = False
+
+        ch0_sum = 0
+        ch1_sum = 0
+        count = 0
+        for _ in range(samples):
+            ch0, ch1 = await self.get_raw_data_unadjusted_async()
+            if ch0 is None:
+                continue
+            ch0_sum += ch0
+            ch1_sum += ch1
+            count += 1
+
+        if count == 0:
+            return {'error': self.last_error or 'No valid samples'}
+
+        ch0_avg = ch0_sum / count
+        ch1_avg = ch1_sum / count
+        self._dark_offsets[(self._gain, self._integration)] = (ch0_avg, ch1_avg)
+        return {'ch0': ch0_avg, 'ch1': ch1_avg, 'samples': count}
+
+    def clear_dark_offsets(self):
+        """Remove all stored dark-offset calibrations."""
+        self._dark_offsets = {}
+
+    def get_dark_offsets(self):
+        """Return stored dark offsets as a JSON-safe dict."""
+        result = {}
+        for (gain, integ), (off0, off1) in self._dark_offsets.items():
+            key = "{:d}_{:d}".format(gain, integ)
+            result[key] = {
+                'gain_reg': gain,
+                'integration_reg': integ,
+                'integration_ms': self.INTEGRATION_TIMES_MS.get(integ, 0),
+                'ch0_offset': off0,
+                'ch1_offset': off1,
+            }
+        return result
+
+    def load_dark_offsets(self, offsets):
+        """
+        Load dark offsets from a dict produced by get_dark_offsets().
+        Silently skips entries that don't match the current driver layout.
+        """
+        self._dark_offsets = {}
+        if not offsets:
+            return
+        for entry in offsets.values():
+            try:
+                g = int(entry['gain_reg'])
+                i = int(entry['integration_reg'])
+                o0 = float(entry['ch0_offset'])
+                o1 = float(entry['ch1_offset'])
+                self._dark_offsets[(g, i)] = (o0, o1)
+            except (KeyError, TypeError, ValueError):
+                continue
+
+    # ── Per-device gain factor calibration ──────────────────────────────
+
+    async def calibrate_gain_factors(self, reference_gain=None, samples=8):
+        """
+        Measure the actual gain ratios of this specific sensor.
+
+        Caller must point the sensor at a STEADY light source (not flicker-
+        prone), bright enough to give a useful ch0 reading at LOW gain but
+        not so bright that MED saturates. MED gain + 300ms integration is
+        a sensible default test condition.
+
+        The reference gain (default MED) keeps its nominal factor; other
+        gain stages are scaled by their measured ratio to the reference.
+
+        Returns:
+            dict: { 'factors': {gain_reg: float, ...}, 'reference_gain': int }
+        """
+        if not self.connected:
+            return {'error': 'Sensor not connected'}
+
+        if reference_gain is None:
+            reference_gain = self.GAIN_MED
+
+        saved_gain = self._gain
+        measurements = {}
+
+        try:
+            for gain in self._GAIN_ORDER:
+                self.set_gain(gain)
+                await self.get_raw_data_unadjusted_async()  # settle
+                self._needs_settle = False
+                total = 0
+                count = 0
+                saturated = False
+                for _ in range(samples):
+                    ch0, ch1 = await self.get_raw_data_unadjusted_async()
+                    if ch0 is None:
+                        continue
+                    # Skip saturated stages; we can't measure a ratio from them.
+                    sat = 37887 if self._integration == self.INTEGRATIONTIME_100MS else 65534
+                    if ch0 >= sat or ch1 >= sat:
+                        saturated = True
+                        break
+                    total += ch0
+                    count += 1
+                if saturated or count == 0:
+                    measurements[gain] = None
+                else:
+                    measurements[gain] = total / count
+        finally:
+            self.set_gain(saved_gain)
+
+        ref_counts = measurements.get(reference_gain)
+        if not ref_counts:
+            return {'error': 'Reference gain measurement failed or saturated'}
+
+        ref_nominal = self.GAIN_FACTORS[reference_gain]
+        factors = {}
+        for gain, counts in measurements.items():
+            if counts is None:
+                # Keep nominal for stages that couldn't be measured.
+                factors[gain] = self.GAIN_FACTORS[gain]
+            else:
+                factors[gain] = (counts / ref_counts) * ref_nominal
+
+        self._gain_factors_override = factors
+        return {'factors': factors, 'reference_gain': reference_gain}
+
+    def clear_gain_factors(self):
+        """Remove per-device gain calibration and fall back to nominal."""
+        self._gain_factors_override = {}
+
+    def get_gain_factors(self):
+        """Return active gain factors (override if set, else nominal)."""
+        if self._gain_factors_override:
+            return dict(self._gain_factors_override)
+        return dict(self.GAIN_FACTORS)
+
+    def load_gain_factors(self, factors):
+        """Load gain factors from a dict {gain_reg_int: factor_float}."""
+        self._gain_factors_override = {}
+        if not factors:
+            return
+        for key, val in factors.items():
+            try:
+                g = int(key)
+                f = float(val)
+                if g in self.GAIN_FACTORS and f > 0:
+                    self._gain_factors_override[g] = f
+            except (TypeError, ValueError):
+                continue
     
     def get_status(self):
         """
         Get sensor status information.
-        
+
         Returns:
             dict: Status information including settings and last readings
         """
@@ -493,7 +748,7 @@ class TSL2591:
             self.GAIN_HIGH: "HIGH (428x)",
             self.GAIN_MAX: "MAX (9876x)"
         }
-        
+
         return {
             'connected': self.connected,
             'address': f"0x{self.address:02X}",
@@ -503,7 +758,11 @@ class TSL2591:
             'last_lux': self.last_lux,
             'last_visible': self.last_visible,
             'last_ir': self.last_ir,
-            'last_error': self.last_error
+            'last_error': self.last_error,
+            'dark_offsets': self.get_dark_offsets(),
+            'dark_offset_active': (self._gain, self._integration) in self._dark_offsets,
+            'gain_factors': self.get_gain_factors(),
+            'gain_calibrated': bool(self._gain_factors_override),
         }
 
 
@@ -529,11 +788,14 @@ class DarkroomLightMeter:
     
     # Default calibration constant (lux × seconds)
     DEFAULT_CALIBRATION = 1000.0
-    
+
+    # Where dark offsets + per-device gain factors are persisted.
+    CALIBRATION_FILE = "light_meter_calibration.json"
+
     def __init__(self, sensor=None, i2c=None, sda_pin=0, scl_pin=1):
         """
         Initialize darkroom light meter.
-        
+
         Args:
             sensor: Existing TSL2591 instance (optional)
             i2c: Existing I2C bus (optional)
@@ -544,20 +806,58 @@ class DarkroomLightMeter:
             self.sensor = sensor
         else:
             self.sensor = TSL2591(i2c=i2c, sda_pin=sda_pin, scl_pin=scl_pin)
-        
+
         # Calibration storage (paper_id -> calibration_constant)
         self.calibrations = {}
         self.default_calibration = self.DEFAULT_CALIBRATION
-        
+
         # Current paper selection (server-side state)
         self.current_paper_id = 'ilford_cooltone'
-        
+
         # Legacy filter system for backward compatibility (deprecated)
         self.filter_system = 'ilford'
-        
+
         # Stored readings for contrast calculation
         self.highlight_lux = None
         self.shadow_lux = None
+
+        # Load persisted sensor calibration (dark offsets + gain factors)
+        self._load_sensor_calibration()
+
+    def _load_sensor_calibration(self):
+        """Load dark offsets and gain factors from CALIBRATION_FILE, if present."""
+        try:
+            with open(self.CALIBRATION_FILE, 'r') as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            return
+
+        if not isinstance(data, dict):
+            return
+
+        dark = data.get('dark_offsets')
+        if dark:
+            self.sensor.load_dark_offsets(dark)
+
+        gain = data.get('gain_factors')
+        if gain:
+            self.sensor.load_gain_factors(gain)
+
+    def _save_sensor_calibration(self):
+        """Persist dark offsets and gain factors to CALIBRATION_FILE."""
+        payload = {
+            'dark_offsets': self.sensor.get_dark_offsets(),
+            # Store gain factors only if user-calibrated (not nominal defaults).
+            'gain_factors': (
+                {str(k): v for k, v in self.sensor._gain_factors_override.items()}
+                if self.sensor._gain_factors_override else {}
+            ),
+        }
+        try:
+            with open(self.CALIBRATION_FILE, 'w') as f:
+                json.dump(payload, f)
+        except OSError as e:
+            print(f"WARNING: failed to save {self.CALIBRATION_FILE}: {e}")
     
     # ── Paper / calibration state ─────────────────────────────────────
     
