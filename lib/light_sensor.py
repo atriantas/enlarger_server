@@ -96,11 +96,12 @@ class TSL2591:
         INTEGRATIONTIME_600MS: 600
     }
     
-    # LUX calculation coefficients (from datasheet)
-    LUX_DF = 408.0  # Device factor
-    LUX_COEFF_B = 1.64
-    LUX_COEFF_C = 0.59
-    LUX_COEFF_D = 0.86
+    # LUX calculation coefficients
+    # LUX_DF is the TSL2591 device factor (from datasheet / community).
+    # The TSL2591 datasheet does NOT publish B/C/D piecewise coefficients
+    # (those belong to the TSL2561); the accepted TSL2591 formula is
+    # lux = (ch0 - ch1) * (1 - ch1/ch0) / cpl.
+    LUX_DF = 408.0
     
     def __init__(self, i2c=None, sda_pin=0, scl_pin=1, address=ADDR):
         """
@@ -122,6 +123,7 @@ class TSL2591:
         # Default settings
         self._gain = self.GAIN_MED  # Start with medium gain
         self._integration = self.INTEGRATIONTIME_300MS  # 300ms integration
+        self._needs_settle = False  # True right after a gain/integration change
         
         try:
             # Use provided I2C or create new instance
@@ -194,6 +196,9 @@ class TSL2591:
         self._gain = gain
         self._integration = integration
         self._write_register(self.REG_CONTROL, gain | integration)
+        # The ADC may be part-way through an integration with the old
+        # settings; mark the next read as "stale" so callers can discard it.
+        self._needs_settle = True
     
     def set_gain(self, gain):
         """
@@ -297,31 +302,33 @@ class TSL2591:
         # Get integration time in ms
         integration_ms = self.INTEGRATION_TIMES_MS.get(self._integration, 300)
         
-        # Check for saturation
-        if ch0 >= 65535 or ch1 >= 65535:
-            # Sensor saturated - need lower gain or shorter integration
-            self.last_error = "Sensor saturated - too bright"
+        # Check for saturation. The 100ms integration saturates at 36863,
+        # every longer step saturates at 65535. Use the lower bound to be safe.
+        sat_limit = 36863 if self._integration == self.INTEGRATIONTIME_100MS else 65535
+        if ch0 >= sat_limit or ch1 >= sat_limit:
+            self.last_error = "Sensor saturated - lower gain or shorten integration"
             return None
-        
-        # Calculate counts per lux
-        # CPL = (ATIME * AGAIN) / DF
-        cpl = (integration_ms * gain_factor) / self.LUX_DF
-        
-        if cpl == 0:
+
+        # No-light guard: ch0 == 0 means nothing hit the visible+IR channel.
+        if ch0 == 0:
             return 0.0
-        
-        # Calculate lux using two methods and take the max
-        # This handles different spectral conditions
-        
-        # Method 1: Standard formula
-        lux1 = (ch0 - (self.LUX_COEFF_B * ch1)) / cpl
-        
-        # Method 2: Alternative for IR-heavy conditions
-        lux2 = ((self.LUX_COEFF_C * ch0) - (self.LUX_COEFF_D * ch1)) / cpl
-        
-        # Take maximum of both (both should be positive for valid readings)
-        lux = max(lux1, lux2, 0.0)
-        
+
+        # Counts per lux: CPL = (ATIME_ms * AGAIN) / DF
+        cpl = (integration_ms * gain_factor) / self.LUX_DF
+        if cpl <= 0:
+            return None
+
+        # Standard TSL2591 lux formula (Adafruit / community consensus).
+        # ch1/ch0 is the IR ratio; the (1 - ch1/ch0) factor attenuates
+        # the reading as the scene gets more IR-heavy (e.g. tungsten).
+        lux = (ch0 - ch1) * (1.0 - ch1 / ch0) / cpl
+
+        # Negative lux means the IR channel exceeded the visible channel —
+        # signal invalid rather than clamping to zero.
+        if lux < 0:
+            self.last_error = "Invalid reading (ch1 > ch0)"
+            return None
+
         return lux
     
     def read_lux(self):
@@ -369,33 +376,38 @@ class TSL2591:
     async def read_averaged_lux_async(self, samples=5, delay_ms=50):
         """
         Read averaged lux value over multiple samples.
-        
-        For darkroom exposure metering, averaging reduces flicker effects
-        from the enlarger lamp and provides more stable readings.
-        
+
+        Discards the first read if gain/integration changed since the last
+        read (the ADC would still be mid-integration with stale settings),
+        and trims the high+low outliers before averaging when enough
+        samples are available — this rejects enlarger flicker spikes and
+        noise without hiding real variance.
+
         Args:
-            samples: Number of samples to average (default: 5)
+            samples: Number of samples to keep after trimming (default: 5)
             delay_ms: Delay between samples in ms (default: 50)
-        
+
         Returns:
             dict: {
-                'lux': float,           # Averaged lux value
-                'min': float,           # Minimum reading
-                'max': float,           # Maximum reading
-                'samples': int,         # Number of valid samples
+                'lux': float,           # Trimmed-mean lux value
+                'min': float,           # Minimum reading (pre-trim)
+                'max': float,           # Maximum reading (pre-trim)
+                'samples': int,         # Number of valid samples used
                 'variance': float       # Reading variance (stability indicator)
             }
         """
+        if self._needs_settle:
+            await self.read_lux_async()
+            self._needs_settle = False
+
         readings = []
-        
         for i in range(samples):
             lux = await self.read_lux_async()
             if lux is not None:
                 readings.append(lux)
-            
             if i < samples - 1:
                 await asyncio.sleep_ms(delay_ms)
-        
+
         if not readings:
             return {
                 'lux': None,
@@ -405,25 +417,31 @@ class TSL2591:
                 'variance': None,
                 'error': self.last_error
             }
-        
-        avg_lux = sum(readings) / len(readings)
+
         min_lux = min(readings)
         max_lux = max(readings)
-        
-        # Calculate variance
-        if len(readings) > 1:
-            variance = sum((x - avg_lux) ** 2 for x in readings) / len(readings)
+
+        # Trim one high and one low outlier once we have >=5 samples.
+        # Below that, trimming removes too much signal.
+        if len(readings) >= 5:
+            trimmed = sorted(readings)[1:-1]
+        else:
+            trimmed = readings
+
+        avg_lux = sum(trimmed) / len(trimmed)
+
+        if len(trimmed) > 1:
+            variance = sum((x - avg_lux) ** 2 for x in trimmed) / len(trimmed)
         else:
             variance = 0.0
-        
-        # Update cached value
+
         self.last_lux = avg_lux
-        
+
         return {
             'lux': avg_lux,
             'min': min_lux,
             'max': max_lux,
-            'samples': len(readings),
+            'samples': len(trimmed),
             'variance': variance
         }
     
