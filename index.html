@@ -5801,11 +5801,21 @@
               <div class="label-sm" style="line-height: 1.4; padding: 5px">
                 <strong>To calibrate:</strong><br />
                 1. Set up enlarger with a typical negative<br />
-                2. Measure lux at baseboard (use exposure mode)<br />
-                3. Make test strip prints<br />
-                4. Determine correct exposure time<br />
-                5. Calculate: calibration = measured_lux × correct_time<br />
-                6. Enter value below
+                2. <strong>Remove the multigrade filter</strong> (or set the
+                enlarger head to a neutral white-light setting). The saved
+                constant is stored as an unfiltered value.<br />
+                3. Measure lux at baseboard with no filter in the light path<br />
+                4. Put the filter back, make test strip prints, find the
+                correct exposure time at your usual printing grade<br />
+                5. Divide that time by the filter factor for the grade you
+                used (shown in the paper data) to get the unfiltered time<br />
+                6. Calculate: calibration = measured_lux × unfiltered_time<br />
+                7. Enter value below
+                <br /><br />
+                <em>At metering time, pick the filter grade you'll print
+                with in the FILTER GRADE dropdown — the server multiplies
+                the unfiltered calibration by that grade's factor to give
+                you the correct time.</em>
               </div>
 
               <!-- Manual Calibration Input -->
@@ -5817,10 +5827,10 @@
                   type="number"
                   id="calibrationInput"
                   class="settings-input"
-                  placeholder="e.g., 1000"
-                  min="1"
+                  placeholder="e.g., 1000.00"
+                  min="0.01"
                   max="100000"
-                  step="1"
+                  step="0.01"
                   value="1000"
                   style="width: 100%"
                 />
@@ -5837,6 +5847,8 @@
                       id="calMeasuredLux"
                       class="settings-input"
                       placeholder="lux"
+                      min="0.01"
+                      step="0.01"
                       style="width: 100%"
                     />
                   </div>
@@ -5847,7 +5859,8 @@
                       id="calCorrectTime"
                       class="settings-input"
                       placeholder="seconds"
-                      step="0.1"
+                      min="0.01"
+                      step="0.01"
                       style="width: 100%"
                     />
                   </div>
@@ -21596,19 +21609,23 @@
           const filterGrade = document.getElementById(
             "exposureFilterGrade",
           ).value;
-          const filters = this.getFilterData();
-          const filterData = filters[filterGrade] || filters[""];
-          const factor = filterData.factor;
 
-          // Base exposure time
-          let time = this.calibration / lux;
+          // "None (no filter)" and unknown grades use factor = 1 so the
+          // base reciprocity time K/L stands on its own. Applying a lookup
+          // factor here was crashing on filters[""] and leaving the old
+          // exposure time stuck on screen.
+          let factor = 1.0;
+          if (filterGrade && filterGrade !== "none") {
+            const filters = this.getFilterData();
+            const filterData = filters && filters[filterGrade];
+            if (filterData && typeof filterData.factor === "number") {
+              factor = filterData.factor;
+            }
+          }
 
-          // Apply filter factor
-          time *= factor;
-
+          const time = (this.calibration / lux) * factor;
           this.exposureTime = time;
 
-          // Update display
           const timeDisplay = document.getElementById("meterExposureTime");
           if (timeDisplay) {
             timeDisplay.textContent = time.toFixed(2);
@@ -22235,7 +22252,7 @@
 
           // Update calibration input
           document.getElementById("calibrationInput").value =
-            calibration.toFixed(0);
+            calibration.toFixed(2);
 
           // Save calibration
           this.calibration = calibration;
@@ -22246,7 +22263,7 @@
           this.sendCalibrationToServer(calibration);
 
           this.showFeedback(
-            `Calibration calculated: ${calibration.toFixed(0)} lux·s`,
+            `Calibration calculated: ${calibration.toFixed(2)} lux·s`,
             "success",
           );
         }
@@ -22271,7 +22288,7 @@
           this.sendCalibrationToServer(value);
 
           this.showFeedback(
-            `Calibration saved: ${value.toFixed(0)} lux·s`,
+            `Calibration saved: ${value.toFixed(2)} lux·s`,
             "success",
           );
         }
@@ -22423,7 +22440,7 @@
           // Update calibration value
           const display = document.getElementById("meterCalibrationValue");
           if (display) {
-            display.textContent = this.calibration.toFixed(0) + " lux·s";
+            display.textContent = this.calibration.toFixed(2) + " lux·s";
           }
 
           // Update paper name display
@@ -22437,7 +22454,7 @@
           // Update calibration input field if present
           const calibrationInput = document.getElementById("calibrationInput");
           if (calibrationInput) {
-            calibrationInput.value = this.calibration.toFixed(0);
+            calibrationInput.value = this.calibration.toFixed(2);
           }
         }
 
