@@ -5944,6 +5944,45 @@
                   Refresh Status
                 </button>
               </div>
+
+              <!-- Dark-offset calibration -->
+              <div class="title-sm" style="margin-top: 14px">
+                DARK-OFFSET CALIBRATION
+              </div>
+              <div class="label-sm" style="margin-bottom: 8px">
+                Subtracts the sensor's electrical baseline from every
+                reading. Greatly improves shadow/low-light accuracy.
+                Offsets are stored per gain + integration pair — recapture
+                after changing either.
+              </div>
+              <div class="exp-info">
+                <div class="info-box">
+                  <div class="label-sm">ACTIVE FOR CURRENT SETTINGS</div>
+                  <div class="value-display" id="darkOffsetActive">--</div>
+                </div>
+                <div class="info-box">
+                  <div class="label-sm">STORED ENTRIES</div>
+                  <div class="value-display" id="darkOffsetCount">0</div>
+                </div>
+              </div>
+              <div class="label-sm" style="margin-top: 8px">
+                Before pressing Calibrate: turn the enlarger OFF and cover
+                the sensor (or close the darkroom door). Calibration takes
+                a few seconds while it averages 16 samples.
+              </div>
+              <div class="settings-btn-group" style="margin-top: 8px">
+                <button class="settings-btn" id="calibrateDarkOffsetBtn">
+                  Calibrate Dark Offset
+                </button>
+                <button class="settings-btn" id="clearDarkOffsetBtn">
+                  Clear Offsets
+                </button>
+              </div>
+              <div
+                class="label-sm"
+                id="darkOffsetFeedback"
+                style="margin-top: 6px; min-height: 1em"
+              ></div>
             </div>
           </div>
         </section>
@@ -20982,7 +21021,7 @@
           if (luxDisplay) {
             luxDisplay.textContent = `Lux: ${this.proof.samples[
               index
-            ].toFixed(1)}`;
+            ].toFixed(2)}`;
           }
           if (zoneDisplay) {
             if (result && typeof result.zone === "number") {
@@ -21233,7 +21272,7 @@
 
             this.showFeedback(
               `Auto-selected Zone V reference: ${this.proof.referenceLux.toFixed(
-                1,
+                2,
               )} lux (geometric mean)`,
               "success",
             );
@@ -21287,6 +21326,20 @@
               this.checkSensorStatus(),
             );
           }
+
+          // Dark-offset calibrate / clear
+          const darkCalBtn = document.getElementById("calibrateDarkOffsetBtn");
+          if (darkCalBtn) {
+            darkCalBtn.addEventListener("click", () =>
+              this.calibrateDarkOffset(),
+            );
+          }
+          const darkClearBtn = document.getElementById("clearDarkOffsetBtn");
+          if (darkClearBtn) {
+            darkClearBtn.addEventListener("click", () =>
+              this.clearDarkOffset(),
+            );
+          }
         }
 
         /**
@@ -21312,6 +21365,8 @@
                   sensor.gain || "Unknown";
                 document.getElementById("sensorIntegration").textContent =
                   (sensor.integration_ms || 300) + "ms";
+
+                this.updateDarkOffsetDisplay(sensor);
               } else {
                 statusDisplay.textContent = "Not Connected";
                 statusDisplay.style.color = "var(--danger)";
@@ -21361,6 +21416,118 @@
         }
 
         /**
+         * Refresh dark-offset summary boxes from a sensor status payload.
+         */
+        updateDarkOffsetDisplay(sensor) {
+          const activeEl = document.getElementById("darkOffsetActive");
+          const countEl = document.getElementById("darkOffsetCount");
+          if (!activeEl || !countEl) return;
+
+          const offsets = sensor.dark_offsets || {};
+          const entries = Object.keys(offsets).length;
+          countEl.textContent = String(entries);
+
+          if (sensor.dark_offset_active) {
+            const key = `${sensor.gain_value}_${(sensor.integration_ms || 0) / 100 - 1}`;
+            const entry = offsets[key];
+            if (entry) {
+              activeEl.textContent = `ch0=${entry.ch0_offset.toFixed(
+                1,
+              )}, ch1=${entry.ch1_offset.toFixed(1)}`;
+            } else {
+              activeEl.textContent = "Active";
+            }
+            activeEl.style.color = "var(--accent)";
+          } else {
+            activeEl.textContent = entries ? "Not for current settings" : "None";
+            activeEl.style.color = "var(--text-secondary)";
+          }
+        }
+
+        /**
+         * Capture dark-offset baseline for the current gain + integration.
+         * User MUST have enlarger off and sensor covered.
+         */
+        async calibrateDarkOffset() {
+          const btn = document.getElementById("calibrateDarkOffsetBtn");
+          const feedback = document.getElementById("darkOffsetFeedback");
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Calibrating...";
+          }
+          if (feedback) {
+            feedback.textContent =
+              "Capturing baseline — keep sensor in darkness.";
+            feedback.style.color = "var(--text-secondary)";
+          }
+          try {
+            const response = await fetch(
+              "/light-meter-dark-offset?action=calibrate",
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              const c = data.captured || {};
+              if (feedback) {
+                feedback.textContent = `Saved: ch0=${(c.ch0 || 0).toFixed(
+                  1,
+                )}, ch1=${(c.ch1 || 0).toFixed(1)} (${c.samples || 0} samples)`;
+                feedback.style.color = "var(--accent)";
+              }
+              this.showFeedback("Dark offset calibrated", "success");
+              this.checkSensorStatus();
+            } else {
+              if (feedback) {
+                feedback.textContent = "Error: " + (data.error || "unknown");
+                feedback.style.color = "var(--danger)";
+              }
+              this.showFeedback(
+                "Dark-offset error: " + (data.error || "unknown"),
+                "error",
+              );
+            }
+          } catch (error) {
+            if (feedback) {
+              feedback.textContent = "Connection error: " + error.message;
+              feedback.style.color = "var(--danger)";
+            }
+            this.showFeedback("Connection error: " + error.message, "error");
+          } finally {
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Calibrate Dark Offset";
+            }
+          }
+        }
+
+        /**
+         * Clear all stored dark-offset calibrations.
+         */
+        async clearDarkOffset() {
+          const feedback = document.getElementById("darkOffsetFeedback");
+          try {
+            const response = await fetch(
+              "/light-meter-dark-offset?action=clear",
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              if (feedback) {
+                feedback.textContent = "All dark offsets cleared.";
+                feedback.style.color = "var(--text-secondary)";
+              }
+              this.showFeedback("Dark offsets cleared", "success");
+              this.checkSensorStatus();
+            } else {
+              this.showFeedback(
+                "Error: " + (data.error || "unknown"),
+                "error",
+              );
+            }
+          } catch (error) {
+            this.showFeedback("Connection error: " + error.message, "error");
+          }
+        }
+
+        /**
          * Measure lux (exposure mode)
          */
         async measureLux() {
@@ -21391,7 +21558,7 @@
 
             if (data.status === "success") {
               this.lastLux = data.lux;
-              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+              luxDisplay.textContent = data.lux.toFixed(2) + " lux";
               varianceDisplay.textContent = data.variance
                 ? data.variance.toFixed(2)
                 : "--";
@@ -21495,7 +21662,7 @@
 
             if (data.status === "success") {
               this.highlightLux = data.lux;
-              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+              luxDisplay.textContent = data.lux.toFixed(2) + " lux";
 
               this.updateContrastButtons(mode);
               playUIBeep(800, 0.3, 0.2);
@@ -21544,7 +21711,7 @@
 
             if (data.status === "success") {
               this.shadowLux = data.lux;
-              luxDisplay.textContent = data.lux.toFixed(1) + " lux";
+              luxDisplay.textContent = data.lux.toFixed(2) + " lux";
 
               this.updateContrastButtons(mode);
               playUIBeep(800, 0.3, 0.2);

@@ -126,7 +126,7 @@ class WiFiAP:
             try:
                 # This may vary by MicroPython version
                 return self.ap.status('stations')
-            except:
+            except (AttributeError, OSError):
                 pass
         return -1
 
