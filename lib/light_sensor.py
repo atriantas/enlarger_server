@@ -910,6 +910,11 @@ class DarkroomLightMeter:
         'shadow_zone': 3,
         'soft_trim_stops': 0.0,
         'hard_trim_stops': 0.0,
+        # Contrast Analyzer trims (applied to lux readings before delta_ev /
+        # midpoint calculation). Per-paper, persisted alongside split-grade
+        # settings.
+        'contrast_highlight_trim_stops': 0.0,
+        'contrast_shadow_trim_stops': 0.0,
     }
 
     def get_split_settings(self, paper_id=None):
@@ -935,7 +940,12 @@ class DarkroomLightMeter:
         for key in ('highlight_zone', 'shadow_zone'):
             if key in kwargs and kwargs[key] is not None:
                 current[key] = int(kwargs[key])
-        for key in ('soft_trim_stops', 'hard_trim_stops'):
+        for key in (
+            'soft_trim_stops',
+            'hard_trim_stops',
+            'contrast_highlight_trim_stops',
+            'contrast_shadow_trim_stops',
+        ):
             if key in kwargs and kwargs[key] is not None:
                 current[key] = float(kwargs[key])
         self.split_settings[paper_id] = current
@@ -1068,10 +1078,16 @@ class DarkroomLightMeter:
     
     # ── Orchestration (uses stored state) ─────────────────────────────
     
-    def get_contrast_analysis(self, paper_id=None, calibration=None):
+    def get_contrast_analysis(self, paper_id=None, calibration=None,
+                              highlight_trim_stops=None,
+                              shadow_trim_stops=None):
         """
         Get contrast analysis from stored highlight/shadow readings.
-        
+
+        Trims (in stops) are applied to the lux readings before delta_ev,
+        recommended grade, and midpoint exposure time are computed. They
+        fall back to per-paper stored settings when not provided.
+
         Returns:
             dict: Full analysis including ΔEV, recommended grade,
                   exposure times, and split-grade calculations
@@ -1082,36 +1098,60 @@ class DarkroomLightMeter:
                 'highlight_lux': self.highlight_lux,
                 'shadow_lux': self.shadow_lux,
             }
-        
+
         pid = paper_id or self.current_paper_id
-        
-        delta_ev = self.calculate_delta_ev(self.highlight_lux, self.shadow_lux)
+
+        settings = self.get_split_settings(pid)
+        h_trim = (
+            highlight_trim_stops if highlight_trim_stops is not None
+            else settings.get('contrast_highlight_trim_stops', 0.0)
+        )
+        s_trim = (
+            shadow_trim_stops if shadow_trim_stops is not None
+            else settings.get('contrast_shadow_trim_stops', 0.0)
+        )
+
+        # Convention (matches split-grade soft/hard trim): positive trim
+        # means MORE exposure for that zone. To increase exposure at the
+        # metered point we divide its lux by 2**trim, so the resulting
+        # K/lux suggested time grows.
+        h_adj = self.highlight_lux * (2.0 ** -float(h_trim))
+        s_adj = self.shadow_lux * (2.0 ** -float(s_trim))
+
+        delta_ev = self.calculate_delta_ev(h_adj, s_adj)
         recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
+        # Legacy split-grade preview uses raw lux (not affected by Contrast
+        # Analyzer trims, which only apply to the contrast analysis).
         split_grade = self.calculate_split_grade(
             self.highlight_lux, self.shadow_lux, paper_id=pid,
         )
-        
+
         exposure_times = None
         if recommended:
             cal = calibration if calibration else self.get_calibration(pid)
             exposure_times = _calculate_midpoint_exposure_time(
-                self.highlight_lux,
-                self.shadow_lux,
+                h_adj,
+                s_adj,
                 recommended,
                 calibration=cal,
             )
-        
+
         recommended_response = None
         if recommended:
             recommended_response = {
                 'grade': recommended.get('grade'),
                 'match_quality': recommended.get('match_quality'),
                 'reasoning': recommended.get('reasoning'),
+                'out_of_range': recommended.get('out_of_range'),
             }
-        
+
         return {
             'highlight_lux': self.highlight_lux,
             'shadow_lux': self.shadow_lux,
+            'highlight_lux_adjusted': h_adj,
+            'shadow_lux_adjusted': s_adj,
+            'highlight_trim_stops': float(h_trim),
+            'shadow_trim_stops': float(s_trim),
             'delta_ev': delta_ev,
             'recommended_grade': recommended_response,
             'split_grade': split_grade,

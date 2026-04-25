@@ -5225,7 +5225,7 @@
               </select>
             </div>
 
-            <!-- Send to CALC Button -->
+            <!-- Send Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
               <button
                 class="settings-btn primary"
@@ -5233,6 +5233,13 @@
                 disabled
               >
                 → Send to EXPOSURE
+              </button>
+              <button
+                class="settings-btn"
+                id="sendExposureToTestStrip"
+                disabled
+              >
+                → Send to TEST STRIP
               </button>
             </div>
           </div>
@@ -5302,6 +5309,73 @@
               >
                 Measure Shadow
               </button>
+            </div>
+
+            <!-- Per-paper Highlight/Shadow trim (Contrast Analyzer) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">TRIMS (per paper)</div>
+              <div class="label-sm" style="margin-top: 8px">
+                <div class="control-label">
+                  <span>HIGHLIGHT TRIM</span>
+                  <span
+                    class="value-display"
+                    id="contrastHighlightTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastHighlightTrimSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 6px">
+                <div class="control-label">
+                  <span>SHADOW TRIM</span>
+                  <span
+                    class="value-display"
+                    id="contrastShadowTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastShadowTrimSlider"
+                />
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 6px;
+                  margin-top: 6px;
+                  font-size: 0.65rem;
+                "
+              >
+                <span
+                  class="label-sm"
+                  id="contrastTrimsPaperLabel"
+                  style="flex: 1; color: var(--text-secondary)"
+                >
+                  Saved per paper
+                </span>
+                <button
+                  class="settings-btn"
+                  id="contrastResetTrimsBtn"
+                  style="padding: 2px 8px; font-size: 0.65rem"
+                  type="button"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
 
             <!-- Contrast Analysis Results -->
@@ -5404,11 +5478,11 @@
 
             <!-- Action Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
-              <button class="settings-btn" id="analyzeContrastBtn" disabled>
-                Analyze Contrast
-              </button>
               <button class="settings-btn" id="sendContrastToCalc" disabled>
-                Send Suggested Time to EXPOSURE
+                → Send to EXPOSURE
+              </button>
+              <button class="settings-btn" id="sendContrastToTestStrip" disabled>
+                → Send to TEST STRIP
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -20338,12 +20412,21 @@
             measureBtn.addEventListener("click", () => this.measureLux());
           }
 
-          // Send to CALC button
+          // Send to EXPOSURE button
           const sendBtn = document.getElementById("sendExposureToCalc");
           if (sendBtn) {
             sendBtn.addEventListener("click", () => {
               playUIFeedback("actionConfirm");
               this.sendExposureToCalc();
+            });
+          }
+
+          // Send to TEST STRIP button
+          const sendTestBtn = document.getElementById("sendExposureToTestStrip");
+          if (sendTestBtn) {
+            sendTestBtn.addEventListener("click", () => {
+              playUIFeedback("actionConfirm");
+              this.sendExposureToTestStrip();
             });
           }
 
@@ -20387,17 +20470,21 @@
             );
           }
 
-          // Analyze button
-          const analyzeBtn = document.getElementById("analyzeContrastBtn");
-          if (analyzeBtn) {
-            analyzeBtn.addEventListener("click", () => this.analyzeContrast());
-          }
-
-          // Send suggested time to CALC button
+          // Send suggested time to EXPOSURE button
           const sendContrastBtn = document.getElementById("sendContrastToCalc");
           if (sendContrastBtn) {
             sendContrastBtn.addEventListener("click", () =>
               this.sendContrastToCalc(),
+            );
+          }
+
+          // Send suggested time to TEST STRIP button
+          const sendContrastTestBtn = document.getElementById(
+            "sendContrastToTestStrip",
+          );
+          if (sendContrastTestBtn) {
+            sendContrastTestBtn.addEventListener("click", () =>
+              this.sendContrastToTestStrip(),
             );
           }
 
@@ -20408,6 +20495,148 @@
               playUIFeedback("resetTone");
               this.clearContrastReadings();
             });
+          }
+
+          // Per-paper highlight/shadow trim sliders
+          this.bindContrastTrims();
+        }
+
+        /**
+         * Bind Contrast Analyzer trim sliders. Loads stored values via
+         * loadSplitSettings (shared per-paper storage); persists on change
+         * and triggers live recalc when both readings exist.
+         */
+        bindContrastTrims() {
+          const hSlider = document.getElementById(
+            "contrastHighlightTrimSlider",
+          );
+          const sSlider = document.getElementById("contrastShadowTrimSlider");
+          const hValue = document.getElementById("contrastHighlightTrimValue");
+          const sValue = document.getElementById("contrastShadowTrimValue");
+          const resetBtn = document.getElementById("contrastResetTrimsBtn");
+          if (!hSlider || !sSlider) return;
+          const fmtTrim = (v) => {
+            const n = parseFloat(v) || 0;
+            return `${n >= 0 ? "+" : ""}${n.toFixed(2)} stops`;
+          };
+          hSlider.addEventListener("input", () => {
+            hValue.textContent = fmtTrim(hSlider.value);
+          });
+          sSlider.addEventListener("input", () => {
+            sValue.textContent = fmtTrim(sSlider.value);
+          });
+          const persistAndRecalc = () => {
+            this.saveContrastTrims();
+            if (this.highlightLux && this.shadowLux) {
+              this.analyzeContrast();
+            }
+          };
+          hSlider.addEventListener("change", persistAndRecalc);
+          sSlider.addEventListener("change", persistAndRecalc);
+          if (resetBtn) {
+            resetBtn.addEventListener("click", () => this.resetContrastTrims());
+          }
+        }
+
+        /**
+         * Read current contrast trims from the UI.
+         */
+        readContrastTrimsFromUI() {
+          const h = parseFloat(
+            document.getElementById("contrastHighlightTrimSlider").value,
+          );
+          const s = parseFloat(
+            document.getElementById("contrastShadowTrimSlider").value,
+          );
+          return {
+            contrast_highlight_trim_stops: Number.isFinite(h) ? h : 0,
+            contrast_shadow_trim_stops: Number.isFinite(s) ? s : 0,
+          };
+        }
+
+        /**
+         * Apply contrast trim values to the UI.
+         */
+        applyContrastTrimsToUI(settings) {
+          if (!settings) return;
+          const hSlider = document.getElementById(
+            "contrastHighlightTrimSlider",
+          );
+          const sSlider = document.getElementById("contrastShadowTrimSlider");
+          const hValue = document.getElementById("contrastHighlightTrimValue");
+          const sValue = document.getElementById("contrastShadowTrimValue");
+          const fmtTrim = (v) =>
+            `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
+          if (hSlider && settings.contrast_highlight_trim_stops != null) {
+            hSlider.value = String(settings.contrast_highlight_trim_stops);
+            if (hValue)
+              hValue.textContent = fmtTrim(
+                settings.contrast_highlight_trim_stops,
+              );
+          }
+          if (sSlider && settings.contrast_shadow_trim_stops != null) {
+            sSlider.value = String(settings.contrast_shadow_trim_stops);
+            if (sValue)
+              sValue.textContent = fmtTrim(
+                settings.contrast_shadow_trim_stops,
+              );
+          }
+          const label = document.getElementById("contrastTrimsPaperLabel");
+          if (label) {
+            const pid = this.currentPaperId || this.getCurrentPaperId();
+            label.textContent = pid
+              ? `Saved per paper · ${pid}`
+              : "Saved per paper";
+          }
+        }
+
+        /**
+         * Persist current contrast trims for the current paper.
+         */
+        async saveContrastTrims() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          const t = this.readContrastTrimsFromUI();
+          try {
+            const params = new URLSearchParams({
+              action: "set",
+              paper_id: paperId,
+              contrast_highlight_trim: String(t.contrast_highlight_trim_stops),
+              contrast_shadow_trim: String(t.contrast_shadow_trim_stops),
+            });
+            await fetch(`/splitgrade-settings?${params.toString()}`);
+          } catch (e) {
+            console.warn("Could not save contrast trims:", e);
+          }
+        }
+
+        /**
+         * Reset contrast trims for the current paper to 0.
+         */
+        async resetContrastTrims() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          try {
+            const params = new URLSearchParams({
+              action: "set",
+              paper_id: paperId,
+              contrast_highlight_trim: "0",
+              contrast_shadow_trim: "0",
+            });
+            const r = await fetch(`/splitgrade-settings?${params.toString()}`);
+            const data = await r.json();
+            if (data && data.status === "success" && data.settings) {
+              this.applyContrastTrimsToUI(data.settings);
+            }
+          } catch (e) {
+            console.warn("Could not reset contrast trims:", e);
+          }
+          this.showFeedback(
+            "Contrast trims reset for this paper",
+            "success",
+          );
+          if (this.highlightLux && this.shadowLux) {
+            this.analyzeContrast();
           }
         }
 
@@ -20587,6 +20816,8 @@
             const data = await r.json();
             if (data && data.status === "success" && data.settings) {
               this.applySplitSettingsToUI(data.settings);
+              // Same per-paper storage holds the Contrast Analyzer trims.
+              this.applyContrastTrimsToUI(data.settings);
             }
           } catch (e) {
             console.warn("Could not load split settings:", e);
@@ -21840,8 +22071,13 @@
                 timeDisplay.textContent = data.exposure_time.toFixed(2);
               }
 
-              // Enable send button
-              document.getElementById("sendExposureToCalc").disabled = false;
+              // Enable send buttons
+              [
+                document.getElementById("sendExposureToCalc"),
+                document.getElementById("sendExposureToTestStrip"),
+              ].forEach((btn) => {
+                if (btn) btn.disabled = false;
+              });
 
               playUIBeep(800, 0.3, 0.2);
             } else {
@@ -21890,7 +22126,7 @@
         }
 
         /**
-         * Send exposure time to CALC tab
+         * Send exposure meter time to EXPOSURE tab
          */
         sendExposureToCalc() {
           if (!this.exposureTime || this.exposureTime <= 0) {
@@ -21899,6 +22135,18 @@
           }
 
           this.sendTimeToCalc(this.exposureTime, "Exposure meter");
+        }
+
+        /**
+         * Send exposure meter time to TEST STRIP tab
+         */
+        sendExposureToTestStrip() {
+          if (!this.exposureTime || this.exposureTime <= 0) {
+            this.showFeedback("No exposure time calculated", "error");
+            return;
+          }
+
+          this.sendTimeToTestStrip(this.exposureTime, "Exposure meter");
         }
 
         /**
@@ -22010,7 +22258,6 @@
           const hasBoth = this.highlightLux !== null && this.shadowLux !== null;
 
           if (mode === "contrast") {
-            document.getElementById("analyzeContrastBtn").disabled = !hasBoth;
             // Auto-analyze when both readings are available
             if (hasBoth) {
               this.analyzeContrast();
@@ -22042,10 +22289,17 @@
             const paperId = this.currentPaperId || this.getCurrentPaperId();
             const calibration = this.calibration || 1000.0;
 
-            // Send calibration along with the request
-            const baseParams =
-              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}`;
-            const response = await fetch(baseParams);
+            // Pull current Contrast Analyzer trims from the UI
+            const trims = this.readContrastTrimsFromUI();
+            const params = new URLSearchParams({
+              calibration: String(calibration),
+              paper_id: paperId,
+              highlight_trim: String(trims.contrast_highlight_trim_stops),
+              shadow_trim: String(trims.contrast_shadow_trim_stops),
+            });
+            const response = await fetch(
+              `/light-meter-contrast?${params.toString()}`,
+            );
             const data = await response.json();
 
             if (data.status === "success") {
@@ -22085,11 +22339,13 @@
                 document.getElementById("exposureNote").textContent =
                   times.notes || "--";
 
-                const sendContrastBtn =
-                  document.getElementById("sendContrastToCalc");
-                if (sendContrastBtn) {
-                  sendContrastBtn.disabled = false;
-                }
+                const sendBtns = [
+                  document.getElementById("sendContrastToCalc"),
+                  document.getElementById("sendContrastToTestStrip"),
+                ];
+                sendBtns.forEach((btn) => {
+                  if (btn) btn.disabled = false;
+                });
 
                 console.log("Exposure time calculated:", times);
               } else {
@@ -22100,11 +22356,13 @@
                 document.getElementById("midpointLuxDisplay").textContent =
                   "-- lux";
                 document.getElementById("exposureNote").textContent = "--";
-                const sendContrastBtn =
-                  document.getElementById("sendContrastToCalc");
-                if (sendContrastBtn) {
-                  sendContrastBtn.disabled = true;
-                }
+                const sendBtns = [
+                  document.getElementById("sendContrastToCalc"),
+                  document.getElementById("sendContrastToTestStrip"),
+                ];
+                sendBtns.forEach((btn) => {
+                  if (btn) btn.disabled = true;
+                });
               }
 
               playUIBeep(1000, 0.3, 0.3);
@@ -22141,13 +22399,12 @@
           document.getElementById("midpointLuxDisplay").textContent = "-- lux";
           document.getElementById("exposureNote").textContent = "--";
 
-          const sendContrastBtn = document.getElementById("sendContrastToCalc");
-          if (sendContrastBtn) {
-            sendContrastBtn.disabled = true;
-          }
-
-          // Disable buttons
-          document.getElementById("analyzeContrastBtn").disabled = true;
+          [
+            document.getElementById("sendContrastToCalc"),
+            document.getElementById("sendContrastToTestStrip"),
+          ].forEach((btn) => {
+            if (btn) btn.disabled = true;
+          });
 
           // Clear on server too
           try {
@@ -22158,7 +22415,7 @@
         }
 
         /**
-         * Send contrast analyzer suggested time to CALC tab
+         * Send contrast analyzer suggested time to EXPOSURE tab
          */
         sendContrastToCalc() {
           const time = this.contrastSuggestedTime;
@@ -22168,6 +22425,19 @@
           }
 
           this.sendTimeToCalc(time, "Contrast Analyzer Suggested");
+        }
+
+        /**
+         * Send contrast analyzer suggested time to TEST STRIP tab
+         */
+        sendContrastToTestStrip() {
+          const time = this.contrastSuggestedTime;
+          if (!time || time <= 0) {
+            this.showFeedback("No suggested time available", "error");
+            return;
+          }
+
+          this.sendTimeToTestStrip(time, "Contrast Analyzer Suggested");
         }
 
         /**
@@ -22483,6 +22753,39 @@
               notes: `Via light meter: ${source}`,
             });
           }
+        }
+
+        /**
+         * Send time to TEST STRIP tab as the base time and switch tab.
+         */
+        sendTimeToTestStrip(time, source) {
+          if (!time || time <= 0) {
+            this.showFeedback("Invalid exposure time", "error");
+            return;
+          }
+
+          const baseSlider = document.getElementById("testBaseSlider");
+          if (baseSlider) {
+            const clampedTime = Math.min(
+              Math.max(time, parseFloat(baseSlider.min)),
+              parseFloat(baseSlider.max),
+            );
+            baseSlider.value = clampedTime;
+            baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          switchTab("fstop-test");
+
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          playUIBeep(800, 0.3, 0.3);
+
+          this.showFeedback(
+            `${source}: ${time.toFixed(2)}s → TEST STRIP`,
+            "success",
+          );
         }
 
         /**

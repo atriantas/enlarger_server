@@ -1040,33 +1040,40 @@ class HTTPServer:
     async def _handle_light_meter_contrast(self, conn, params):
         """
         Handle /light-meter-contrast endpoint - get contrast analysis.
-        
+
         Query params:
             paper_id: Paper ID to use for analysis (optional, defaults to current paper)
             calibration: Calibration constant from client (optional, uses server-side if not provided)
-        
+            highlight_trim: Highlight trim in stops (optional, defaults to per-paper)
+            shadow_trim: Shadow trim in stops (optional, defaults to per-paper)
+
         Returns ΔEV, recommended filter grade, and split-grade calculations
-        based on stored highlight and shadow readings.
+        based on stored highlight and shadow readings, with trims applied.
         """
         if await self._require_light_meter(conn):
             return
-        
+
+        def _opt_float(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
         try:
             paper_id = params.get('paper_id')
-            
-            # Get calibration from request (takes priority over server-side)
-            calibration_str = params.get('calibration')
-            calibration = None
-            if calibration_str:
-                try:
-                    calibration = float(calibration_str)
-                except (ValueError, TypeError):
-                    pass
+
+            calibration = _opt_float('calibration')
+
             analysis = self.light_meter.get_contrast_analysis(
                 paper_id=paper_id,
                 calibration=calibration,
+                highlight_trim_stops=_opt_float('highlight_trim'),
+                shadow_trim_stops=_opt_float('shadow_trim'),
             )
-            
+
             if 'error' in analysis:
                 response = self._json_response({
                     "error": analysis['error'],
@@ -1075,14 +1082,17 @@ class HTTPServer:
                 }, 400)
                 await self._sendall(conn, response)
                 return
-            
-            # Get current paper info
+
             current_paper_id = paper_id or self.light_meter.get_current_paper()
-            
+
             response = self._json_response({
                 "status": "success",
                 "highlight_lux": analysis['highlight_lux'],
                 "shadow_lux": analysis['shadow_lux'],
+                "highlight_lux_adjusted": analysis.get('highlight_lux_adjusted'),
+                "shadow_lux_adjusted": analysis.get('shadow_lux_adjusted'),
+                "highlight_trim_stops": analysis.get('highlight_trim_stops'),
+                "shadow_trim_stops": analysis.get('shadow_trim_stops'),
                 "delta_ev": analysis['delta_ev'],
                 "recommended_grade": analysis['recommended_grade'],
                 "split_grade": analysis['split_grade'],
@@ -1092,7 +1102,7 @@ class HTTPServer:
                 "timestamp": time.ticks_ms()
             })
             await self._sendall(conn, response)
-            
+
         except Exception as e:
             response = self._json_response({
                 "error": f"Contrast analysis error: {e}"
@@ -1588,6 +1598,8 @@ class HTTPServer:
             shadow_zone: int, used with action=set.
             soft_trim: float (stops), used with action=set.
             hard_trim: float (stops), used with action=set.
+            contrast_highlight_trim: float (stops), used with action=set.
+            contrast_shadow_trim: float (stops), used with action=set.
 
         Returns the (possibly updated) effective settings.
         """
@@ -1623,6 +1635,10 @@ class HTTPServer:
                     shadow_zone=_opt_int('shadow_zone'),
                     soft_trim_stops=_opt_float('soft_trim'),
                     hard_trim_stops=_opt_float('hard_trim'),
+                    contrast_highlight_trim_stops=_opt_float(
+                        'contrast_highlight_trim'),
+                    contrast_shadow_trim_stops=_opt_float(
+                        'contrast_shadow_trim'),
                 )
             elif action == 'clear':
                 self.light_meter.clear_split_settings(paper_id)
