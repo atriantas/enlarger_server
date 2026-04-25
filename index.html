@@ -5225,7 +5225,7 @@
               </select>
             </div>
 
-            <!-- Send to CALC Button -->
+            <!-- Send Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
               <button
                 class="settings-btn primary"
@@ -5233,6 +5233,13 @@
                 disabled
               >
                 → Send to EXPOSURE
+              </button>
+              <button
+                class="settings-btn"
+                id="sendExposureToTestStrip"
+                disabled
+              >
+                → Send to TEST STRIP
               </button>
             </div>
           </div>
@@ -5276,7 +5283,9 @@
 
             <!-- Highlight Measurement -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">HIGHLIGHT (brightest area)</div>
+              <div class="label-sm">
+                HIGHLIGHT (lightest tone in print — dim spot at paper plane)
+              </div>
               <div class="value-display" id="highlightLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -5289,7 +5298,9 @@
 
             <!-- Shadow Measurement -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">SHADOW (darkest area)</div>
+              <div class="label-sm">
+                SHADOW (darkest tone in print — bright spot at paper plane)
+              </div>
               <div class="value-display" id="shadowLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -5298,6 +5309,73 @@
               >
                 Measure Shadow
               </button>
+            </div>
+
+            <!-- Per-paper Highlight/Shadow trim (Contrast Analyzer) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">TRIMS (per paper)</div>
+              <div class="label-sm" style="margin-top: 8px">
+                <div class="control-label">
+                  <span>HIGHLIGHT TRIM</span>
+                  <span
+                    class="value-display"
+                    id="contrastHighlightTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastHighlightTrimSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 6px">
+                <div class="control-label">
+                  <span>SHADOW TRIM</span>
+                  <span
+                    class="value-display"
+                    id="contrastShadowTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastShadowTrimSlider"
+                />
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 6px;
+                  margin-top: 6px;
+                  font-size: 0.65rem;
+                "
+              >
+                <span
+                  class="label-sm"
+                  id="contrastTrimsPaperLabel"
+                  style="flex: 1; color: var(--text-secondary)"
+                >
+                  Saved per paper
+                </span>
+                <button
+                  class="settings-btn"
+                  id="contrastResetTrimsBtn"
+                  style="padding: 2px 8px; font-size: 0.65rem"
+                  type="button"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
 
             <!-- Contrast Analysis Results -->
@@ -5400,11 +5478,11 @@
 
             <!-- Action Buttons -->
             <div class="settings-btn-group" style="margin-top: 15px">
-              <button class="settings-btn" id="analyzeContrastBtn" disabled>
-                Analyze Contrast
-              </button>
               <button class="settings-btn" id="sendContrastToCalc" disabled>
-                Send Suggested Time to EXPOSURE
+                → Send to EXPOSURE
+              </button>
+              <button class="settings-btn" id="sendContrastToTestStrip" disabled>
+                → Send to TEST STRIP
               </button>
               <button class="settings-btn" id="clearContrastBtn">
                 Clear Readings
@@ -5447,9 +5525,109 @@
               />
             </div>
 
+            <!-- Zone Targets & Per-Paper Trim (RH Designs split-grade tunables) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">ZONE TARGETS</div>
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  margin-top: 6px;
+                  align-items: center;
+                "
+              >
+                <label class="label-sm" style="flex: 1; font-size: 0.7rem">
+                  Highlight (lighter tone)
+                  <select
+                    id="splitHighlightZone"
+                    class="settings-input"
+                    style="width: 100%; margin-top: 2px"
+                  >
+                    <option value="6">Zone VI</option>
+                    <option value="7" selected>Zone VII</option>
+                    <option value="8">Zone VIII</option>
+                    <option value="9">Zone IX</option>
+                  </select>
+                </label>
+                <label class="label-sm" style="flex: 1; font-size: 0.7rem">
+                  Shadow (darker tone)
+                  <select
+                    id="splitShadowZone"
+                    class="settings-input"
+                    style="width: 100%; margin-top: 2px"
+                  >
+                    <option value="1">Zone I</option>
+                    <option value="2">Zone II</option>
+                    <option value="3" selected>Zone III</option>
+                    <option value="4">Zone IV</option>
+                  </select>
+                </label>
+              </div>
+              <div class="label-sm" style="margin-top: 8px">
+                <div class="control-label">
+                  <span>SOFT TRIM</span>
+                  <span class="value-display" id="splitSoftTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="splitSoftTrimSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 6px">
+                <div class="control-label">
+                  <span>HARD TRIM</span>
+                  <span class="value-display" id="splitHardTrimValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="splitHardTrimSlider"
+                />
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 6px;
+                  margin-top: 6px;
+                  font-size: 0.65rem;
+                "
+              >
+                <span
+                  class="label-sm"
+                  id="splitTrimsPaperLabel"
+                  style="flex: 1; color: var(--text-secondary)"
+                >
+                  Saved per paper
+                </span>
+                <button
+                  class="settings-btn"
+                  id="splitResetTrimsBtn"
+                  style="padding: 2px 8px; font-size: 0.65rem"
+                  type="button"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
             <!-- Highlight Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">HIGHLIGHT AREA</div>
+              <div class="label-sm">
+                HIGHLIGHT (lightest tone in print — dim spot at paper plane)
+              </div>
               <div class="value-display" id="splitHighlightLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -5462,7 +5640,9 @@
 
             <!-- Shadow Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">SHADOW AREA</div>
+              <div class="label-sm">
+                SHADOW (darkest tone in print — bright spot at paper plane)
+              </div>
               <div class="value-display" id="splitShadowLux">-- lux</div>
               <button
                 class="settings-btn"
@@ -5483,50 +5663,30 @@
               >
                 --
               </div>
-              <div class="label-sm" style="margin-top: 4px">
-                Match Quality: <span id="splitMatchQuality">--</span>
+              <div
+                class="label-sm"
+                style="margin-top: 4px; font-size: 0.75rem"
+              >
+                Equivalent single grade:
+                <span style="font-weight: bold" id="splitEquivalentGrade"
+                  >--</span
+                >
               </div>
               <div
                 class="label-sm"
-                id="splitMatchNote"
+                id="splitOutOfRangeBanner"
                 style="
-                  margin-top: 4px;
-                  font-size: 0.55rem;
-                  color: var(--text-secondary);
+                  display: none;
+                  margin-top: 6px;
+                  padding: 6px 8px;
+                  border-radius: 4px;
+                  font-size: 0.7rem;
+                  background: rgba(255, 100, 50, 0.15);
+                  border: 1px solid rgba(255, 100, 50, 0.4);
+                  color: #ff8855;
                 "
               >
                 --
-              </div>
-            </div>
-
-            <!-- Paper & Filter Characteristics (Split-Grade) -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">PAPER CHARACTERISTICS</div>
-              <div class="label-sm" style="margin-top: 5px; font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Printable EV:</span>
-                  <span style="font-weight: bold" id="splitPrintableEV">-- EV</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Gamma (Tone Curve):</span>
-                  <span style="font-weight: bold" id="splitPaperGamma">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Contrast Index:</span>
-                  <span style="font-weight: bold" id="splitContrastIndex">--</span>
-                </div>
-              </div>
-              <div class="label-sm" style="font-size: 0.85rem">
-                <div style="display: flex; justify-content: space-between">
-                  <span>Density Range:</span>
-                  <span style="font-weight: bold" id="splitDensityRange">
-                    -- (Dmin-Dmax)
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -5540,7 +5700,7 @@
               "
             >
               <div class="label-sm" style="color: var(--accent)">
-                ANALYSIS REASONING
+                ANALYSIS DETAILS
               </div>
               <div
                 class="label-sm"
@@ -5631,16 +5791,9 @@
               </div>
               <div class="label-sm" style="text-align: center; margin-top: 5px">
                 1. Measure highlight and shadow areas<br />
-                2. Click "Calculate Split-Grade"<br />
+                2. Times update automatically — adjust zones / trims to refine<br />
                 3. Send times to EXPOSURE tab for exposure
               </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="settings-btn-group" style="margin-top: 15px">
-              <button class="settings-btn" id="calculateSplitBtn" disabled>
-                Calculate Split-Grade
-              </button>
             </div>
 
             <div class="settings-btn-group" style="margin-top: 10px">
@@ -19965,6 +20118,8 @@
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
 
+          // Load per-paper split-grade tunables
+          this.loadSplitSettings();
         }
 
         /**
@@ -20057,6 +20212,8 @@
           this.loadCalibrationForCurrentPaper();
           this.updateCalibrationDisplay();
 
+          // Load per-paper split-grade tunables
+          this.loadSplitSettings();
         }
 
         /**
@@ -20255,12 +20412,21 @@
             measureBtn.addEventListener("click", () => this.measureLux());
           }
 
-          // Send to CALC button
+          // Send to EXPOSURE button
           const sendBtn = document.getElementById("sendExposureToCalc");
           if (sendBtn) {
             sendBtn.addEventListener("click", () => {
               playUIFeedback("actionConfirm");
               this.sendExposureToCalc();
+            });
+          }
+
+          // Send to TEST STRIP button
+          const sendTestBtn = document.getElementById("sendExposureToTestStrip");
+          if (sendTestBtn) {
+            sendTestBtn.addEventListener("click", () => {
+              playUIFeedback("actionConfirm");
+              this.sendExposureToTestStrip();
             });
           }
 
@@ -20304,17 +20470,21 @@
             );
           }
 
-          // Analyze button
-          const analyzeBtn = document.getElementById("analyzeContrastBtn");
-          if (analyzeBtn) {
-            analyzeBtn.addEventListener("click", () => this.analyzeContrast());
-          }
-
-          // Send suggested time to CALC button
+          // Send suggested time to EXPOSURE button
           const sendContrastBtn = document.getElementById("sendContrastToCalc");
           if (sendContrastBtn) {
             sendContrastBtn.addEventListener("click", () =>
               this.sendContrastToCalc(),
+            );
+          }
+
+          // Send suggested time to TEST STRIP button
+          const sendContrastTestBtn = document.getElementById(
+            "sendContrastToTestStrip",
+          );
+          if (sendContrastTestBtn) {
+            sendContrastTestBtn.addEventListener("click", () =>
+              this.sendContrastToTestStrip(),
             );
           }
 
@@ -20325,6 +20495,148 @@
               playUIFeedback("resetTone");
               this.clearContrastReadings();
             });
+          }
+
+          // Per-paper highlight/shadow trim sliders
+          this.bindContrastTrims();
+        }
+
+        /**
+         * Bind Contrast Analyzer trim sliders. Loads stored values via
+         * loadSplitSettings (shared per-paper storage); persists on change
+         * and triggers live recalc when both readings exist.
+         */
+        bindContrastTrims() {
+          const hSlider = document.getElementById(
+            "contrastHighlightTrimSlider",
+          );
+          const sSlider = document.getElementById("contrastShadowTrimSlider");
+          const hValue = document.getElementById("contrastHighlightTrimValue");
+          const sValue = document.getElementById("contrastShadowTrimValue");
+          const resetBtn = document.getElementById("contrastResetTrimsBtn");
+          if (!hSlider || !sSlider) return;
+          const fmtTrim = (v) => {
+            const n = parseFloat(v) || 0;
+            return `${n >= 0 ? "+" : ""}${n.toFixed(2)} stops`;
+          };
+          hSlider.addEventListener("input", () => {
+            hValue.textContent = fmtTrim(hSlider.value);
+          });
+          sSlider.addEventListener("input", () => {
+            sValue.textContent = fmtTrim(sSlider.value);
+          });
+          const persistAndRecalc = () => {
+            this.saveContrastTrims();
+            if (this.highlightLux && this.shadowLux) {
+              this.analyzeContrast();
+            }
+          };
+          hSlider.addEventListener("change", persistAndRecalc);
+          sSlider.addEventListener("change", persistAndRecalc);
+          if (resetBtn) {
+            resetBtn.addEventListener("click", () => this.resetContrastTrims());
+          }
+        }
+
+        /**
+         * Read current contrast trims from the UI.
+         */
+        readContrastTrimsFromUI() {
+          const h = parseFloat(
+            document.getElementById("contrastHighlightTrimSlider").value,
+          );
+          const s = parseFloat(
+            document.getElementById("contrastShadowTrimSlider").value,
+          );
+          return {
+            contrast_highlight_trim_stops: Number.isFinite(h) ? h : 0,
+            contrast_shadow_trim_stops: Number.isFinite(s) ? s : 0,
+          };
+        }
+
+        /**
+         * Apply contrast trim values to the UI.
+         */
+        applyContrastTrimsToUI(settings) {
+          if (!settings) return;
+          const hSlider = document.getElementById(
+            "contrastHighlightTrimSlider",
+          );
+          const sSlider = document.getElementById("contrastShadowTrimSlider");
+          const hValue = document.getElementById("contrastHighlightTrimValue");
+          const sValue = document.getElementById("contrastShadowTrimValue");
+          const fmtTrim = (v) =>
+            `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
+          if (hSlider && settings.contrast_highlight_trim_stops != null) {
+            hSlider.value = String(settings.contrast_highlight_trim_stops);
+            if (hValue)
+              hValue.textContent = fmtTrim(
+                settings.contrast_highlight_trim_stops,
+              );
+          }
+          if (sSlider && settings.contrast_shadow_trim_stops != null) {
+            sSlider.value = String(settings.contrast_shadow_trim_stops);
+            if (sValue)
+              sValue.textContent = fmtTrim(
+                settings.contrast_shadow_trim_stops,
+              );
+          }
+          const label = document.getElementById("contrastTrimsPaperLabel");
+          if (label) {
+            const pid = this.currentPaperId || this.getCurrentPaperId();
+            label.textContent = pid
+              ? `Saved per paper · ${pid}`
+              : "Saved per paper";
+          }
+        }
+
+        /**
+         * Persist current contrast trims for the current paper.
+         */
+        async saveContrastTrims() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          const t = this.readContrastTrimsFromUI();
+          try {
+            const params = new URLSearchParams({
+              action: "set",
+              paper_id: paperId,
+              contrast_highlight_trim: String(t.contrast_highlight_trim_stops),
+              contrast_shadow_trim: String(t.contrast_shadow_trim_stops),
+            });
+            await fetch(`/splitgrade-settings?${params.toString()}`);
+          } catch (e) {
+            console.warn("Could not save contrast trims:", e);
+          }
+        }
+
+        /**
+         * Reset contrast trims for the current paper to 0.
+         */
+        async resetContrastTrims() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          try {
+            const params = new URLSearchParams({
+              action: "set",
+              paper_id: paperId,
+              contrast_highlight_trim: "0",
+              contrast_shadow_trim: "0",
+            });
+            const r = await fetch(`/splitgrade-settings?${params.toString()}`);
+            const data = await r.json();
+            if (data && data.status === "success" && data.settings) {
+              this.applyContrastTrimsToUI(data.settings);
+            }
+          } catch (e) {
+            console.warn("Could not reset contrast trims:", e);
+          }
+          this.showFeedback(
+            "Contrast trims reset for this paper",
+            "success",
+          );
+          if (this.highlightLux && this.shadowLux) {
+            this.analyzeContrast();
           }
         }
 
@@ -20359,12 +20671,6 @@
             );
           }
 
-          // Calculate button
-          const calcBtn = document.getElementById("calculateSplitBtn");
-          if (calcBtn) {
-            calcBtn.addEventListener("click", () => this.calculateSplitGrade());
-          }
-
           // Send to CALC buttons
           const sendBothBtn = document.getElementById("sendSplitBothToCalc");
           if (sendBothBtn) {
@@ -20381,6 +20687,188 @@
               playUIFeedback("resetTone");
               this.clearSplitReadings();
             });
+          }
+
+          // Zone-target dropdowns + per-paper trim sliders
+          this.bindSplitTunables();
+        }
+
+        /**
+         * Bind zone-target dropdowns and per-paper trim sliders.
+         * Loads stored values on first interaction; persists on change.
+         */
+        bindSplitTunables() {
+          const highlightSel = document.getElementById("splitHighlightZone");
+          const shadowSel = document.getElementById("splitShadowZone");
+          const softSlider = document.getElementById("splitSoftTrimSlider");
+          const hardSlider = document.getElementById("splitHardTrimSlider");
+          const softValue = document.getElementById("splitSoftTrimValue");
+          const hardValue = document.getElementById("splitHardTrimValue");
+          const resetBtn = document.getElementById("splitResetTrimsBtn");
+          if (!highlightSel || !shadowSel || !softSlider || !hardSlider) {
+            return;
+          }
+          const fmtTrim = (v) => {
+            const n = parseFloat(v) || 0;
+            return `${n >= 0 ? "+" : ""}${n.toFixed(2)} stops`;
+          };
+          softSlider.addEventListener("input", () => {
+            softValue.textContent = fmtTrim(softSlider.value);
+          });
+          hardSlider.addEventListener("input", () => {
+            hardValue.textContent = fmtTrim(hardSlider.value);
+          });
+          const persistAndRecalc = () => {
+            this.saveSplitSettings();
+            // Auto-recompute when both lux readings are available
+            if (this.highlightLux && this.shadowLux) {
+              this.calculateSplitGrade();
+            }
+          };
+          highlightSel.addEventListener("change", persistAndRecalc);
+          shadowSel.addEventListener("change", persistAndRecalc);
+          softSlider.addEventListener("change", persistAndRecalc);
+          hardSlider.addEventListener("change", persistAndRecalc);
+          if (resetBtn) {
+            resetBtn.addEventListener("click", () => this.resetSplitSettings());
+          }
+        }
+
+        /**
+         * Read current split-grade tunables from the UI.
+         */
+        readSplitSettingsFromUI() {
+          const hi = parseInt(
+            document.getElementById("splitHighlightZone").value,
+            10,
+          );
+          const sh = parseInt(
+            document.getElementById("splitShadowZone").value,
+            10,
+          );
+          const soft = parseFloat(
+            document.getElementById("splitSoftTrimSlider").value,
+          );
+          const hard = parseFloat(
+            document.getElementById("splitHardTrimSlider").value,
+          );
+          return {
+            highlight_zone: Number.isFinite(hi) ? hi : 7,
+            shadow_zone: Number.isFinite(sh) ? sh : 3,
+            soft_trim_stops: Number.isFinite(soft) ? soft : 0,
+            hard_trim_stops: Number.isFinite(hard) ? hard : 0,
+          };
+        }
+
+        /**
+         * Apply settings dict to UI controls.
+         */
+        applySplitSettingsToUI(settings) {
+          if (!settings) return;
+          const hi = document.getElementById("splitHighlightZone");
+          const sh = document.getElementById("splitShadowZone");
+          const soft = document.getElementById("splitSoftTrimSlider");
+          const hard = document.getElementById("splitHardTrimSlider");
+          const softValue = document.getElementById("splitSoftTrimValue");
+          const hardValue = document.getElementById("splitHardTrimValue");
+          if (hi && settings.highlight_zone != null) {
+            hi.value = String(settings.highlight_zone);
+          }
+          if (sh && settings.shadow_zone != null) {
+            sh.value = String(settings.shadow_zone);
+          }
+          const fmtTrim = (v) =>
+            `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
+          if (soft && settings.soft_trim_stops != null) {
+            soft.value = String(settings.soft_trim_stops);
+            if (softValue) softValue.textContent = fmtTrim(settings.soft_trim_stops);
+          }
+          if (hard && settings.hard_trim_stops != null) {
+            hard.value = String(settings.hard_trim_stops);
+            if (hardValue) hardValue.textContent = fmtTrim(settings.hard_trim_stops);
+          }
+        }
+
+        /**
+         * Update the "saved per paper" label with the current paper id.
+         */
+        updateSplitTrimsPaperLabel() {
+          const label = document.getElementById("splitTrimsPaperLabel");
+          if (!label) return;
+          const pid = this.currentPaperId || this.getCurrentPaperId();
+          label.textContent = pid
+            ? `Saved per paper · ${pid}`
+            : "Saved per paper";
+        }
+
+        /**
+         * Fetch stored split-settings for the current paper and apply to UI.
+         */
+        async loadSplitSettings() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          try {
+            const params = new URLSearchParams({
+              action: "get",
+              paper_id: paperId,
+            });
+            const r = await fetch(`/splitgrade-settings?${params.toString()}`);
+            const data = await r.json();
+            if (data && data.status === "success" && data.settings) {
+              this.applySplitSettingsToUI(data.settings);
+              // Same per-paper storage holds the Contrast Analyzer trims.
+              this.applyContrastTrimsToUI(data.settings);
+            }
+          } catch (e) {
+            console.warn("Could not load split settings:", e);
+          }
+          this.updateSplitTrimsPaperLabel();
+        }
+
+        /**
+         * Persist current UI tunables for the current paper.
+         */
+        async saveSplitSettings() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          const s = this.readSplitSettingsFromUI();
+          try {
+            const params = new URLSearchParams({
+              action: "set",
+              paper_id: paperId,
+              highlight_zone: String(s.highlight_zone),
+              shadow_zone: String(s.shadow_zone),
+              soft_trim: String(s.soft_trim_stops),
+              hard_trim: String(s.hard_trim_stops),
+            });
+            await fetch(`/splitgrade-settings?${params.toString()}`);
+          } catch (e) {
+            console.warn("Could not save split settings:", e);
+          }
+        }
+
+        /**
+         * Reset tunables for the current paper to defaults (Zone VII / III, 0 trims).
+         */
+        async resetSplitSettings() {
+          const paperId = this.currentPaperId || this.getCurrentPaperId();
+          if (!paperId) return;
+          try {
+            const params = new URLSearchParams({
+              action: "clear",
+              paper_id: paperId,
+            });
+            const r = await fetch(`/splitgrade-settings?${params.toString()}`);
+            const data = await r.json();
+            if (data && data.status === "success" && data.settings) {
+              this.applySplitSettingsToUI(data.settings);
+            }
+          } catch (e) {
+            console.warn("Could not reset split settings:", e);
+          }
+          this.showFeedback("Split-grade tunables reset for this paper", "success");
+          if (this.highlightLux && this.shadowLux) {
+            this.calculateSplitGrade();
           }
         }
 
@@ -21583,8 +22071,13 @@
                 timeDisplay.textContent = data.exposure_time.toFixed(2);
               }
 
-              // Enable send button
-              document.getElementById("sendExposureToCalc").disabled = false;
+              // Enable send buttons
+              [
+                document.getElementById("sendExposureToCalc"),
+                document.getElementById("sendExposureToTestStrip"),
+              ].forEach((btn) => {
+                if (btn) btn.disabled = false;
+              });
 
               playUIBeep(800, 0.3, 0.2);
             } else {
@@ -21633,7 +22126,7 @@
         }
 
         /**
-         * Send exposure time to CALC tab
+         * Send exposure meter time to EXPOSURE tab
          */
         sendExposureToCalc() {
           if (!this.exposureTime || this.exposureTime <= 0) {
@@ -21642,6 +22135,18 @@
           }
 
           this.sendTimeToCalc(this.exposureTime, "Exposure meter");
+        }
+
+        /**
+         * Send exposure meter time to TEST STRIP tab
+         */
+        sendExposureToTestStrip() {
+          if (!this.exposureTime || this.exposureTime <= 0) {
+            this.showFeedback("No exposure time calculated", "error");
+            return;
+          }
+
+          this.sendTimeToTestStrip(this.exposureTime, "Exposure meter");
         }
 
         /**
@@ -21753,13 +22258,11 @@
           const hasBoth = this.highlightLux !== null && this.shadowLux !== null;
 
           if (mode === "contrast") {
-            document.getElementById("analyzeContrastBtn").disabled = !hasBoth;
             // Auto-analyze when both readings are available
             if (hasBoth) {
               this.analyzeContrast();
             }
           } else if (mode === "split") {
-            document.getElementById("calculateSplitBtn").disabled = !hasBoth;
             // Auto-calculate split-grade when both readings are available
             if (hasBoth) {
               this.calculateSplitGrade();
@@ -21786,10 +22289,17 @@
             const paperId = this.currentPaperId || this.getCurrentPaperId();
             const calibration = this.calibration || 1000.0;
 
-            // Send calibration along with the request
-            const baseParams =
-              `/light-meter-contrast?calibration=${calibration}&paper_id=${paperId}`;
-            const response = await fetch(baseParams);
+            // Pull current Contrast Analyzer trims from the UI
+            const trims = this.readContrastTrimsFromUI();
+            const params = new URLSearchParams({
+              calibration: String(calibration),
+              paper_id: paperId,
+              highlight_trim: String(trims.contrast_highlight_trim_stops),
+              shadow_trim: String(trims.contrast_shadow_trim_stops),
+            });
+            const response = await fetch(
+              `/light-meter-contrast?${params.toString()}`,
+            );
             const data = await response.json();
 
             if (data.status === "success") {
@@ -21829,11 +22339,13 @@
                 document.getElementById("exposureNote").textContent =
                   times.notes || "--";
 
-                const sendContrastBtn =
-                  document.getElementById("sendContrastToCalc");
-                if (sendContrastBtn) {
-                  sendContrastBtn.disabled = false;
-                }
+                const sendBtns = [
+                  document.getElementById("sendContrastToCalc"),
+                  document.getElementById("sendContrastToTestStrip"),
+                ];
+                sendBtns.forEach((btn) => {
+                  if (btn) btn.disabled = false;
+                });
 
                 console.log("Exposure time calculated:", times);
               } else {
@@ -21844,11 +22356,13 @@
                 document.getElementById("midpointLuxDisplay").textContent =
                   "-- lux";
                 document.getElementById("exposureNote").textContent = "--";
-                const sendContrastBtn =
-                  document.getElementById("sendContrastToCalc");
-                if (sendContrastBtn) {
-                  sendContrastBtn.disabled = true;
-                }
+                const sendBtns = [
+                  document.getElementById("sendContrastToCalc"),
+                  document.getElementById("sendContrastToTestStrip"),
+                ];
+                sendBtns.forEach((btn) => {
+                  if (btn) btn.disabled = true;
+                });
               }
 
               playUIBeep(1000, 0.3, 0.3);
@@ -21885,13 +22399,12 @@
           document.getElementById("midpointLuxDisplay").textContent = "-- lux";
           document.getElementById("exposureNote").textContent = "--";
 
-          const sendContrastBtn = document.getElementById("sendContrastToCalc");
-          if (sendContrastBtn) {
-            sendContrastBtn.disabled = true;
-          }
-
-          // Disable buttons
-          document.getElementById("analyzeContrastBtn").disabled = true;
+          [
+            document.getElementById("sendContrastToCalc"),
+            document.getElementById("sendContrastToTestStrip"),
+          ].forEach((btn) => {
+            if (btn) btn.disabled = true;
+          });
 
           // Clear on server too
           try {
@@ -21902,7 +22415,7 @@
         }
 
         /**
-         * Send contrast analyzer suggested time to CALC tab
+         * Send contrast analyzer suggested time to EXPOSURE tab
          */
         sendContrastToCalc() {
           const time = this.contrastSuggestedTime;
@@ -21912,6 +22425,19 @@
           }
 
           this.sendTimeToCalc(time, "Contrast Analyzer Suggested");
+        }
+
+        /**
+         * Send contrast analyzer suggested time to TEST STRIP tab
+         */
+        sendContrastToTestStrip() {
+          const time = this.contrastSuggestedTime;
+          if (!time || time <= 0) {
+            this.showFeedback("No suggested time available", "error");
+            return;
+          }
+
+          this.sendTimeToTestStrip(time, "Contrast Analyzer Suggested");
         }
 
         /**
@@ -21942,12 +22468,19 @@
 
           const endpoint = "/light-meter-split-grade-heiland";
 
-          // Build query parameters with paper_id
+          // Pull current zone targets + per-paper trim from the UI
+          const tunables = this.readSplitSettingsFromUI();
+
+          // Build query parameters with paper_id and tunables
           const params = new URLSearchParams({
             highlight: this.highlightLux,
             shadow: this.shadowLux,
             calibration: calibration,
             paper_id: paperId,
+            highlight_zone: String(tunables.highlight_zone),
+            shadow_zone: String(tunables.shadow_zone),
+            soft_trim: String(tunables.soft_trim_stops),
+            hard_trim: String(tunables.hard_trim_stops),
           });
 
           console.log("Calling split-grade endpoint:", endpoint);
@@ -21994,82 +22527,75 @@
 
               // Update displays with absolute exposure times
               document.getElementById("splitDeltaEV").textContent =
-                result.delta_ev.toFixed(1) + " EV";
+                result.delta_ev.toFixed(2) + " EV";
 
-              document.getElementById("splitMatchQuality").textContent =
-                result.match_quality;
-
-              // Show match quality note
-              const matchNote = document.getElementById("splitMatchNote");
-              if (
-                result.match_quality === "poor" &&
-                result.total_printable_ev &&
-                result.total_printable_ev > result.delta_ev + 2
-              ) {
-                matchNote.textContent =
-                  "Note: Negative contrast is lower than paper's full range. Single-grade printing may be sufficient.";
-                matchNote.style.color = "#666";
-              } else if (
-                result.match_quality === "excellent" ||
-                result.match_quality === "good"
-              ) {
-                matchNote.textContent =
-                  "Split-grade is appropriate for this negative contrast.";
-                matchNote.style.color = "var(--accent)";
-              } else {
-                matchNote.textContent = "";
+              // Equivalent single grade (for reference only)
+              const eqGradeEl = document.getElementById("splitEquivalentGrade");
+              if (eqGradeEl) {
+                if (result.equivalent_grade && result.equivalent_grade.grade) {
+                  const eq = result.equivalent_grade;
+                  eqGradeEl.textContent = `Grade ${eq.grade} (ISO R ${eq.iso_r ?? "--"}, ${eq.match_quality || "--"} match)`;
+                } else {
+                  eqGradeEl.textContent = "--";
+                }
               }
 
-              document.getElementById("splitPrintableEV").textContent =
-                (result.total_printable_ev || 0).toFixed(1) + " EV";
+              // Side-specific out-of-range banner
+              const banner = document.getElementById("splitOutOfRangeBanner");
+              if (banner) {
+                const oor = result.equivalent_grade && result.equivalent_grade.out_of_range;
+                if (oor === "too_contrasty") {
+                  banner.style.display = "block";
+                  banner.textContent =
+                    "Highlights will burn — negative exceeds the paper's softest grade. Consider pre-flashing, dodging, or accepting clipped highlights.";
+                } else if (oor === "too_flat") {
+                  banner.style.display = "block";
+                  banner.textContent =
+                    "Negative is flatter than the paper's hardest grade — print contrast will be limited. Consider development push or skip split-grade.";
+                } else {
+                  banner.style.display = "none";
+                  banner.textContent = "";
+                }
+              }
 
-              document.getElementById("splitPaperGamma").textContent = (
-                result.paper_gamma || 0.7
-              ).toFixed(2);
-
-              document.getElementById("splitContrastIndex").textContent = (
-                result.paper_contrast_index || 1.0
-              ).toFixed(2);
-
-              const dmin = result.paper_dmin || 0.05;
-              const dmax = result.paper_dmax || 2.0;
-              document.getElementById("splitDensityRange").textContent =
-                `${(dmax - dmin).toFixed(2)} (Dmin: ${dmin.toFixed(2)}, Dmax: ${dmax.toFixed(2)})`;
-
-              const reasoning = result.selection_reason
-                ? `${result.selection_reason} (Match: ${result.match_quality})`
-                : `Match: ${result.match_quality}`;
+              const reasoningParts = [
+                `${result.soft_filter} ${result.delta_soft_stops >= 0 ? "+" : ""}${result.delta_soft_stops.toFixed(2)} stops`,
+                `${result.hard_filter} ${result.delta_hard_stops >= 0 ? "+" : ""}${result.delta_hard_stops.toFixed(2)} stops`,
+              ];
+              if (result.reciprocity_applied) {
+                reasoningParts.push("reciprocity applied");
+              }
               document.getElementById("splitAnalysisReasoning").textContent =
-                reasoning;
+                reasoningParts.join(" · ");
 
-              // Calculate split-adjusted times
-              const softAdj = result.soft_time * (result.soft_percent / 100);
-              const hardAdj = result.hard_time * (result.hard_percent / 100);
-              const totalAdj = softAdj + hardAdj;
+              // Display raw server-computed times. Percentages are derived
+              // here only for the UI ratio labels.
+              const softTime = result.soft_time;
+              const hardTime = result.hard_time;
+              const totalTime = result.total_time;
+              const softPercent = totalTime > 0
+                ? (softTime / totalTime) * 100
+                : 50;
+              const hardPercent = totalTime > 0
+                ? (hardTime / totalTime) * 100
+                : 50;
 
-              result.soft_time_adjusted = softAdj;
-              result.hard_time_adjusted = hardAdj;
-              result.total_time_adjusted = totalAdj;
-
-              // Soft exposure (split-adjusted)
               document.getElementById("splitSoftTime").textContent =
-                softAdj.toFixed(2) + "s";
+                softTime.toFixed(2) + "s";
               document.getElementById("splitSoftFilterName").textContent =
                 result.soft_filter;
               document.getElementById("splitSoftPercent").textContent =
-                result.soft_percent.toFixed(0) + "%";
+                softPercent.toFixed(0) + "%";
 
-              // Hard exposure (split-adjusted)
               document.getElementById("splitHardTime").textContent =
-                hardAdj.toFixed(2) + "s";
+                hardTime.toFixed(2) + "s";
               document.getElementById("splitHardFilterName").textContent =
                 result.hard_filter;
               document.getElementById("splitHardPercent").textContent =
-                result.hard_percent.toFixed(0) + "%";
+                hardPercent.toFixed(0) + "%";
 
-              // Total time (split-adjusted)
               document.getElementById("splitTotalTime").textContent =
-                totalAdj.toFixed(2) + "s";
+                totalTime.toFixed(2) + "s";
 
               // Enable send button
               document.getElementById("sendSplitBothToCalc").disabled = false;
@@ -22097,27 +22623,29 @@
           this.splitGradeResult = null;
 
           // Clear displays
-          document.getElementById("splitHighlightLux").textContent = "-- lux";
-          document.getElementById("splitShadowLux").textContent = "-- lux";
-          document.getElementById("splitDeltaEV").textContent = "--";
-          document.getElementById("splitMatchQuality").textContent = "--";
-          document.getElementById("splitMatchNote").textContent = "--";
-          document.getElementById("splitPrintableEV").textContent = "-- EV";
-          document.getElementById("splitPaperGamma").textContent = "--";
-          document.getElementById("splitContrastIndex").textContent = "--";
-          document.getElementById("splitDensityRange").textContent =
-            "-- (Dmin-Dmax)";
-          document.getElementById("splitAnalysisReasoning").textContent = "--";
-          document.getElementById("splitSoftTime").textContent = "--.--";
-          document.getElementById("splitSoftFilterName").textContent = "--";
-          document.getElementById("splitSoftPercent").textContent = "--%";
-          document.getElementById("splitHardTime").textContent = "--.--";
-          document.getElementById("splitHardFilterName").textContent = "--";
-          document.getElementById("splitHardPercent").textContent = "--%";
-          document.getElementById("splitTotalTime").textContent = "--.--";
+          const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+          };
+          setText("splitHighlightLux", "-- lux");
+          setText("splitShadowLux", "-- lux");
+          setText("splitDeltaEV", "--");
+          setText("splitEquivalentGrade", "--");
+          setText("splitAnalysisReasoning", "--");
+          setText("splitSoftTime", "--.--");
+          setText("splitSoftFilterName", "--");
+          setText("splitSoftPercent", "--%");
+          setText("splitHardTime", "--.--");
+          setText("splitHardFilterName", "--");
+          setText("splitHardPercent", "--%");
+          setText("splitTotalTime", "--.--");
+          const banner = document.getElementById("splitOutOfRangeBanner");
+          if (banner) {
+            banner.style.display = "none";
+            banner.textContent = "";
+          }
 
-          // Disable buttons
-          document.getElementById("calculateSplitBtn").disabled = true;
+          // Disable send button until next calc completes
           document.getElementById("sendSplitBothToCalc").disabled = true;
 
           // Clear on server too
@@ -22137,12 +22665,8 @@
             return;
           }
 
-          const softTime =
-            this.splitGradeResult.soft_time_adjusted ||
-            this.splitGradeResult.soft_time;
-          const hardTime =
-            this.splitGradeResult.hard_time_adjusted ||
-            this.splitGradeResult.hard_time;
+          const softTime = this.splitGradeResult.soft_time;
+          const hardTime = this.splitGradeResult.hard_time;
 
           if (!softTime || !hardTime) {
             this.showFeedback("Split-grade times are missing", "error");
@@ -22150,9 +22674,7 @@
           }
 
           const totalTime =
-            this.splitGradeResult.total_time_adjusted ||
-            this.splitGradeResult.total_time ||
-            softTime + hardTime;
+            this.splitGradeResult.total_time || softTime + hardTime;
 
           applySplitGradeToCalc({
             neutralTime: totalTime,
@@ -22231,6 +22753,39 @@
               notes: `Via light meter: ${source}`,
             });
           }
+        }
+
+        /**
+         * Send time to TEST STRIP tab as the base time and switch tab.
+         */
+        sendTimeToTestStrip(time, source) {
+          if (!time || time <= 0) {
+            this.showFeedback("Invalid exposure time", "error");
+            return;
+          }
+
+          const baseSlider = document.getElementById("testBaseSlider");
+          if (baseSlider) {
+            const clampedTime = Math.min(
+              Math.max(time, parseFloat(baseSlider.min)),
+              parseFloat(baseSlider.max),
+            );
+            baseSlider.value = clampedTime;
+            baseSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          switchTab("fstop-test");
+
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          playUIBeep(800, 0.3, 0.3);
+
+          this.showFeedback(
+            `${source}: ${time.toFixed(2)}s → TEST STRIP`,
+            "success",
+          );
         }
 
         /**

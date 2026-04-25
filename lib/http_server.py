@@ -82,6 +82,7 @@ class HTTPServer:
             '/light-meter-config':            self._handle_light_meter_config,
             '/light-meter-dark-offset':       self._handle_light_meter_dark_offset,
             '/light-meter-gain-calibrate':    self._handle_light_meter_gain_calibrate,
+            '/splitgrade-settings':           self._handle_splitgrade_settings,
             '/update-check':                  self._handle_update_check,
             '/update-check-only':             self._handle_update_check_only,
             '/version':                       self._handle_version,
@@ -1039,33 +1040,40 @@ class HTTPServer:
     async def _handle_light_meter_contrast(self, conn, params):
         """
         Handle /light-meter-contrast endpoint - get contrast analysis.
-        
+
         Query params:
             paper_id: Paper ID to use for analysis (optional, defaults to current paper)
             calibration: Calibration constant from client (optional, uses server-side if not provided)
-        
+            highlight_trim: Highlight trim in stops (optional, defaults to per-paper)
+            shadow_trim: Shadow trim in stops (optional, defaults to per-paper)
+
         Returns ΔEV, recommended filter grade, and split-grade calculations
-        based on stored highlight and shadow readings.
+        based on stored highlight and shadow readings, with trims applied.
         """
         if await self._require_light_meter(conn):
             return
-        
+
+        def _opt_float(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
         try:
             paper_id = params.get('paper_id')
-            
-            # Get calibration from request (takes priority over server-side)
-            calibration_str = params.get('calibration')
-            calibration = None
-            if calibration_str:
-                try:
-                    calibration = float(calibration_str)
-                except (ValueError, TypeError):
-                    pass
+
+            calibration = _opt_float('calibration')
+
             analysis = self.light_meter.get_contrast_analysis(
                 paper_id=paper_id,
                 calibration=calibration,
+                highlight_trim_stops=_opt_float('highlight_trim'),
+                shadow_trim_stops=_opt_float('shadow_trim'),
             )
-            
+
             if 'error' in analysis:
                 response = self._json_response({
                     "error": analysis['error'],
@@ -1074,14 +1082,17 @@ class HTTPServer:
                 }, 400)
                 await self._sendall(conn, response)
                 return
-            
-            # Get current paper info
+
             current_paper_id = paper_id or self.light_meter.get_current_paper()
-            
+
             response = self._json_response({
                 "status": "success",
                 "highlight_lux": analysis['highlight_lux'],
                 "shadow_lux": analysis['shadow_lux'],
+                "highlight_lux_adjusted": analysis.get('highlight_lux_adjusted'),
+                "shadow_lux_adjusted": analysis.get('shadow_lux_adjusted'),
+                "highlight_trim_stops": analysis.get('highlight_trim_stops'),
+                "shadow_trim_stops": analysis.get('shadow_trim_stops'),
                 "delta_ev": analysis['delta_ev'],
                 "recommended_grade": analysis['recommended_grade'],
                 "split_grade": analysis['split_grade'],
@@ -1091,7 +1102,7 @@ class HTTPServer:
                 "timestamp": time.ticks_ms()
             })
             await self._sendall(conn, response)
-            
+
         except Exception as e:
             response = self._json_response({
                 "error": f"Contrast analysis error: {e}"
@@ -1100,31 +1111,53 @@ class HTTPServer:
     
     async def _handle_light_meter_split_grade_heiland(self, conn, params):
         """
-        Handle /light-meter-split-grade-heiland endpoint - calculate Heiland-like split-grade.
-        
+        Handle /light-meter-split-grade-heiland endpoint - calculate RH-Designs-style split-grade.
+
         Query params:
-            highlight: Highlight lux reading
-            shadow: Shadow lux reading
-            calibration: Calibration constant (lux·s)
+            highlight: Highlight lux reading (dim spot at paper plane = print's lightest tone)
+            shadow: Shadow lux reading (bright spot at paper plane = print's darkest tone)
+            calibration: K_paper from Option B (lux·s, optional — defaults to per-paper stored)
             paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
+            highlight_zone: Target zone for highlight reading (optional, defaults to per-paper)
+            shadow_zone: Target zone for shadow reading (optional, defaults to per-paper)
+            soft_trim: Soft leg user trim in stops (optional, defaults to per-paper)
+            hard_trim: Hard leg user trim in stops (optional, defaults to per-paper)
             system: (deprecated) Legacy filter system parameter
-        
-        Returns Heiland-like split-grade calculation with dynamic filter selection.
+
+        Returns split-grade times based on the paper's softest/hardest filter pair,
+        zone-target offsets, per-paper trim stops, and reciprocity correction.
         """
         if await self._require_light_meter(conn):
             return
-        
+
+        def _opt_float(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
+        def _opt_int(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return int(float(v))
+            except (TypeError, ValueError):
+                return None
+
         try:
             highlight_lux = float(params.get('highlight', 0))
             shadow_lux = float(params.get('shadow', 0))
-            calibration = float(params.get('calibration', self.light_meter.default_calibration))
-            
-            # Accept paper_id (new) or system (legacy fallback)
+
+            cal_opt = _opt_float('calibration')
+
             paper_id = params.get('paper_id')
             if not paper_id:
-                # Fallback to system for backward compatibility
-                paper_id = params.get('system', self.light_meter.current_paper_id or self.light_meter.filter_system)
-            
+                paper_id = params.get('system', self.light_meter.current_paper_id)
+
             if highlight_lux <= 0 or shadow_lux <= 0:
                 response = self._json_response({
                     "error": "Invalid lux readings (must be positive)",
@@ -1134,12 +1167,15 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
 
-            # Calculate Heiland-like split-grade with paper_id
             result = self.light_meter.calculate_split_grade_heiland(
                 highlight_lux=highlight_lux,
                 shadow_lux=shadow_lux,
-                calibration=calibration,
-                system=paper_id,  # Pass paper_id as system parameter for now
+                calibration=cal_opt,
+                system=paper_id,
+                highlight_zone=_opt_int('highlight_zone'),
+                shadow_zone=_opt_int('shadow_zone'),
+                soft_trim_stops=_opt_float('soft_trim'),
+                hard_trim_stops=_opt_float('hard_trim'),
             )
             
             if result is None:
@@ -1150,14 +1186,30 @@ class HTTPServer:
                 }, 500)
                 await self._sendall(conn, response)
                 return
-            
+
+            # Equivalent single-grade recommendation, for reference display.
+            try:
+                equivalent = self.light_meter.recommend_filter_grade(
+                    result.get('delta_ev'),
+                    paper_id=result.get('paper_id'),
+                )
+                if equivalent:
+                    result['equivalent_grade'] = {
+                        'grade': equivalent.get('grade'),
+                        'iso_r': equivalent.get('iso_r'),
+                        'match_quality': equivalent.get('match_quality'),
+                        'out_of_range': equivalent.get('out_of_range'),
+                    }
+            except Exception:
+                pass
+
             response = self._json_response({
                 "status": "success",
                 "result": result,
                 "timestamp": time.ticks_ms()
             })
             await self._sendall(conn, response)
-            
+
         except ValueError as e:
             response = self._json_response({
                 "error": f"Invalid parameters: {e}"
@@ -1531,6 +1583,83 @@ class HTTPServer:
         except Exception as e:
             response = self._json_response({
                 "error": f"Gain calibration error: {e}"
+            }, 500)
+            await self._sendall(conn, response)
+
+    async def _handle_splitgrade_settings(self, conn, params):
+        """
+        Handle /splitgrade-settings endpoint — per-paper RH-Designs split-grade
+        settings (zone targets + soft/hard trim stops).
+
+        Query params:
+            action: 'get' (default), 'set', or 'clear'.
+            paper_id: Paper identifier (optional — defaults to current paper).
+            highlight_zone: int, used with action=set.
+            shadow_zone: int, used with action=set.
+            soft_trim: float (stops), used with action=set.
+            hard_trim: float (stops), used with action=set.
+            contrast_highlight_trim: float (stops), used with action=set.
+            contrast_shadow_trim: float (stops), used with action=set.
+
+        Returns the (possibly updated) effective settings.
+        """
+        if await self._require_light_meter(conn):
+            return
+
+        action = params.get('action', 'get').strip().lower()
+        paper_id = params.get('paper_id') or self.light_meter.current_paper_id
+
+        def _opt_float(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
+        def _opt_int(key):
+            v = params.get(key)
+            if v is None or v == '':
+                return None
+            try:
+                return int(float(v))
+            except (TypeError, ValueError):
+                return None
+
+        try:
+            if action == 'set':
+                self.light_meter.set_split_settings(
+                    paper_id,
+                    highlight_zone=_opt_int('highlight_zone'),
+                    shadow_zone=_opt_int('shadow_zone'),
+                    soft_trim_stops=_opt_float('soft_trim'),
+                    hard_trim_stops=_opt_float('hard_trim'),
+                    contrast_highlight_trim_stops=_opt_float(
+                        'contrast_highlight_trim'),
+                    contrast_shadow_trim_stops=_opt_float(
+                        'contrast_shadow_trim'),
+                )
+            elif action == 'clear':
+                self.light_meter.clear_split_settings(paper_id)
+
+            settings = self.light_meter.get_split_settings(paper_id)
+            response = self._json_response({
+                "status": "success",
+                "action": action,
+                "paper_id": paper_id,
+                "settings": settings,
+            })
+            await self._sendall(conn, response)
+
+        except ValueError as e:
+            response = self._json_response({
+                "error": f"Invalid parameters: {e}"
+            }, 400)
+            await self._sendall(conn, response)
+        except Exception as e:
+            response = self._json_response({
+                "error": f"Split-grade settings error: {e}"
             }, 500)
             await self._sendall(conn, response)
 

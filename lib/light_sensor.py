@@ -811,6 +811,11 @@ class DarkroomLightMeter:
         self.calibrations = {}
         self.default_calibration = self.DEFAULT_CALIBRATION
 
+        # Per-paper split-grade settings (zone targets + trim stops).
+        # Shape: { paper_id: {'highlight_zone': int, 'shadow_zone': int,
+        #                     'soft_trim_stops': float, 'hard_trim_stops': float} }
+        self.split_settings = {}
+
         # Current paper selection (server-side state)
         self.current_paper_id = 'ilford_cooltone'
 
@@ -843,8 +848,14 @@ class DarkroomLightMeter:
         if gain:
             self.sensor.load_gain_factors(gain)
 
+        split = data.get('split_settings')
+        if isinstance(split, dict):
+            self.split_settings = {
+                str(pid): dict(s) for pid, s in split.items() if isinstance(s, dict)
+            }
+
     def _save_sensor_calibration(self):
-        """Persist dark offsets and gain factors to CALIBRATION_FILE."""
+        """Persist dark offsets, gain factors, and split-grade settings to CALIBRATION_FILE."""
         payload = {
             'dark_offsets': self.sensor.get_dark_offsets(),
             # Store gain factors only if user-calibrated (not nominal defaults).
@@ -852,6 +863,7 @@ class DarkroomLightMeter:
                 {str(k): v for k, v in self.sensor._gain_factors_override.items()}
                 if self.sensor._gain_factors_override else {}
             ),
+            'split_settings': self.split_settings,
         }
         try:
             with open(self.CALIBRATION_FILE, 'w') as f:
@@ -890,7 +902,62 @@ class DarkroomLightMeter:
         if paper_id and paper_id in self.calibrations:
             return self.calibrations[paper_id]
         return self.default_calibration
-    
+
+    # ── Per-paper split-grade settings (zone targets + trim stops) ────
+
+    SPLIT_DEFAULTS = {
+        'highlight_zone': 7,
+        'shadow_zone': 3,
+        'soft_trim_stops': 0.0,
+        'hard_trim_stops': 0.0,
+        # Contrast Analyzer trims (applied to lux readings before delta_ev /
+        # midpoint calculation). Per-paper, persisted alongside split-grade
+        # settings.
+        'contrast_highlight_trim_stops': 0.0,
+        'contrast_shadow_trim_stops': 0.0,
+    }
+
+    def get_split_settings(self, paper_id=None):
+        """Get split-grade settings for a paper, falling back to defaults."""
+        pid = paper_id or self.current_paper_id
+        stored = self.split_settings.get(pid, {}) if pid else {}
+        merged = dict(self.SPLIT_DEFAULTS)
+        for key, value in stored.items():
+            if key in merged:
+                merged[key] = value
+        return merged
+
+    def set_split_settings(self, paper_id, **kwargs):
+        """
+        Update split-grade settings for a paper.
+
+        Accepted keys: highlight_zone (int), shadow_zone (int),
+        soft_trim_stops (float), hard_trim_stops (float).
+        """
+        if not paper_id:
+            raise ValueError("paper_id is required")
+        current = dict(self.split_settings.get(paper_id, {}))
+        for key in ('highlight_zone', 'shadow_zone'):
+            if key in kwargs and kwargs[key] is not None:
+                current[key] = int(kwargs[key])
+        for key in (
+            'soft_trim_stops',
+            'hard_trim_stops',
+            'contrast_highlight_trim_stops',
+            'contrast_shadow_trim_stops',
+        ):
+            if key in kwargs and kwargs[key] is not None:
+                current[key] = float(kwargs[key])
+        self.split_settings[paper_id] = current
+        self._save_sensor_calibration()
+        return self.get_split_settings(paper_id)
+
+    def clear_split_settings(self, paper_id):
+        """Remove stored split-grade settings for a paper (revert to defaults)."""
+        if paper_id in self.split_settings:
+            del self.split_settings[paper_id]
+            self._save_sensor_calibration()
+
     # ── Sensor measurements ───────────────────────────────────────────
     
     async def measure_lux_async(self, samples=5):
@@ -979,21 +1046,48 @@ class DarkroomLightMeter:
         )
     
     def calculate_split_grade_heiland(self, highlight_lux, shadow_lux,
-                                      calibration=None, system=None):
-        """Heiland-like split-grade with dynamic filter selection."""
+                                      calibration=None, system=None,
+                                      highlight_zone=None, shadow_zone=None,
+                                      soft_trim_stops=None, hard_trim_stops=None):
+        """RH-Designs-style split-grade. Zone targets and trim stops fall back to
+        per-paper stored split_settings (or defaults) when not supplied."""
+        paper_id = system or self.current_paper_id
+        settings = self.get_split_settings(paper_id)
         return _calculate_split_grade_heiland(
             highlight_lux,
             shadow_lux,
-            calibration=calibration or self.default_calibration,
-            system=system or self.filter_system,
+            calibration=calibration or self.get_calibration(paper_id),
+            system=paper_id,
+            highlight_zone=(
+                highlight_zone if highlight_zone is not None
+                else settings['highlight_zone']
+            ),
+            shadow_zone=(
+                shadow_zone if shadow_zone is not None
+                else settings['shadow_zone']
+            ),
+            soft_trim_stops=(
+                soft_trim_stops if soft_trim_stops is not None
+                else settings['soft_trim_stops']
+            ),
+            hard_trim_stops=(
+                hard_trim_stops if hard_trim_stops is not None
+                else settings['hard_trim_stops']
+            ),
         )
     
     # ── Orchestration (uses stored state) ─────────────────────────────
     
-    def get_contrast_analysis(self, paper_id=None, calibration=None):
+    def get_contrast_analysis(self, paper_id=None, calibration=None,
+                              highlight_trim_stops=None,
+                              shadow_trim_stops=None):
         """
         Get contrast analysis from stored highlight/shadow readings.
-        
+
+        Trims (in stops) are applied to the lux readings before delta_ev,
+        recommended grade, and midpoint exposure time are computed. They
+        fall back to per-paper stored settings when not provided.
+
         Returns:
             dict: Full analysis including ΔEV, recommended grade,
                   exposure times, and split-grade calculations
@@ -1004,36 +1098,60 @@ class DarkroomLightMeter:
                 'highlight_lux': self.highlight_lux,
                 'shadow_lux': self.shadow_lux,
             }
-        
+
         pid = paper_id or self.current_paper_id
-        
-        delta_ev = self.calculate_delta_ev(self.highlight_lux, self.shadow_lux)
+
+        settings = self.get_split_settings(pid)
+        h_trim = (
+            highlight_trim_stops if highlight_trim_stops is not None
+            else settings.get('contrast_highlight_trim_stops', 0.0)
+        )
+        s_trim = (
+            shadow_trim_stops if shadow_trim_stops is not None
+            else settings.get('contrast_shadow_trim_stops', 0.0)
+        )
+
+        # Convention (matches split-grade soft/hard trim): positive trim
+        # means MORE exposure for that zone. To increase exposure at the
+        # metered point we divide its lux by 2**trim, so the resulting
+        # K/lux suggested time grows.
+        h_adj = self.highlight_lux * (2.0 ** -float(h_trim))
+        s_adj = self.shadow_lux * (2.0 ** -float(s_trim))
+
+        delta_ev = self.calculate_delta_ev(h_adj, s_adj)
         recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
+        # Legacy split-grade preview uses raw lux (not affected by Contrast
+        # Analyzer trims, which only apply to the contrast analysis).
         split_grade = self.calculate_split_grade(
             self.highlight_lux, self.shadow_lux, paper_id=pid,
         )
-        
+
         exposure_times = None
         if recommended:
             cal = calibration if calibration else self.get_calibration(pid)
             exposure_times = _calculate_midpoint_exposure_time(
-                self.highlight_lux,
-                self.shadow_lux,
+                h_adj,
+                s_adj,
                 recommended,
                 calibration=cal,
             )
-        
+
         recommended_response = None
         if recommended:
             recommended_response = {
                 'grade': recommended.get('grade'),
                 'match_quality': recommended.get('match_quality'),
                 'reasoning': recommended.get('reasoning'),
+                'out_of_range': recommended.get('out_of_range'),
             }
-        
+
         return {
             'highlight_lux': self.highlight_lux,
             'shadow_lux': self.shadow_lux,
+            'highlight_lux_adjusted': h_adj,
+            'shadow_lux_adjusted': s_adj,
+            'highlight_trim_stops': float(h_trim),
+            'shadow_trim_stops': float(s_trim),
             'delta_ev': delta_ev,
             'recommended_grade': recommended_response,
             'split_grade': split_grade,
