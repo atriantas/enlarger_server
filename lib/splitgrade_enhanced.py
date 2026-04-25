@@ -12,9 +12,10 @@ Based on research into Heiland Splitgrade Controller methodology.
 
 import math
 from lib.paper_database import (
-    get_paper_data, 
+    get_paper_data,
     get_filter_selection,
     get_filter_data,
+    get_splitgrade_config,
     validate_exposure_times,
 )
 
@@ -198,101 +199,109 @@ def calculate_split_grade_heiland(
     shadow_lux,
     calibration=1000.0,
     system=None,
+    highlight_zone=7,
+    shadow_zone=3,
+    soft_trim_stops=0.0,
+    hard_trim_stops=0.0,
 ):
     """
-    Heiland-like split-grade calculation with dynamic filter selection.
+    RH Designs StopClock Vario–style split-grade calculation.
 
-    Based on research into Heiland Splitgrade Controller methodology:
-    1. Dynamic filter selection based on measured contrast (ΔEV)
-    2. Paper characteristic curve consideration
-    3. Exposure optimization for balanced results
-
-    Uses unified filter selection logic from paper_database.py for consistency.
+    Always uses the paper's softest and hardest filters (00 + 5 for Ilford,
+    2xY + 2xM2 for FOMA). Soft and hard offsets are derived automatically
+    from the paper's published filter factors with an explicit zone-target
+    correction so each metered point lands at the desired print zone.
 
     Args:
-        highlight_lux: Lux reading at highlight area
-        shadow_lux: Lux reading at shadow area
-        calibration: Calibration constant (lux × seconds)
-        system: Filter system or paper_id (optional, defaults to 'ilford')
+        highlight_lux: Lux at the print's lightest tone (dim spot at paper plane).
+        shadow_lux: Lux at the print's darkest tone (bright spot at paper plane).
+        calibration: K_paper from Option B (unfiltered, mid-gray) in lux × seconds.
+        system: paper_id (e.g. 'ilford_cooltone'). 'ilford'/'foma' fall back to defaults.
+        highlight_zone: Target zone for the highlight reading (Zone V = mid). Default 7.
+        shadow_zone: Target zone for the shadow reading. Default 3.
+        soft_trim_stops: Per-paper user trim for the soft leg (stops, default 0).
+        hard_trim_stops: Per-paper user trim for the hard leg (stops, default 0).
 
     Returns:
-        dict: Enhanced split-grade results with Heiland-like features
+        dict: { soft_time, hard_time, total_time, soft_filter, hard_filter,
+                delta_soft_stops, delta_hard_stops, delta_ev, reciprocity_applied,
+                highlight_lux, shadow_lux, highlight_zone, shadow_zone,
+                soft_trim_stops, hard_trim_stops, paper_id }
     """
     if highlight_lux is None or shadow_lux is None:
         return None
-
     if highlight_lux <= 0 or shadow_lux <= 0:
         return None
+    if calibration is None or calibration <= 0:
+        return None
 
-    system = system or 'ilford'
-
-    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
-
-    filter_selection = get_filter_selection(delta_ev, system)
-    soft_filter = filter_selection['soft_filter']
-    hard_filter = filter_selection['hard_filter']
-    selection_reason = filter_selection['description']
-    contrast_level = filter_selection['contrast_level']
-
-    # get_paper_data accepts paper_id; system may be a paper_id passed by HTTP server
-    paper_data = get_paper_data(system)
+    paper_id = system or 'ilford_cooltone'
+    paper_data = get_paper_data(paper_id)
     if not paper_data:
         return None
 
-    filter_data = paper_data.get('filters', {})
-
-    if soft_filter not in filter_data:
-        if system.startswith('ilford'):
-            soft_filter = '00'
-            hard_filter = '5'
-        else:
-            soft_filter = '2xY'
-            hard_filter = '2xM2'
-
-    if soft_filter not in filter_data or hard_filter not in filter_data:
+    sg_config = get_splitgrade_config(paper_id)
+    if not sg_config:
         return None
 
-    soft_factor = filter_data[soft_filter]['factor']
-    hard_factor = filter_data[hard_filter]['factor']
+    soft_filter = sg_config['soft_filter']
+    hard_filter = sg_config['hard_filter']
+    filters = paper_data.get('filters', {})
 
-    soft_time = (calibration / highlight_lux) * soft_factor
-    hard_time = (calibration / shadow_lux) * hard_factor
+    soft_filter_data = filters.get(soft_filter)
+    hard_filter_data = filters.get(hard_filter)
+    if not soft_filter_data or not hard_filter_data:
+        return None
 
-    soft_time_opt, hard_time_opt, optimization_applied = validate_exposure_times(
-        soft_time, hard_time, None
-    )
+    factor_soft = soft_filter_data.get('factor')
+    factor_hard = hard_filter_data.get('factor')
+    if not factor_soft or not factor_hard or factor_soft <= 0 or factor_hard <= 0:
+        return None
 
-    total_time = soft_time_opt + hard_time_opt
-    if total_time > 0:
-        soft_percent = (soft_time_opt / total_time) * 100
-        hard_percent = (hard_time_opt / total_time) * 100
-    else:
-        soft_percent = 50.0
-        hard_percent = 50.0
+    # Zone offsets relative to Zone V (mid-gray, where K_paper is calibrated).
+    # Highlight lighter than Zone V → less exposure → negative stops.
+    # Shadow darker than Zone V  → more exposure → positive stops.
+    delta_soft_stops = math.log2(factor_soft) - (highlight_zone - 5) + soft_trim_stops
+    delta_hard_stops = math.log2(factor_hard) + (5 - shadow_zone) + hard_trim_stops
 
-    match_quality = evaluate_split_match(delta_ev, filter_selection)
+    soft_time = (calibration / highlight_lux) * (2.0 ** delta_soft_stops)
+    hard_time = (calibration / shadow_lux) * (2.0 ** delta_hard_stops)
+
+    # Reciprocity correction applied to total exposure, scaled back to legs.
+    reciprocity_p = sg_config.get('reciprocity_p', 0.0)
+    reciprocity_t_ref = sg_config.get('reciprocity_t_ref', 10.0)
+    total_time = soft_time + hard_time
+    reciprocity_applied = False
+    if reciprocity_p and total_time > 0 and reciprocity_t_ref > 0:
+        scale = (total_time / reciprocity_t_ref) ** reciprocity_p
+        soft_time *= scale
+        hard_time *= scale
+        total_time = soft_time + hard_time
+        reciprocity_applied = True
+
+    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
 
     return {
         'soft_filter': soft_filter,
         'hard_filter': hard_filter,
-        'soft_time': soft_time_opt,
-        'hard_time': hard_time_opt,
+        'soft_time': soft_time,
+        'hard_time': hard_time,
         'total_time': total_time,
+        'soft_factor': factor_soft,
+        'hard_factor': factor_hard,
+        'delta_soft_stops': delta_soft_stops,
+        'delta_hard_stops': delta_hard_stops,
         'delta_ev': delta_ev,
-        'soft_factor': soft_factor,
-        'hard_factor': hard_factor,
-        'soft_percent': soft_percent,
-        'hard_percent': hard_percent,
-        'match_quality': match_quality,
-        'selection_reason': selection_reason,
-        'contrast_level': contrast_level,
-        'algorithm': 'heiland_unified',
+        'highlight_zone': highlight_zone,
+        'shadow_zone': shadow_zone,
+        'soft_trim_stops': soft_trim_stops,
+        'hard_trim_stops': hard_trim_stops,
+        'reciprocity_applied': reciprocity_applied,
+        'reciprocity_p': reciprocity_p,
         'highlight_lux': highlight_lux,
         'shadow_lux': shadow_lux,
-        'optimization_applied': optimization_applied,
-        'system': system,
-        'bin_min': filter_selection.get('bin_min', 0.0),
-        'bin_max': filter_selection.get('bin_max', 10.0),
+        'paper_id': paper_id,
+        'algorithm': 'rh_designs_zone_offset',
     }
 
 
@@ -319,9 +328,9 @@ if __name__ == "__main__":
             print(f"  ΔEV: {result['delta_ev']:.2f}")
             print(f"  Filters: {result['soft_filter']} + {result['hard_filter']}")
             print(f"  Times: {result['soft_time']:.1f}s + {result['hard_time']:.1f}s = {result['total_time']:.1f}s")
-            print(f"  Percentages: {result['soft_percent']:.0f}% / {result['hard_percent']:.0f}%")
-            print(f"  Match quality: {result['match_quality']}")
-            print(f"  Selection: {result['selection_reason']}")
+            print(f"  Offsets: soft {result['delta_soft_stops']:+.2f} stops, "
+                  f"hard {result['delta_hard_stops']:+.2f} stops")
+            print(f"  Reciprocity applied: {result['reciprocity_applied']}")
 
     print("\n" + "=" * 60)
     print("Split-grade calculator ready!")

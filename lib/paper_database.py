@@ -1093,6 +1093,58 @@ def get_available_filters(paper_id):
     
     return list(paper_data['filters'].keys())
 
+def get_splitgrade_config(paper_id):
+    """
+    Return RH-Designs-style split-grade configuration for a paper.
+
+    Provides the soft/hard filter pair (always the extremes for the paper's
+    filter system) and reciprocity coefficients used by
+    splitgrade_enhanced.calculate_split_grade_heiland.
+
+    Args:
+        paper_id: Paper identifier
+
+    Returns:
+        dict or None: {
+            'soft_filter': str,         # '00' for Ilford, '2xY' for FOMA
+            'hard_filter': str,         # '5' for Ilford, '2xM2' for FOMA
+            'reciprocity_p': float,     # Schwarzschild exponent (RC ~0.07, FB ~0.10)
+            'reciprocity_t_ref': float, # Reference time in seconds (10.0)
+        }
+    """
+    paper_data = get_paper_data(paper_id)
+    if not paper_data:
+        return None
+
+    manufacturer = paper_data.get('manufacturer', '').lower()
+    paper_type = paper_data.get('paper_type', '').upper()
+    filters = paper_data.get('filters', {})
+
+    if 'foma' in manufacturer:
+        soft_filter, hard_filter = '2xY', '2xM2'
+    else:
+        soft_filter, hard_filter = '00', '5'
+
+    if soft_filter not in filters or hard_filter not in filters:
+        return None
+
+    is_fb = (
+        'FB' in paper_type
+        or 'FIBER' in paper_type
+        or 'FOMABROM' in paper_type
+        or 'FOMAPASTEL' in paper_type
+        or 'FOMATONE' in paper_type
+    )
+    reciprocity_p = 0.10 if is_fb else 0.07
+
+    return {
+        'soft_filter': soft_filter,
+        'hard_filter': hard_filter,
+        'reciprocity_p': reciprocity_p,
+        'reciprocity_t_ref': 10.0,
+    }
+
+
 def calculate_paper_contrast_range(paper_id):
     """
     Calculate printable contrast range for a paper.
