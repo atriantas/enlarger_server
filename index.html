@@ -821,6 +821,12 @@
         box-shadow: 0 0 8px rgba(255, 85, 0, 0.2);
       }
 
+      .settings-btn.on {
+        border-color: var(--accent);
+        box-shadow: 0 0 6px var(--glow);
+        color: var(--accent);
+      }
+
       .settings-btn-group {
         display: flex;
         flex-wrap: wrap;
@@ -3314,7 +3320,7 @@
                 <input
                   type="range"
                   min="0.5"
-                  max="30"
+                  max="100"
                   step="0.5"
                   value="5"
                   class="slider"
@@ -5004,6 +5010,17 @@
 
       <!-- LIGHT METER / CONTRAST ANALYZER Tab -->
       <div id="light-meter" class="tab-content">
+        <!-- Enlarger Light Quick Toggle -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0 10px; border-bottom:1px solid var(--border); margin-bottom:6px;">
+          <span style="font-size:0.75rem; letter-spacing:0.08em; color:var(--text-secondary); font-weight:600;">ENLARGER LIGHT</span>
+          <button
+            class="settings-btn"
+            data-relay="1"
+            id="meterEnlargerToggle"
+            style="width:auto; min-width:80px; padding:6px 18px;"
+          >OFF</button>
+        </div>
+
         <!-- Mode Selection -->
         <div class="control">
           <div class="control-label">
@@ -5240,6 +5257,13 @@
                 disabled
               >
                 → Send to TEST STRIP
+              </button>
+              <button
+                class="settings-btn"
+                id="sendExposureToSplit"
+                disabled
+              >
+                → Send to SPLIT GRADE
               </button>
             </div>
           </div>
@@ -5536,32 +5560,42 @@
                   align-items: center;
                 "
               >
-                <label class="label-sm" style="flex: 1; font-size: 0.7rem">
-                  Highlight (lighter tone)
+                <div style="flex: 1">
+                  <div
+                    class="label-sm"
+                    style="font-size: 0.7rem; margin-bottom: 2px"
+                  >
+                    Highlight (lighter tone)
+                  </div>
                   <select
                     id="splitHighlightZone"
                     class="settings-input"
-                    style="width: 100%; margin-top: 2px"
+                    style="width: 100%"
                   >
                     <option value="6">Zone VI</option>
                     <option value="7" selected>Zone VII</option>
                     <option value="8">Zone VIII</option>
                     <option value="9">Zone IX</option>
                   </select>
-                </label>
-                <label class="label-sm" style="flex: 1; font-size: 0.7rem">
-                  Shadow (darker tone)
+                </div>
+                <div style="flex: 1">
+                  <div
+                    class="label-sm"
+                    style="font-size: 0.7rem; margin-bottom: 2px"
+                  >
+                    Shadow (darker tone)
+                  </div>
                   <select
                     id="splitShadowZone"
                     class="settings-input"
-                    style="width: 100%; margin-top: 2px"
+                    style="width: 100%"
                   >
                     <option value="1">Zone I</option>
                     <option value="2">Zone II</option>
                     <option value="3" selected>Zone III</option>
                     <option value="4">Zone IV</option>
                   </select>
-                </label>
+                </div>
               </div>
               <div class="label-sm" style="margin-top: 8px">
                 <div class="control-label">
@@ -12386,6 +12420,12 @@
             this.bottleCapSlider.value = savedBottleCap;
           }
 
+          // Restore tray volume slider
+          const savedTrayVolume = this.capacityData.trayVolume;
+          if (savedTrayVolume != null) {
+            this.trayVolumeSlider.value = savedTrayVolume;
+          }
+
           // Restore dilution button/custom state
           const ratio = this.capDilutionStock + "+" + this.capDilutionWater;
           let matched = false;
@@ -12424,6 +12464,8 @@
           this.capacityData.bottleCapacity = bottleCap;
           this.capacityData.capDilutionStock = this.capDilutionStock;
           this.capacityData.capDilutionWater = this.capDilutionWater;
+          this.capacityData.trayVolume = trayVolume;
+          StorageManager.saveCapacityTracker(this.capacityData);
 
           // Calculate maximum area and prints
           const maxArea = capacityPerLiter * trayVolumeLiters; // m²
@@ -20432,6 +20474,15 @@
             });
           }
 
+          // Send to SPLIT GRADE button
+          const sendSplitBtn = document.getElementById("sendExposureToSplit");
+          if (sendSplitBtn) {
+            sendSplitBtn.addEventListener("click", () => {
+              playUIFeedback("actionConfirm");
+              this.sendExposureToSplit();
+            });
+          }
+
           // Filter grade change
           const filterSelect = document.getElementById("exposureFilterGrade");
           if (filterSelect) {
@@ -22077,6 +22128,7 @@
               [
                 document.getElementById("sendExposureToCalc"),
                 document.getElementById("sendExposureToTestStrip"),
+                document.getElementById("sendExposureToSplit"),
               ].forEach((btn) => {
                 if (btn) btn.disabled = false;
               });
@@ -22149,6 +22201,18 @@
           }
 
           this.sendTimeToTestStrip(this.exposureTime, "Exposure meter");
+        }
+
+        /**
+         * Send exposure meter time to SPLIT GRADE tab (sets the neutral time)
+         */
+        sendExposureToSplit() {
+          if (!this.exposureTime || this.exposureTime <= 0) {
+            this.showFeedback("No exposure time calculated", "error");
+            return;
+          }
+
+          this.sendTimeToSplit(this.exposureTime, "Exposure meter");
         }
 
         /**
@@ -22786,6 +22850,39 @@
 
           this.showFeedback(
             `${source}: ${time.toFixed(2)}s → TEST STRIP`,
+            "success",
+          );
+        }
+
+        /**
+         * Send time to SPLIT GRADE tab as the neutral time and switch tab.
+         */
+        sendTimeToSplit(time, source) {
+          if (!time || time <= 0) {
+            this.showFeedback("Invalid exposure time", "error");
+            return;
+          }
+
+          const neutralSlider = document.getElementById("neutralTimeSlider");
+          if (neutralSlider) {
+            const clampedTime = Math.min(
+              Math.max(time, parseFloat(neutralSlider.min)),
+              parseFloat(neutralSlider.max),
+            );
+            neutralSlider.value = clampedTime;
+            neutralSlider.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+
+          switchTab("split");
+
+          const container = document.querySelector(".container");
+          if (container) container.scrollTop = 0;
+          window.scrollTo(0, 0);
+
+          playUIBeep(800, 0.3, 0.3);
+
+          this.showFeedback(
+            `${source}: ${time.toFixed(2)}s → SPLIT GRADE`,
             "success",
           );
         }

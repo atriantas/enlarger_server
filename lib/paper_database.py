@@ -614,6 +614,15 @@ PAPER_DATABASE = {
                 'dmax_effect': 1.95,
                 'description': 'Y (Soft)' 
             },
+            'None': {
+            'factor': 1.0,      # Baseline 
+            'iso_r': 100,       # Grade: Special 
+            'gamma': 0.75,
+            'contrast_index': 1.0,
+            'dmin_effect': 0.07,
+            'dmax_effect': 2.00,
+            'description': 'Special - No filtration'
+        },
             'M1': {
                 'factor': 1.4, # Same factor as 'Soft' but different R range
                 'iso_r': 90,   #
@@ -687,6 +696,15 @@ PAPER_DATABASE = {
                 'dmax_effect': 1.85,
                 'description': 'Y (Soft)'
             },
+            'None': {
+            'factor': 1.0,      # Baseline 
+            'iso_r': 100,       # Grade: Special 
+            'gamma': 0.75,
+            'contrast_index': 1.0,
+            'dmin_effect': 0.07,
+            'dmax_effect': 2.00,
+            'description': 'Special - No filtration'
+        },
             'M1': {
                 'factor': 1.4,
                 'iso_r': 90,
