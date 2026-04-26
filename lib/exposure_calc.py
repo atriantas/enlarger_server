@@ -145,7 +145,10 @@ def calculate_virtual_proof_sample(
     zone_clamped = max(0.0, min(10.0, zone))
 
     loge_mid = loge_range * 0.5
-    loge = loge_mid - delta_ev * log10_2
+    # Cell brighter at paper plane (delta_ev > 0) receives MORE exposure →
+    # higher loge → higher density → darker print tone. Earlier code had a
+    # sign flip that inverted the entire grayscale rendering.
+    loge = loge_mid + delta_ev * log10_2
     loge = max(0.0, min(loge_range, loge))
 
     toe_end = loge_range * 0.25
@@ -211,7 +214,7 @@ def calculate_virtual_proof_sample(
         grayscale = 255
 
     clipped_white = density <= dmin + 0.04
-    clipped_black = density >= dmax - 0.01
+    clipped_black = density >= dmax - 0.05
 
     # Compute exposure time for this cell
     filter_factor = filter_data['factor'] if filter_data and 'factor' in filter_data else 1.0
