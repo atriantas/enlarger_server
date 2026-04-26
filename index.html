@@ -12909,13 +12909,15 @@
 
           FOMA: { "00": 1.6, 0: 1.4, 2: 1.4, 3: 2.1, 4: 2.6, 5: 4.6 },
           // FOMA paper-specific factors (will override base FOMA when selected)
+          // Keys match the FOMA filter naming used in paper_database.py so the
+          // server sync in syncFactorsFromPapers() writes a consistent shape.
           FOMASPEED: {
-            "00": 1.6,
-            0: 1.4,
-            2: 1.4,
-            3: 2.1,
-            4: 2.6,
-            5: 4.6,
+            "2xY": 1.6,
+            Y: 1.4,
+            M1: 1.4,
+            "2xM1": 2.1,
+            M2: 2.6,
+            "2xM2": 4.6,
           },
           FOMATONE: {
             "00": 2.0,
@@ -13294,7 +13296,7 @@
             let hardKey = this.hardFilter;
 
             // FOMA papers with special filter names need key mapping
-            if (paperKey === "FOMAPASTEL_MG" || paperKey === "FOMATONE_MG_CLASSIC_VARIANT") {
+            if (paperKey === "FOMASPEED" || paperKey === "FOMAPASTEL_MG" || paperKey === "FOMATONE_MG_CLASSIC_VARIANT") {
               const ilfordToFomaMap = {
                 "00": "2xY", 0: "Y", 1: "None", 2: "M1",
                 3: "2xM1", 4: "M2", 5: "2xM2",
