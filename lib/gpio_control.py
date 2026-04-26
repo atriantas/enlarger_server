@@ -34,6 +34,8 @@ class GPIOControl:
         self.pins = {}
         self.states = {}
         self.auto_safelight = self._load_settings()
+        # True when auto-safelight turned the safelight off; gate for the restore
+        self._safelight_was_on = False
         
         for pin_num in RELAY_PINS:
             # Initialize pin as output
@@ -77,12 +79,20 @@ class GPIOControl:
         
         # Automatic safelight control (only if enabled and not already recursing)
         if self.auto_safelight and not skip_auto_safelight and pin == ENLARGER_PIN:
-            # When enlarger turns ON, turn safelight OFF
-            # When enlarger turns OFF, turn safelight ON
-            safelight_state = not state
-            self.set_relay_state(SAFELIGHT_PIN, safelight_state, skip_auto_safelight=True)
-            action = "OFF" if state else "ON"
-            print(f"  → Auto-safelight: turning {action} (enlarger is {state_str})")
+            if state:
+                # Enlarger turning ON: only suppress safelight if it is currently on
+                if self.states.get(SAFELIGHT_PIN, False):
+                    self._safelight_was_on = True
+                    self.set_relay_state(SAFELIGHT_PIN, False, skip_auto_safelight=True)
+                    print(f"  → Auto-safelight: turning OFF (enlarger is ON)")
+                else:
+                    self._safelight_was_on = False
+            else:
+                # Enlarger turning OFF: only restore safelight if auto turned it off
+                if self._safelight_was_on:
+                    self._safelight_was_on = False
+                    self.set_relay_state(SAFELIGHT_PIN, True, skip_auto_safelight=True)
+                    print(f"  → Auto-safelight: turning ON (enlarger is OFF)")
         
         return True
     
