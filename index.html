@@ -1207,6 +1207,7 @@
       .phase-badge-s { background: #2a3a5a; color: #5db8f0; }
       .phase-badge-e { background: #4a3a2a; color: #f0c05d; }
       .phase-badge-c { background: #4a2a3a; color: #e07a9a; }
+      .phase-badge-m { background: #3a3a4a; color: #b8a8e0; }
 
       /* Save-to-permanent form in modal */
       .save-perm-form input,
@@ -10897,6 +10898,7 @@
             source: source,
             type: type,
             phases: {
+              meter: null,
               test: null,
               split: null,
               calc: null,
@@ -11013,6 +11015,77 @@
             this.saveSessions();
             this.updateUI();
           }
+        }
+
+        /**
+         * Add METER phase to current session.
+         * Captures readings from the LIGHT METER tab (exposure/contrast/split-grade)
+         * including the suggested contrast grade for Contrast Analyzer transfers.
+         * @param {Object} data - Meter data
+         */
+        addMeterPhase(data) {
+          if (!appState.logging.activeSession) {
+            this.startSession("meter", data.mode || "exposure");
+          }
+
+          const session = this.getActiveSession();
+          if (!session) return;
+
+          if (!session.phases.meter) {
+            session.phases.meter = [];
+          }
+
+          session.phases.meter.push({
+            mode: data.mode,
+            destination: data.destination,
+            paper: data.paper,
+            calibration: data.calibration,
+            // Exposure mode
+            lux: data.lux,
+            filterGrade: data.filterGrade,
+            exposureTime: data.exposureTime,
+            // Contrast mode
+            highlightLux: data.highlightLux,
+            shadowLux: data.shadowLux,
+            deltaEV: data.deltaEV,
+            recommendedGrade: data.recommendedGrade,
+            matchQuality: data.matchQuality,
+            suggestedTime: data.suggestedTime,
+            // Split-grade mode
+            softTime: data.softTime,
+            hardTime: data.hardTime,
+            softFilter: data.softFilter,
+            hardFilter: data.hardFilter,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Update session name if no other phases yet
+          if (
+            !session.phases.test &&
+            !session.phases.split &&
+            !session.phases.calc &&
+            !session.phases.timer
+          ) {
+            const modeNames = {
+              exposure: "Exposure Meter",
+              contrast: "Contrast Analyzer",
+              split: "Split-Grade Meter",
+              "split-grade": "Split-Grade Meter",
+            };
+            const base = modeNames[data.mode] || "Meter";
+            if (data.recommendedGrade) {
+              session.name = `${base}: Grade ${data.recommendedGrade}`;
+            } else if (data.suggestedTime) {
+              session.name = `${base}: ${Number(data.suggestedTime).toFixed(2)}s`;
+            } else if (data.exposureTime) {
+              session.name = `${base}: ${Number(data.exposureTime).toFixed(2)}s`;
+            } else {
+              session.name = base;
+            }
+          }
+
+          this.saveSessions();
+          this.updateUI();
         }
 
         /**
@@ -11193,6 +11266,10 @@
 
           const headers = [
             "RowType", "SessionName", "Date", "Duration", "Source",
+            "MeterMode", "MeterDestination", "MeterPaper",
+            "MeterLux", "MeterHighlightLux", "MeterShadowLux", "MeterDeltaEV",
+            "MeterSuggestedGrade", "MeterMatchQuality", "MeterSuggestedTime",
+            "MeterSoftFilter", "MeterHardFilter", "MeterSoftTime", "MeterHardTime",
             "TestBase", "TestMethod", "TestSelected", "TestSelectedStop",
             "SplitNeutral", "SplitPaper", "SplitSoftFilter", "SplitHardFilter",
             "SplitSoftTime", "SplitHardTime", "SplitTotal", "SplitBurn%",
@@ -11207,9 +11284,13 @@
           allSessions.forEach((session) => {
             const f = this.csvField.bind(this);
             const duration = this.formatDuration(session.created, session.ended) || "";
-            const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", manual: "Session" };
+            const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", meter: "Meter", manual: "Session" };
             const calcCount = session.phases.calc ? session.phases.calc.length : 0;
             const calcTotal = this.calculateCalcTotal(session);
+            // Use first meter entry on summary row (multiple shown as METER detail rows)
+            const firstMeter = session.phases.meter && session.phases.meter.length > 0
+              ? session.phases.meter[0]
+              : null;
 
             // SESSION summary row
             const summaryRow = [
@@ -11218,6 +11299,21 @@
               f(this.isoDateStr(session.created)),
               f(duration),
               f(sourceLabels[session.source] || session.source),
+              // Meter
+              f(firstMeter?.mode),
+              f(firstMeter?.destination),
+              f(firstMeter?.paper),
+              f(firstMeter?.lux),
+              f(firstMeter?.highlightLux),
+              f(firstMeter?.shadowLux),
+              f(firstMeter?.deltaEV),
+              f(firstMeter?.recommendedGrade),
+              f(firstMeter?.matchQuality),
+              f(firstMeter?.suggestedTime),
+              f(firstMeter?.softFilter),
+              f(firstMeter?.hardFilter),
+              f(firstMeter?.softTime),
+              f(firstMeter?.hardTime),
               // Test
               f(session.phases.test?.baseTime),
               f(session.phases.test?.method),
@@ -11247,6 +11343,39 @@
             ];
             rows.push(summaryRow.join(","));
 
+            // METER detail rows (one per reading; useful when multiple transfers happened)
+            if (session.phases.meter && session.phases.meter.length > 1) {
+              session.phases.meter.slice(1).forEach((m) => {
+                const detailRow = [
+                  f("METER"),
+                  f(session.name),
+                  f(m.timestamp ? this.isoDateStr(m.timestamp) : ""),
+                  "", "", // duration, source
+                  f(m.mode),
+                  f(m.destination),
+                  f(m.paper),
+                  f(m.lux),
+                  f(m.highlightLux),
+                  f(m.shadowLux),
+                  f(m.deltaEV),
+                  f(m.recommendedGrade),
+                  f(m.matchQuality),
+                  f(m.suggestedTime),
+                  f(m.softFilter),
+                  f(m.hardFilter),
+                  f(m.softTime),
+                  f(m.hardTime),
+                  "", "", "", "", // test fields
+                  "", "", "", "", "", "", "", "", // split fields
+                  "", "", // calc summary
+                  "", "", "", "", "", // calc detail
+                  "", "", "", "", // timer fields
+                  "", // notes
+                ];
+                rows.push(detailRow.join(","));
+              });
+            }
+
             // EXPOSURE detail rows
             if (session.phases.calc && session.phases.calc.length > 0) {
               session.phases.calc.forEach((calc) => {
@@ -11256,6 +11385,10 @@
                   f(session.name),
                   f(calc.timestamp ? this.isoDateStr(calc.timestamp) : ""),
                   "", "", // duration, source
+                  "", "", "", // meter mode/destination/paper
+                  "", "", "", "", // meter lux/highlight/shadow/deltaEV
+                  "", "", "", // meter grade/quality/suggested
+                  "", "", "", "", // meter split fields
                   "", "", "", "", // test fields
                   "", "", "", "", "", "", "", "", // split fields
                   "", "", // calc summary
@@ -11381,6 +11514,7 @@
             test: "Test Strip",
             split: "Split Grade",
             calc: "Exposure",
+            meter: "Meter",
             manual: "Session",
           };
           return `${sourceNames[source] || "Session"} - ${timestamp}`;
@@ -11593,6 +11727,7 @@
 
         phaseBadges(session) {
           let html = "";
+          if (session.phases.meter && session.phases.meter.length > 0) html += '<span class="phase-badge phase-badge-m">M</span> ';
           if (session.phases.test) html += '<span class="phase-badge phase-badge-t">T</span> ';
           if (session.phases.split) html += '<span class="phase-badge phase-badge-s">S</span> ';
           if (session.phases.calc && session.phases.calc.length > 0) html += '<span class="phase-badge phase-badge-e">E</span> ';
@@ -11602,9 +11737,27 @@
 
         calcSummaryLabel(session) {
           const total = this.calculateCalcTotal(session);
-          if (total === "0.00") return "No exposures";
-          const count = session.phases.calc ? session.phases.calc.length : 0;
-          return `${count} exposure${count !== 1 ? "s" : ""}, ${total}s total`;
+          if (total !== "0.00") {
+            const count = session.phases.calc ? session.phases.calc.length : 0;
+            return `${count} exposure${count !== 1 ? "s" : ""}, ${total}s total`;
+          }
+          // Fall back to meter info when there are no actual exposures
+          const meter = session.phases.meter;
+          if (meter && meter.length > 0) {
+            const last = meter[meter.length - 1];
+            if (last.mode === "contrast" && last.recommendedGrade != null) {
+              const t = last.suggestedTime != null ? `, ${Number(last.suggestedTime).toFixed(2)}s` : "";
+              return `Suggested grade ${last.recommendedGrade}${t}`;
+            }
+            if (last.mode === "exposure" && last.exposureTime != null) {
+              return `Metered ${Number(last.exposureTime).toFixed(2)}s`;
+            }
+            if ((last.mode === "split" || last.mode === "split-grade") && last.suggestedTime != null) {
+              return `Split-grade total ${Number(last.suggestedTime).toFixed(2)}s`;
+            }
+            return "Meter reading";
+          }
+          return "No exposures";
         }
 
         /**
@@ -11617,7 +11770,7 @@
           const session = sessions.find((s) => s.id === sessionId);
           if (!session) return;
 
-          const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", manual: "Session" };
+          const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", meter: "Meter", manual: "Session" };
           const sourceLabel = sourceLabels[session.source] || session.source;
           const duration = this.formatDuration(session.created, session.ended);
 
@@ -11628,6 +11781,54 @@
           if (duration) body += `<div><strong>Duration:</strong> ${duration}</div>`;
           if (session.notes) body += `<div style="margin-top:4px"><strong>Notes:</strong> ${this.escapeHTML(session.notes)}</div>`;
           body += "</div>";
+
+          // METER phase card
+          if (session.phases.meter && session.phases.meter.length > 0) {
+            const modeLabels = {
+              exposure: "Exposure Meter",
+              contrast: "Contrast Analyzer",
+              split: "Split-Grade Meter",
+              "split-grade": "Split-Grade Meter",
+            };
+            const destLabels = { calc: "Exposure", test: "Test Strip", split: "Split Grade" };
+            body += '<div class="phase-card">';
+            body += '<div class="phase-card-header"><span class="phase-badge phase-badge-m">M</span> Light Meter</div>';
+            session.phases.meter.forEach((m, i) => {
+              if (i > 0) body += '<div class="phase-card-divider"></div>';
+              const modeLabel = modeLabels[m.mode] || m.mode || "Meter";
+              body += `<div class="phase-card-row"><span>Mode</span><span>${this.escapeHTML(modeLabel)}</span></div>`;
+              if (m.destination) body += `<div class="phase-card-row"><span>Sent To</span><span>${this.escapeHTML(destLabels[m.destination] || m.destination)}</span></div>`;
+              if (m.paper) body += `<div class="phase-card-row"><span>Paper</span><span>${this.escapeHTML(m.paper)}</span></div>`;
+              if (m.calibration != null) body += `<div class="phase-card-row"><span>Calibration</span><span>${Number(m.calibration).toFixed(2)} lux·s</span></div>`;
+              // Exposure mode
+              if (m.mode === "exposure") {
+                if (m.lux != null) body += `<div class="phase-card-row"><span>Lux</span><span>${Number(m.lux).toFixed(2)} lux</span></div>`;
+                if (m.filterGrade) body += `<div class="phase-card-row"><span>Filter Grade</span><span>${this.escapeHTML(String(m.filterGrade))}</span></div>`;
+                if (m.exposureTime != null) body += `<div class="phase-card-row"><span>Exposure Time</span><span>${Number(m.exposureTime).toFixed(2)}s</span></div>`;
+              }
+              // Contrast mode
+              if (m.mode === "contrast") {
+                if (m.highlightLux != null) body += `<div class="phase-card-row"><span>Highlight</span><span>${Number(m.highlightLux).toFixed(2)} lux</span></div>`;
+                if (m.shadowLux != null) body += `<div class="phase-card-row"><span>Shadow</span><span>${Number(m.shadowLux).toFixed(2)} lux</span></div>`;
+                if (m.deltaEV != null) body += `<div class="phase-card-row"><span>ΔEV</span><span>${Number(m.deltaEV).toFixed(2)} EV</span></div>`;
+                if (m.recommendedGrade != null) body += `<div class="phase-card-row"><span>Suggested Grade</span><span>${this.escapeHTML(String(m.recommendedGrade))}</span></div>`;
+                if (m.matchQuality) body += `<div class="phase-card-row"><span>Match Quality</span><span>${this.escapeHTML(m.matchQuality)}</span></div>`;
+                if (m.suggestedTime != null) body += `<div class="phase-card-row"><span>Suggested Time</span><span>${Number(m.suggestedTime).toFixed(2)}s</span></div>`;
+              }
+              // Split-grade mode
+              if (m.mode === "split" || m.mode === "split-grade") {
+                if (m.highlightLux != null) body += `<div class="phase-card-row"><span>Highlight</span><span>${Number(m.highlightLux).toFixed(2)} lux</span></div>`;
+                if (m.shadowLux != null) body += `<div class="phase-card-row"><span>Shadow</span><span>${Number(m.shadowLux).toFixed(2)} lux</span></div>`;
+                if (m.softFilter != null) body += `<div class="phase-card-row"><span>Soft Filter</span><span>${this.escapeHTML(String(m.softFilter))}</span></div>`;
+                if (m.hardFilter != null) body += `<div class="phase-card-row"><span>Hard Filter</span><span>${this.escapeHTML(String(m.hardFilter))}</span></div>`;
+                if (m.softTime != null) body += `<div class="phase-card-row"><span>Soft Time</span><span>${Number(m.softTime).toFixed(2)}s</span></div>`;
+                if (m.hardTime != null) body += `<div class="phase-card-row"><span>Hard Time</span><span>${Number(m.hardTime).toFixed(2)}s</span></div>`;
+                if (m.suggestedTime != null) body += `<div class="phase-card-row"><span>Total</span><span>${Number(m.suggestedTime).toFixed(2)}s</span></div>`;
+              }
+              if (m.timestamp) body += `<div class="phase-card-row"><span>Time</span><span>${new Date(m.timestamp).toLocaleTimeString()}</span></div>`;
+            });
+            body += "</div>";
+          }
 
           // TEST phase card
           if (session.phases.test) {
@@ -22188,6 +22389,7 @@
             return;
           }
 
+          this.logExposureMeterPhase("calc");
           this.sendTimeToCalc(this.exposureTime, "Exposure meter");
         }
 
@@ -22200,6 +22402,7 @@
             return;
           }
 
+          this.logExposureMeterPhase("test");
           this.sendTimeToTestStrip(this.exposureTime, "Exposure meter");
         }
 
@@ -22212,7 +22415,26 @@
             return;
           }
 
+          this.logExposureMeterPhase("split");
           this.sendTimeToSplit(this.exposureTime, "Exposure meter");
+        }
+
+        /**
+         * Log a meter phase entry for an Exposure Meter transfer.
+         * @param {string} destination - 'calc', 'test', or 'split'
+         */
+        logExposureMeterPhase(destination) {
+          if (!window.exposureLogManager) return;
+          const filterGradeEl = document.getElementById("exposureFilterGrade");
+          window.exposureLogManager.addMeterPhase({
+            mode: "exposure",
+            destination: destination,
+            paper: this.currentPaperId || this.getCurrentPaperId() || null,
+            calibration: this.calibration,
+            lux: this.lastLux,
+            filterGrade: filterGradeEl ? filterGradeEl.value || null : null,
+            exposureTime: this.exposureTime,
+          });
         }
 
         /**
@@ -22490,7 +22712,31 @@
             return;
           }
 
+          this.logContrastMeterPhase("calc", time);
           this.sendTimeToCalc(time, "Contrast Analyzer Suggested");
+        }
+
+        /**
+         * Log a meter phase entry for a Contrast Analyzer transfer.
+         * @param {string} destination - 'calc' or 'test'
+         * @param {number} suggestedTime - Suggested exposure time
+         */
+        logContrastMeterPhase(destination, suggestedTime) {
+          if (!window.exposureLogManager) return;
+          const grade = this.recommendedGrade?.grade ?? null;
+          const matchQuality = this.recommendedGrade?.match_quality ?? null;
+          window.exposureLogManager.addMeterPhase({
+            mode: "contrast",
+            destination: destination,
+            paper: this.currentPaperId || this.getCurrentPaperId() || null,
+            calibration: this.calibration,
+            highlightLux: this.highlightLux,
+            shadowLux: this.shadowLux,
+            deltaEV: this.deltaEV,
+            recommendedGrade: grade,
+            matchQuality: matchQuality,
+            suggestedTime: suggestedTime,
+          });
         }
 
         /**
@@ -22503,6 +22749,7 @@
             return;
           }
 
+          this.logContrastMeterPhase("test", time);
           this.sendTimeToTestStrip(time, "Contrast Analyzer Suggested");
         }
 
@@ -22741,6 +22988,42 @@
 
           const totalTime =
             this.splitGradeResult.total_time || softTime + hardTime;
+          const paperId =
+            this.currentPaperId || this.getCurrentPaperId() || null;
+          const softFilter = this.splitGradeResult.soft_filter;
+          const hardFilter = this.splitGradeResult.hard_filter;
+
+          // Log meter phase with split-grade readings
+          if (window.exposureLogManager) {
+            window.exposureLogManager.addMeterPhase({
+              mode: "split",
+              destination: "calc",
+              paper: paperId,
+              calibration: this.calibration,
+              highlightLux: this.highlightLux,
+              shadowLux: this.shadowLux,
+              softTime: softTime,
+              hardTime: hardTime,
+              softFilter: softFilter,
+              hardFilter: hardFilter,
+              suggestedTime: totalTime,
+            });
+
+            // Also persist as a SPLIT phase so the session shows split timing
+            window.exposureLogManager.addSplitPhase({
+              neutralTime: totalTime,
+              paperBrand: paperId || this.paperBrand,
+              softFilter: softFilter,
+              hardFilter: hardFilter,
+              filterBrand: this.paperBrand,
+              highlightsBase: softTime,
+              shadowsBase: hardTime,
+              softTime: softTime,
+              hardTime: hardTime,
+              totalTime: totalTime,
+              burnPercent: null,
+            });
+          }
 
           applySplitGradeToCalc({
             neutralTime: totalTime,
@@ -22749,8 +23032,9 @@
             softTime: softTime,
             hardTime: hardTime,
             totalTime: totalTime,
-            softFilter: this.splitGradeResult.soft_filter,
-            hardFilter: this.splitGradeResult.hard_filter,
+            softFilter: softFilter,
+            hardFilter: hardFilter,
+            paperBrand: paperId || this.paperBrand,
             softFactor: this.splitGradeResult.soft_factor,
             hardFactor: this.splitGradeResult.hard_factor,
           });
@@ -22809,16 +23093,9 @@
             "success",
           );
 
-          // Log to exposure log manager
-          if (window.exposureLogManager) {
-            window.exposureLogManager.addCalcPhase({
-              baseTime: time,
-              stopAdjustment: 0,
-              finalTime: time,
-              filterContext: source,
-              notes: `Via light meter: ${source}`,
-            });
-          }
+          // Note: meter-phase logging is performed by the specific
+          // sendXxxToCalc handler that calls into here. The actual CALC
+          // exposure is logged when the user presses START on the CALC tab.
         }
 
         /**
