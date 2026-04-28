@@ -11254,7 +11254,13 @@
         }
 
         /**
-         * Export sessions as CSV with SESSION summary + EXPOSURE detail rows
+         * Export sessions as a narrow long-format CSV.
+         *
+         * Each session emits one row per phase event with a shared 6-column
+         * schema: Session, Time, Type, Summary, Notes, Details. Phase-specific
+         * fields are packed into Details as `key=value; key=value` pairs so
+         * every field is preserved and the file stays narrow enough to read
+         * in any spreadsheet. Filter on Type to slice by phase.
          */
         exportCSV() {
           const allSessions = appState.logging.permanentSessions;
@@ -11264,144 +11270,211 @@
             return;
           }
 
-          const headers = [
-            "RowType", "SessionName", "Date", "Duration", "Source",
-            "MeterMode", "MeterDestination", "MeterPaper",
-            "MeterLux", "MeterHighlightLux", "MeterShadowLux", "MeterDeltaEV",
-            "MeterSuggestedGrade", "MeterMatchQuality", "MeterSuggestedTime",
-            "MeterSoftFilter", "MeterHardFilter", "MeterSoftTime", "MeterHardTime",
-            "TestBase", "TestMethod", "TestSelected", "TestSelectedStop",
-            "SplitNeutral", "SplitPaper", "SplitSoftFilter", "SplitHardFilter",
-            "SplitSoftTime", "SplitHardTime", "SplitTotal", "SplitBurn%",
-            "CalcCount", "CalcTotal",
-            "CalcBaseTime", "CalcStop", "CalcFinalTime", "CalcFilter", "CalcNotes",
-            "TimerDev", "TimerStop", "TimerFix", "TimerFlo",
-            "Notes"
-          ];
+          const f = this.csvField.bind(this);
+          const sourceLabels = {
+            test: "Test Strip", split: "Split Grade",
+            calc: "Exposure", meter: "Meter", manual: "Session",
+          };
+          const fmt = (n, dp = 2) =>
+            Number.isFinite(Number(n)) ? Number(n).toFixed(dp) : "";
+          const sec = (n) =>
+            Number.isFinite(Number(n)) ? `${Number(n).toFixed(2)}s` : "";
+          const lux = (n) =>
+            Number.isFinite(Number(n)) ? `${Number(n).toFixed(2)} lux` : "";
+          // Pack key=value pairs; skip empty values; use "; " as the separator
+          // and "|" inside arrays so commas never appear unless really needed.
+          const details = (pairs) =>
+            pairs
+              .filter(([, v]) => v != null && v !== "")
+              .map(([k, v]) => `${k}=${v}`)
+              .join("; ");
 
+          const headers = ["Session", "Time", "Type", "Summary", "Notes", "Details"];
           const rows = [headers.join(",")];
 
+          const pushRow = (session, time, type, summary, notes, detailStr) => {
+            rows.push([
+              f(session.name),
+              f(time),
+              f(type),
+              f(summary),
+              f(notes),
+              f(detailStr),
+            ].join(","));
+          };
+
           allSessions.forEach((session) => {
-            const f = this.csvField.bind(this);
+            const sourceLabel = sourceLabels[session.source] || session.source || "";
             const duration = this.formatDuration(session.created, session.ended) || "";
-            const sourceLabels = { test: "Test Strip", split: "Split Grade", calc: "Exposure", meter: "Meter", manual: "Session" };
             const calcCount = session.phases.calc ? session.phases.calc.length : 0;
             const calcTotal = this.calculateCalcTotal(session);
-            // Use first meter entry on summary row (multiple shown as METER detail rows)
-            const firstMeter = session.phases.meter && session.phases.meter.length > 0
-              ? session.phases.meter[0]
-              : null;
+            const hasCalc = calcTotal !== "0.00";
 
-            // SESSION summary row
-            const summaryRow = [
-              f("SESSION"),
-              f(session.name),
-              f(this.isoDateStr(session.created)),
-              f(duration),
-              f(sourceLabels[session.source] || session.source),
-              // Meter
-              f(firstMeter?.mode),
-              f(firstMeter?.destination),
-              f(firstMeter?.paper),
-              f(firstMeter?.lux),
-              f(firstMeter?.highlightLux),
-              f(firstMeter?.shadowLux),
-              f(firstMeter?.deltaEV),
-              f(firstMeter?.recommendedGrade),
-              f(firstMeter?.matchQuality),
-              f(firstMeter?.suggestedTime),
-              f(firstMeter?.softFilter),
-              f(firstMeter?.hardFilter),
-              f(firstMeter?.softTime),
-              f(firstMeter?.hardTime),
-              // Test
-              f(session.phases.test?.baseTime),
-              f(session.phases.test?.method),
-              f(session.phases.test?.selectedStep),
-              f(session.phases.test?.selectedStop),
-              // Split
-              f(session.phases.split?.neutralTime),
-              f(session.phases.split?.paperBrand),
-              f(session.phases.split?.softFilter),
-              f(session.phases.split?.hardFilter),
-              f(session.phases.split?.softTime),
-              f(session.phases.split?.hardTime),
-              f(session.phases.split?.totalTime),
-              f(session.phases.split?.burnPercent),
-              // Calc summary
-              f(calcCount > 0 ? calcCount : ""),
-              f(calcTotal !== "0.00" ? calcTotal : ""),
-              // Calc detail (empty on summary row)
-              "", "", "", "", "",
-              // Timer
-              f(session.phases.timer?.dev),
-              f(session.phases.timer?.stop),
-              f(session.phases.timer?.fix),
-              f(session.phases.timer?.flo),
-              // Notes
-              f(session.notes),
-            ];
-            rows.push(summaryRow.join(","));
+            // SESSION row — high-level snapshot
+            let sessSummary = sourceLabel;
+            if (duration) sessSummary += ` · ${duration}`;
+            if (hasCalc) sessSummary += ` · ${calcCount} exposure${calcCount !== 1 ? "s" : ""}, ${calcTotal}s total`;
+            pushRow(
+              session,
+              this.isoDateStr(session.created),
+              "SESSION",
+              sessSummary,
+              session.notes,
+              details([
+                ["source", session.source],
+                ["ended", session.ended ? this.isoDateStr(session.ended) : ""],
+                ["calc_count", hasCalc ? calcCount : ""],
+                ["calc_total", hasCalc ? `${calcTotal}s` : ""],
+              ]),
+            );
 
-            // METER detail rows (one per reading; useful when multiple transfers happened)
-            if (session.phases.meter && session.phases.meter.length > 1) {
-              session.phases.meter.slice(1).forEach((m) => {
-                const detailRow = [
-                  f("METER"),
-                  f(session.name),
-                  f(m.timestamp ? this.isoDateStr(m.timestamp) : ""),
-                  "", "", // duration, source
-                  f(m.mode),
-                  f(m.destination),
-                  f(m.paper),
-                  f(m.lux),
-                  f(m.highlightLux),
-                  f(m.shadowLux),
-                  f(m.deltaEV),
-                  f(m.recommendedGrade),
-                  f(m.matchQuality),
-                  f(m.suggestedTime),
-                  f(m.softFilter),
-                  f(m.hardFilter),
-                  f(m.softTime),
-                  f(m.hardTime),
-                  "", "", "", "", // test fields
-                  "", "", "", "", "", "", "", "", // split fields
-                  "", "", // calc summary
-                  "", "", "", "", "", // calc detail
-                  "", "", "", "", // timer fields
-                  "", // notes
-                ];
-                rows.push(detailRow.join(","));
+            // METER rows — one per reading
+            if (session.phases.meter) {
+              session.phases.meter.forEach((m) => {
+                const modeLabel = {
+                  exposure: "Exposure",
+                  contrast: "Contrast",
+                  split: "Split-Grade",
+                  "split-grade": "Split-Grade",
+                }[m.mode] || (m.mode || "Meter");
+
+                let summary = modeLabel;
+                if (m.mode === "contrast" && m.recommendedGrade != null) {
+                  summary = `Contrast → Grade ${m.recommendedGrade}`;
+                  if (m.suggestedTime != null) summary += ` @ ${sec(m.suggestedTime)}`;
+                } else if (m.mode === "exposure" && m.exposureTime != null) {
+                  summary = `Exposure → ${sec(m.exposureTime)}`;
+                } else if (
+                  (m.mode === "split" || m.mode === "split-grade") &&
+                  m.softTime != null && m.hardTime != null
+                ) {
+                  summary = `Split → ${sec(m.softTime)} soft + ${sec(m.hardTime)} hard`;
+                }
+                if (m.destination) summary += ` → ${String(m.destination).toUpperCase()}`;
+
+                pushRow(
+                  session,
+                  m.timestamp ? this.isoDateStr(m.timestamp) : "",
+                  "METER",
+                  summary,
+                  "",
+                  details([
+                    ["mode", m.mode],
+                    ["destination", m.destination],
+                    ["paper", m.paper],
+                    ["calibration", m.calibration != null ? `${fmt(m.calibration)} lux·s` : ""],
+                    ["lux", lux(m.lux)],
+                    ["filter_grade", m.filterGrade],
+                    ["highlight_lux", lux(m.highlightLux)],
+                    ["shadow_lux", lux(m.shadowLux)],
+                    ["delta_ev", m.deltaEV != null ? `${fmt(m.deltaEV)} EV` : ""],
+                    ["suggested_grade", m.recommendedGrade],
+                    ["match_quality", m.matchQuality],
+                    ["soft_filter", m.softFilter],
+                    ["hard_filter", m.hardFilter],
+                    ["soft_time", sec(m.softTime)],
+                    ["hard_time", sec(m.hardTime)],
+                    ["suggested_time", sec(m.suggestedTime)],
+                  ]),
+                );
               });
             }
 
-            // EXPOSURE detail rows
+            // TEST row
+            if (session.phases.test) {
+              const t = session.phases.test;
+              const transfer = t.transferDestination === "split" ? "SPLIT" : "EXPOSURE";
+              let testSummary = `${t.method || "?"}, base ${sec(t.baseTime)}`;
+              if (t.selectedStep != null) {
+                testSummary += `, selected ${sec(t.selectedStep)}`;
+                if (t.selectedStop != null) testSummary += ` (${formatStop(t.selectedStop)})`;
+              }
+              testSummary += ` → ${transfer}`;
+              pushRow(
+                session,
+                this.isoDateStr(session.created),
+                "TEST",
+                testSummary,
+                t.notes,
+                details([
+                  ["base", sec(t.baseTime)],
+                  ["method", t.method],
+                  ["selected_step", sec(t.selectedStep)],
+                  ["selected_stop", t.selectedStop != null ? formatStop(t.selectedStop) : ""],
+                  ["transfer", transfer.toLowerCase()],
+                  ["steps", t.steps && t.steps.length ? t.steps.map((s) => `${s}s`).join("|") : ""],
+                ]),
+              );
+            }
+
+            // SPLIT row
+            if (session.phases.split) {
+              const sp = session.phases.split;
+              let splitSummary = `${sec(sp.softTime)} soft + ${sec(sp.hardTime)} hard`;
+              if (sp.totalTime != null) splitSummary += ` = ${sec(sp.totalTime)}`;
+              if (sp.softFilter != null && sp.hardFilter != null) {
+                splitSummary += ` · F${sp.softFilter}/F${sp.hardFilter}`;
+              }
+              pushRow(
+                session,
+                this.isoDateStr(session.created),
+                "SPLIT",
+                splitSummary,
+                "",
+                details([
+                  ["paper", sp.paperBrand],
+                  ["neutral", sec(sp.neutralTime)],
+                  ["soft_filter", sp.softFilter],
+                  ["hard_filter", sp.hardFilter],
+                  ["soft_time", sec(sp.softTime)],
+                  ["hard_time", sec(sp.hardTime)],
+                  ["total", sec(sp.totalTime)],
+                  ["highlights_base", sp.highlightsBase],
+                  ["shadows_base", sp.shadowsBase],
+                  ["burn_pct", sp.burnPercent != null ? `${sp.burnPercent}%` : ""],
+                ]),
+              );
+            }
+
+            // EXPOSURE rows — one per calc step
             if (session.phases.calc && session.phases.calc.length > 0) {
-              session.phases.calc.forEach((calc) => {
-                const stopDisplay = formatStop(calc.stopAdjustment);
-                const detailRow = [
-                  f("EXPOSURE"),
-                  f(session.name),
-                  f(calc.timestamp ? this.isoDateStr(calc.timestamp) : ""),
-                  "", "", // duration, source
-                  "", "", "", // meter mode/destination/paper
-                  "", "", "", "", // meter lux/highlight/shadow/deltaEV
-                  "", "", "", // meter grade/quality/suggested
-                  "", "", "", "", // meter split fields
-                  "", "", "", "", // test fields
-                  "", "", "", "", "", "", "", "", // split fields
-                  "", "", // calc summary
-                  f(calc.baseTime),
-                  f(stopDisplay),
-                  f(calc.finalTime),
-                  f(calc.filterContext),
-                  f(calc.notes),
-                  "", "", "", "", // timer fields
-                  "", // notes
-                ];
-                rows.push(detailRow.join(","));
+              session.phases.calc.forEach((calc, i) => {
+                const stop = formatStop(calc.stopAdjustment);
+                const expSummary =
+                  `#${i + 1}: base ${sec(calc.baseTime)} ${stop} → ${sec(calc.finalTime)}`;
+                pushRow(
+                  session,
+                  calc.timestamp ? this.isoDateStr(calc.timestamp) : "",
+                  "EXPOSURE",
+                  expSummary,
+                  calc.notes,
+                  details([
+                    ["index", String(i + 1)],
+                    ["base", sec(calc.baseTime)],
+                    ["stop", stop],
+                    ["final", sec(calc.finalTime)],
+                    ["filter", calc.filterContext],
+                  ]),
+                );
               });
+            }
+
+            // TIMER row
+            if (session.phases.timer) {
+              const tm = session.phases.timer;
+              pushRow(
+                session,
+                session.ended ? this.isoDateStr(session.ended) : this.isoDateStr(session.created),
+                "TIMER",
+                `Dev ${tm.dev}s · Stop ${tm.stop}s · Fix ${tm.fix}s · Flo ${tm.flo}s`,
+                "",
+                details([
+                  ["dev", tm.dev != null ? `${tm.dev}s` : ""],
+                  ["stop", tm.stop != null ? `${tm.stop}s` : ""],
+                  ["fix", tm.fix != null ? `${tm.fix}s` : ""],
+                  ["flo", tm.flo != null ? `${tm.flo}s` : ""],
+                ]),
+              );
             }
           });
 
