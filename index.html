@@ -2509,6 +2509,7 @@
                       </option>
                       <option value="fb_classic">Multigrade FB Classic</option>
                       <option value="cooltone">Multigrade RC Cooltone</option>
+                      <option value="warmtone">Multigrade RC Warmtone</option>
                       <option value="fb_warmtone">
                         Multigrade FB Warmtone
                       </option>
@@ -2768,6 +2769,7 @@
                 Multigrade IV RC Portfolio (Discontinued)
               </option>
               <option value="cooltone">Multigrade RC Cooltone</option>
+              <option value="warmtone">Multigrade RC Warmtone</option>
               <option value="fb_classic">Multigrade FB Classic</option>
               <option value="fb_warmtone">Multigrade FB Warmtone</option>
               <option value="fb_cooltone">Multigrade FB Cooltone</option>
@@ -5405,7 +5407,7 @@
 
             <!-- Contrast Analysis Results -->
             <div class="info-box" style="margin-top: 15px">
-              <div class="label-sm">CONTRAST RANGE (ΔEV)</div>
+              <div class="label-sm">CONTRAST RANGE (Stops)</div>
               <div
                 class="timer-display"
                 id="deltaEVDisplay"
@@ -5414,7 +5416,7 @@
                 --
               </div>
               <div class="label-sm" style="margin-top: 4px">
-                Higher ΔEV = higher contrast negative
+                More stops = higher contrast negative
               </div>
             </div>
 
@@ -5690,7 +5692,7 @@
 
             <!-- Contrast Analysis -->
             <div class="info-box" style="margin-top: 15px">
-              <div class="label-sm">CONTRAST RANGE (ΔEV)</div>
+              <div class="label-sm">CONTRAST RANGE (Stops)</div>
               <div
                 class="timer-display"
                 id="splitDeltaEV"
@@ -11367,7 +11369,7 @@
                     ["filter_grade", m.filterGrade],
                     ["highlight_lux", lux(m.highlightLux)],
                     ["shadow_lux", lux(m.shadowLux)],
-                    ["delta_ev", m.deltaEV != null ? `${fmt(m.deltaEV)} EV` : ""],
+                    ["delta_ev", m.deltaEV != null ? `${fmt(m.deltaEV)} stops` : ""],
                     ["suggested_grade", m.recommendedGrade],
                     ["match_quality", m.matchQuality],
                     ["soft_filter", m.softFilter],
@@ -11883,7 +11885,7 @@
               if (m.mode === "contrast") {
                 if (m.highlightLux != null) body += `<div class="phase-card-row"><span>Highlight</span><span>${Number(m.highlightLux).toFixed(2)} lux</span></div>`;
                 if (m.shadowLux != null) body += `<div class="phase-card-row"><span>Shadow</span><span>${Number(m.shadowLux).toFixed(2)} lux</span></div>`;
-                if (m.deltaEV != null) body += `<div class="phase-card-row"><span>ΔEV</span><span>${Number(m.deltaEV).toFixed(2)} EV</span></div>`;
+                if (m.deltaEV != null) body += `<div class="phase-card-row"><span>Contrast</span><span>${Number(m.deltaEV).toFixed(2)} stops</span></div>`;
                 if (m.recommendedGrade != null) body += `<div class="phase-card-row"><span>Suggested Grade</span><span>${this.escapeHTML(String(m.recommendedGrade))}</span></div>`;
                 if (m.matchQuality) body += `<div class="phase-card-row"><span>Match Quality</span><span>${this.escapeHTML(m.matchQuality)}</span></div>`;
                 if (m.suggestedTime != null) body += `<div class="phase-card-row"><span>Suggested Time</span><span>${Number(m.suggestedTime).toFixed(2)}s</span></div>`;
@@ -13165,6 +13167,15 @@
             4: 5.0,
             5: 5.0,
           },
+          ILFORD_WARMTONE: {
+            "00": 2.0,
+            0: 2.0,
+            1: 2.0,
+            2: 2.0,
+            3: 2.0,
+            4: 4.0,
+            5: 4.0,
+          },
           ILFORD_PORTFOLIO: {
             "00": 2.5,
             0: 2.5,
@@ -13387,6 +13398,7 @@
          */
         static ID_TO_KEY = {
           ilford_cooltone:                  "ILFORD_COOLTONE",
+          ilford_warmtone:                  "ILFORD_WARMTONE",
           ilford_iv_rc_portfolio:           "ILFORD_PORTFOLIO",
           ilford_multigrade_rc_deluxe_new:  "ILFORD_RC_DELUXE_NEW",
           ilford_multigrade_rc_portfolio_new: "ILFORD_RC_PORTFOLIO_NEW",
@@ -13589,6 +13601,7 @@
             return "FOMATONE";
           }
           if (this.ilfordPaperType === "cooltone") return "ILFORD_COOLTONE";
+          if (this.ilfordPaperType === "warmtone") return "ILFORD_WARMTONE";
           if (this.ilfordPaperType === "portfolio") return "ILFORD_PORTFOLIO";
           if (this.ilfordPaperType === "rc_deluxe_new") return "ILFORD_RC_DELUXE_NEW";
           if (this.ilfordPaperType === "rc_portfolio_new") return "ILFORD_RC_PORTFOLIO_NEW";
@@ -13939,6 +13952,7 @@
 
           const ilfordPaperNames = {
             cooltone: "RC Cooltone",
+            warmtone: "RC Warmtone",
             portfolio: "RC Portfolio",
             rc_deluxe_new: "RC Deluxe",
             rc_portfolio_new: "RC Portfolio New",
@@ -16240,6 +16254,21 @@
               },
             },
 
+            // Multigrade RC Warmtone
+            warmtone: {
+              name: "Multigrade RC Warmtone",
+              filters: {
+                none: { iso: 110, factor: 1.0 }, // Base ISO for no filter (grade 2)
+                "00": { iso: 190, factor: 2.0 },
+                0: { iso: 160, factor: 2.0 },
+                1: { iso: 130, factor: 2.0 },
+                2: { iso: 110, factor: 2.0 },
+                3: { iso: 90, factor: 2.0 },
+                4: { iso: 70, factor: 4.0 },
+                5: { iso: 50, factor: 4.0 },
+              },
+            },
+
             // Multigrade IV RC Portfolio (Discontinued)
             portfolio: {
               name: "Multigrade IV RC Portfolio (Discontinued)",
@@ -16347,6 +16376,7 @@
          */
         static SERVER_ID_MAP = {
           ilford_cooltone:                    "cooltone",
+          ilford_warmtone:                    "warmtone",
           ilford_iv_rc_portfolio:             "portfolio",
           ilford_multigrade_rc_deluxe_new:    "rc_deluxe_new",
           ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
@@ -20420,6 +20450,7 @@
             ilford_multigrade_rc_portfolio_new: "rc_portfolio_new",
             ilford_iv_rc_portfolio: "portfolio",
             ilford_cooltone: "cooltone",
+            ilford_warmtone: "warmtone",
             ilford_fb_classic: "fb_classic",
             ilford_fb_warmtone: "fb_warmtone",
             ilford_fb_cooltone: "fb_cooltone",
@@ -22669,7 +22700,7 @@
 
               // Update displays - CONTRAST AND GRADE ONLY, NO EXPOSURE TIME
               document.getElementById("deltaEVDisplay").textContent =
-                data.delta_ev.toFixed(2) + " EV";
+                data.delta_ev.toFixed(2) + " stops";
 
               if (data.recommended_grade) {
                 const grade = data.recommended_grade;
@@ -22913,7 +22944,7 @@
 
               // Update displays with absolute exposure times
               document.getElementById("splitDeltaEV").textContent =
-                result.delta_ev.toFixed(2) + " EV";
+                result.delta_ev.toFixed(2) + " stops";
 
               // Equivalent single grade (for reference only)
               const eqGradeEl = document.getElementById("splitEquivalentGrade");
