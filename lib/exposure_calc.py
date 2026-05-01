@@ -15,8 +15,41 @@ from lib.paper_database import (
     get_paper_data,
     get_filter_data,
     get_available_filters,
+    get_splitgrade_config,
     PAPER_DATABASE,
 )
+
+
+def apply_reciprocity(time_s, paper_id):
+    """
+    Apply Schwarzschild reciprocity-failure correction to an exposure time.
+
+    Lengthens the exposure when t > t_ref. Clamps to no-op when t <= t_ref:
+    the Schwarzschild form is only valid for long exposures, and below the
+    reference time real reciprocity behavior is paper-specific and small.
+
+    Args:
+        time_s: Computed exposure time in seconds (uncorrected).
+        paper_id: Paper identifier for looking up reciprocity_p / t_ref.
+
+    Returns:
+        tuple: (corrected_time, applied: bool, scale: float)
+               applied=False means the original time is returned unchanged.
+    """
+    if time_s is None or time_s <= 0 or not paper_id:
+        return time_s, False, 1.0
+
+    cfg = get_splitgrade_config(paper_id)
+    if not cfg:
+        return time_s, False, 1.0
+
+    p = cfg.get('reciprocity_p') or 0.0
+    t_ref = cfg.get('reciprocity_t_ref') or 0.0
+    if p <= 0 or t_ref <= 0 or time_s <= t_ref:
+        return time_s, False, 1.0
+
+    scale = (time_s / t_ref) ** p
+    return time_s * scale, True, scale
 
 
 def calculate_exposure_time(lux, calibration=1000.0, filter_grade=None, paper_id=None):
@@ -354,24 +387,30 @@ def calculate_midpoint_exposure_time(
     shadow_lux,
     recommended_grade,
     calibration=1000.0,
+    paper_id=None,
 ):
     """
     Calculate exposure time from the mid-point (gray) lux.
 
     The midpoint lux is the geometric mean of highlight and shadow.
-    Exposure time follows the Exposure Meter formula then applies
-    the recommended filter factor.
+    Exposure time follows the Exposure Meter formula, applies the
+    recommended filter factor, then applies reciprocity-failure
+    correction (lengthens long exposures only).
 
     Args:
         highlight_lux: Measured lux at highlight area
         shadow_lux: Measured lux at shadow area
         recommended_grade: Output from recommend_filter_grade()
         calibration: Calibration constant (lux × seconds)
+        paper_id: Paper identifier for reciprocity lookup (optional).
 
     Returns:
         dict: {
-            'suggested_time': float,
+            'suggested_time': float,                # final, reciprocity-corrected
+            'suggested_time_uncorrected': float,    # before reciprocity
             'midpoint_lux': float,
+            'reciprocity_applied': bool,
+            'reciprocity_delta_seconds': float,
             'notes': str
         }
     """
@@ -387,15 +426,28 @@ def calculate_midpoint_exposure_time(
         recommended_grade.get('filter_factor', 1.0)
     )
 
-    suggested_time = (calibration / lux_mid) * filter_factor
+    raw_time = (calibration / lux_mid) * filter_factor
+    corrected_time, recip_applied, _ = apply_reciprocity(raw_time, paper_id)
+    delta_s = corrected_time - raw_time
 
-    return {
-        'suggested_time': round(suggested_time, 2),
-        'midpoint_lux': round(lux_mid, 2),
-        'notes': (
+    if recip_applied:
+        notes = (
+            "Midpoint exposure (highlight/shadow geometric mean) with "
+            "reciprocity correction +{:.2f}s applied."
+        ).format(delta_s)
+    else:
+        notes = (
             "Midpoint exposure based on highlight/shadow geometric mean, "
             "using calibration constant and filter factor."
-        ),
+        )
+
+    return {
+        'suggested_time': round(corrected_time, 2),
+        'suggested_time_uncorrected': round(raw_time, 2),
+        'midpoint_lux': round(lux_mid, 2),
+        'reciprocity_applied': recip_applied,
+        'reciprocity_delta_seconds': round(delta_s, 2),
+        'notes': notes,
     }
 
 
