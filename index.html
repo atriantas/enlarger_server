@@ -5996,7 +5996,11 @@
                 constant is stored as an unfiltered value.<br />
                 3. Measure lux at baseboard with no filter in the light path<br />
                 4. Put the filter back, make test strip prints, find the
-                correct exposure time at your usual printing grade<br />
+                correct exposure time at your usual printing grade.
+                <strong>Aim for a final exposure near 10 s</strong> — that
+                is the reciprocity reference, so K stays clean and the
+                tool's reciprocity correction can do its job at long
+                exposures.<br />
                 5. Divide that time by the filter factor for the grade you
                 used (shown in the paper data) to get the unfiltered time<br />
                 6. Calculate: calibration = measured_lux × unfiltered_time<br />
@@ -6004,8 +6008,9 @@
                 <br /><br />
                 <em>At metering time, pick the filter grade you'll print
                 with in the FILTER GRADE dropdown — the server multiplies
-                the unfiltered calibration by that grade's factor to give
-                you the correct time.</em>
+                the unfiltered calibration by that grade's factor and
+                applies reciprocity correction (lengthens only) when
+                exposures exceed 10 s.</em>
               </div>
 
               <!-- Manual Calibration Input -->

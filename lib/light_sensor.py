@@ -1134,6 +1134,7 @@ class DarkroomLightMeter:
                 s_adj,
                 recommended,
                 calibration=cal,
+                paper_id=pid,
             )
 
         recommended_response = None

@@ -18,6 +18,7 @@ from lib.paper_database import (
     get_splitgrade_config,
     validate_exposure_times,
 )
+from lib.exposure_calc import apply_reciprocity
 
 def calculate_delta_ev(highlight_lux, shadow_lux):
     """
@@ -268,16 +269,17 @@ def calculate_split_grade_heiland(
     hard_time = (calibration / shadow_lux) * (2.0 ** delta_hard_stops)
 
     # Reciprocity correction applied to total exposure, scaled back to legs.
-    reciprocity_p = sg_config.get('reciprocity_p', 0.0)
-    reciprocity_t_ref = sg_config.get('reciprocity_t_ref', 10.0)
+    # Uses the shared apply_reciprocity helper which clamps to no-op when
+    # total_time <= t_ref (Schwarzschild only valid for long exposures).
     total_time = soft_time + hard_time
-    reciprocity_applied = False
-    if reciprocity_p and total_time > 0 and reciprocity_t_ref > 0:
-        scale = (total_time / reciprocity_t_ref) ** reciprocity_p
+    corrected_total, reciprocity_applied, scale = apply_reciprocity(
+        total_time, paper_id
+    )
+    if reciprocity_applied:
         soft_time *= scale
         hard_time *= scale
-        total_time = soft_time + hard_time
-        reciprocity_applied = True
+        total_time = corrected_total
+    reciprocity_p = sg_config.get('reciprocity_p', 0.0)
 
     delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
 
