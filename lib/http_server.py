@@ -1187,21 +1187,17 @@ class HTTPServer:
                 await self._sendall(conn, response)
                 return
 
-            # Equivalent single-grade recommendation, for reference display.
-            try:
-                equivalent = self.light_meter.recommend_filter_grade(
-                    result.get('delta_ev'),
-                    paper_id=result.get('paper_id'),
-                )
-                if equivalent:
-                    result['equivalent_grade'] = {
-                        'grade': equivalent.get('grade'),
-                        'iso_r': equivalent.get('iso_r'),
-                        'match_quality': equivalent.get('match_quality'),
-                        'out_of_range': equivalent.get('out_of_range'),
-                    }
-            except Exception:
-                pass
+            # The equivalent-grade split algorithm already attaches the
+            # equivalent grade fields directly on the result. Wrap them in a
+            # nested dict for SPA back-compat (UI reads result.equivalent_grade).
+            if result.get('equivalent_grade_calc') is not None:
+                result['equivalent_grade'] = {
+                    'grade': result.get('equivalent_grade_calc'),
+                    'iso_r': result.get('equivalent_iso_r'),
+                    'factor': result.get('equivalent_factor'),
+                    'match_quality': result.get('equivalent_match_quality'),
+                    'out_of_range': result.get('equivalent_out_of_range'),
+                }
 
             response = self._json_response({
                 "status": "success",

@@ -354,11 +354,15 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
     else:
         match_quality = 'approximate'
 
+    # iso_r_target = delta_ev * 30, so a high target ISO R means a CONTRASTY
+    # negative that needs lots of printable range (soft grade). If even the
+    # softest paper grade does not provide enough latitude → too_contrasty.
+    # A target below the paper's hardest-grade ISO R is the inverse: too flat.
     out_of_range = None
     if iso_r_target > max_iso_r:
-        out_of_range = 'too_flat'
-    elif iso_r_target < min_iso_r:
         out_of_range = 'too_contrasty'
+    elif iso_r_target < min_iso_r:
+        out_of_range = 'too_flat'
 
     best_match['match_quality'] = match_quality
     best_match['out_of_range'] = out_of_range
