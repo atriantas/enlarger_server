@@ -13,12 +13,10 @@ Based on research into Heiland Splitgrade Controller methodology.
 import math
 from lib.paper_database import (
     get_paper_data,
-    get_filter_selection,
     get_filter_data,
     get_splitgrade_config,
-    validate_exposure_times,
 )
-from lib.exposure_calc import apply_reciprocity
+from lib.exposure_calc import apply_reciprocity, recommend_filter_grade
 
 def calculate_delta_ev(highlight_lux, shadow_lux):
     """
@@ -206,28 +204,51 @@ def calculate_split_grade_heiland(
     hard_trim_stops=0.0,
 ):
     """
-    RH Designs StopClock Vario–style split-grade calculation.
+    Canonical RH Designs StopClock Vario / Heiland Splitgrade-style
+    equivalent-grade split.
 
-    Always uses the paper's softest and hardest filters (00 + 5 for Ilford,
-    2xY + 2xM2 for FOMA). Soft and hard offsets are derived automatically
-    from the paper's published filter factors with an explicit zone-target
-    correction so each metered point lands at the desired print zone.
+    Method (replaces the older "independent legs" zone-offset model that
+    over-darkened shadows because the soft leg's density contribution at
+    the shadow region was ignored):
+
+      1. ΔEV = |log2(shadow_lux / highlight_lux)|  → measured contrast.
+      2. Equivalent single grade G_eq is the closest filter whose ISO R
+         matches the negative's contrast (via recommend_filter_grade).
+      3. Total time is set so the geometric-mean midpoint lux lands at the
+         target mid zone (default Zone V):
+             base_time = (K / lux_mid) * 2^(5 - mid_zone)
+         where mid_zone = (highlight_zone + shadow_zone) / 2 — so symmetric
+         zone selections (default 7/3) give no overall shift; asymmetric
+         pairs shift overall print brightness.
+      4. Soft fraction α is interpolated from the equivalent grade's ISO R
+         between the paper's hardest- and softest-filter ISO R endpoints:
+             α = (ISO_R_eq - ISO_R_hard) / (ISO_R_soft - ISO_R_hard)
+         clamped to [0, 1]. α=1 → pure soft (00/2xY), α=0 → pure hard (5/2xM2).
+      5. Legs are sized so combined exposure at the midpoint matches
+         the equivalent single-grade exposure (single-emulsion equivalence):
+             T_soft = α     · factor_soft · base_time · 2^soft_trim
+             T_hard = (1−α) · factor_hard · base_time · 2^hard_trim
+         This satisfies T_soft/factor_soft + T_hard/factor_hard
+                       = 2^(5 - mid_zone) · K / lux_mid, i.e. the same
+         equivalent-unfiltered exposure as a single grade-G_eq print at
+         lux_mid. Highlights and shadows then land at zones determined by
+         the equivalent grade's contrast curve, which is the canonical
+         split-grade behaviour.
 
     Args:
         highlight_lux: Lux at the print's lightest tone (dim spot at paper plane).
         shadow_lux: Lux at the print's darkest tone (bright spot at paper plane).
-        calibration: K_paper from Option B (unfiltered, mid-gray) in lux × seconds.
-        system: paper_id (e.g. 'ilford_cooltone'). 'ilford'/'foma' fall back to defaults.
-        highlight_zone: Target zone for the highlight reading (Zone V = mid). Default 7.
-        shadow_zone: Target zone for the shadow reading. Default 3.
-        soft_trim_stops: Per-paper user trim for the soft leg (stops, default 0).
-        hard_trim_stops: Per-paper user trim for the hard leg (stops, default 0).
+        calibration: K_paper (unfiltered, mid-gray Zone V) in lux × seconds.
+        system: paper_id (e.g. 'ilford_cooltone'). Falls back to ilford_cooltone.
+        highlight_zone: Target zone for highlight (default 7). With shadow_zone,
+            averages to mid_zone for overall brightness offset.
+        shadow_zone: Target zone for shadow (default 3).
+        soft_trim_stops: Per-paper soft-leg fine-tune (stops, default 0).
+        hard_trim_stops: Per-paper hard-leg fine-tune (stops, default 0).
 
     Returns:
-        dict: { soft_time, hard_time, total_time, soft_filter, hard_filter,
-                delta_soft_stops, delta_hard_stops, delta_ev, reciprocity_applied,
-                highlight_lux, shadow_lux, highlight_zone, shadow_zone,
-                soft_trim_stops, hard_trim_stops, paper_id }
+        dict with soft/hard times, filters, factors, delta_ev, equivalent
+        grade info, soft fraction (alpha), reciprocity flag, and inputs.
     """
     if highlight_lux is None or shadow_lux is None:
         return None
@@ -256,21 +277,48 @@ def calculate_split_grade_heiland(
 
     factor_soft = soft_filter_data.get('factor')
     factor_hard = hard_filter_data.get('factor')
+    iso_r_soft = soft_filter_data.get('iso_r')
+    iso_r_hard = hard_filter_data.get('iso_r')
     if not factor_soft or not factor_hard or factor_soft <= 0 or factor_hard <= 0:
         return None
 
-    # Zone offsets relative to Zone V (mid-gray, where K_paper is calibrated).
-    # Highlight lighter than Zone V → less exposure → negative stops.
-    # Shadow darker than Zone V  → more exposure → positive stops.
-    delta_soft_stops = math.log2(factor_soft) - (highlight_zone - 5) + soft_trim_stops
-    delta_hard_stops = math.log2(factor_hard) + (5 - shadow_zone) + hard_trim_stops
+    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
+    if delta_ev is None:
+        return None
 
-    soft_time = (calibration / highlight_lux) * (2.0 ** delta_soft_stops)
-    hard_time = (calibration / shadow_lux) * (2.0 ** delta_hard_stops)
+    # ── Step 1 + 2: equivalent single grade for this contrast ──────────
+    equivalent = recommend_filter_grade(delta_ev, paper_id=paper_id)
+    if not equivalent:
+        return None
 
-    # Reciprocity correction applied to total exposure, scaled back to legs.
-    # Uses the shared apply_reciprocity helper which clamps to no-op when
-    # total_time <= t_ref (Schwarzschild only valid for long exposures).
+    grade_eq = equivalent.get('grade')
+    iso_r_eq = equivalent.get('iso_r')
+    factor_eq = equivalent.get('factor', 1.0)
+    eq_match_quality = equivalent.get('match_quality')
+    eq_out_of_range = equivalent.get('out_of_range')
+
+    # ── Step 3: soft fraction α via ISO R interpolation ────────────────
+    # Paper-specific endpoints make this work for both Ilford and FOMA.
+    if (iso_r_soft is not None and iso_r_hard is not None
+            and iso_r_eq is not None and iso_r_soft != iso_r_hard):
+        alpha = (iso_r_eq - iso_r_hard) / (iso_r_soft - iso_r_hard)
+        alpha = max(0.0, min(1.0, alpha))
+    else:
+        alpha = 0.5
+
+    # ── Step 4: midpoint-anchored base time ────────────────────────────
+    lux_mid = math.sqrt(highlight_lux * shadow_lux)
+    mid_zone = (highlight_zone + shadow_zone) / 2.0
+    base_time = (calibration / lux_mid) * (2.0 ** (5.0 - mid_zone))
+
+    # ── Step 5: equivalent-exposure split, with per-leg trims ─────────
+    soft_time = alpha * factor_soft * base_time * (2.0 ** soft_trim_stops)
+    hard_time = (1.0 - alpha) * factor_hard * base_time * (2.0 ** hard_trim_stops)
+
+    # Reciprocity applied to the cumulative exposure, scaled back to legs.
+    # Internally consistent (legs still sum to corrected_total) and small
+    # for typical darkroom timings; clamp via apply_reciprocity for short
+    # exposures where Schwarzschild form does not apply.
     total_time = soft_time + hard_time
     corrected_total, reciprocity_applied, scale = apply_reciprocity(
         total_time, paper_id
@@ -281,8 +329,6 @@ def calculate_split_grade_heiland(
         total_time = corrected_total
     reciprocity_p = sg_config.get('reciprocity_p', 0.0)
 
-    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
-
     return {
         'soft_filter': soft_filter,
         'hard_filter': hard_filter,
@@ -291,9 +337,14 @@ def calculate_split_grade_heiland(
         'total_time': total_time,
         'soft_factor': factor_soft,
         'hard_factor': factor_hard,
-        'delta_soft_stops': delta_soft_stops,
-        'delta_hard_stops': delta_hard_stops,
         'delta_ev': delta_ev,
+        'soft_alpha': alpha,
+        'equivalent_grade_calc': grade_eq,
+        'equivalent_iso_r': iso_r_eq,
+        'equivalent_factor': factor_eq,
+        'equivalent_match_quality': eq_match_quality,
+        'equivalent_out_of_range': eq_out_of_range,
+        'mid_zone': mid_zone,
         'highlight_zone': highlight_zone,
         'shadow_zone': shadow_zone,
         'soft_trim_stops': soft_trim_stops,
@@ -303,7 +354,7 @@ def calculate_split_grade_heiland(
         'highlight_lux': highlight_lux,
         'shadow_lux': shadow_lux,
         'paper_id': paper_id,
-        'algorithm': 'rh_designs_zone_offset',
+        'algorithm': 'rh_designs_equivalent_grade_split',
     }
 
 
@@ -328,10 +379,14 @@ if __name__ == "__main__":
 
         if result:
             print(f"  ΔEV: {result['delta_ev']:.2f}")
+            print(f"  Equivalent grade: {result['equivalent_grade_calc']} "
+                  f"(ISO R {result['equivalent_iso_r']}, "
+                  f"factor {result['equivalent_factor']:.2f})")
             print(f"  Filters: {result['soft_filter']} + {result['hard_filter']}")
-            print(f"  Times: {result['soft_time']:.1f}s + {result['hard_time']:.1f}s = {result['total_time']:.1f}s")
-            print(f"  Offsets: soft {result['delta_soft_stops']:+.2f} stops, "
-                  f"hard {result['delta_hard_stops']:+.2f} stops")
+            print(f"  α (soft fraction): {result['soft_alpha']*100:.0f}% soft / "
+                  f"{(1-result['soft_alpha'])*100:.0f}% hard")
+            print(f"  Times: {result['soft_time']:.2f}s + {result['hard_time']:.2f}s "
+                  f"= {result['total_time']:.2f}s")
             print(f"  Reciprocity applied: {result['reciprocity_applied']}")
 
     print("\n" + "=" * 60)

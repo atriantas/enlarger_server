@@ -22980,10 +22980,28 @@
                 }
               }
 
-              const reasoningParts = [
-                `${result.soft_filter} ${result.delta_soft_stops >= 0 ? "+" : ""}${result.delta_soft_stops.toFixed(2)} stops`,
-                `${result.hard_filter} ${result.delta_hard_stops >= 0 ? "+" : ""}${result.delta_hard_stops.toFixed(2)} stops`,
-              ];
+              const reasoningParts = [];
+              if (typeof result.soft_alpha === "number") {
+                const softPct = Math.round(result.soft_alpha * 100);
+                const hardPct = 100 - softPct;
+                reasoningParts.push(
+                  `${softPct}% ${result.soft_filter} / ${hardPct}% ${result.hard_filter}`,
+                );
+              }
+              const trimParts = [];
+              if (result.soft_trim_stops) {
+                trimParts.push(
+                  `soft ${result.soft_trim_stops >= 0 ? "+" : ""}${result.soft_trim_stops.toFixed(2)}`,
+                );
+              }
+              if (result.hard_trim_stops) {
+                trimParts.push(
+                  `hard ${result.hard_trim_stops >= 0 ? "+" : ""}${result.hard_trim_stops.toFixed(2)}`,
+                );
+              }
+              if (trimParts.length) {
+                reasoningParts.push(`trim ${trimParts.join(", ")} st`);
+              }
               if (result.reciprocity_applied) {
                 reasoningParts.push("reciprocity applied");
               }
