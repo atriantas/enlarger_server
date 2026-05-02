@@ -317,7 +317,10 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
     available_filters = get_available_filters(paper_id)
 
     for grade in available_filters:
-        if grade == '' or grade == 'none':
+        # Skip the "no filter" baseline entry — it is the calibration anchor,
+        # not a usable contrast grade. Database entries are mixed case
+        # ('none', 'None'), so normalize before comparing.
+        if not grade or str(grade).strip().lower() == 'none':
             continue
 
         filter_data = get_filter_data(paper_id, grade)

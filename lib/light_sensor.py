@@ -811,9 +811,11 @@ class DarkroomLightMeter:
         self.calibrations = {}
         self.default_calibration = self.DEFAULT_CALIBRATION
 
-        # Per-paper split-grade settings (zone targets + trim stops).
-        # Shape: { paper_id: {'highlight_zone': int, 'shadow_zone': int,
-        #                     'soft_trim_stops': float, 'hard_trim_stops': float} }
+        # Per-paper split-grade tunables (all stops, float). Shape:
+        # { paper_id: {'overall_offset_stops': float, 'contrast_bias_stops': float,
+        #              'soft_trim_stops': float, 'hard_trim_stops': float,
+        #              'contrast_highlight_trim_stops': float,
+        #              'contrast_shadow_trim_stops': float} }
         self.split_settings = {}
 
         # Current paper selection (server-side state)
@@ -906,15 +908,17 @@ class DarkroomLightMeter:
     # ── Per-paper split-grade settings (zone targets + trim stops) ────
 
     SPLIT_DEFAULTS = {
-        'highlight_zone': 7,
-        'shadow_zone': 3,
+        # Split-Grade Analyzer tunables.
+        'overall_offset_stops': 0.0,
+        'contrast_bias_stops': 0.0,
         'soft_trim_stops': 0.0,
         'hard_trim_stops': 0.0,
-        # Contrast Analyzer trims (applied to lux readings before delta_ev /
-        # midpoint calculation). Per-paper, persisted alongside split-grade
-        # settings.
+        # Contrast Analyzer tunables (separate state so the two tools have
+        # independent knobs). Per-paper, persisted alongside split-grade.
         'contrast_highlight_trim_stops': 0.0,
         'contrast_shadow_trim_stops': 0.0,
+        'ca_overall_offset_stops': 0.0,
+        'ca_contrast_bias_stops': 0.0,
     }
 
     def get_split_settings(self, paper_id=None):
@@ -931,20 +935,26 @@ class DarkroomLightMeter:
         """
         Update split-grade settings for a paper.
 
-        Accepted keys: highlight_zone (int), shadow_zone (int),
-        soft_trim_stops (float), hard_trim_stops (float).
+        Accepted keys (all stops, float): overall_offset_stops,
+        contrast_bias_stops, soft_trim_stops, hard_trim_stops,
+        contrast_highlight_trim_stops, contrast_shadow_trim_stops.
         """
         if not paper_id:
             raise ValueError("paper_id is required")
         current = dict(self.split_settings.get(paper_id, {}))
-        for key in ('highlight_zone', 'shadow_zone'):
-            if key in kwargs and kwargs[key] is not None:
-                current[key] = int(kwargs[key])
+        # Drop legacy zone-target keys if present from older saves; the new
+        # algorithm replaces them with overall_offset / contrast_bias.
+        current.pop('highlight_zone', None)
+        current.pop('shadow_zone', None)
         for key in (
+            'overall_offset_stops',
+            'contrast_bias_stops',
             'soft_trim_stops',
             'hard_trim_stops',
             'contrast_highlight_trim_stops',
             'contrast_shadow_trim_stops',
+            'ca_overall_offset_stops',
+            'ca_contrast_bias_stops',
         ):
             if key in kwargs and kwargs[key] is not None:
                 current[key] = float(kwargs[key])
@@ -1047,10 +1057,11 @@ class DarkroomLightMeter:
     
     def calculate_split_grade_heiland(self, highlight_lux, shadow_lux,
                                       calibration=None, system=None,
-                                      highlight_zone=None, shadow_zone=None,
+                                      overall_offset_stops=None,
+                                      contrast_bias_stops=None,
                                       soft_trim_stops=None, hard_trim_stops=None):
-        """RH-Designs-style split-grade. Zone targets and trim stops fall back to
-        per-paper stored split_settings (or defaults) when not supplied."""
+        """RH-Designs-style split-grade. Tunables fall back to per-paper
+        stored split_settings (or defaults) when not supplied."""
         paper_id = system or self.current_paper_id
         settings = self.get_split_settings(paper_id)
         return _calculate_split_grade_heiland(
@@ -1058,13 +1069,13 @@ class DarkroomLightMeter:
             shadow_lux,
             calibration=calibration or self.get_calibration(paper_id),
             system=paper_id,
-            highlight_zone=(
-                highlight_zone if highlight_zone is not None
-                else settings['highlight_zone']
+            overall_offset_stops=(
+                overall_offset_stops if overall_offset_stops is not None
+                else settings['overall_offset_stops']
             ),
-            shadow_zone=(
-                shadow_zone if shadow_zone is not None
-                else settings['shadow_zone']
+            contrast_bias_stops=(
+                contrast_bias_stops if contrast_bias_stops is not None
+                else settings['contrast_bias_stops']
             ),
             soft_trim_stops=(
                 soft_trim_stops if soft_trim_stops is not None
@@ -1080,17 +1091,26 @@ class DarkroomLightMeter:
     
     def get_contrast_analysis(self, paper_id=None, calibration=None,
                               highlight_trim_stops=None,
-                              shadow_trim_stops=None):
+                              shadow_trim_stops=None,
+                              overall_offset_stops=None,
+                              contrast_bias_stops=None):
         """
         Get contrast analysis from stored highlight/shadow readings.
 
-        Trims (in stops) are applied to the lux readings before delta_ev,
-        recommended grade, and midpoint exposure time are computed. They
-        fall back to per-paper stored settings when not provided.
+        Per-paper tunables (all stops, fall back to stored settings):
+          - highlight_trim_stops / shadow_trim_stops: shift the lux readings
+            before any computation (interpretive bias on what counts as
+            "highlight" / "shadow").
+          - contrast_bias_stops: shift the equivalent-grade lookup. Positive
+            biases toward a HARDER grade (smaller effective ΔEV); negative
+            toward softer.
+          - overall_offset_stops: scale the suggested midpoint exposure time
+            by 2^offset. Positive = darker print (longer time); negative
+            = lighter (shorter).
 
         Returns:
-            dict: Full analysis including ΔEV, recommended grade,
-                  exposure times, and split-grade calculations
+            dict: ΔEV (measured + biased), recommended grade,
+                  midpoint exposure times, legacy split-grade preview.
         """
         if self.highlight_lux is None or self.shadow_lux is None:
             return {
@@ -1110,6 +1130,14 @@ class DarkroomLightMeter:
             shadow_trim_stops if shadow_trim_stops is not None
             else settings.get('contrast_shadow_trim_stops', 0.0)
         )
+        overall = (
+            overall_offset_stops if overall_offset_stops is not None
+            else settings.get('ca_overall_offset_stops', 0.0)
+        )
+        bias = (
+            contrast_bias_stops if contrast_bias_stops is not None
+            else settings.get('ca_contrast_bias_stops', 0.0)
+        )
 
         # Convention (matches split-grade soft/hard trim): positive trim
         # means MORE exposure for that zone. To increase exposure at the
@@ -1119,7 +1147,15 @@ class DarkroomLightMeter:
         s_adj = self.shadow_lux * (2.0 ** -float(s_trim))
 
         delta_ev = self.calculate_delta_ev(h_adj, s_adj)
-        recommended = self.recommend_filter_grade(delta_ev, paper_id=pid)
+        # Effective ΔEV for grade lookup: positive bias → harder grade
+        # (paper sees a flatter negative). Measured delta_ev is unchanged.
+        if delta_ev is None:
+            delta_ev_effective = None
+        else:
+            delta_ev_effective = max(0.0, delta_ev - float(bias))
+        recommended = self.recommend_filter_grade(
+            delta_ev_effective, paper_id=pid,
+        )
         # Legacy split-grade preview uses raw lux (not affected by Contrast
         # Analyzer trims, which only apply to the contrast analysis).
         split_grade = self.calculate_split_grade(
@@ -1129,11 +1165,15 @@ class DarkroomLightMeter:
         exposure_times = None
         if recommended:
             cal = calibration if calibration else self.get_calibration(pid)
+            # Apply overall_offset by scaling the calibration constant; this
+            # lets apply_reciprocity inside _calculate_midpoint_exposure_time
+            # see the post-offset time and clamp/correct it correctly.
+            effective_cal = cal * (2.0 ** float(overall))
             exposure_times = _calculate_midpoint_exposure_time(
                 h_adj,
                 s_adj,
                 recommended,
-                calibration=cal,
+                calibration=effective_cal,
                 paper_id=pid,
             )
 
@@ -1153,7 +1193,10 @@ class DarkroomLightMeter:
             'shadow_lux_adjusted': s_adj,
             'highlight_trim_stops': float(h_trim),
             'shadow_trim_stops': float(s_trim),
+            'overall_offset_stops': float(overall),
+            'contrast_bias_stops': float(bias),
             'delta_ev': delta_ev,
+            'delta_ev_effective': delta_ev_effective,
             'recommended_grade': recommended_response,
             'split_grade': split_grade,
             'exposure_times': exposure_times,
