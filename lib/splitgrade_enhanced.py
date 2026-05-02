@@ -195,28 +195,6 @@ def calculate_split_grade_legacy(
     }
 
 
-def _estimate_grade_from_gamma(filters, target_gamma):
-    """Closest-match filter grade for a target effective gamma.
-
-    Returns the filter key (e.g. '2', '2xM1') whose gamma is nearest
-    to target_gamma. Returns None if no filter has gamma data.
-    """
-    if target_gamma is None or not filters:
-        return None
-
-    best_name = None
-    best_diff = float('inf')
-    for fname, fdata in filters.items():
-        g = (fdata or {}).get('gamma')
-        if g is None or g <= 0:
-            continue
-        diff = abs(g - target_gamma)
-        if diff < best_diff:
-            best_diff = diff
-            best_name = fname
-    return best_name
-
-
 def calculate_split_grade_heiland(
     highlight_lux,
     shadow_lux,
@@ -228,80 +206,70 @@ def calculate_split_grade_heiland(
     hard_trim_stops=0.0,
 ):
     """
-    Effective-gamma split-grade solver.
+    Gamma-aware split-grade calculation (RH Designs StopClock Vario style).
 
-    Models the combined soft+hard exposure as a single emulsion whose
-    effective gamma is the exposure-weighted blend of the two leg
-    gammas:
-
-        γ_eff = (E_soft × γ_soft + E_hard × γ_hard) / (E_soft + E_hard)
-
-    This replaces the old additive density model
-    (D = γ_s·log10(E_s/K) + γ_h·log10(E_h/K)) which had γ_eff =
-    γ_soft + γ_hard locked by construction — too steep, so endpoints
-    landed beyond their target zones (e.g. shadows clipping to Zone I
-    on a 4-stop scene with an Ilford 00+5 pair).
+    Models each filter leg as primarily exposing one emulsion with its own
+    gamma (γ_soft for the green-sensitive emulsion, γ_hard for the
+    blue-sensitive emulsion) and assumes the resulting densities ADD on the
+    final print. This captures the cross-emulsion bleed that the
+    independent-leg model ignores: at the shadow area the soft leg also
+    contributes density, and at the highlight area the hard leg also
+    contributes — both push tones darker than the simple zone-offset
+    formulas predict.
 
     Algorithm
     ---------
-    1. γ_target = (highlight_zone − shadow_zone) / Δstops, the print
-       contrast that maps the metered lux range onto the requested
-       zone span. Clamp to [γ_soft, γ_hard] — the filter pair's
-       achievable contrast range.
-    2. Solve a 2×2 linear system at the midtone (lux_mid =
-       sqrt(highlight_lux·shadow_lux)) for the per-leg exposures:
+    1. Initial solution from zone-offset formulas (independent-leg).
+    2. Predict midtone density using the additive model with per-filter
+       gammas. Apply a multiplicative correction to BOTH legs so the
+       midtone lands at Zone V (matches single-grade calibration K).
+    3. Predict the resulting endpoint zones for diagnostic output. With
+       the additive model the print's effective gamma equals
+       γ_soft + γ_hard, so when the negative's contrast doesn't match
+       (Z_h − Z_s) × γ_ref / (γ_soft + γ_hard), endpoints drift
+       proportionally and predicted_zone_h / _s reflect that drift.
+    4. Apply per-leg user trims (multiplicative, independent).
+    5. Apply reciprocity-failure correction on the total exposure.
 
-           E_s_mid + E_h_mid                          = K
-           γ_s·E_s_mid + γ_h·E_h_mid (both / K)       = γ_target·K
+    The midtone anchor fixes the user's "grey card off in split-grade"
+    symptom even though the per-filter gammas alone can't fully decouple
+    endpoint placement (the additive model is inherently rank-1 in
+    density-space). Endpoints that drift can be compensated with
+    per-leg trims after observing a test print.
 
-       Closed form:
-           E_s_mid = K · (γ_h − γ_target) / (γ_h − γ_s)
-           E_h_mid = K · (γ_target − γ_s) / (γ_h − γ_s)
-
-       This anchors the midtone at Zone V and produces the requested
-       effective gamma in one shot — no iterative correction needed.
-    3. Convert mid-point exposures to leg times:
-           T_soft = E_s_mid · factor_soft / lux_mid
-           T_hard = E_h_mid · factor_hard / lux_mid
-    4. Apply user per-leg trims (independent multipliers).
-    5. Apply Schwarzschild reciprocity correction to the total time.
-
-    If gamma data for either filter is missing the solver falls back
-    to a 50/50 mid-anchored split (E_s_mid = E_h_mid = K/2) and the
-    result reports algorithm='basic_50_50_fallback'.
+    When per-filter gamma data is missing for a paper, the function
+    falls back to the independent-leg behavior of the previous version.
 
     Args:
-        highlight_lux: Lux at the print's lightest tone (LOWEST baseboard
-            reading — densest negative area).
-        shadow_lux: Lux at the print's darkest tone (HIGHEST baseboard
-            reading — thinnest negative area).
-        calibration: K_paper (mid-gray, lux·seconds).
+        highlight_lux: Lux at the print's lightest tone (dim spot at paper plane).
+        shadow_lux: Lux at the print's darkest tone (bright spot at paper plane).
+        calibration: K_paper (unfiltered, mid-gray) in lux × seconds.
         system: paper_id (e.g. 'ilford_cooltone').
-        highlight_zone: Target print zone for the highlight reading.
-        shadow_zone: Target print zone for the shadow reading.
-        soft_trim_stops: Per-leg user trim, in stops, for the soft filter.
-        hard_trim_stops: Per-leg user trim, in stops, for the hard filter.
+        highlight_zone: Target zone for the highlight reading. Default 7.
+        shadow_zone: Target zone for the shadow reading. Default 3.
+        soft_trim_stops: Per-paper user trim on the soft leg (stops).
+        hard_trim_stops: Per-paper user trim on the hard leg (stops).
+
+    Model limitation note
+    ---------------------
+    The additive density model has an effective print gamma of
+    (γ_soft + γ_hard), which over-predicts real split-grade print
+    contrast. The MIDTONE prediction is reliable (rank-1 system → the
+    average density across the metered range is well-determined) and is
+    used to anchor the print to the user's calibration. Per-endpoint
+    predictions are not reliable enough to expose to the user; the
+    actionable knob for endpoint drift is per-leg trim adjustment after
+    a test print.
 
     Returns:
-        dict with:
-          - soft_filter, hard_filter, soft_time, hard_time, total_time
-          - soft_factor, hard_factor
-          - delta_soft_stops, delta_hard_stops (log2(E_leg / K) at the leg's
-            metering point — diagnostic only)
-          - delta_ev, highlight_zone, shadow_zone
-          - soft_trim_stops, hard_trim_stops
-          - reciprocity_applied, reciprocity_p
-          - highlight_lux, shadow_lux, paper_id
-          - soft_gamma, hard_gamma
-          - target_gamma_raw — the unclamped (Z_h−Z_s)/Δstops request
-          - target_gamma — clamped to [γ_soft, γ_hard]
-          - effective_gamma — γ blended at the midtone with the FINAL
-            (post-trim) leg ratio
-          - gamma_clamp — None | 'too_soft' (request below γ_soft, scene
-            too contrasty for the pair) | 'too_hard' (request above γ_hard,
-            scene too flat for the pair)
-          - target_grade_estimate — closest filter key for effective_gamma
-          - algorithm — 'effective_gamma_v1' or 'basic_50_50_fallback'
+        dict including all original fields (soft_time, hard_time, etc.)
+        plus gamma-aware diagnostic fields:
+          - soft_gamma, hard_gamma, reference_gamma
+          - midtone_correction_stops — stops applied to BOTH legs to
+            anchor the midtone density to Zone V (matches calibration K)
+          - midtone_density_offset_pre_correction — predicted density
+            error at midtone before the anchor correction was applied
+          - algorithm: 'gamma_aware_v1' or 'independent_leg_fallback'
     """
     if highlight_lux is None or shadow_lux is None:
         return None
@@ -333,65 +301,65 @@ def calculate_split_grade_heiland(
     if not factor_soft or not factor_hard or factor_soft <= 0 or factor_hard <= 0:
         return None
 
+    # Per-filter gammas drive the gamma-aware solver. Both must be present
+    # and positive; otherwise we fall back to the independent-leg model.
     gamma_soft = soft_filter_data.get('gamma')
     gamma_hard = hard_filter_data.get('gamma')
-    have_gammas = (
+    use_gamma_aware = (
         gamma_soft is not None and gamma_hard is not None
         and gamma_soft > 0 and gamma_hard > 0
-        and gamma_hard > gamma_soft
     )
 
-    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
-    lux_mid = math.sqrt(highlight_lux * shadow_lux)
+    # Reference gamma — used to convert zone numbers ↔ density. The
+    # calibrated grade's gamma is the right anchor since K is calibrated
+    # at that grade. Try Ilford grade 2 first, then FOMA's 2xM1 (normal).
+    ref_filter_data = filters.get('2') or filters.get('2xM1')
+    gamma_ref = (ref_filter_data or {}).get('gamma')
+    if not gamma_ref or gamma_ref <= 0:
+        gamma_ref = 0.85  # Sensible default if reference filter is missing
+
     log10_2 = math.log10(2.0)
 
     # ---------------------------------------------------------------
-    # Step 1 — Target effective gamma from zone request
+    # Step 1 — Initial solution (zone-offset formulas, independent-leg)
     # ---------------------------------------------------------------
-    zone_span = float(highlight_zone) - float(shadow_zone)
-    gamma_clamp = None
-    if have_gammas:
-        if delta_ev is None or delta_ev <= 1e-6:
-            # Degenerate: equal lux readings. Pick the midpoint gamma
-            # of the filter pair (a "grade 2-ish" balance).
-            gamma_target_raw = (gamma_soft + gamma_hard) / 2.0
-        else:
-            gamma_target_raw = zone_span / delta_ev
+    delta_soft_stops_init = math.log2(factor_soft) - (highlight_zone - 5)
+    delta_hard_stops_init = math.log2(factor_hard) + (5 - shadow_zone)
 
-        if gamma_target_raw < gamma_soft:
-            gamma_target = gamma_soft
-            gamma_clamp = 'too_soft'  # scene wants more compression than pair allows
-        elif gamma_target_raw > gamma_hard:
-            gamma_target = gamma_hard
-            gamma_clamp = 'too_hard'  # scene wants more expansion than pair allows
-        else:
-            gamma_target = gamma_target_raw
-    else:
-        gamma_target_raw = None
-        gamma_target = None
+    soft_time = (calibration / highlight_lux) * (2.0 ** delta_soft_stops_init)
+    hard_time = (calibration / shadow_lux) * (2.0 ** delta_hard_stops_init)
 
     # ---------------------------------------------------------------
-    # Step 2 — Solve 2×2 system at midtone
+    # Step 2 — Gamma-aware midtone anchor
+    # Density model (additive, per-filter gammas):
+    #   D - D_zoneV = γ_s × log10(E_s/K) + γ_h × log10(E_h/K)
+    # where E_s = (lux/factor_s) × T_s and E_h similar.
+    # K is the Zone V exposure on each filter alone — same for both
+    # under the speed-matched filter assumption.
     # ---------------------------------------------------------------
-    if have_gammas:
-        denom = gamma_hard - gamma_soft
-        E_soft_mid = calibration * (gamma_hard - gamma_target) / denom
-        E_hard_mid = calibration * (gamma_target - gamma_soft) / denom
-        algorithm = 'effective_gamma_v1'
-    else:
-        # Fallback: 50/50 mid-anchored split with no contrast targeting.
-        E_soft_mid = calibration / 2.0
-        E_hard_mid = calibration / 2.0
-        algorithm = 'basic_50_50_fallback'
+    midtone_density_offset = 0.0
+    midtone_correction_stops = 0.0
+
+    if use_gamma_aware:
+        lux_mid = math.sqrt(highlight_lux * shadow_lux)
+        E_soft_mid = (lux_mid / factor_soft) * soft_time
+        E_hard_mid = (lux_mid / factor_hard) * hard_time
+        if E_soft_mid > 0 and E_hard_mid > 0:
+            midtone_density_offset = (
+                gamma_soft * math.log10(E_soft_mid / calibration)
+                + gamma_hard * math.log10(E_hard_mid / calibration)
+            )
+            # Multiplicative α applied to BOTH legs cancels the midtone
+            # density error: (γ_s + γ_h) × log10(α) + δ_d_mid = 0
+            log10_alpha = -midtone_density_offset / (gamma_soft + gamma_hard)
+            alpha = 10.0 ** log10_alpha
+            soft_time *= alpha
+            hard_time *= alpha
+            midtone_correction_stops = log10_alpha / log10_2
 
     # ---------------------------------------------------------------
-    # Step 3 — Convert mid-point exposures to leg times
-    # ---------------------------------------------------------------
-    soft_time = E_soft_mid * factor_soft / lux_mid
-    hard_time = E_hard_mid * factor_hard / lux_mid
-
-    # ---------------------------------------------------------------
-    # Step 4 — Per-leg user trims
+    # Step 3 — Per-leg user trims (independent, multiplicative)
+    # Positive trim = more exposure on that leg = darker that endpoint.
     # ---------------------------------------------------------------
     if soft_trim_stops:
         soft_time *= 2.0 ** soft_trim_stops
@@ -399,7 +367,8 @@ def calculate_split_grade_heiland(
         hard_time *= 2.0 ** hard_trim_stops
 
     # ---------------------------------------------------------------
-    # Step 5 — Reciprocity on total exposure
+    # Step 4 — Reciprocity correction on total exposure (lengthens long
+    # prints only — clamp inside apply_reciprocity).
     # ---------------------------------------------------------------
     total_time = soft_time + hard_time
     corrected_total, reciprocity_applied, scale = apply_reciprocity(
@@ -411,38 +380,21 @@ def calculate_split_grade_heiland(
         total_time = corrected_total
     reciprocity_p = sg_config.get('reciprocity_p', 0.0)
 
-    # ---------------------------------------------------------------
-    # Diagnostics
-    # ---------------------------------------------------------------
-    if soft_time > 0 and hard_time > 0 and have_gammas:
-        E_soft_post = (lux_mid / factor_soft) * soft_time
-        E_hard_post = (lux_mid / factor_hard) * hard_time
-        E_total_post = E_soft_post + E_hard_post
-        if E_total_post > 0:
-            effective_gamma = (
-                (E_soft_post * gamma_soft + E_hard_post * gamma_hard)
-                / E_total_post
-            )
-        else:
-            effective_gamma = gamma_target
-    else:
-        effective_gamma = gamma_target
-
-    target_grade_estimate = (
-        _estimate_grade_from_gamma(filters, effective_gamma)
-        if effective_gamma is not None else None
-    )
-
-    if soft_time > 0:
+    # Final delta_soft / delta_hard expressed as stops-from-Zone-V (kept
+    # for backward compatibility with logs and the SPA).
+    if highlight_lux > 0 and calibration > 0 and soft_time > 0:
         delta_soft_stops = math.log2(soft_time * highlight_lux / calibration)
     else:
         delta_soft_stops = 0.0
-    if hard_time > 0:
+    if shadow_lux > 0 and calibration > 0 and hard_time > 0:
         delta_hard_stops = math.log2(hard_time * shadow_lux / calibration)
     else:
         delta_hard_stops = 0.0
 
+    delta_ev = calculate_delta_ev(highlight_lux, shadow_lux)
+
     return {
+        # Backward-compatible fields
         'soft_filter': soft_filter,
         'hard_filter': hard_filter,
         'soft_time': soft_time,
@@ -462,14 +414,15 @@ def calculate_split_grade_heiland(
         'highlight_lux': highlight_lux,
         'shadow_lux': shadow_lux,
         'paper_id': paper_id,
+        # Gamma-aware diagnostic fields
         'soft_gamma': gamma_soft,
         'hard_gamma': gamma_hard,
-        'target_gamma_raw': gamma_target_raw,
-        'target_gamma': gamma_target,
-        'effective_gamma': effective_gamma,
-        'gamma_clamp': gamma_clamp,
-        'target_grade_estimate': target_grade_estimate,
-        'algorithm': algorithm,
+        'reference_gamma': gamma_ref,
+        'midtone_correction_stops': midtone_correction_stops,
+        'midtone_density_offset_pre_correction': midtone_density_offset,
+        'algorithm': (
+            'gamma_aware_v1' if use_gamma_aware else 'independent_leg_fallback'
+        ),
     }
 
 
