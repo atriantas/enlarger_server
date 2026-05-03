@@ -317,10 +317,11 @@ def recommend_filter_grade(delta_ev, paper_id='ilford_cooltone'):
     available_filters = get_available_filters(paper_id)
 
     for grade in available_filters:
-        # Skip the "no filter" baseline entry — it is the calibration anchor,
-        # not a usable contrast grade. Database entries are mixed case
-        # ('none', 'None'), so normalize before comparing.
-        if not grade or str(grade).strip().lower() == 'none':
+        # Skip placeholder keys only. NOTE: capitalized 'None' is a real
+        # FOMA grade (Special–Normal, ISO R 100, no filter inserted) per
+        # the FOMA datasheet — keep it in the recommendation pool. Only
+        # a lowercase 'none' is treated as a non-grade placeholder.
+        if grade == '' or grade == 'none':
             continue
 
         filter_data = get_filter_data(paper_id, grade)
