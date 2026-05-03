@@ -1046,9 +1046,11 @@ class HTTPServer:
             calibration: Calibration constant from client (optional, uses server-side if not provided)
             highlight_trim: Highlight trim in stops (optional, defaults to per-paper)
             shadow_trim: Shadow trim in stops (optional, defaults to per-paper)
+            overall_offset: Suggested-time offset in stops (optional, per-paper)
+            contrast_bias: Equivalent-grade bias in stops (optional, per-paper)
 
         Returns ΔEV, recommended filter grade, and split-grade calculations
-        based on stored highlight and shadow readings, with trims applied.
+        based on stored highlight and shadow readings, with tunables applied.
         """
         if await self._require_light_meter(conn):
             return
@@ -1072,6 +1074,8 @@ class HTTPServer:
                 calibration=calibration,
                 highlight_trim_stops=_opt_float('highlight_trim'),
                 shadow_trim_stops=_opt_float('shadow_trim'),
+                overall_offset_stops=_opt_float('overall_offset'),
+                contrast_bias_stops=_opt_float('contrast_bias'),
             )
 
             if 'error' in analysis:
@@ -1093,7 +1097,10 @@ class HTTPServer:
                 "shadow_lux_adjusted": analysis.get('shadow_lux_adjusted'),
                 "highlight_trim_stops": analysis.get('highlight_trim_stops'),
                 "shadow_trim_stops": analysis.get('shadow_trim_stops'),
+                "overall_offset_stops": analysis.get('overall_offset_stops'),
+                "contrast_bias_stops": analysis.get('contrast_bias_stops'),
                 "delta_ev": analysis['delta_ev'],
+                "delta_ev_effective": analysis.get('delta_ev_effective'),
                 "recommended_grade": analysis['recommended_grade'],
                 "split_grade": analysis['split_grade'],
                 "exposure_times": analysis.get('exposure_times'),
@@ -1118,10 +1125,10 @@ class HTTPServer:
             shadow: Shadow lux reading (bright spot at paper plane = print's darkest tone)
             calibration: K_paper from Option B (lux·s, optional — defaults to per-paper stored)
             paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
-            highlight_zone: Target zone for highlight reading (optional, defaults to per-paper)
-            shadow_zone: Target zone for shadow reading (optional, defaults to per-paper)
-            soft_trim: Soft leg user trim in stops (optional, defaults to per-paper)
-            hard_trim: Hard leg user trim in stops (optional, defaults to per-paper)
+            overall_offset: Global brightness offset in stops (optional, per-paper)
+            contrast_bias: Equivalent-grade bias in stops (optional, per-paper)
+            soft_trim: Soft leg user trim in stops (optional, per-paper)
+            hard_trim: Hard leg user trim in stops (optional, per-paper)
             system: (deprecated) Legacy filter system parameter
 
         Returns split-grade times based on the paper's softest/hardest filter pair,
@@ -1172,8 +1179,8 @@ class HTTPServer:
                 shadow_lux=shadow_lux,
                 calibration=cal_opt,
                 system=paper_id,
-                highlight_zone=_opt_int('highlight_zone'),
-                shadow_zone=_opt_int('shadow_zone'),
+                overall_offset_stops=_opt_float('overall_offset'),
+                contrast_bias_stops=_opt_float('contrast_bias'),
                 soft_trim_stops=_opt_float('soft_trim'),
                 hard_trim_stops=_opt_float('hard_trim'),
             )
@@ -1585,17 +1592,19 @@ class HTTPServer:
     async def _handle_splitgrade_settings(self, conn, params):
         """
         Handle /splitgrade-settings endpoint — per-paper RH-Designs split-grade
-        settings (zone targets + soft/hard trim stops).
+        tunables (overall exposure, contrast bias, soft/hard trim stops).
 
         Query params:
             action: 'get' (default), 'set', or 'clear'.
             paper_id: Paper identifier (optional — defaults to current paper).
-            highlight_zone: int, used with action=set.
-            shadow_zone: int, used with action=set.
+            overall_offset: float (stops), used with action=set.
+            contrast_bias: float (stops), used with action=set.
             soft_trim: float (stops), used with action=set.
             hard_trim: float (stops), used with action=set.
             contrast_highlight_trim: float (stops), used with action=set.
             contrast_shadow_trim: float (stops), used with action=set.
+            ca_overall_offset: float (stops), Contrast Analyzer overall offset.
+            ca_contrast_bias: float (stops), Contrast Analyzer grade bias.
 
         Returns the (possibly updated) effective settings.
         """
@@ -1614,27 +1623,20 @@ class HTTPServer:
             except (TypeError, ValueError):
                 return None
 
-        def _opt_int(key):
-            v = params.get(key)
-            if v is None or v == '':
-                return None
-            try:
-                return int(float(v))
-            except (TypeError, ValueError):
-                return None
-
         try:
             if action == 'set':
                 self.light_meter.set_split_settings(
                     paper_id,
-                    highlight_zone=_opt_int('highlight_zone'),
-                    shadow_zone=_opt_int('shadow_zone'),
+                    overall_offset_stops=_opt_float('overall_offset'),
+                    contrast_bias_stops=_opt_float('contrast_bias'),
                     soft_trim_stops=_opt_float('soft_trim'),
                     hard_trim_stops=_opt_float('hard_trim'),
                     contrast_highlight_trim_stops=_opt_float(
                         'contrast_highlight_trim'),
                     contrast_shadow_trim_stops=_opt_float(
                         'contrast_shadow_trim'),
+                    ca_overall_offset_stops=_opt_float('ca_overall_offset'),
+                    ca_contrast_bias_stops=_opt_float('ca_contrast_bias'),
                 )
             elif action == 'clear':
                 self.light_meter.clear_split_settings(paper_id)

@@ -5338,9 +5338,47 @@
               </button>
             </div>
 
-            <!-- Per-paper Highlight/Shadow trim (Contrast Analyzer) -->
+            <!-- Per-paper Contrast Analyzer tunables -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">TRIMS (per paper)</div>
+              <div class="label-sm">TUNABLES (per paper)</div>
+              <div class="label-sm" style="margin-top: 8px">
+                <div class="control-label">
+                  <span>OVERALL EXPOSURE</span>
+                  <span
+                    class="value-display"
+                    id="contrastOverallOffsetValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastOverallOffsetSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 6px">
+                <div class="control-label">
+                  <span>CONTRAST BIAS</span>
+                  <span
+                    class="value-display"
+                    id="contrastBiasValue"
+                    >+0.00 stops</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  min="-1.0"
+                  max="1.0"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="contrastBiasSlider"
+                />
+              </div>
               <div class="label-sm" style="margin-top: 8px">
                 <div class="control-label">
                   <span>HIGHLIGHT TRIM</span>
@@ -5552,53 +5590,72 @@
               />
             </div>
 
-            <!-- Zone Targets & Per-Paper Trim (RH Designs split-grade tunables) -->
+            <!-- Highlight Measurement for Split Grade -->
             <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">ZONE TARGETS</div>
-              <div
-                style="
-                  display: flex;
-                  gap: 8px;
-                  margin-top: 6px;
-                  align-items: center;
-                "
+              <div class="label-sm">
+                HIGHLIGHT (lightest tone in print — dim spot at paper plane)
+              </div>
+              <div class="value-display" id="splitHighlightLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="splitMeasureHighlightBtn"
+                style="margin-top: 5px"
               >
-                <div style="flex: 1">
-                  <div
-                    class="label-sm"
-                    style="font-size: 0.7rem; margin-bottom: 2px"
+                Measure Highlight
+              </button>
+            </div>
+
+            <!-- Shadow Measurement for Split Grade -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">
+                SHADOW (darkest tone in print — bright spot at paper plane)
+              </div>
+              <div class="value-display" id="splitShadowLux">-- lux</div>
+              <button
+                class="settings-btn"
+                id="splitMeasureShadowBtn"
+                style="margin-top: 5px"
+              >
+                Measure Shadow
+              </button>
+            </div>
+
+            <!-- Per-paper split-grade tunables (overall offset, contrast bias, per-leg trims) -->
+            <div class="info-box" style="margin-top: 10px">
+              <div class="label-sm">SPLIT-GRADE TUNABLES</div>
+              <div class="label-sm" style="margin-top: 8px">
+                <div class="control-label">
+                  <span>OVERALL EXPOSURE</span>
+                  <span class="value-display" id="splitOverallOffsetValue"
+                    >+0.00 stops</span
                   >
-                    Highlight (lighter tone)
-                  </div>
-                  <select
-                    id="splitHighlightZone"
-                    class="settings-input"
-                    style="width: 100%"
-                  >
-                    <option value="6">Zone VI</option>
-                    <option value="7" selected>Zone VII</option>
-                    <option value="8">Zone VIII</option>
-                    <option value="9">Zone IX</option>
-                  </select>
                 </div>
-                <div style="flex: 1">
-                  <div
-                    class="label-sm"
-                    style="font-size: 0.7rem; margin-bottom: 2px"
+                <input
+                  type="range"
+                  min="-1.5"
+                  max="1.5"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="splitOverallOffsetSlider"
+                />
+              </div>
+              <div class="label-sm" style="margin-top: 6px">
+                <div class="control-label">
+                  <span>CONTRAST BIAS</span>
+                  <span class="value-display" id="splitContrastBiasValue"
+                    >+0.00 stops</span
                   >
-                    Shadow (darker tone)
-                  </div>
-                  <select
-                    id="splitShadowZone"
-                    class="settings-input"
-                    style="width: 100%"
-                  >
-                    <option value="1">Zone I</option>
-                    <option value="2">Zone II</option>
-                    <option value="3" selected>Zone III</option>
-                    <option value="4">Zone IV</option>
-                  </select>
                 </div>
+                <input
+                  type="range"
+                  min="-1.0"
+                  max="1.0"
+                  step="0.166666"
+                  value="0"
+                  class="slider"
+                  id="splitContrastBiasSlider"
+                />
               </div>
               <div class="label-sm" style="margin-top: 8px">
                 <div class="control-label">
@@ -5658,36 +5715,6 @@
                   Reset
                 </button>
               </div>
-            </div>
-
-            <!-- Highlight Measurement for Split Grade -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">
-                HIGHLIGHT (lightest tone in print — dim spot at paper plane)
-              </div>
-              <div class="value-display" id="splitHighlightLux">-- lux</div>
-              <button
-                class="settings-btn"
-                id="splitMeasureHighlightBtn"
-                style="margin-top: 5px"
-              >
-                Measure Highlight
-              </button>
-            </div>
-
-            <!-- Shadow Measurement for Split Grade -->
-            <div class="info-box" style="margin-top: 10px">
-              <div class="label-sm">
-                SHADOW (darkest tone in print — bright spot at paper plane)
-              </div>
-              <div class="value-display" id="splitShadowLux">-- lux</div>
-              <button
-                class="settings-btn"
-                id="splitMeasureShadowBtn"
-                style="margin-top: 5px"
-              >
-                Measure Shadow
-              </button>
             </div>
 
             <!-- Contrast Analysis -->
@@ -5766,8 +5793,7 @@
                   --.--
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  <span id="splitSoftFilterName">--</span> |
-                  <span id="splitSoftPercent">--%</span>
+                  <span id="splitSoftFilterName">--</span>
                 </div>
               </div>
               <div
@@ -5786,8 +5812,7 @@
                   --.--
                 </div>
                 <div class="label-sm" style="margin-top: 4px">
-                  <span id="splitHardFilterName">--</span> |
-                  <span id="splitHardPercent">--%</span>
+                  <span id="splitHardFilterName">--</span>
                 </div>
               </div>
             </div>
@@ -20870,6 +20895,14 @@
          * and triggers live recalc when both readings exist.
          */
         bindContrastTrims() {
+          const overallSlider = document.getElementById(
+            "contrastOverallOffsetSlider",
+          );
+          const overallValue = document.getElementById(
+            "contrastOverallOffsetValue",
+          );
+          const biasSlider = document.getElementById("contrastBiasSlider");
+          const biasValue = document.getElementById("contrastBiasValue");
           const hSlider = document.getElementById(
             "contrastHighlightTrimSlider",
           );
@@ -20877,11 +20910,17 @@
           const hValue = document.getElementById("contrastHighlightTrimValue");
           const sValue = document.getElementById("contrastShadowTrimValue");
           const resetBtn = document.getElementById("contrastResetTrimsBtn");
-          if (!hSlider || !sSlider) return;
+          if (!hSlider || !sSlider || !overallSlider || !biasSlider) return;
           const fmtTrim = (v) => {
             const n = parseFloat(v) || 0;
             return `${n >= 0 ? "+" : ""}${n.toFixed(2)} stops`;
           };
+          overallSlider.addEventListener("input", () => {
+            overallValue.textContent = fmtTrim(overallSlider.value);
+          });
+          biasSlider.addEventListener("input", () => {
+            biasValue.textContent = fmtTrim(biasSlider.value);
+          });
           hSlider.addEventListener("input", () => {
             hValue.textContent = fmtTrim(hSlider.value);
           });
@@ -20894,6 +20933,8 @@
               this.analyzeContrast();
             }
           };
+          overallSlider.addEventListener("change", persistAndRecalc);
+          biasSlider.addEventListener("change", persistAndRecalc);
           hSlider.addEventListener("change", persistAndRecalc);
           sSlider.addEventListener("change", persistAndRecalc);
           if (resetBtn) {
@@ -20905,6 +20946,12 @@
          * Read current contrast trims from the UI.
          */
         readContrastTrimsFromUI() {
+          const overall = parseFloat(
+            document.getElementById("contrastOverallOffsetSlider").value,
+          );
+          const bias = parseFloat(
+            document.getElementById("contrastBiasSlider").value,
+          );
           const h = parseFloat(
             document.getElementById("contrastHighlightTrimSlider").value,
           );
@@ -20912,6 +20959,8 @@
             document.getElementById("contrastShadowTrimSlider").value,
           );
           return {
+            ca_overall_offset_stops: Number.isFinite(overall) ? overall : 0,
+            ca_contrast_bias_stops: Number.isFinite(bias) ? bias : 0,
             contrast_highlight_trim_stops: Number.isFinite(h) ? h : 0,
             contrast_shadow_trim_stops: Number.isFinite(s) ? s : 0,
           };
@@ -20922,6 +20971,14 @@
          */
         applyContrastTrimsToUI(settings) {
           if (!settings) return;
+          const overallSlider = document.getElementById(
+            "contrastOverallOffsetSlider",
+          );
+          const overallValue = document.getElementById(
+            "contrastOverallOffsetValue",
+          );
+          const biasSlider = document.getElementById("contrastBiasSlider");
+          const biasValue = document.getElementById("contrastBiasValue");
           const hSlider = document.getElementById(
             "contrastHighlightTrimSlider",
           );
@@ -20930,6 +20987,18 @@
           const sValue = document.getElementById("contrastShadowTrimValue");
           const fmtTrim = (v) =>
             `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
+          if (overallSlider && settings.ca_overall_offset_stops != null) {
+            overallSlider.value = String(settings.ca_overall_offset_stops);
+            if (overallValue)
+              overallValue.textContent = fmtTrim(
+                settings.ca_overall_offset_stops,
+              );
+          }
+          if (biasSlider && settings.ca_contrast_bias_stops != null) {
+            biasSlider.value = String(settings.ca_contrast_bias_stops);
+            if (biasValue)
+              biasValue.textContent = fmtTrim(settings.ca_contrast_bias_stops);
+          }
           if (hSlider && settings.contrast_highlight_trim_stops != null) {
             hSlider.value = String(settings.contrast_highlight_trim_stops);
             if (hValue)
@@ -20964,6 +21033,8 @@
             const params = new URLSearchParams({
               action: "set",
               paper_id: paperId,
+              ca_overall_offset: String(t.ca_overall_offset_stops),
+              ca_contrast_bias: String(t.ca_contrast_bias_stops),
               contrast_highlight_trim: String(t.contrast_highlight_trim_stops),
               contrast_shadow_trim: String(t.contrast_shadow_trim_stops),
             });
@@ -20983,6 +21054,8 @@
             const params = new URLSearchParams({
               action: "set",
               paper_id: paperId,
+              ca_overall_offset: "0",
+              ca_contrast_bias: "0",
               contrast_highlight_trim: "0",
               contrast_shadow_trim: "0",
             });
@@ -21061,20 +21134,39 @@
          * Loads stored values on first interaction; persists on change.
          */
         bindSplitTunables() {
-          const highlightSel = document.getElementById("splitHighlightZone");
-          const shadowSel = document.getElementById("splitShadowZone");
+          const overallSlider = document.getElementById(
+            "splitOverallOffsetSlider",
+          );
+          const overallValue = document.getElementById(
+            "splitOverallOffsetValue",
+          );
+          const biasSlider = document.getElementById(
+            "splitContrastBiasSlider",
+          );
+          const biasValue = document.getElementById("splitContrastBiasValue");
           const softSlider = document.getElementById("splitSoftTrimSlider");
           const hardSlider = document.getElementById("splitHardTrimSlider");
           const softValue = document.getElementById("splitSoftTrimValue");
           const hardValue = document.getElementById("splitHardTrimValue");
           const resetBtn = document.getElementById("splitResetTrimsBtn");
-          if (!highlightSel || !shadowSel || !softSlider || !hardSlider) {
+          if (
+            !overallSlider ||
+            !biasSlider ||
+            !softSlider ||
+            !hardSlider
+          ) {
             return;
           }
           const fmtTrim = (v) => {
             const n = parseFloat(v) || 0;
             return `${n >= 0 ? "+" : ""}${n.toFixed(2)} stops`;
           };
+          overallSlider.addEventListener("input", () => {
+            overallValue.textContent = fmtTrim(overallSlider.value);
+          });
+          biasSlider.addEventListener("input", () => {
+            biasValue.textContent = fmtTrim(biasSlider.value);
+          });
           softSlider.addEventListener("input", () => {
             softValue.textContent = fmtTrim(softSlider.value);
           });
@@ -21088,8 +21180,8 @@
               this.calculateSplitGrade();
             }
           };
-          highlightSel.addEventListener("change", persistAndRecalc);
-          shadowSel.addEventListener("change", persistAndRecalc);
+          overallSlider.addEventListener("change", persistAndRecalc);
+          biasSlider.addEventListener("change", persistAndRecalc);
           softSlider.addEventListener("change", persistAndRecalc);
           hardSlider.addEventListener("change", persistAndRecalc);
           if (resetBtn) {
@@ -21101,13 +21193,11 @@
          * Read current split-grade tunables from the UI.
          */
         readSplitSettingsFromUI() {
-          const hi = parseInt(
-            document.getElementById("splitHighlightZone").value,
-            10,
+          const overall = parseFloat(
+            document.getElementById("splitOverallOffsetSlider").value,
           );
-          const sh = parseInt(
-            document.getElementById("splitShadowZone").value,
-            10,
+          const bias = parseFloat(
+            document.getElementById("splitContrastBiasSlider").value,
           );
           const soft = parseFloat(
             document.getElementById("splitSoftTrimSlider").value,
@@ -21116,8 +21206,8 @@
             document.getElementById("splitHardTrimSlider").value,
           );
           return {
-            highlight_zone: Number.isFinite(hi) ? hi : 7,
-            shadow_zone: Number.isFinite(sh) ? sh : 3,
+            overall_offset_stops: Number.isFinite(overall) ? overall : 0,
+            contrast_bias_stops: Number.isFinite(bias) ? bias : 0,
             soft_trim_stops: Number.isFinite(soft) ? soft : 0,
             hard_trim_stops: Number.isFinite(hard) ? hard : 0,
           };
@@ -21128,20 +21218,28 @@
          */
         applySplitSettingsToUI(settings) {
           if (!settings) return;
-          const hi = document.getElementById("splitHighlightZone");
-          const sh = document.getElementById("splitShadowZone");
+          const overall = document.getElementById("splitOverallOffsetSlider");
+          const overallValue = document.getElementById(
+            "splitOverallOffsetValue",
+          );
+          const bias = document.getElementById("splitContrastBiasSlider");
+          const biasValue = document.getElementById("splitContrastBiasValue");
           const soft = document.getElementById("splitSoftTrimSlider");
           const hard = document.getElementById("splitHardTrimSlider");
           const softValue = document.getElementById("splitSoftTrimValue");
           const hardValue = document.getElementById("splitHardTrimValue");
-          if (hi && settings.highlight_zone != null) {
-            hi.value = String(settings.highlight_zone);
-          }
-          if (sh && settings.shadow_zone != null) {
-            sh.value = String(settings.shadow_zone);
-          }
           const fmtTrim = (v) =>
             `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
+          if (overall && settings.overall_offset_stops != null) {
+            overall.value = String(settings.overall_offset_stops);
+            if (overallValue)
+              overallValue.textContent = fmtTrim(settings.overall_offset_stops);
+          }
+          if (bias && settings.contrast_bias_stops != null) {
+            bias.value = String(settings.contrast_bias_stops);
+            if (biasValue)
+              biasValue.textContent = fmtTrim(settings.contrast_bias_stops);
+          }
           if (soft && settings.soft_trim_stops != null) {
             soft.value = String(settings.soft_trim_stops);
             if (softValue) softValue.textContent = fmtTrim(settings.soft_trim_stops);
@@ -21199,8 +21297,8 @@
             const params = new URLSearchParams({
               action: "set",
               paper_id: paperId,
-              highlight_zone: String(s.highlight_zone),
-              shadow_zone: String(s.shadow_zone),
+              overall_offset: String(s.overall_offset_stops),
+              contrast_bias: String(s.contrast_bias_stops),
               soft_trim: String(s.soft_trim_stops),
               hard_trim: String(s.hard_trim_stops),
             });
@@ -22686,11 +22784,13 @@
             const paperId = this.currentPaperId || this.getCurrentPaperId();
             const calibration = this.calibration || 1000.0;
 
-            // Pull current Contrast Analyzer trims from the UI
+            // Pull current Contrast Analyzer tunables from the UI
             const trims = this.readContrastTrimsFromUI();
             const params = new URLSearchParams({
               calibration: String(calibration),
               paper_id: paperId,
+              overall_offset: String(trims.ca_overall_offset_stops),
+              contrast_bias: String(trims.ca_contrast_bias_stops),
               highlight_trim: String(trims.contrast_highlight_trim_stops),
               shadow_trim: String(trims.contrast_shadow_trim_stops),
             });
@@ -22890,7 +22990,7 @@
 
           const endpoint = "/light-meter-split-grade-heiland";
 
-          // Pull current zone targets + per-paper trim from the UI
+          // Pull per-paper tunables from the UI
           const tunables = this.readSplitSettingsFromUI();
 
           // Build query parameters with paper_id and tunables
@@ -22899,8 +22999,8 @@
             shadow: this.shadowLux,
             calibration: calibration,
             paper_id: paperId,
-            highlight_zone: String(tunables.highlight_zone),
-            shadow_zone: String(tunables.shadow_zone),
+            overall_offset: String(tunables.overall_offset_stops),
+            contrast_bias: String(tunables.contrast_bias_stops),
             soft_trim: String(tunables.soft_trim_stops),
             hard_trim: String(tunables.hard_trim_stops),
           });
@@ -22980,6 +23080,10 @@
                 }
               }
 
+              // Reasoning shows the equivalent-exposure soft/hard split
+              // (α-percent), plus any non-zero trims and reciprocity flag.
+              // α is the contrast balance — directly tied to the equivalent
+              // grade — and is the meaningful split for split-grade printing.
               const reasoningParts = [];
               if (typeof result.soft_alpha === "number") {
                 const softPct = Math.round(result.soft_alpha * 100);
@@ -23008,31 +23112,19 @@
               document.getElementById("splitAnalysisReasoning").textContent =
                 reasoningParts.join(" · ");
 
-              // Display raw server-computed times. Percentages are derived
-              // here only for the UI ratio labels.
               const softTime = result.soft_time;
               const hardTime = result.hard_time;
               const totalTime = result.total_time;
-              const softPercent = totalTime > 0
-                ? (softTime / totalTime) * 100
-                : 50;
-              const hardPercent = totalTime > 0
-                ? (hardTime / totalTime) * 100
-                : 50;
 
               document.getElementById("splitSoftTime").textContent =
                 softTime.toFixed(2) + "s";
               document.getElementById("splitSoftFilterName").textContent =
                 result.soft_filter;
-              document.getElementById("splitSoftPercent").textContent =
-                softPercent.toFixed(0) + "%";
 
               document.getElementById("splitHardTime").textContent =
                 hardTime.toFixed(2) + "s";
               document.getElementById("splitHardFilterName").textContent =
                 result.hard_filter;
-              document.getElementById("splitHardPercent").textContent =
-                hardPercent.toFixed(0) + "%";
 
               document.getElementById("splitTotalTime").textContent =
                 totalTime.toFixed(2) + "s";
@@ -23074,10 +23166,8 @@
           setText("splitAnalysisReasoning", "--");
           setText("splitSoftTime", "--.--");
           setText("splitSoftFilterName", "--");
-          setText("splitSoftPercent", "--%");
           setText("splitHardTime", "--.--");
           setText("splitHardFilterName", "--");
-          setText("splitHardPercent", "--%");
           setText("splitTotalTime", "--.--");
           const banner = document.getElementById("splitOutOfRangeBanner");
           if (banner) {
