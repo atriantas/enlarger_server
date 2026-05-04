@@ -200,8 +200,8 @@ def calculate_split_grade_heiland(
     system=None,
     overall_offset_stops=0.0,
     contrast_bias_stops=0.0,
-    highlight_trim_stops=0.0,
-    shadow_trim_stops=0.0,
+    soft_trim_stops=0.0,
+    hard_trim_stops=0.0,
 ):
     """
     Canonical RH Designs StopClock Vario / Heiland Splitgrade-style
@@ -224,19 +224,10 @@ def calculate_split_grade_heiland(
          clamped to [0, 1]. α=1 → pure soft (00/2xY), α=0 → pure hard (5/2xM2).
       6. Legs sized so combined exposure at the midpoint matches the
          equivalent single-grade exposure (single-emulsion equivalence):
-             T_soft = α     · factor_soft · base_time · 2^highlight_trim
-             T_hard = (1−α) · factor_hard · base_time · 2^shadow_trim
+             T_soft = α     · factor_soft · base_time · 2^soft_trim
+             T_hard = (1−α) · factor_hard · base_time · 2^hard_trim
          Highlights and shadows then land at zones determined by the
          equivalent grade's contrast curve — canonical split-grade behaviour.
-
-    On the trim names: the soft leg's exposure dominates highlight density
-    in real paper because the soft emulsion saturates at shadow lux (its
-    D_max is reached well before the shadow exposure level), while the
-    hard emulsion is in its toe at highlight lux. So highlight_trim_stops
-    primarily moves the highlight tone and shadow_trim_stops primarily
-    moves the shadow tone. The orthogonality is approximate (driven by
-    paper saturation, not by linear-log algebra) but matches darkroom
-    intuition.
 
     Args:
         highlight_lux: Lux at the print's lightest tone (dim spot at paper plane).
@@ -247,10 +238,8 @@ def calculate_split_grade_heiland(
             Positive = darker print; negative = lighter print.
         contrast_bias_stops: Shifts the equivalent-grade lookup (stops, default 0).
             Positive = harder grade than auto pick; negative = softer.
-        highlight_trim_stops: Adjusts highlight tone (stops, default 0).
-            Multiplies the soft leg by 2^trim. Positive = darker highlight.
-        shadow_trim_stops: Adjusts shadow tone (stops, default 0).
-            Multiplies the hard leg by 2^trim. Positive = darker shadow.
+        soft_trim_stops: Per-leg soft fine-tune (stops, default 0).
+        hard_trim_stops: Per-leg hard fine-tune (stops, default 0).
 
     Returns:
         dict with soft/hard times, filters, factors, delta_ev, equivalent
@@ -316,12 +305,9 @@ def calculate_split_grade_heiland(
     lux_mid = math.sqrt(highlight_lux * shadow_lux)
     base_time = (calibration / lux_mid) * (2.0 ** overall_offset_stops)
 
-    # ── Step 5: equivalent-exposure split, with per-tone trims ────────
-    # In real paper, the soft emulsion saturates at shadow lux and the hard
-    # emulsion is in its toe at highlight lux, so each trim primarily moves
-    # its named tone; cross-talk to the other tone is small.
-    soft_time = alpha * factor_soft * base_time * (2.0 ** highlight_trim_stops)
-    hard_time = (1.0 - alpha) * factor_hard * base_time * (2.0 ** shadow_trim_stops)
+    # ── Step 5: equivalent-exposure split, with per-leg trims ─────────
+    soft_time = alpha * factor_soft * base_time * (2.0 ** soft_trim_stops)
+    hard_time = (1.0 - alpha) * factor_hard * base_time * (2.0 ** hard_trim_stops)
 
     # Reciprocity applied to the cumulative exposure, scaled back to legs.
     # Internally consistent (legs still sum to corrected_total) and small
@@ -355,8 +341,8 @@ def calculate_split_grade_heiland(
         'equivalent_out_of_range': eq_out_of_range,
         'overall_offset_stops': overall_offset_stops,
         'contrast_bias_stops': contrast_bias_stops,
-        'highlight_trim_stops': highlight_trim_stops,
-        'shadow_trim_stops': shadow_trim_stops,
+        'soft_trim_stops': soft_trim_stops,
+        'hard_trim_stops': hard_trim_stops,
         'reciprocity_applied': reciprocity_applied,
         'reciprocity_p': reciprocity_p,
         'highlight_lux': highlight_lux,
