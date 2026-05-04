@@ -5659,8 +5659,8 @@
               </div>
               <div class="label-sm" style="margin-top: 8px">
                 <div class="control-label">
-                  <span>SOFT TRIM</span>
-                  <span class="value-display" id="splitSoftTrimValue"
+                  <span>HIGHLIGHT TRIM</span>
+                  <span class="value-display" id="splitHighlightTrimValue"
                     >+0.00 stops</span
                   >
                 </div>
@@ -5671,13 +5671,13 @@
                   step="0.166666"
                   value="0"
                   class="slider"
-                  id="splitSoftTrimSlider"
+                  id="splitHighlightTrimSlider"
                 />
               </div>
               <div class="label-sm" style="margin-top: 6px">
                 <div class="control-label">
-                  <span>HARD TRIM</span>
-                  <span class="value-display" id="splitHardTrimValue"
+                  <span>SHADOW TRIM</span>
+                  <span class="value-display" id="splitShadowTrimValue"
                     >+0.00 stops</span
                   >
                 </div>
@@ -5688,7 +5688,7 @@
                   step="0.166666"
                   value="0"
                   class="slider"
-                  id="splitHardTrimSlider"
+                  id="splitShadowTrimSlider"
                 />
               </div>
               <div
@@ -21144,16 +21144,16 @@
             "splitContrastBiasSlider",
           );
           const biasValue = document.getElementById("splitContrastBiasValue");
-          const softSlider = document.getElementById("splitSoftTrimSlider");
-          const hardSlider = document.getElementById("splitHardTrimSlider");
-          const softValue = document.getElementById("splitSoftTrimValue");
-          const hardValue = document.getElementById("splitHardTrimValue");
+          const hiSlider = document.getElementById("splitHighlightTrimSlider");
+          const shSlider = document.getElementById("splitShadowTrimSlider");
+          const hiValue = document.getElementById("splitHighlightTrimValue");
+          const shValue = document.getElementById("splitShadowTrimValue");
           const resetBtn = document.getElementById("splitResetTrimsBtn");
           if (
             !overallSlider ||
             !biasSlider ||
-            !softSlider ||
-            !hardSlider
+            !hiSlider ||
+            !shSlider
           ) {
             return;
           }
@@ -21167,11 +21167,11 @@
           biasSlider.addEventListener("input", () => {
             biasValue.textContent = fmtTrim(biasSlider.value);
           });
-          softSlider.addEventListener("input", () => {
-            softValue.textContent = fmtTrim(softSlider.value);
+          hiSlider.addEventListener("input", () => {
+            hiValue.textContent = fmtTrim(hiSlider.value);
           });
-          hardSlider.addEventListener("input", () => {
-            hardValue.textContent = fmtTrim(hardSlider.value);
+          shSlider.addEventListener("input", () => {
+            shValue.textContent = fmtTrim(shSlider.value);
           });
           const persistAndRecalc = () => {
             this.saveSplitSettings();
@@ -21182,8 +21182,8 @@
           };
           overallSlider.addEventListener("change", persistAndRecalc);
           biasSlider.addEventListener("change", persistAndRecalc);
-          softSlider.addEventListener("change", persistAndRecalc);
-          hardSlider.addEventListener("change", persistAndRecalc);
+          hiSlider.addEventListener("change", persistAndRecalc);
+          shSlider.addEventListener("change", persistAndRecalc);
           if (resetBtn) {
             resetBtn.addEventListener("click", () => this.resetSplitSettings());
           }
@@ -21199,17 +21199,17 @@
           const bias = parseFloat(
             document.getElementById("splitContrastBiasSlider").value,
           );
-          const soft = parseFloat(
-            document.getElementById("splitSoftTrimSlider").value,
+          const hi = parseFloat(
+            document.getElementById("splitHighlightTrimSlider").value,
           );
-          const hard = parseFloat(
-            document.getElementById("splitHardTrimSlider").value,
+          const sh = parseFloat(
+            document.getElementById("splitShadowTrimSlider").value,
           );
           return {
             overall_offset_stops: Number.isFinite(overall) ? overall : 0,
             contrast_bias_stops: Number.isFinite(bias) ? bias : 0,
-            soft_trim_stops: Number.isFinite(soft) ? soft : 0,
-            hard_trim_stops: Number.isFinite(hard) ? hard : 0,
+            highlight_trim_stops: Number.isFinite(hi) ? hi : 0,
+            shadow_trim_stops: Number.isFinite(sh) ? sh : 0,
           };
         }
 
@@ -21224,10 +21224,10 @@
           );
           const bias = document.getElementById("splitContrastBiasSlider");
           const biasValue = document.getElementById("splitContrastBiasValue");
-          const soft = document.getElementById("splitSoftTrimSlider");
-          const hard = document.getElementById("splitHardTrimSlider");
-          const softValue = document.getElementById("splitSoftTrimValue");
-          const hardValue = document.getElementById("splitHardTrimValue");
+          const hi = document.getElementById("splitHighlightTrimSlider");
+          const sh = document.getElementById("splitShadowTrimSlider");
+          const hiValue = document.getElementById("splitHighlightTrimValue");
+          const shValue = document.getElementById("splitShadowTrimValue");
           const fmtTrim = (v) =>
             `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)} stops`;
           if (overall && settings.overall_offset_stops != null) {
@@ -21240,13 +21240,15 @@
             if (biasValue)
               biasValue.textContent = fmtTrim(settings.contrast_bias_stops);
           }
-          if (soft && settings.soft_trim_stops != null) {
-            soft.value = String(settings.soft_trim_stops);
-            if (softValue) softValue.textContent = fmtTrim(settings.soft_trim_stops);
+          if (hi && settings.highlight_trim_stops != null) {
+            hi.value = String(settings.highlight_trim_stops);
+            if (hiValue)
+              hiValue.textContent = fmtTrim(settings.highlight_trim_stops);
           }
-          if (hard && settings.hard_trim_stops != null) {
-            hard.value = String(settings.hard_trim_stops);
-            if (hardValue) hardValue.textContent = fmtTrim(settings.hard_trim_stops);
+          if (sh && settings.shadow_trim_stops != null) {
+            sh.value = String(settings.shadow_trim_stops);
+            if (shValue)
+              shValue.textContent = fmtTrim(settings.shadow_trim_stops);
           }
         }
 
@@ -21299,8 +21301,8 @@
               paper_id: paperId,
               overall_offset: String(s.overall_offset_stops),
               contrast_bias: String(s.contrast_bias_stops),
-              soft_trim: String(s.soft_trim_stops),
-              hard_trim: String(s.hard_trim_stops),
+              highlight_trim: String(s.highlight_trim_stops),
+              shadow_trim: String(s.shadow_trim_stops),
             });
             await fetch(`/splitgrade-settings?${params.toString()}`);
           } catch (e) {
@@ -23001,8 +23003,8 @@
             paper_id: paperId,
             overall_offset: String(tunables.overall_offset_stops),
             contrast_bias: String(tunables.contrast_bias_stops),
-            soft_trim: String(tunables.soft_trim_stops),
-            hard_trim: String(tunables.hard_trim_stops),
+            highlight_trim: String(tunables.highlight_trim_stops),
+            shadow_trim: String(tunables.shadow_trim_stops),
           });
 
           console.log("Calling split-grade endpoint:", endpoint);
@@ -23093,14 +23095,14 @@
                 );
               }
               const trimParts = [];
-              if (result.soft_trim_stops) {
+              if (result.highlight_trim_stops) {
                 trimParts.push(
-                  `soft ${result.soft_trim_stops >= 0 ? "+" : ""}${result.soft_trim_stops.toFixed(2)}`,
+                  `hi ${result.highlight_trim_stops >= 0 ? "+" : ""}${result.highlight_trim_stops.toFixed(2)}`,
                 );
               }
-              if (result.hard_trim_stops) {
+              if (result.shadow_trim_stops) {
                 trimParts.push(
-                  `hard ${result.hard_trim_stops >= 0 ? "+" : ""}${result.hard_trim_stops.toFixed(2)}`,
+                  `sh ${result.shadow_trim_stops >= 0 ? "+" : ""}${result.shadow_trim_stops.toFixed(2)}`,
                 );
               }
               if (trimParts.length) {

@@ -813,9 +813,11 @@ class DarkroomLightMeter:
 
         # Per-paper split-grade tunables (all stops, float). Shape:
         # { paper_id: {'overall_offset_stops': float, 'contrast_bias_stops': float,
-        #              'soft_trim_stops': float, 'hard_trim_stops': float,
+        #              'highlight_trim_stops': float, 'shadow_trim_stops': float,
         #              'contrast_highlight_trim_stops': float,
-        #              'contrast_shadow_trim_stops': float} }
+        #              'contrast_shadow_trim_stops': float,
+        #              'ca_overall_offset_stops': float,
+        #              'ca_contrast_bias_stops': float} }
         self.split_settings = {}
 
         # Current paper selection (server-side state)
@@ -911,8 +913,13 @@ class DarkroomLightMeter:
         # Split-Grade Analyzer tunables.
         'overall_offset_stops': 0.0,
         'contrast_bias_stops': 0.0,
-        'soft_trim_stops': 0.0,
-        'hard_trim_stops': 0.0,
+        # highlight_trim multiplies the soft leg; shadow_trim multiplies the
+        # hard leg. Named per the dominant tone each leg controls in real
+        # paper (soft saturates at shadow → soft leg's effect lives mostly
+        # at the highlight; hard's toe at highlight → hard leg's effect
+        # lives mostly at the shadow).
+        'highlight_trim_stops': 0.0,
+        'shadow_trim_stops': 0.0,
         # Contrast Analyzer tunables (separate state so the two tools have
         # independent knobs). Per-paper, persisted alongside split-grade.
         'contrast_highlight_trim_stops': 0.0,
@@ -936,21 +943,25 @@ class DarkroomLightMeter:
         Update split-grade settings for a paper.
 
         Accepted keys (all stops, float): overall_offset_stops,
-        contrast_bias_stops, soft_trim_stops, hard_trim_stops,
-        contrast_highlight_trim_stops, contrast_shadow_trim_stops.
+        contrast_bias_stops, highlight_trim_stops, shadow_trim_stops,
+        contrast_highlight_trim_stops, contrast_shadow_trim_stops,
+        ca_overall_offset_stops, ca_contrast_bias_stops.
         """
         if not paper_id:
             raise ValueError("paper_id is required")
         current = dict(self.split_settings.get(paper_id, {}))
-        # Drop legacy zone-target keys if present from older saves; the new
-        # algorithm replaces them with overall_offset / contrast_bias.
+        # Drop legacy keys if present from older saves; the new algorithm
+        # replaced zone targets with overall_offset / contrast_bias and
+        # renamed soft_trim/hard_trim to highlight_trim/shadow_trim.
         current.pop('highlight_zone', None)
         current.pop('shadow_zone', None)
+        current.pop('soft_trim_stops', None)
+        current.pop('hard_trim_stops', None)
         for key in (
             'overall_offset_stops',
             'contrast_bias_stops',
-            'soft_trim_stops',
-            'hard_trim_stops',
+            'highlight_trim_stops',
+            'shadow_trim_stops',
             'contrast_highlight_trim_stops',
             'contrast_shadow_trim_stops',
             'ca_overall_offset_stops',
@@ -1059,7 +1070,8 @@ class DarkroomLightMeter:
                                       calibration=None, system=None,
                                       overall_offset_stops=None,
                                       contrast_bias_stops=None,
-                                      soft_trim_stops=None, hard_trim_stops=None):
+                                      highlight_trim_stops=None,
+                                      shadow_trim_stops=None):
         """RH-Designs-style split-grade. Tunables fall back to per-paper
         stored split_settings (or defaults) when not supplied."""
         paper_id = system or self.current_paper_id
@@ -1077,13 +1089,13 @@ class DarkroomLightMeter:
                 contrast_bias_stops if contrast_bias_stops is not None
                 else settings['contrast_bias_stops']
             ),
-            soft_trim_stops=(
-                soft_trim_stops if soft_trim_stops is not None
-                else settings['soft_trim_stops']
+            highlight_trim_stops=(
+                highlight_trim_stops if highlight_trim_stops is not None
+                else settings['highlight_trim_stops']
             ),
-            hard_trim_stops=(
-                hard_trim_stops if hard_trim_stops is not None
-                else settings['hard_trim_stops']
+            shadow_trim_stops=(
+                shadow_trim_stops if shadow_trim_stops is not None
+                else settings['shadow_trim_stops']
             ),
         )
     
