@@ -1127,8 +1127,8 @@ class HTTPServer:
             paper_id: Paper ID (e.g., 'ilford_cooltone', 'foma_fomaspeed')
             overall_offset: Global brightness offset in stops (optional, per-paper)
             contrast_bias: Equivalent-grade bias in stops (optional, per-paper)
-            soft_trim: Soft leg user trim in stops (optional, per-paper)
-            hard_trim: Hard leg user trim in stops (optional, per-paper)
+            highlight_trim: Highlight tone trim in stops (optional, per-paper)
+            shadow_trim: Shadow tone trim in stops (optional, per-paper)
             system: (deprecated) Legacy filter system parameter
 
         Returns split-grade times based on the paper's softest/hardest filter pair,
@@ -1181,8 +1181,8 @@ class HTTPServer:
                 system=paper_id,
                 overall_offset_stops=_opt_float('overall_offset'),
                 contrast_bias_stops=_opt_float('contrast_bias'),
-                soft_trim_stops=_opt_float('soft_trim'),
-                hard_trim_stops=_opt_float('hard_trim'),
+                highlight_trim_stops=_opt_float('highlight_trim'),
+                shadow_trim_stops=_opt_float('shadow_trim'),
             )
             
             if result is None:
@@ -1597,12 +1597,12 @@ class HTTPServer:
         Query params:
             action: 'get' (default), 'set', or 'clear'.
             paper_id: Paper identifier (optional — defaults to current paper).
-            overall_offset: float (stops), used with action=set.
-            contrast_bias: float (stops), used with action=set.
-            soft_trim: float (stops), used with action=set.
-            hard_trim: float (stops), used with action=set.
-            contrast_highlight_trim: float (stops), used with action=set.
-            contrast_shadow_trim: float (stops), used with action=set.
+            overall_offset: float (stops), Split-Grade overall brightness.
+            contrast_bias: float (stops), Split-Grade grade bias.
+            highlight_trim: float (stops), Split-Grade highlight tone trim.
+            shadow_trim: float (stops), Split-Grade shadow tone trim.
+            contrast_highlight_trim: float (stops), Contrast Analyzer hi trim.
+            contrast_shadow_trim: float (stops), Contrast Analyzer sh trim.
             ca_overall_offset: float (stops), Contrast Analyzer overall offset.
             ca_contrast_bias: float (stops), Contrast Analyzer grade bias.
 
@@ -1629,8 +1629,8 @@ class HTTPServer:
                     paper_id,
                     overall_offset_stops=_opt_float('overall_offset'),
                     contrast_bias_stops=_opt_float('contrast_bias'),
-                    soft_trim_stops=_opt_float('soft_trim'),
-                    hard_trim_stops=_opt_float('hard_trim'),
+                    highlight_trim_stops=_opt_float('highlight_trim'),
+                    shadow_trim_stops=_opt_float('shadow_trim'),
                     contrast_highlight_trim_stops=_opt_float(
                         'contrast_highlight_trim'),
                     contrast_shadow_trim_stops=_opt_float(
